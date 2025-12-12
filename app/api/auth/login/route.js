@@ -23,8 +23,20 @@ export async function POST(request) {
     const usersCollection = await getCollection(Collections.USERS)
     const clientsCollection = await getCollection(Collections.CLIENTS)
 
+    console.log('Login attempt for:', email)
     const foundUser = await usersCollection.findOne({ email })
-    if (!foundUser || !verifyPassword(password, foundUser.password)) {
+    console.log('Found user:', foundUser ? foundUser.email : 'NOT FOUND')
+    
+    if (!foundUser) {
+      console.log('User not found in database')
+      return errorResponse('Invalid credentials', 401)
+    }
+    
+    const passwordMatch = verifyPassword(password, foundUser.password)
+    console.log('Password match:', passwordMatch)
+    
+    if (!passwordMatch) {
+      console.log('Password mismatch')
       return errorResponse('Invalid credentials', 401)
     }
 
