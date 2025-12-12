@@ -594,6 +594,128 @@ export function SuperAdminSettings({ user }) {
           </div>
         </TabsContent>
 
+        {/* AI Provider Tab */}
+        <TabsContent value="ai-provider">
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-semibold">AI Provider Configuration</h3>
+                <p className="text-sm text-muted-foreground">Configure the AI model for Mee AI Agent (Enterprise feature)</p>
+              </div>
+            </div>
+
+            <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-violet-50">
+              <CardHeader>
+                <div className="flex items-center gap-4">
+                  <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center shadow-lg">
+                    <Bot className="h-6 w-6 text-white" />
+                  </div>
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      Mee AI Agent
+                      <Badge className="bg-purple-500">Enterprise</Badge>
+                    </CardTitle>
+                    <CardDescription>Intelligent business assistant powered by AI</CardDescription>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <Label className="text-base font-semibold">Select AI Provider</Label>
+                  <div className="grid grid-cols-3 gap-4">
+                    {[
+                      { id: 'openai', name: 'OpenAI', model: 'GPT-4o', color: 'bg-green-500' },
+                      { id: 'claude', name: 'Anthropic', model: 'Claude Sonnet', color: 'bg-orange-500' },
+                      { id: 'gemini', name: 'Google', model: 'Gemini 2.0', color: 'bg-blue-500' }
+                    ].map((provider) => (
+                      <div
+                        key={provider.id}
+                        onClick={() => setSettings(prev => ({
+                          ...prev,
+                          aiProvider: { ...prev?.aiProvider, provider: provider.id }
+                        }))}
+                        className={`p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                          settings?.aiProvider?.provider === provider.id 
+                            ? 'border-purple-500 bg-white shadow-lg' 
+                            : 'border-slate-200 hover:border-purple-200'
+                        }`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`h-10 w-10 rounded-lg ${provider.color} flex items-center justify-center text-white font-bold`}>
+                            {provider.name.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="font-semibold">{provider.name}</p>
+                            <p className="text-xs text-muted-foreground">{provider.model}</p>
+                          </div>
+                        </div>
+                        {settings?.aiProvider?.provider === provider.id && (
+                          <div className="mt-3 flex items-center gap-1 text-purple-600 text-sm">
+                            <CheckCircle2 className="h-4 w-4" />
+                            <span>Selected</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                <Alert className="bg-white">
+                  <Brain className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Note:</strong> Mee uses the Emergent LLM Key which provides access to all AI providers. 
+                    You can switch providers anytime without additional configuration.
+                  </AlertDescription>
+                </Alert>
+
+                <div className="flex gap-2">
+                  <Button
+                    onClick={() => saveSettings('aiProvider', settings?.aiProvider)}
+                    disabled={savingSection === 'aiProvider'}
+                  >
+                    {savingSection === 'aiProvider' ? (
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                    ) : (
+                      <Save className="h-4 w-4 mr-2" />
+                    )}
+                    Save AI Settings
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-base flex items-center gap-2">
+                  <Sparkles className="h-5 w-5 text-purple-500" />
+                  Mee AI Capabilities
+                </CardTitle>
+                <CardDescription>Features available to Enterprise clients</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-2 gap-4">
+                  {[
+                    { title: 'Lead Intelligence', desc: 'AI-powered lead scoring and prioritization' },
+                    { title: 'Task Suggestions', desc: 'Smart task recommendations based on context' },
+                    { title: 'Document Generation', desc: 'Auto-generate proposals and emails' },
+                    { title: 'Natural Language Queries', desc: 'Ask questions about your data' },
+                    { title: 'Client Insights', desc: 'Behavior analysis and churn prediction' },
+                    { title: 'Smart Reminders', desc: 'AI-powered follow-up suggestions' }
+                  ].map((feature, i) => (
+                    <div key={i} className="flex items-start gap-3 p-3 rounded-lg bg-slate-50">
+                      <CheckCircle2 className="h-5 w-5 text-green-500 mt-0.5" />
+                      <div>
+                        <p className="font-medium text-sm">{feature.title}</p>
+                        <p className="text-xs text-muted-foreground">{feature.desc}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
         {/* Pricing Management */}
         <TabsContent value="pricing">
           <div className="space-y-4">
