@@ -156,9 +156,9 @@ export function LeadForm({ lead, onSubmit, onCancel }) {
           />
         </div>
         <div className="space-y-2">
-          <Label>Next Follow-up Date</Label>
+          <Label>Next Follow-up Date & Time</Label>
           <Input
-            type="date"
+            type="datetime-local"
             value={formData.nextFollowUp}
             onChange={(e) => setFormData({ ...formData, nextFollowUp: e.target.value })}
           />
