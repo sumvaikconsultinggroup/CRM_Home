@@ -184,6 +184,7 @@ const CATEGORIES = [
   { id: 'automation', name: 'Automation', icon: Zap },
   { id: 'productivity', name: 'Productivity', icon: Calendar },
   { id: 'communication', name: 'Communication', icon: MessageSquare },
+  { id: 'accounting', name: 'Accounting', icon: FileSpreadsheet },
   { id: 'lead-sources', name: 'Lead Sources', icon: Share2 },
   { id: 'developer', name: 'Developer', icon: Code }
 ]
