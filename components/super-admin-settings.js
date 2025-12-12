@@ -16,7 +16,7 @@ import {
   Shield, Bell, FileText, Database, Save, AlertTriangle, 
   DollarSign, Edit, Trash2, Plus, IndianRupee, CreditCard,
   CheckCircle2, XCircle, Loader2, Eye, EyeOff, RefreshCw,
-  Wallet, Globe, Settings2, Activity
+  Wallet, Globe, Settings2, Activity, Sparkles, Bot, Brain
 } from 'lucide-react'
 import { toast } from 'sonner'
 
