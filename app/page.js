@@ -2300,6 +2300,10 @@ function WhiteLabelSettings() {
     try {
       await api.updateWhitelabel(settings)
       toast.success('White label settings saved successfully!')
+      // Instant Apply
+      if (settings.primaryColor) {
+        document.documentElement.style.setProperty('--primary', settings.primaryColor)
+      }
     } catch (error) {
       toast.error(error.message || 'Failed to save settings')
     }
