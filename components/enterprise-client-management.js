@@ -349,7 +349,7 @@ const ClientDetailDialog = ({ client, modules, open, onOpenChange, onModuleToggl
                           <div>
                             <p className="font-medium text-sm">Invoice #{1000 + i}</p>
                             <p className="text-xs text-muted-foreground">
-                              {new Date(Date.now() - i * 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}
+                              {i === 0 ? 'This month' : i === 1 ? 'Last month' : `${i} months ago`}
                             </p>
                           </div>
                         </div>
