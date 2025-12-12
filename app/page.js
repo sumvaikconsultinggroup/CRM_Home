@@ -1805,131 +1805,13 @@ function ClientDashboard({ user, client, onLogout }) {
                 exit={{ opacity: 0, y: -20 }}
                 className="space-y-6"
               >
-                <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-bold">Reports & Analytics</h2>
-                  <div className="flex gap-2">
-                    <Button 
-                      variant="outline" 
-                      onClick={() => {
-                        // Generate CSV
-                        const csvData = leads.map(l => ({
-                          Name: l.name,
-                          Email: l.email,
-                          Status: l.status,
-                          Value: l.value,
-                          Source: l.source
-                        }))
-                        const csv = [
-                          Object.keys(csvData[0]).join(','),
-                          ...csvData.map(row => Object.values(row).join(','))
-                        ].join('\n')
-                        const blob = new Blob([csv], { type: 'text/csv' })
-                        const url = URL.createObjectURL(blob)
-                        const a = document.createElement('a')
-                        a.href = url
-                        a.download = `report-${new Date().toISOString().split('T')[0]}.csv`
-                        a.click()
-                        toast.success('Report exported as CSV!')
-                      }}
-                    >
-                      <Download className="h-4 w-4 mr-2" /> Export CSV
-                    </Button>
-                    <Button 
-                      onClick={() => {
-                        window.print()
-                        toast.success('Print dialog opened!')
-                      }}
-                      className="bg-gradient-to-r from-primary to-indigo-600"
-                    >
-                      <FileText className="h-4 w-4 mr-2" /> Export PDF
-                    </Button>
-                  </div>
-                </div>
-
-                <Tabs defaultValue="sales" className="w-full">
-                  <TabsList className="mb-4">
-                    <TabsTrigger value="sales">Sales Report</TabsTrigger>
-                    <TabsTrigger value="expenses">Expense Report</TabsTrigger>
-                  </TabsList>
-
-                  <TabsContent value="sales" className="space-y-6">
-                    <div className="grid lg:grid-cols-2 gap-6">
-                      <GlassCard className="p-6">
-                        <h3 className="font-semibold mb-4">Monthly Performance</h3>
-                        <ResponsiveContainer width="100%" height={300}>
-                          <LineChart data={stats.charts.monthlyLeads}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="month" />
-                            <YAxis />
-                            <Tooltip />
-                            <Legend />
-                            <Line type="monotone" dataKey="leads" stroke="#3B82F6" strokeWidth={2} />
-                            <Line type="monotone" dataKey="value" stroke="#10B981" strokeWidth={2} />
-                          </LineChart>
-                        </ResponsiveContainer>
-                      </GlassCard>
-
-                      <GlassCard className="p-6">
-                        <h3 className="font-semibold mb-4">Lead Sources Performance</h3>
-                        <ResponsiveContainer width="100%" height={300}>
-                          <BarChart data={stats.charts.leadSources}>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="source" />
-                            <YAxis />
-                            <Tooltip />
-                            <Bar dataKey="count" fill="#3B82F6" radius={[8, 8, 0, 0]} />
-                          </BarChart>
-                        </ResponsiveContainer>
-                      </GlassCard>
-                    </div>
-                  </TabsContent>
-
-                  <TabsContent value="expenses" className="space-y-6">
-                    <div className="grid lg:grid-cols-2 gap-6">
-                      <GlassCard className="p-6">
-                        <h3 className="font-semibold mb-4">Expenses by Category</h3>
-                        <ResponsiveContainer width="100%" height={300}>
-                          <PieChart>
-                            <Pie
-                              data={stats.charts.expenseCategories}
-                              cx="50%"
-                              cy="50%"
-                              outerRadius={100}
-                              fill="#8884d8"
-                              dataKey="total"
-                              nameKey="category"
-                              label={({ category, total }) => `${category}: ₹${total?.toLocaleString()}`}
-                            >
-                              {stats.charts.expenseCategories.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                              ))}
-                            </Pie>
-                            <Tooltip />
-                          </PieChart>
-                        </ResponsiveContainer>
-                      </GlassCard>
-
-                      <GlassCard className="p-6">
-                        <h3 className="font-semibold mb-4">Monthly Expenses</h3>
-                        <ResponsiveContainer width="100%" height={300}>
-                          <AreaChart data={stats.charts.monthlyExpenses}>
-                            <defs>
-                              <linearGradient id="colorExp" x1="0" y1="0" x2="0" y2="1">
-                                <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3}/>
-                                <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
-                              </linearGradient>
-                            </defs>
-                            <CartesianGrid strokeDasharray="3 3" />
-                            <XAxis dataKey="month" />
-                            <YAxis />
-                            <Tooltip />
-                            <Area type="monotone" dataKey="total" stroke="#EF4444" fillOpacity={1} fill="url(#colorExp)" strokeWidth={2} />
-                          </AreaChart>
-                        </ResponsiveContainer>
-                      </GlassCard>
-                    </div>
-                  </TabsContent>
-                </Tabs>
+                <AdvancedReports 
+                  stats={stats}
+                  leads={leads}
+                  projects={projects}
+                  tasks={tasks}
+                  expenses={expenses}
+                />
               </motion.div>
             )}
 
