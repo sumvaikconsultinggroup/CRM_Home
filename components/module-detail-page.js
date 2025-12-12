@@ -7,7 +7,7 @@ import { Card } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { 
   ArrowLeft, CheckCircle2, Star, Play, Users, BarChart3, 
-  Shield, Zap, TrendingUp, Clock, DollarSign, Building2
+  Shield, Zap, TrendingUp, Clock, DollarSign, Building2, Square
 } from 'lucide-react'
 
 const FadeIn = ({ children, delay = 0 }) => (
