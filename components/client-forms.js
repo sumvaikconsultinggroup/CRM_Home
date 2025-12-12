@@ -17,7 +17,10 @@ export function LeadForm({ lead, onSubmit, onCancel }) {
     source: 'website',
     status: 'new',
     value: '',
-    notes: ''
+    notes: '',
+    nextFollowUp: '',
+    assignedTo: '',
+    priority: 'medium'
   })
 
   useEffect(() => {
@@ -30,7 +33,10 @@ export function LeadForm({ lead, onSubmit, onCancel }) {
         source: lead.source || 'website',
         status: lead.status || 'new',
         value: lead.value || '',
-        notes: lead.notes || ''
+        notes: lead.notes || '',
+        nextFollowUp: lead.nextFollowUp ? new Date(lead.nextFollowUp).toISOString().split('T')[0] : '',
+        assignedTo: lead.assignedTo || '',
+        priority: lead.priority || 'medium'
       })
     }
   }, [lead])
