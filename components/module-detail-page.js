@@ -29,8 +29,9 @@ export default function ModuleDetailPage({ moduleId }) {
     fetch('/api/modules-public')
       .then(res => res.json())
       .then(data => {
-        if (data.success && data.data) {
-          const foundModule = data.data.find(m => m.id === moduleId)
+        // API returns array directly, not wrapped in {success, data}
+        if (Array.isArray(data)) {
+          const foundModule = data.find(m => m.id === moduleId)
           setModule(foundModule)
         }
       })
@@ -40,8 +41,9 @@ export default function ModuleDetailPage({ moduleId }) {
     fetch('/api/plans')
       .then(res => res.json())
       .then(data => {
-        if (data.success && data.data) {
-          setPlans(data.data)
+        // API returns array directly
+        if (Array.isArray(data)) {
+          setPlans(data)
         }
       })
       .catch(console.error)
