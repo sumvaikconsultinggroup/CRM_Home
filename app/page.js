@@ -2035,6 +2035,120 @@ function ClientDashboard({ user, client, onLogout }) {
                 )}
               </motion.div>
             )}
+
+            {/* Settings Tab */}
+            {activeTab === 'settings' && (
+              <motion.div
+                key="settings"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
+                <div>
+                  <h2 className="text-2xl font-bold">Account Settings</h2>
+                  <p className="text-muted-foreground">Manage your profile and preferences</p>
+                </div>
+
+                <div className="grid gap-6">
+                  {/* Profile Settings */}
+                  <GlassCard className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <Users className="h-5 w-5" />
+                      Profile Information
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Name</Label>
+                          <Input value={user?.name || ''} disabled />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Email</Label>
+                          <Input value={user?.email || ''} disabled />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <Label>Company</Label>
+                          <Input value={client?.businessName || ''} disabled />
+                        </div>
+                        <div className="space-y-2">
+                          <Label>Role</Label>
+                          <Input value={user?.role?.toUpperCase() || ''} disabled />
+                        </div>
+                      </div>
+                    </div>
+                  </GlassCard>
+
+                  {/* Subscription Info */}
+                  <GlassCard className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <Crown className="h-5 w-5" />
+                      Subscription Plan
+                    </h3>
+                    <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/10 to-indigo-600/10 rounded-lg border border-primary/20">
+                      <div>
+                        <p className="font-semibold text-lg">{client?.plan?.name || 'Basic'} Plan</p>
+                        <p className="text-sm text-muted-foreground">
+                          {client?.subscriptionStatus === 'active' ? '✓ Active' : '⚠ Inactive'}
+                        </p>
+                      </div>
+                      <Button variant="outline">
+                        <ArrowUpRight className="h-4 w-4 mr-2" /> Upgrade Plan
+                      </Button>
+                    </div>
+                  </GlassCard>
+
+                  {/* Preferences */}
+                  <GlassCard className="p-6">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <Settings className="h-5 w-5" />
+                      Preferences
+                    </h3>
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                        <div>
+                          <p className="font-medium">Email Notifications</p>
+                          <p className="text-sm text-muted-foreground">Receive updates about leads and projects</p>
+                        </div>
+                        <Switch defaultChecked />
+                      </div>
+                      <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                        <div>
+                          <p className="font-medium">WhatsApp Notifications</p>
+                          <p className="text-sm text-muted-foreground">Get instant alerts on your phone</p>
+                        </div>
+                        <Switch defaultChecked />
+                      </div>
+                      <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                        <div>
+                          <p className="font-medium">Weekly Reports</p>
+                          <p className="text-sm text-muted-foreground">Receive summary emails every Monday</p>
+                        </div>
+                        <Switch />
+                      </div>
+                    </div>
+                  </GlassCard>
+
+                  {/* Danger Zone */}
+                  <GlassCard className="p-6 border-red-200">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-red-600">
+                      <AlertCircle className="h-5 w-5" />
+                      Danger Zone
+                    </h3>
+                    <div className="space-y-3">
+                      <Button variant="outline" className="w-full justify-start text-red-600 border-red-200 hover:bg-red-50">
+                        <Trash2 className="h-4 w-4 mr-2" /> Delete All Data
+                      </Button>
+                      <Button variant="outline" className="w-full justify-start text-red-600 border-red-200 hover:bg-red-50">
+                        <AlertCircle className="h-4 w-4 mr-2" /> Deactivate Account
+                      </Button>
+                    </div>
+                  </GlassCard>
+                </div>
+              </motion.div>
+            )}
           </AnimatePresence>
         </div>
       </main>
