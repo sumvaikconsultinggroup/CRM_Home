@@ -260,7 +260,7 @@ function AdvancedFilters({ filters, onFilterChange, isEnterprise }) {
 }
 
 // Main Enterprise Leads Component
-export function EnterpriseLeads({ leads, onUpdateLead, onRefresh, isEnterprise, client }) {
+export function EnterpriseLeads({ leads, onUpdateLead, onRefresh, isEnterprise, isProfessional, client }) {
   const [selectedLeads, setSelectedLeads] = useState([])
   const [showImport, setShowImport] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
@@ -271,6 +271,9 @@ export function EnterpriseLeads({ leads, onUpdateLead, onRefresh, isEnterprise, 
 
   const statuses = ['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'won', 'lost']
 
+  // Professional or Enterprise features
+  const hasAdvancedFeatures = isProfessional || isEnterprise
+  
   const handleDragEnd = async (event) => {
     const { active, over } = event
     if (!over || active.id === over.id) return
