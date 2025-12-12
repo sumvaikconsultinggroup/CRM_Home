@@ -2531,7 +2531,20 @@ export default function App() {
       )}
       {view === 'login' && (
         <motion.div key="login" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <LoginPage onBack={() => setView('landing')} onSuccess={handleLoginSuccess} onRegister={() => setView('register')} />
+          <LoginPage 
+            onBack={() => setView('landing')} 
+            onSuccess={handleLoginSuccess} 
+            onRegister={() => setView('register')}
+            onForgotPassword={() => setView('forgot-password')}
+          />
+        </motion.div>
+      )}
+      {view === 'forgot-password' && (
+        <motion.div key="forgot-password" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <ForgotPasswordPage 
+            onBack={() => setView('landing')}
+            onLogin={() => setView('login')}
+          />
         </motion.div>
       )}
       {view === 'register' && (
