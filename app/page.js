@@ -428,7 +428,14 @@ function SuperAdminDashboard({ user, onLogout }) {
                             {client.businessName?.charAt(0)}
                           </div>
                           <div>
-                            <p className="font-semibold">{client.businessName}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-semibold">{client.businessName}</p>
+                              {client.clientCode && (
+                                <Badge variant="secondary" className="text-xs font-mono bg-slate-200">
+                                  {client.clientCode}
+                                </Badge>
+                              )}
+                            </div>
                             <p className="text-sm text-muted-foreground">{client.email}</p>
                             <div className="flex gap-2 mt-1">
                               <Badge variant="outline" className="text-xs">{client.planName}</Badge>
