@@ -387,6 +387,8 @@ export function EnterpriseLeads({
   const [sortBy, setSortBy] = useState('createdAt')
   const [sortOrder, setSortOrder] = useState('desc')
   const [viewingLead, setViewingLead] = useState(null)
+  const [remarkLead, setRemarkLead] = useState(null)
+  const [remarkText, setRemarkText] = useState('')
 
   // Get plan features
   const planId = client?.planId || 'basic'
