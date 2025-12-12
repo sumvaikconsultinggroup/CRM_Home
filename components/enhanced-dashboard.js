@@ -344,7 +344,7 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
               Welcome back, {client?.businessName?.split(' ')[0] || 'Builder'}! 👋
             </h1>
             <p className="text-white/80 max-w-lg">
-              Here's what's happening with your business today. You have {pendingTasks} pending tasks and {newLeads} new leads waiting for your attention.
+              Here is what is happening with your business today. You have {pendingTasks} pending tasks and {newLeads} new leads waiting for your attention.
             </p>
           </div>
           <div className="flex gap-3">
