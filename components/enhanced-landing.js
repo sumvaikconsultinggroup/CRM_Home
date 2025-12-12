@@ -9,7 +9,7 @@ import {
   Building2, ArrowRight, CheckCircle2, Star, Zap, Shield, 
   BarChart3, Users, Globe, ChevronRight, Sparkles, 
   Layers, ChefHat, Grid3X3, Sofa, HardHat, Paintbrush, Wrench,
-  DoorOpen, Palette, Building, Play, MessageSquare, TrendingUp
+  Square, Palette, Building, Play, MessageSquare, TrendingUp
 } from 'lucide-react'
 
 // Icon mapping for modules
@@ -22,7 +22,7 @@ const moduleIcons = {
   'Paintbrush': Paintbrush,
   'Wrench': Wrench,
   'Zap': Zap,
-  'DoorOpen': DoorOpen,
+  'DoorOpen': Square,
   'Building2': Building2,
   'Palette': Palette,
   'Building': Building
