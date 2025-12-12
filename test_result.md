@@ -204,6 +204,9 @@ backend:
       - working: "NA"
         agent: "main"
         comment: "Fixed bug: Import CSV button visibility for Enterprise plans. Fixed Drag & Drop sync issues for Basic/Professional plans. Added optimistic UI updates."
+      - working: "NA"
+        agent: "main"
+        comment: "Hardened Plan Detection logic to support both 'planId' string and 'plan' object. Forced immediate refresh on Drag & Drop."
 
   - task: "Projects Management CRUD"
     implemented: true
