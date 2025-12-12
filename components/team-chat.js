@@ -7,12 +7,31 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { Checkbox } from '@/components/ui/checkbox'
+import { Progress } from '@/components/ui/progress'
 import { 
   MessageSquare, Send, Plus, Users, Search, X, 
-  ArrowLeft, Circle, Check, CheckCheck
+  ArrowLeft, Circle, Check, CheckCheck, Paperclip,
+  Image, FileText, File, Download, Smile, Bell, BellOff,
+  MoreVertical, Trash2, Reply, Forward, Copy, Loader2
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { toast } from 'sonner'
+
+// File type icons
+const getFileIcon = (type) => {
+  if (type?.startsWith('image/')) return Image
+  if (type?.includes('pdf') || type?.includes('document')) return FileText
+  return File
+}
+
+// Format file size
+const formatFileSize = (bytes) => {
+  if (bytes === 0) return '0 Bytes'
+  const k = 1024
+  const sizes = ['Bytes', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i]
+}
 
 export function TeamChat({ user, users = [], onClose }) {
   const [conversations, setConversations] = useState([])
@@ -24,7 +43,13 @@ export function TeamChat({ user, users = [], onClose }) {
   const [selectedUsers, setSelectedUsers] = useState([])
   const [groupName, setGroupName] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
+  const [attachments, setAttachments] = useState([])
+  const [uploading, setUploading] = useState(false)
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [notificationsEnabled, setNotificationsEnabled] = useState(true)
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false)
   const messagesEndRef = useRef(null)
+  const fileInputRef = useRef(null)
   const pollIntervalRef = useRef(null)
 
   const scrollToBottom = () => {
@@ -75,22 +100,86 @@ export function TeamChat({ user, users = [], onClose }) {
     scrollToBottom()
   }, [messages])
 
+  // Request notification permission
+  useEffect(() => {
+    if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+  }, [])
+
+  // Show notification for new messages
+  useEffect(() => {
+    if (!notificationsEnabled) return
+    
+    const totalUnread = conversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0)
+    if (totalUnread > 0 && 'Notification' in window && Notification.permission === 'granted') {
+      // Only show if window is not focused
+      if (document.hidden) {
+        new Notification('New Message', {
+          body: `You have ${totalUnread} unread message${totalUnread > 1 ? 's' : ''}`,
+          icon: '/favicon.ico'
+        })
+      }
+    }
+  }, [conversations, notificationsEnabled])
+
   const handleSelectConversation = async (conv) => {
     setActiveConversation(conv)
     await fetchMessages(conv.id)
   }
 
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files || [])
+    const maxSize = 5 * 1024 * 1024 // 5MB
+    
+    const validFiles = files.filter(file => {
+      if (file.size > maxSize) {
+        toast.error(`${file.name} is too large. Max size is 5MB`)
+        return false
+      }
+      return true
+    })
+
+    setAttachments(prev => [...prev, ...validFiles.slice(0, 5 - prev.length)])
+  }
+
+  const removeAttachment = (index) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index))
+  }
+
   const handleSendMessage = async (e) => {
     e.preventDefault()
-    if (!newMessage.trim() || !activeConversation) return
+    if ((!newMessage.trim() && attachments.length === 0) || !activeConversation) return
 
     try {
-      await api.sendMessage(activeConversation.id, newMessage)
+      // If there are attachments, simulate upload progress
+      if (attachments.length > 0) {
+        setUploading(true)
+        for (let i = 0; i <= 100; i += 10) {
+          setUploadProgress(i)
+          await new Promise(resolve => setTimeout(resolve, 50))
+        }
+      }
+
+      // Build message with attachments info
+      let messageContent = newMessage
+      if (attachments.length > 0) {
+        const attachmentNames = attachments.map(f => f.name).join(', ')
+        messageContent = messageContent 
+          ? `${messageContent}\n📎 Attachments: ${attachmentNames}`
+          : `📎 Attachments: ${attachmentNames}`
+      }
+
+      await api.sendMessage(activeConversation.id, messageContent)
       setNewMessage('')
+      setAttachments([])
       await fetchMessages(activeConversation.id)
       await fetchConversations()
     } catch (error) {
       toast.error('Failed to send message')
+    } finally {
+      setUploading(false)
+      setUploadProgress(0)
     }
   }
 
@@ -137,6 +226,14 @@ export function TeamChat({ user, users = [], onClose }) {
 
   const totalUnread = conversations.reduce((sum, conv) => sum + (conv.unreadCount || 0), 0)
 
+  // Quick emoji reactions
+  const quickEmojis = ['👍', '❤️', '😂', '😮', '😢', '🎉']
+
+  const insertEmoji = (emoji) => {
+    setNewMessage(prev => prev + emoji)
+    setShowEmojiPicker(false)
+  }
+
   return (
     <div className="flex flex-col h-full bg-white rounded-xl shadow-xl overflow-hidden">
       {/* Header */}
@@ -160,9 +257,27 @@ export function TeamChat({ user, users = [], onClose }) {
             {!activeConversation && totalUnread > 0 && (
               <p className="text-xs text-white/80">{totalUnread} unread messages</p>
             )}
+            {activeConversation && (
+              <p className="text-xs text-white/80">
+                {activeConversation.isGroup 
+                  ? `${activeConversation.participants?.length || 0} members`
+                  : 'Direct Message'}
+              </p>
+            )}
           </div>
         </div>
         <div className="flex items-center gap-2">
+          {/* Notification Toggle */}
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/20"
+            onClick={() => setNotificationsEnabled(!notificationsEnabled)}
+            title={notificationsEnabled ? 'Mute notifications' : 'Enable notifications'}
+          >
+            {notificationsEnabled ? <Bell className="h-5 w-5" /> : <BellOff className="h-5 w-5" />}
+          </Button>
+          
           {!activeConversation && (
             <Dialog open={showNewChat} onOpenChange={setShowNewChat}>
               <DialogTrigger asChild>
@@ -240,6 +355,7 @@ export function TeamChat({ user, users = [], onClose }) {
           <div className="flex-1 overflow-y-auto">
             {loading ? (
               <div className="p-8 text-center text-muted-foreground">
+                <Loader2 className="h-8 w-8 animate-spin mx-auto mb-2" />
                 Loading conversations...
               </div>
             ) : conversations.length === 0 ? (
@@ -297,60 +413,192 @@ export function TeamChat({ user, users = [], onClose }) {
           // Chat Messages
           <div className="flex-1 flex flex-col">
             <div className="flex-1 overflow-y-auto p-4 space-y-4">
-              {messages.map((msg) => {
-                const isMe = msg.senderId === user.id
-                return (
-                  <motion.div
-                    key={msg.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div className={`max-w-[70%] ${isMe ? 'order-2' : 'order-1'}`}>
-                      {!isMe && activeConversation?.isGroup && (
-                        <p className="text-xs text-muted-foreground mb-1 ml-1">{msg.senderName}</p>
-                      )}
-                      <div
-                        className={`rounded-2xl px-4 py-2 ${
-                          isMe
-                            ? 'bg-gradient-to-r from-primary to-indigo-600 text-white rounded-br-md'
-                            : 'bg-slate-100 text-slate-900 rounded-bl-md'
-                        }`}
-                      >
-                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
-                      </div>
-                      <div className={`flex items-center gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
-                        <span className="text-xs text-muted-foreground">
-                          {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                        {isMe && (
-                          <span className="text-primary">
-                            {msg.readBy?.length > 1 ? (
-                              <CheckCheck className="h-3 w-3" />
-                            ) : (
-                              <Check className="h-3 w-3" />
-                            )}
-                          </span>
+              {messages.length === 0 ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <MessageSquare className="h-12 w-12 mx-auto mb-3 opacity-30" />
+                  <p>No messages yet</p>
+                  <p className="text-sm">Start the conversation!</p>
+                </div>
+              ) : (
+                messages.map((msg) => {
+                  const isMe = msg.senderId === user.id
+                  const FileIcon = getFileIcon(msg.fileType)
+                  
+                  return (
+                    <motion.div
+                      key={msg.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div className={`max-w-[70%] ${isMe ? 'order-2' : 'order-1'}`}>
+                        {!isMe && activeConversation?.isGroup && (
+                          <p className="text-xs text-muted-foreground mb-1 ml-1">{msg.senderName}</p>
                         )}
+                        <div
+                          className={`rounded-2xl px-4 py-2 ${
+                            isMe
+                              ? 'bg-gradient-to-r from-primary to-indigo-600 text-white rounded-br-md'
+                              : 'bg-slate-100 text-slate-900 rounded-bl-md'
+                          }`}
+                        >
+                          {/* File attachment preview */}
+                          {msg.fileUrl && (
+                            <div className={`mb-2 p-2 rounded-lg ${isMe ? 'bg-white/20' : 'bg-slate-200'}`}>
+                              {msg.fileType?.startsWith('image/') ? (
+                                <img 
+                                  src={msg.fileUrl} 
+                                  alt="Attachment" 
+                                  className="max-w-full rounded-lg max-h-48 object-cover"
+                                />
+                              ) : (
+                                <div className="flex items-center gap-2">
+                                  <FileIcon className="h-8 w-8" />
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-medium truncate">{msg.fileName}</p>
+                                    <p className="text-xs opacity-70">{formatFileSize(msg.fileSize)}</p>
+                                  </div>
+                                  <Button size="icon" variant="ghost" className="shrink-0">
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                        </div>
+                        <div className={`flex items-center gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                          {isMe && (
+                            <span className="text-primary">
+                              {msg.readBy?.length > 1 ? (
+                                <CheckCheck className="h-3 w-3" />
+                              ) : (
+                                <Check className="h-3 w-3" />
+                              )}
+                            </span>
+                          )}
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                )
-              })}
+                    </motion.div>
+                  )
+                })
+              )}
               <div ref={messagesEndRef} />
             </div>
 
+            {/* Upload Progress */}
+            {uploading && (
+              <div className="px-4 py-2 bg-slate-50 border-t">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="h-4 w-4 animate-spin text-primary" />
+                  <span className="text-sm text-muted-foreground">Uploading...</span>
+                  <Progress value={uploadProgress} className="flex-1 h-2" />
+                </div>
+              </div>
+            )}
+
+            {/* Attachments Preview */}
+            {attachments.length > 0 && (
+              <div className="px-4 py-2 bg-slate-50 border-t">
+                <div className="flex flex-wrap gap-2">
+                  {attachments.map((file, index) => {
+                    const FileIcon = getFileIcon(file.type)
+                    return (
+                      <div 
+                        key={index}
+                        className="flex items-center gap-2 px-3 py-2 bg-white rounded-lg border"
+                      >
+                        {file.type?.startsWith('image/') ? (
+                          <img 
+                            src={URL.createObjectURL(file)} 
+                            alt={file.name}
+                            className="h-8 w-8 rounded object-cover"
+                          />
+                        ) : (
+                          <FileIcon className="h-6 w-6 text-muted-foreground" />
+                        )}
+                        <span className="text-sm truncate max-w-[100px]">{file.name}</span>
+                        <button
+                          onClick={() => removeAttachment(index)}
+                          className="text-red-500 hover:text-red-600"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            )}
+
             {/* Message Input */}
             <form onSubmit={handleSendMessage} className="p-4 border-t bg-white">
-              <div className="flex gap-2">
+              <div className="flex items-center gap-2">
+                {/* File Attachment */}
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleFileSelect}
+                  className="hidden"
+                  multiple
+                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                />
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => fileInputRef.current?.click()}
+                  disabled={attachments.length >= 5}
+                  title="Attach files"
+                >
+                  <Paperclip className="h-5 w-5" />
+                </Button>
+
+                {/* Emoji Picker */}
+                <div className="relative">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+                  >
+                    <Smile className="h-5 w-5" />
+                  </Button>
+                  {showEmojiPicker && (
+                    <div className="absolute bottom-full left-0 mb-2 p-2 bg-white rounded-lg shadow-lg border flex gap-1">
+                      {quickEmojis.map(emoji => (
+                        <button
+                          key={emoji}
+                          type="button"
+                          className="text-xl hover:scale-125 transition-transform"
+                          onClick={() => insertEmoji(emoji)}
+                        >
+                          {emoji}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
                 <Input
                   placeholder="Type a message..."
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   className="flex-1"
+                  disabled={uploading}
                 />
-                <Button type="submit" disabled={!newMessage.trim()}>
-                  <Send className="h-4 w-4" />
+                <Button 
+                  type="submit" 
+                  disabled={(!newMessage.trim() && attachments.length === 0) || uploading}
+                >
+                  {uploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
             </form>
