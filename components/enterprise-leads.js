@@ -119,7 +119,7 @@ const calculateLeadScore = (lead) => {
 }
 
 // Lead Card Component
-const LeadCard = ({ lead, onEdit, onDelete, onView, onStatusChange, showScore, compact = false }) => {
+const LeadCard = ({ lead, onEdit, onDelete, onView, onStatusChange, onAddRemark, showScore, compact = false }) => {
   const statusConfig = LEAD_STATUSES.find(s => s.id === lead.status) || LEAD_STATUSES[0]
   const priorityConfig = PRIORITY_LEVELS.find(p => p.id === lead.priority) || PRIORITY_LEVELS[0]
   const score = showScore ? calculateLeadScore(lead) : null
