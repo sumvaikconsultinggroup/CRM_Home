@@ -70,11 +70,13 @@ const GlassCard = ({ children, className = '', ...props }) => (
 )
 
 // Animated stat card
-const StatCard = ({ title, value, change, icon: Icon, trend = 'up', delay = 0 }) => (
+const StatCard = ({ title, value, change, icon: Icon, trend = 'up', delay = 0, onClick }) => (
   <motion.div
     initial={{ opacity: 0, y: 20 }}
     animate={{ opacity: 1, y: 0 }}
     transition={{ delay, duration: 0.5 }}
+    onClick={onClick}
+    className={onClick ? 'cursor-pointer' : ''}
   >
     <GlassCard className="p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
       <div className="flex items-center justify-between">
