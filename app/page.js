@@ -2024,9 +2024,7 @@ function ClientDashboard({ user, client, onLogout }) {
                       </div>
                       <Button 
                         variant="outline"
-                        onClick={() => {
-                          toast.info('Upgrade plans available! Contact support@buildcrm.com')
-                        }}
+                        onClick={() => setShowUpgradeFlow(true)}
                       >
                         <ArrowUpRight className="h-4 w-4 mr-2" /> Upgrade Plan
                       </Button>
