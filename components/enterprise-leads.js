@@ -465,11 +465,31 @@ export function EnterpriseLeads({
 
   const handleStatusChange = async (leadId, newStatus) => {
     try {
-      await api.updateLead({ id: leadId, status: newStatus })
+      await api.updateLead(leadId, { status: newStatus })
       setLeads(leads.map(l => l.id === leadId ? { ...l, status: newStatus } : l))
       toast.success('Lead status updated')
     } catch (error) {
+      console.error('Status update error:', error)
       toast.error('Failed to update status')
+    }
+  }
+
+  const handleAddRemark = async (leadId, remark) => {
+    try {
+      const lead = leads.find(l => l.id === leadId)
+      const remarks = lead?.remarks || []
+      const newRemark = {
+        id: Date.now().toString(),
+        text: remark,
+        createdBy: user?.name || 'Unknown',
+        createdAt: new Date().toISOString()
+      }
+      await api.updateLead(leadId, { remarks: [...remarks, newRemark] })
+      setLeads(leads.map(l => l.id === leadId ? { ...l, remarks: [...remarks, newRemark] } : l))
+      toast.success('Remark added')
+    } catch (error) {
+      console.error('Add remark error:', error)
+      toast.error('Failed to add remark')
     }
   }
 
