@@ -2025,7 +2025,12 @@ function ClientDashboard({ user, client, onLogout }) {
                           {client?.subscriptionStatus === 'active' ? '✓ Active' : '⚠ Inactive'}
                         </p>
                       </div>
-                      <Button variant="outline">
+                      <Button 
+                        variant="outline"
+                        onClick={() => {
+                          toast.info('Upgrade plans available! Contact support@buildcrm.com')
+                        }}
+                      >
                         <ArrowUpRight className="h-4 w-4 mr-2" /> Upgrade Plan
                       </Button>
                     </div>
