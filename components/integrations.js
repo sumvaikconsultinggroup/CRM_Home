@@ -199,6 +199,8 @@ export function Integrations({ client }) {
   const [webhookUrl, setWebhookUrl] = useState('')
   const [apiKey, setApiKey] = useState('')
   const [copied, setCopied] = useState(false)
+  const [connectionConfig, setConnectionConfig] = useState({})
+  const [connecting, setConnecting] = useState(false)
 
   useEffect(() => {
     fetchIntegrations()
@@ -223,6 +225,20 @@ export function Integrations({ client }) {
       fetchIntegrations()
     } catch (error) {
       toast.error('Failed to generate webhook')
+    }
+  }
+
+  const handleDirectConnect = async (integration) => {
+    setConnecting(true)
+    try {
+      await api.connectIntegration(integration.id, connectionConfig)
+      toast.success(`${integration.name} connected successfully!`)
+      setConnectionConfig({})
+      fetchIntegrations()
+    } catch (error) {
+      toast.error('Failed to connect integration')
+    } finally {
+      setConnecting(false)
     }
   }
 
