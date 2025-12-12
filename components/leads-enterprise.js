@@ -200,9 +200,9 @@ function CSVImportDialog({ open, onClose, onImport }) {
   )
 }
 
-// Advanced Filters (Enterprise)
-function AdvancedFilters({ filters, onFilterChange, isEnterprise }) {
-  if (!isEnterprise) return null
+// Advanced Filters (Professional & Enterprise)
+function AdvancedFilters({ filters, onFilterChange, hasAdvancedFeatures }) {
+  if (!hasAdvancedFeatures) return null
 
   return (
     <motion.div
