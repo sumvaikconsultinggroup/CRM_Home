@@ -322,6 +322,14 @@ export function EnterpriseLeads({ leads, onUpdateLead, onEditLead, onRefresh, is
   // Professional or Enterprise features
   const hasAdvancedFeatures = isProfessional || isEnterprise
   
+  // Debug logging
+  console.log('Leads Component - Plan Detection:', { 
+    isProfessional, 
+    isEnterprise, 
+    hasAdvancedFeatures,
+    clientPlan: client?.plan?.id 
+  })
+  
   const handleDragEnd = async (event) => {
     const { active, over } = event
     if (!over || active.id === over.id) return
