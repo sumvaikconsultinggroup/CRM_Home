@@ -1387,6 +1387,30 @@ function ClientDashboard({ user, client, onLogout }) {
               </motion.div>
             )}
 
+            {/* Calendar & Notes Tab */}
+            {activeTab === 'calendar' && (
+              <motion.div
+                key="calendar"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                <CalendarNotes tasks={tasks} />
+              </motion.div>
+            )}
+
+            {/* Integrations Tab */}
+            {activeTab === 'integrations' && (
+              <motion.div
+                key="integrations"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                <Integrations client={client} />
+              </motion.div>
+            )}
+
             {/* Settings Tab */}
             {activeTab === 'settings' && (
               <motion.div
