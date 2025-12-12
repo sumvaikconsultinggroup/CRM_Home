@@ -164,13 +164,14 @@ const PlanDistributionCard = ({ clients }) => {
 
 // Revenue Trend Chart
 const RevenueTrendCard = ({ clients }) => {
-  // Generate mock monthly data based on clients
+  // Generate monthly data based on clients with deterministic values
   const monthlyData = useMemo(() => {
     const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
     const baseValue = clients.length * 5000
+    const growthFactors = [0.85, 0.92, 0.88, 1.02, 0.95, 1.08] // Deterministic growth factors
     return months.map((month, i) => ({
       month,
-      revenue: Math.round(baseValue * (0.8 + Math.random() * 0.4) * (1 + i * 0.1)),
+      revenue: Math.round(baseValue * growthFactors[i] * (1 + i * 0.1)),
       clients: Math.max(1, clients.length - 5 + i)
     }))
   }, [clients])
@@ -197,19 +198,7 @@ const RevenueTrendCard = ({ clients }) => {
               <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
               <XAxis dataKey="month" stroke="#9CA3AF" />
               <YAxis stroke="#9CA3AF" />
-              <Tooltip
-                content={({ active, payload, label }) => {
-                  if (active && payload && payload.length) {
-                    return (
-                      <div className="bg-white p-3 rounded-lg shadow-lg border">
-                        <p className="font-medium">{label}</p>
-                        <p className="text-sm text-blue-600">Revenue: ₹{payload[0].value.toLocaleString()}</p>
-                      </div>
-                    )
-                  }
-                  return null
-                }}
-              />
+              <Tooltip content={AreaTooltip} />
               <Area
                 type="monotone"
                 dataKey="revenue"
