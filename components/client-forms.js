@@ -341,7 +341,7 @@ export function TaskForm({ task, projects, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    projectId: '',
+    projectId: undefined,
     assignedTo: '',
     status: 'todo',
     priority: 'medium',
@@ -353,7 +353,7 @@ export function TaskForm({ task, projects, onSubmit, onCancel }) {
       setFormData({
         title: task.title || '',
         description: task.description || '',
-        projectId: task.projectId || '',
+        projectId: task.projectId || undefined,
         assignedTo: task.assignedTo || '',
         status: task.status || 'todo',
         priority: task.priority || 'medium',
