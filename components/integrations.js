@@ -545,8 +545,137 @@ export function Integrations({ client }) {
                 </div>
               )}
 
-              {/* For other integrations */}
-              {!['automation', 'developer'].includes(selectedIntegration.category) && (
+              {/* WhatsApp Direct Connect */}
+              {selectedIntegration.id === 'whatsapp' && (
+                <div className="space-y-4">
+                  <div className="p-4 rounded-xl bg-green-50 border border-green-200">
+                    <h4 className="font-semibold mb-4 flex items-center gap-2">
+                      <span className="text-xl">📱</span>
+                      WhatsApp Business API Configuration
+                    </h4>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium">Phone Number ID</label>
+                        <Input
+                          placeholder="Enter your WhatsApp Phone Number ID"
+                          value={connectionConfig.phoneNumberId || ''}
+                          onChange={(e) => setConnectionConfig({ ...connectionConfig, phoneNumberId: e.target.value })}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">Found in Meta Business Suite → WhatsApp → API Setup</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Access Token</label>
+                        <Input
+                          type="password"
+                          placeholder="Enter your WhatsApp Access Token"
+                          value={connectionConfig.accessToken || ''}
+                          onChange={(e) => setConnectionConfig({ ...connectionConfig, accessToken: e.target.value })}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">Generate a permanent token from Meta Developer Portal</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Business Account ID</label>
+                        <Input
+                          placeholder="Enter your WhatsApp Business Account ID"
+                          value={connectionConfig.businessAccountId || ''}
+                          onChange={(e) => setConnectionConfig({ ...connectionConfig, businessAccountId: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-slate-50 border">
+                    <h4 className="font-semibold mb-2">How to get WhatsApp API credentials:</h4>
+                    <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+                      <li>Go to <a href="https://business.facebook.com" target="_blank" rel="noopener noreferrer" className="text-primary underline">Meta Business Suite</a></li>
+                      <li>Navigate to WhatsApp → API Setup</li>
+                      <li>Copy your Phone Number ID and generate an Access Token</li>
+                      <li>For production, create a System User with permanent token</li>
+                    </ol>
+                  </div>
+
+                  <Button 
+                    className="w-full" 
+                    onClick={() => handleDirectConnect(selectedIntegration)}
+                    disabled={connecting || !connectionConfig.phoneNumberId || !connectionConfig.accessToken}
+                  >
+                    {connecting ? 'Connecting...' : 'Connect WhatsApp'} <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </div>
+              )}
+
+              {/* Tally Direct Connect */}
+              {selectedIntegration.id === 'tally' && (
+                <div className="space-y-4">
+                  <div className="p-4 rounded-xl bg-red-50 border border-red-200">
+                    <h4 className="font-semibold mb-4 flex items-center gap-2">
+                      <span className="text-xl">📒</span>
+                      Tally ERP Configuration
+                    </h4>
+                    <div className="space-y-4">
+                      <div>
+                        <label className="text-sm font-medium">Tally Server Host</label>
+                        <Input
+                          placeholder="e.g., localhost or 192.168.1.100"
+                          value={connectionConfig.tallyHost || ''}
+                          onChange={(e) => setConnectionConfig({ ...connectionConfig, tallyHost: e.target.value })}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">IP address or hostname where Tally is running</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Tally Port</label>
+                        <Input
+                          placeholder="Default: 9000"
+                          value={connectionConfig.tallyPort || ''}
+                          onChange={(e) => setConnectionConfig({ ...connectionConfig, tallyPort: e.target.value })}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">Usually 9000 for Tally ODBC server</p>
+                      </div>
+                      <div>
+                        <label className="text-sm font-medium">Company Name</label>
+                        <Input
+                          placeholder="Enter your Tally Company Name"
+                          value={connectionConfig.companyName || ''}
+                          onChange={(e) => setConnectionConfig({ ...connectionConfig, companyName: e.target.value })}
+                        />
+                        <p className="text-xs text-muted-foreground mt-1">Exact name as shown in Tally</p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-slate-50 border">
+                    <h4 className="font-semibold mb-2">Tally Setup Requirements:</h4>
+                    <ol className="list-decimal list-inside space-y-2 text-sm text-muted-foreground">
+                      <li>Enable Tally ODBC Server in Tally → F12 → Data Configuration</li>
+                      <li>Set Port Number (default 9000)</li>
+                      <li>Enable "Allow Remote Access" if connecting from another machine</li>
+                      <li>Keep Tally running with the company open</li>
+                    </ol>
+                  </div>
+
+                  <div className="p-4 rounded-xl bg-amber-50 border border-amber-200">
+                    <h4 className="font-semibold mb-2 text-amber-700">Supported Features:</h4>
+                    <div className="flex flex-wrap gap-2">
+                      <Badge className="bg-amber-100 text-amber-700">Invoice Sync</Badge>
+                      <Badge className="bg-amber-100 text-amber-700">Payment Updates</Badge>
+                      <Badge className="bg-amber-100 text-amber-700">Ledger Creation</Badge>
+                      <Badge className="bg-amber-100 text-amber-700">GST Reports</Badge>
+                    </div>
+                  </div>
+
+                  <Button 
+                    className="w-full" 
+                    onClick={() => handleDirectConnect(selectedIntegration)}
+                    disabled={connecting || !connectionConfig.tallyHost || !connectionConfig.companyName}
+                  >
+                    {connecting ? 'Connecting...' : 'Connect Tally'} <ArrowRight className="h-4 w-4 ml-2" />
+                  </Button>
+                </div>
+              )}
+
+              {/* For other integrations without direct connect */}
+              {!['automation', 'developer'].includes(selectedIntegration.category) && 
+               !selectedIntegration.hasDirectConnect && (
                 <div className="space-y-4">
                   <div className="p-4 rounded-xl bg-slate-50 border">
                     <h4 className="font-semibold mb-2">How to Connect</h4>
