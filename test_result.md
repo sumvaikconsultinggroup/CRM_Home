@@ -201,6 +201,9 @@ backend:
       - working: true
         agent: "testing"
         comment: "✅ TESTED: Leads CRUD working perfectly. All operations (GET, POST, PUT, DELETE) working with proper client isolation. Created, updated, and deleted test lead successfully."
+      - working: "NA"
+        agent: "main"
+        comment: "Fixed bug: Import CSV button visibility for Enterprise plans. Fixed Drag & Drop sync issues for Basic/Professional plans. Added optimistic UI updates."
 
   - task: "Projects Management CRUD"
     implemented: true
