@@ -9,6 +9,29 @@ export async function OPTIONS() {
   return optionsResponse()
 }
 
+// Generate next client code
+async function generateClientCode() {
+  const clientsCollection = await getCollection(Collections.CLIENTS)
+  
+  // Find the highest client code number
+  const allClients = await clientsCollection
+    .find({ clientCode: { $exists: true } })
+    .toArray()
+  
+  let maxNumber = 0
+  for (const client of allClients) {
+    if (client.clientCode) {
+      const match = client.clientCode.match(/CL-(\d+)/)
+      if (match) {
+        const num = parseInt(match[1])
+        if (num > maxNumber) maxNumber = num
+      }
+    }
+  }
+  
+  return `CL-${String(maxNumber + 1).padStart(3, '0')}`
+}
+
 export async function POST(request) {
   try {
     await seedDatabase()
@@ -41,10 +64,14 @@ export async function POST(request) {
 
     const clientId = uuidv4()
     const userId = uuidv4()
+    
+    // Generate unique client code
+    const clientCode = await generateClientCode()
 
     // Create client organization
     const client = {
       id: clientId,
+      clientCode, // Add unique client code
       businessName,
       email,
       phone: phone || '',
