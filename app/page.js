@@ -1258,7 +1258,8 @@ function ClientDashboard({ user, client, onLogout }) {
     // Add Wooden Flooring module link if enabled
     ...(hasFlooringModule ? [{ id: 'flooring-module', icon: Layers, label: 'Wooden Flooring', isModule: true }] : []),
     { id: 'modules', icon: Package, label: 'Modules' },
-    { id: 'whitelabel', icon: Palette, label: 'White Label' }
+    { id: 'whitelabel', icon: Palette, label: 'White Label' },
+    { id: 'settings', icon: Settings, label: 'Settings' }
   ]
 
   const statusColors = {
