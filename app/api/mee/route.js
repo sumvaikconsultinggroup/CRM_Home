@@ -8,10 +8,10 @@ import { successResponse, errorResponse, optionsResponse } from '@/lib/utils/res
 const getAIClient = (provider = 'openai') => {
   const apiKey = process.env.EMERGENT_LLM_KEY
   
-  // Emergent LLM key works with OpenAI SDK
+  // Emergent LLM key works with their unified API
   return new OpenAI({
     apiKey: apiKey,
-    baseURL: 'https://api.openai.com/v1'
+    baseURL: 'https://llm.emergentagi.com/v1'
   })
 }
 
