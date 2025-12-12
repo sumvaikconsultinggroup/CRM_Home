@@ -259,6 +259,9 @@ export function SuperAdminSettings({ user }) {
           <TabsTrigger value="payment-gateways" className="flex items-center gap-2">
             <CreditCard className="h-4 w-4" /> Payment Gateways
           </TabsTrigger>
+          <TabsTrigger value="ai-provider" className="flex items-center gap-2">
+            <Sparkles className="h-4 w-4" /> AI Provider
+          </TabsTrigger>
           <TabsTrigger value="pricing" className="flex items-center gap-2">
             <DollarSign className="h-4 w-4" /> Pricing
           </TabsTrigger>
