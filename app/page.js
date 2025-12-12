@@ -45,6 +45,8 @@ import { TeamChat } from '@/components/team-chat'
 import { EnhancedDashboard } from '@/components/enhanced-dashboard'
 import { CalendarNotes } from '@/components/calendar-notes'
 import { Integrations } from '@/components/integrations'
+import { EnhancedSuperAdminOverview } from '@/components/enhanced-super-admin-overview'
+import { EnterpriseClientManagement } from '@/components/enterprise-client-management'
 
 // Animation variants
 const fadeIn = {
