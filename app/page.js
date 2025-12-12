@@ -991,32 +991,27 @@ function ClientDashboard({ user, client, onLogout }) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="space-y-6"
               >
-                <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-bold">Sales Pipeline</h2>
-                  <Button onClick={() => { setDialogType('lead'); setEditingItem(null); setShowDialog(true); }}>
-                    <Plus className="h-4 w-4 mr-2" /> Add Lead
-                  </Button>
-                </div>
-
                 <EnterpriseLeads
                   leads={leads}
-                  onUpdateLead={async (leadId, data) => {
-                    console.log('Updating lead:', leadId, data)
-                    await api.updateLead(leadId, data)
-                    // We call fetchData to ensure state consistency
-                    await fetchData()
-                  }}
+                  user={user}
+                  client={client}
+                  users={users}
+                  onAddLead={() => { setDialogType('lead'); setEditingItem(null); setShowDialog(true); }}
                   onEditLead={(lead) => {
                     setDialogType('lead')
                     setEditingItem(lead)
                     setShowDialog(true)
                   }}
+                  onDeleteLead={async (lead) => {
+                    try {
+                      await api.deleteLead(lead.id)
+                      await fetchData()
+                    } catch (error) {
+                      console.error('Failed to delete lead:', error)
+                    }
+                  }}
                   onRefresh={fetchData}
-                  isEnterprise={isEnterprise}
-                  isProfessional={isProfessional}
-                  client={client}
                 />
               </motion.div>
             )}
