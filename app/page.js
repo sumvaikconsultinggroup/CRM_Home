@@ -1769,6 +1769,8 @@ function ClientDashboard({ user, client, onLogout }) {
                 <div className="grid lg:grid-cols-3 gap-4">
                   <StatCard title="Total Expenses" value={`₹${stats?.overview.totalExpenses?.toLocaleString()}`} icon={Receipt} />
                 </div>
+                
+                <ExpenseCharts expenses={expenses} />
 
                 <GlassCard className="p-6">
                   <h3 className="font-semibold mb-4">Recent Expenses</h3>
