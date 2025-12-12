@@ -1204,6 +1204,23 @@ export function EnterpriseLeads({
                 </div>
               )}
 
+              {/* Remarks History */}
+              {viewingLead.remarks && viewingLead.remarks.length > 0 && (
+                <div>
+                  <Label className="text-xs text-muted-foreground">Remarks History</Label>
+                  <div className="mt-2 space-y-2 max-h-40 overflow-y-auto">
+                    {viewingLead.remarks.map((remark, i) => (
+                      <div key={i} className="p-3 bg-slate-50 rounded-lg text-sm">
+                        <p>{remark.text}</p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {remark.createdBy} • {new Date(remark.createdAt).toLocaleString()}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Actions */}
               <div className="flex justify-end gap-2">
                 <Button variant="outline" onClick={() => setViewingLead(null)}>Close</Button>
@@ -1213,6 +1230,63 @@ export function EnterpriseLeads({
               </div>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Remark Dialog */}
+      <Dialog open={!!remarkLead} onOpenChange={() => { setRemarkLead(null); setRemarkText(''); }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-3">
+              <MessageSquare className="h-5 w-5 text-primary" />
+              Add Remark for {remarkLead?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <Textarea
+              placeholder="Enter your remark or note about this lead..."
+              value={remarkText}
+              onChange={(e) => setRemarkText(e.target.value)}
+              rows={4}
+            />
+            
+            {/* Previous Remarks */}
+            {remarkLead?.remarks && remarkLead.remarks.length > 0 && (
+              <div>
+                <Label className="text-xs text-muted-foreground">Previous Remarks</Label>
+                <div className="mt-2 space-y-2 max-h-32 overflow-y-auto">
+                  {remarkLead.remarks.slice(-3).map((remark, i) => (
+                    <div key={i} className="p-2 bg-slate-50 rounded text-sm">
+                      <p className="text-xs">{remark.text}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {remark.createdBy} • {new Date(remark.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => { setRemarkLead(null); setRemarkText(''); }}>
+                Cancel
+              </Button>
+              <Button 
+                onClick={async () => {
+                  if (!remarkText.trim()) {
+                    toast.error('Please enter a remark')
+                    return
+                  }
+                  await handleAddRemark(remarkLead.id, remarkText)
+                  setRemarkLead(null)
+                  setRemarkText('')
+                }}
+                disabled={!remarkText.trim()}
+              >
+                <MessageSquare className="h-4 w-4 mr-2" /> Add Remark
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>
