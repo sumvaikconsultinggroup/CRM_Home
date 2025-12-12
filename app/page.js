@@ -28,7 +28,7 @@ import {
   ChefHat, Grid3X3, Sofa, HardHat, Paintbrush, Wrench, Zap, Phone, Mail, Target,
   BarChart3, PieChart as PieChartIcon, ArrowUpRight, ArrowDownRight, Calendar, UserPlus, Package,
   Sparkles, Bell, Search, Filter, Download, RefreshCw, Send, MessageSquare, Palette,
-  Globe, Image, FileText, Star, Crown, ChevronDown, ExternalLink, Lock
+  Globe, Image, FileText, Star, Crown, ChevronDown, ExternalLink, Lock, Square, Building
 } from 'lucide-react'
 import FlooringModule from './flooring/page'
 import { LeadForm, ProjectForm, TaskForm, ExpenseForm, UserForm } from '@/components/client-forms'
@@ -40,6 +40,7 @@ import { SuperAdminReports } from '@/components/super-admin-reports'
 import { SuperAdminSettings } from '@/components/super-admin-settings'
 import EnhancedLanding from '@/components/enhanced-landing'
 import { LoginPage, RegisterPage, ForgotPasswordPage } from '@/components/auth-ui'
+import { TeamChat } from '@/components/team-chat'
 
 // Animation variants
 const fadeIn = {
