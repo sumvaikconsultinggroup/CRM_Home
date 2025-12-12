@@ -958,160 +958,24 @@ function ClientDashboard({ user, client, onLogout }) {
         {/* Content */}
         <div className="p-6">
           <AnimatePresence mode="wait">
-            {/* Dashboard Tab */}
-            {activeTab === 'dashboard' && stats && (
+            {/* Dashboard Tab - Enhanced */}
+            {activeTab === 'dashboard' && (
               <motion.div
                 key="dashboard"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="space-y-6"
               >
-                {/* Stats */}
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <StatCard 
-                    title="Total Leads" 
-                    value={stats.overview.totalLeads} 
-                    change={`${stats.overview.conversionRate}% conversion`} 
-                    icon={Target} 
-                    delay={0} 
-                    onClick={() => setActiveTab('leads')}
-                  />
-                  <StatCard 
-                    title="Pipeline Value" 
-                    value={`₹${stats.overview.pipelineValue?.toLocaleString()}`} 
-                    change={`${stats.overview.wonLeads} won`} 
-                    icon={DollarSign} 
-                    delay={0.1}
-                    onClick={() => setActiveTab('leads')}
-                  />
-                  <StatCard 
-                    title="Active Projects" 
-                    value={stats.overview.activeProjects} 
-                    change={`of ${stats.overview.totalProjects} total`} 
-                    icon={Briefcase} 
-                    delay={0.2}
-                    onClick={() => setActiveTab('projects')}
-                  />
-                  <StatCard 
-                    title="Tasks Done" 
-                    value={`${stats.overview.completedTasks}/${stats.overview.totalTasks}`} 
-                    change={`${stats.overview.taskCompletionRate}%`} 
-                    icon={CheckCircle2} 
-                    delay={0.3}
-                    onClick={() => setActiveTab('tasks')}
-                  />
-                </div>
-
-                {/* Charts */}
-                <div className="grid lg:grid-cols-2 gap-6">
-                  <GlassCard className="p-6">
-                    <h3 className="text-lg font-semibold mb-4">Lead Sources</h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <PieChart>
-                        <Pie
-                          data={stats.charts.leadSources}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={100}
-                          fill="#8884d8"
-                          paddingAngle={5}
-                          dataKey="count"
-                          nameKey="source"
-                        >
-                          {stats.charts.leadSources.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </GlassCard>
-
-                  <GlassCard className="p-6">
-                    <h3 className="text-lg font-semibold mb-4">Pipeline Overview</h3>
-                    <ResponsiveContainer width="100%" height={300}>
-                      <BarChart data={stats.charts.leadStatuses}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-                        <XAxis dataKey="status" stroke="#6b7280" />
-                        <YAxis stroke="#6b7280" />
-                        <Tooltip 
-                          contentStyle={{ 
-                            backgroundColor: 'rgba(255,255,255,0.9)', 
-                            backdropFilter: 'blur(10px)',
-                            borderRadius: '12px',
-                            border: '1px solid rgba(0,0,0,0.1)'
-                          }}
-                        />
-                        <Bar dataKey="count" fill="#3B82F6" radius={[8, 8, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </GlassCard>
-                </div>
-
-                {/* Recent Activity */}
-                <div className="grid lg:grid-cols-2 gap-6">
-                  <GlassCard className="p-6">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg font-semibold">Recent Leads</h3>
-                      <Button variant="ghost" size="sm" onClick={() => setActiveTab('leads')}>
-                        View All <ChevronRight className="h-4 w-4 ml-1" />
-                      </Button>
-                    </div>
-                    <div className="space-y-3">
-                      {leads.slice(0, 5).map((lead, i) => (
-                        <motion.div
-                          key={lead.id}
-                          className="flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: i * 0.05 }}
-                        >
-                          <div>
-                            <p className="font-medium">{lead.name}</p>
-                            <p className="text-sm text-muted-foreground">{lead.source}</p>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <span className="text-sm font-medium">₹{lead.value?.toLocaleString()}</span>
-                            <div className={`h-2 w-2 rounded-full ${statusColors[lead.status]}`} />
-                          </div>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </GlassCard>
-
-                  <GlassCard className="p-6">
-                    <div className="flex justify-between items-center mb-4">
-                      <h3 className="text-lg font-semibold">Upcoming Tasks</h3>
-                      <Button variant="ghost" size="sm" onClick={() => setActiveTab('tasks')}>
-                        View All <ChevronRight className="h-4 w-4 ml-1" />
-                      </Button>
-                    </div>
-                    <div className="space-y-3">
-                      {tasks.filter(t => t.status !== 'completed').slice(0, 5).map((task, i) => (
-                        <motion.div
-                          key={task.id}
-                          className="flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: i * 0.05 }}
-                        >
-                          <div>
-                            <p className="font-medium">{task.title}</p>
-                            <p className="text-sm text-muted-foreground">
-                              Due: {new Date(task.dueDate).toLocaleDateString()}
-                            </p>
-                          </div>
-                          <Badge variant={task.priority === 'high' || task.priority === 'urgent' ? 'destructive' : 'secondary'}>
-                            {task.priority}
-                          </Badge>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </GlassCard>
-                </div>
+                <EnhancedDashboard
+                  stats={stats}
+                  leads={leads}
+                  projects={projects}
+                  tasks={tasks}
+                  expenses={expenses}
+                  users={users}
+                  client={client}
+                  onNavigate={setActiveTab}
+                />
               </motion.div>
             )}
 
