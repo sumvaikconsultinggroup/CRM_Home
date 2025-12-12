@@ -20,6 +20,36 @@ import {
   Mail, FileText, Plus, X, Search, ChevronDown, Crown, Sparkles, TrendingUp
 } from 'lucide-react'
 
+// Droppable Column
+function DroppableColumn({ status, children, count }) {
+  const { setNodeRef, isOver } = useDroppable({ id: status })
+  
+  return (
+    <div ref={setNodeRef} className="min-h-[400px]">
+      <Card className={`h-full transition-all ${isOver ? 'ring-2 ring-primary shadow-lg' : ''}`}>
+        <div className="p-4 border-b flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className={`h-2 w-2 rounded-full ${
+              status === 'won' ? 'bg-green-500' : 
+              status === 'lost' ? 'bg-red-500' : 
+              status === 'qualified' ? 'bg-purple-500' :
+              status === 'contacted' ? 'bg-yellow-500' :
+              status === 'proposal' ? 'bg-orange-500' :
+              status === 'negotiation' ? 'bg-pink-500' :
+              'bg-blue-500'
+            }`} />
+            <span className="font-medium capitalize text-sm">{status}</span>
+          </div>
+          <Badge variant="secondary">{count}</Badge>
+        </div>
+        <div className="p-2 space-y-2 max-h-[600px] overflow-y-auto">
+          {children}
+        </div>
+      </Card>
+    </div>
+  )
+}
+
 // Draggable Lead Card
 function LeadCard({ lead, onUpdate, onSelect, isSelected, isEnterprise, hasAdvancedFeatures }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: lead.id })
