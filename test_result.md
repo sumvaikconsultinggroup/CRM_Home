@@ -451,6 +451,9 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "Implemented White Label color application (instant and on load). Fixed plan-based feature rendering logic."
+      - working: "NA"
+        agent: "main"
+        comment: "Added Expenses Charts (Pie & Bar) and Advanced Reporting components."
 
   - task: "Wooden Flooring Module - Frontend Integration"
     implemented: true
