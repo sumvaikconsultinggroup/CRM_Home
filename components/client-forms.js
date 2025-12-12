@@ -477,7 +477,7 @@ export function ExpenseForm({ expense, projects, onSubmit, onCancel }) {
     description: '',
     category: 'materials',
     amount: '',
-    projectId: '',
+    projectId: undefined,
     date: new Date().toISOString().split('T')[0],
     paymentMethod: 'cash',
     notes: ''
@@ -489,7 +489,7 @@ export function ExpenseForm({ expense, projects, onSubmit, onCancel }) {
         description: expense.description || '',
         category: expense.category || 'materials',
         amount: expense.amount || '',
-        projectId: expense.projectId || '',
+        projectId: expense.projectId || undefined,
         date: expense.date ? new Date(expense.date).toISOString().split('T')[0] : '',
         paymentMethod: expense.paymentMethod || 'cash',
         notes: expense.notes || ''
