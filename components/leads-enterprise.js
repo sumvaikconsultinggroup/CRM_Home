@@ -351,7 +351,7 @@ export function EnterpriseLeads({ leads, onUpdateLead, onRefresh, isEnterprise, 
         </div>
 
         <div className="flex items-center gap-2">
-          {isEnterprise && (
+          {hasAdvancedFeatures && (
             <>
               <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
                 <Filter className="h-4 w-4 mr-2" />
@@ -363,10 +363,10 @@ export function EnterpriseLeads({ leads, onUpdateLead, onRefresh, isEnterprise, 
               </Button>
             </>
           )}
-          {!isEnterprise && (
+          {!hasAdvancedFeatures && (
             <Badge variant="outline" className="text-amber-600 border-amber-600">
               <Crown className="h-3 w-3 mr-1" />
-              Upgrade for CSV Import & More
+              Upgrade to Professional for CSV Import
             </Badge>
           )}
         </div>
