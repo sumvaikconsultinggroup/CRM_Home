@@ -120,6 +120,23 @@ export function LeadForm({ lead, onSubmit, onCancel }) {
           </Select>
         </div>
         <div className="space-y-2">
+          <Label>Priority</Label>
+          <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value })}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="low">Low</SelectItem>
+              <SelectItem value="medium">Medium</SelectItem>
+              <SelectItem value="high">High</SelectItem>
+              <SelectItem value="urgent">Urgent</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
           <Label>Value (₹)</Label>
           <Input
             type="number"
@@ -127,6 +144,23 @@ export function LeadForm({ lead, onSubmit, onCancel }) {
             onChange={(e) => setFormData({ ...formData, value: e.target.value })}
           />
         </div>
+        <div className="space-y-2">
+          <Label>Next Follow-up Date</Label>
+          <Input
+            type="date"
+            value={formData.nextFollowUp}
+            onChange={(e) => setFormData({ ...formData, nextFollowUp: e.target.value })}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Assigned To</Label>
+        <Input
+          value={formData.assignedTo}
+          onChange={(e) => setFormData({ ...formData, assignedTo: e.target.value })}
+          placeholder="User ID or email"
+        />
       </div>
 
       <div className="space-y-2">
