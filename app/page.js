@@ -1727,17 +1727,20 @@ function ClientDashboard({ user, client, onLogout }) {
                     {expenses.map((expense, i) => (
                       <motion.div
                         key={expense.id}
-                        className="flex items-center justify-between p-4 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
+                        className="flex items-center justify-between p-4 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer"
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.03 }}
+                        onClick={() => { setDialogType('expense'); setEditingItem(expense); setShowDialog(true); }}
                       >
                         <div>
                           <p className="font-medium">{expense.description}</p>
-                          <p className="text-sm text-muted-foreground">{expense.category} • {new Date(expense.date).toLocaleDateString()}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {expense.category || 'Uncategorized'} • {expense.date ? new Date(expense.date).toLocaleDateString() : 'No date'}
+                          </p>
                         </div>
                         <div className="flex items-center gap-4">
-                          <span className="font-bold">₹{expense.amount?.toLocaleString()}</span>
+                          <span className="font-bold">₹{expense.amount?.toLocaleString() || '0'}</span>
                           <Badge variant={expense.approved ? 'default' : 'secondary'}>
                             {expense.approved ? 'Approved' : 'Pending'}
                           </Badge>
