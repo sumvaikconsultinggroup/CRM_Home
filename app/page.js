@@ -1516,6 +1516,16 @@ function ClientDashboard({ user, client, onLogout }) {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Mee AI Agent - Floating */}
+      <MeeAgent
+        client={client}
+        user={user}
+        stats={stats}
+        leads={leads}
+        tasks={tasks}
+        onUpgrade={() => setShowUpgradeFlow(true)}
+      />
     </div>
   )
 }
