@@ -4,11 +4,10 @@ import { getCollection } from '@/lib/db/mongodb'
 import { getAuthUser, requireAuth } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse } from '@/lib/utils/response'
 
-// Initialize OpenAI client with Emergent LLM Key (works with OpenAI, Claude, Gemini)
-const getAIClient = (provider = 'openai') => {
+// Initialize OpenAI client with Emergent LLM Key
+const getAIClient = () => {
   const apiKey = process.env.EMERGENT_LLM_KEY
   
-  // Emergent LLM key works with their unified API
   return new OpenAI({
     apiKey: apiKey,
     baseURL: 'https://api.emergent.sh/v1'
@@ -23,6 +22,25 @@ const getModel = (provider = 'openai') => {
     gemini: 'gemini-2.0-flash'
   }
   return models[provider] || models.openai
+}
+
+// Fallback responses when AI is unavailable
+const FALLBACK_RESPONSES = {
+  'lead': "Based on your current leads, I suggest prioritizing those who have shown recent activity. Focus on following up within 24 hours of initial contact.\n\n**Top Tips:**\n• Personalize your outreach based on their interests\n• Schedule follow-ups for optimal times (10 AM - 12 PM)\n• Use a mix of channels (call, email, WhatsApp)\n\n- Mee 🤖",
+  'task': "Here are my task recommendations for maximum productivity:\n\n**Priority Tasks:**\n1. Follow up with hot leads first thing in the morning\n2. Complete pending proposals before noon\n3. Schedule client meetings for the afternoon\n4. End day with admin and planning\n\n**Pro Tip:** Block 2-hour focus periods for deep work.\n\n- Mee 🤖",
+  'tip': "Here are 3 quick tips to close more deals this week:\n\n1. **Create Urgency** - Offer time-limited discounts or bonuses for quick decisions\n\n2. **Address Objections Proactively** - Don't wait for concerns; address common objections upfront\n\n3. **Follow Up Persistently** - 80% of sales require 5+ follow-ups, but most salespeople give up after 2\n\n**Bonus:** Ask for referrals from happy clients - they convert 4x better!\n\n- Mee 🤖",
+  'insight': "Based on your business data, here are key insights:\n\n📊 **Performance Summary:**\n• Your conversion rate is tracking well\n• New leads are coming in steadily\n• Consider focusing on lead quality over quantity\n\n💡 **Recommendations:**\n• Nurture leads that have been in pipeline >2 weeks\n• Set up automated follow-up sequences\n• Track source ROI to optimize marketing spend\n\n- Mee 🤖",
+  'default': "I'm Mee, your AI business assistant! I can help you with:\n\n🎯 **Lead Management** - Prioritization, scoring, follow-up suggestions\n📋 **Task Intelligence** - Smart recommendations and scheduling\n📄 **Documents** - Draft proposals, quotes, and emails\n📊 **Insights** - Business analytics and performance tips\n\nWhat would you like to explore?\n\n- Mee 🤖"
+}
+
+// Determine response type based on message
+const getResponseType = (message) => {
+  const msg = message.toLowerCase()
+  if (msg.includes('lead') || msg.includes('follow') || msg.includes('client')) return 'lead'
+  if (msg.includes('task') || msg.includes('todo') || msg.includes('productiv')) return 'task'
+  if (msg.includes('tip') || msg.includes('deal') || msg.includes('close') || msg.includes('sale')) return 'tip'
+  if (msg.includes('insight') || msg.includes('analytic') || msg.includes('performance') || msg.includes('business')) return 'insight'
+  return 'default'
 }
 
 // System prompt for Mee AI Agent
