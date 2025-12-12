@@ -534,7 +534,7 @@ function SuperAdminDashboard({ user, onLogout }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 flex">
+    <div className="min-h-screen bg-slate-50 flex">
       {/* Sidebar */}
       <motion.aside 
         className={`${sidebarOpen ? 'w-72' : 'w-20'} bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white transition-all duration-300 flex flex-col`}
