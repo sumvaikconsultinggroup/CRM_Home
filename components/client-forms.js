@@ -214,7 +214,19 @@ export function ProjectForm({ project, onSubmit, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSubmit(formData)
+    // Convert number fields to actual numbers
+    const submitData = {
+      ...formData,
+      budget: formData.budget ? parseFloat(formData.budget) : undefined,
+      progress: formData.progress ? parseInt(formData.progress) : 0
+    }
+    // Remove undefined values
+    Object.keys(submitData).forEach(key => {
+      if (submitData[key] === undefined || submitData[key] === '') {
+        delete submitData[key]
+      }
+    })
+    onSubmit(submitData)
   }
 
   return (
