@@ -2306,11 +2306,23 @@ function WhiteLabelSettings() {
     favicon: '',
     primaryColor: '#3B82F6',
     secondaryColor: '#1E40AF',
+    accentColor: '#10B981',
     companyName: '',
     customDomain: '',
+    emailBranding: {
+      enabled: false,
+      headerBg: '#3B82F6',
+      footerText: ''
+    },
+    loginPage: {
+      backgroundImage: '',
+      welcomeText: 'Welcome Back',
+      tagline: 'Manage your business efficiently'
+    },
     enabled: false
   })
   const [loading, setLoading] = useState(true)
+  const [activeSection, setActiveSection] = useState('branding')
 
   useEffect(() => {
     api.getWhitelabel()
@@ -2322,100 +2334,374 @@ function WhiteLabelSettings() {
   const handleSave = async () => {
     try {
       await api.updateWhitelabel(settings)
-      toast.success('White label settings saved!')
+      toast.success('White label settings saved successfully!')
     } catch (error) {
-      toast.error(error.message)
+      toast.error(error.message || 'Failed to save settings')
     }
   }
 
-  if (loading) return <div>Loading...</div>
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-12">
+        <RefreshCw className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    )
+  }
 
   return (
-    <GlassCard className="p-6">
-      <div className="grid md:grid-cols-2 gap-6">
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Company Name</Label>
-            <Input 
-              value={settings.companyName} 
-              onChange={(e) => setSettings({ ...settings, companyName: e.target.value })}
-              placeholder="Your Company Name"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Logo URL</Label>
-            <Input 
-              value={settings.logo || ''} 
-              onChange={(e) => setSettings({ ...settings, logo: e.target.value })}
-              placeholder="https://example.com/logo.png"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Favicon URL</Label>
-            <Input 
-              value={settings.favicon || ''} 
-              onChange={(e) => setSettings({ ...settings, favicon: e.target.value })}
-              placeholder="https://example.com/favicon.ico"
-            />
-          </div>
-          <div className="space-y-2">
-            <Label>Custom Domain</Label>
-            <Input 
-              value={settings.customDomain || ''} 
-              onChange={(e) => setSettings({ ...settings, customDomain: e.target.value })}
-              placeholder="crm.yourdomain.com"
-            />
-          </div>
-        </div>
-        <div className="space-y-4">
-          <div className="space-y-2">
-            <Label>Primary Color</Label>
-            <div className="flex gap-2">
-              <Input 
-                type="color" 
-                value={settings.primaryColor} 
-                onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
-                className="w-16 h-10 p-1"
-              />
-              <Input 
-                value={settings.primaryColor} 
-                onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
-              />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label>Secondary Color</Label>
-            <div className="flex gap-2">
-              <Input 
-                type="color" 
-                value={settings.secondaryColor} 
-                onChange={(e) => setSettings({ ...settings, secondaryColor: e.target.value })}
-                className="w-16 h-10 p-1"
-              />
-              <Input 
-                value={settings.secondaryColor} 
-                onChange={(e) => setSettings({ ...settings, secondaryColor: e.target.value })}
-              />
-            </div>
-          </div>
-          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-            <div>
-              <p className="font-medium">Enable White Labeling</p>
-              <p className="text-sm text-muted-foreground">Apply custom branding to your CRM</p>
-            </div>
-            <Switch 
-              checked={settings.enabled} 
-              onCheckedChange={(checked) => setSettings({ ...settings, enabled: checked })}
-            />
-          </div>
-        </div>
+    <div className="space-y-6">
+      {/* Section Tabs */}
+      <div className="flex gap-2 border-b">
+        <Button
+          variant={activeSection === 'branding' ? 'default' : 'ghost'}
+          onClick={() => setActiveSection('branding')}
+          className="rounded-b-none"
+        >
+          <Palette className="h-4 w-4 mr-2" />
+          Branding
+        </Button>
+        <Button
+          variant={activeSection === 'colors' ? 'default' : 'ghost'}
+          onClick={() => setActiveSection('colors')}
+          className="rounded-b-none"
+        >
+          <Sparkles className="h-4 w-4 mr-2" />
+          Colors & Theme
+        </Button>
+        <Button
+          variant={activeSection === 'email' ? 'default' : 'ghost'}
+          onClick={() => setActiveSection('email')}
+          className="rounded-b-none"
+        >
+          <Mail className="h-4 w-4 mr-2" />
+          Email Branding
+        </Button>
+        <Button
+          variant={activeSection === 'login' ? 'default' : 'ghost'}
+          onClick={() => setActiveSection('login')}
+          className="rounded-b-none"
+        >
+          <Shield className="h-4 w-4 mr-2" />
+          Login Page
+        </Button>
       </div>
-      <div className="mt-6 pt-6 border-t flex justify-end">
+
+      {/* Branding Section */}
+      {activeSection === 'branding' && (
+        <GlassCard className="p-6">
+          <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+            <Image className="h-5 w-5" />
+            Brand Assets
+          </h3>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Company Name *</Label>
+                <Input 
+                  value={settings.companyName} 
+                  onChange={(e) => setSettings({ ...settings, companyName: e.target.value })}
+                  placeholder="Your Company Name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Logo URL</Label>
+                <Input 
+                  value={settings.logo || ''} 
+                  onChange={(e) => setSettings({ ...settings, logo: e.target.value })}
+                  placeholder="https://example.com/logo.png"
+                />
+                <p className="text-xs text-muted-foreground">Recommended: 200x60px, transparent PNG</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Favicon URL</Label>
+                <Input 
+                  value={settings.favicon || ''} 
+                  onChange={(e) => setSettings({ ...settings, favicon: e.target.value })}
+                  placeholder="https://example.com/favicon.ico"
+                />
+                <p className="text-xs text-muted-foreground">Recommended: 32x32px or 64x64px ICO/PNG</p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Custom Domain</Label>
+                <Input 
+                  value={settings.customDomain || ''} 
+                  onChange={(e) => setSettings({ ...settings, customDomain: e.target.value })}
+                  placeholder="crm.yourdomain.com"
+                />
+                <p className="text-xs text-muted-foreground">Point your domain's CNAME to our servers</p>
+              </div>
+              {/* Preview Section */}
+              <div className="p-4 border rounded-lg bg-slate-50">
+                <Label className="mb-2 block">Logo Preview</Label>
+                {settings.logo ? (
+                  <img src={settings.logo} alt="Logo preview" className="h-12 object-contain" onError={(e) => e.target.style.display = 'none'} />
+                ) : (
+                  <div className="h-12 flex items-center text-sm text-muted-foreground">
+                    No logo uploaded
+                  </div>
+                )}
+              </div>
+              <div className="flex items-center justify-between p-4 bg-gradient-to-r from-primary/10 to-indigo-600/10 rounded-lg border border-primary/20">
+                <div>
+                  <p className="font-medium">Enable White Labeling</p>
+                  <p className="text-xs text-muted-foreground">Apply custom branding across platform</p>
+                </div>
+                <Switch 
+                  checked={settings.enabled} 
+                  onCheckedChange={(checked) => setSettings({ ...settings, enabled: checked })}
+                />
+              </div>
+            </div>
+          </div>
+        </GlassCard>
+      )}
+
+      {/* Colors & Theme Section */}
+      {activeSection === 'colors' && (
+        <GlassCard className="p-6">
+          <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+            <Palette className="h-5 w-5" />
+            Color Scheme
+          </h3>
+          <div className="grid md:grid-cols-3 gap-6">
+            <div className="space-y-2">
+              <Label>Primary Color</Label>
+              <div className="flex gap-2">
+                <Input 
+                  type="color" 
+                  value={settings.primaryColor} 
+                  onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
+                  className="w-16 h-10 p-1 cursor-pointer"
+                />
+                <Input 
+                  value={settings.primaryColor} 
+                  onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Main brand color for buttons & accents</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Secondary Color</Label>
+              <div className="flex gap-2">
+                <Input 
+                  type="color" 
+                  value={settings.secondaryColor} 
+                  onChange={(e) => setSettings({ ...settings, secondaryColor: e.target.value })}
+                  className="w-16 h-10 p-1 cursor-pointer"
+                />
+                <Input 
+                  value={settings.secondaryColor} 
+                  onChange={(e) => setSettings({ ...settings, secondaryColor: e.target.value })}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Used for hover states & links</p>
+            </div>
+            <div className="space-y-2">
+              <Label>Accent Color</Label>
+              <div className="flex gap-2">
+                <Input 
+                  type="color" 
+                  value={settings.accentColor} 
+                  onChange={(e) => setSettings({ ...settings, accentColor: e.target.value })}
+                  className="w-16 h-10 p-1 cursor-pointer"
+                />
+                <Input 
+                  value={settings.accentColor} 
+                  onChange={(e) => setSettings({ ...settings, accentColor: e.target.value })}
+                />
+              </div>
+              <p className="text-xs text-muted-foreground">Success states & highlights</p>
+            </div>
+          </div>
+          
+          {/* Color Preview */}
+          <div className="mt-6 p-6 border rounded-lg bg-slate-50">
+            <Label className="mb-4 block">Color Preview</Label>
+            <div className="flex gap-3">
+              <Button style={{ backgroundColor: settings.primaryColor }}>
+                Primary Button
+              </Button>
+              <Button variant="outline" style={{ borderColor: settings.secondaryColor, color: settings.secondaryColor }}>
+                Secondary
+              </Button>
+              <Badge style={{ backgroundColor: settings.accentColor }}>Accent Badge</Badge>
+            </div>
+          </div>
+        </GlassCard>
+      )}
+
+      {/* Email Branding Section */}
+      {activeSection === 'email' && (
+        <GlassCard className="p-6">
+          <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+            <Mail className="h-5 w-5" />
+            Email Branding
+          </h3>
+          <div className="space-y-4">
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+              <div>
+                <p className="font-medium">Enable Email Branding</p>
+                <p className="text-sm text-muted-foreground">Use your branding in system emails</p>
+              </div>
+              <Switch 
+                checked={settings.emailBranding?.enabled || false} 
+                onCheckedChange={(checked) => setSettings({ 
+                  ...settings, 
+                  emailBranding: { ...settings.emailBranding, enabled: checked }
+                })}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Email Header Background</Label>
+              <div className="flex gap-2">
+                <Input 
+                  type="color" 
+                  value={settings.emailBranding?.headerBg || '#3B82F6'} 
+                  onChange={(e) => setSettings({ 
+                    ...settings, 
+                    emailBranding: { ...settings.emailBranding, headerBg: e.target.value }
+                  })}
+                  className="w-16 h-10 p-1 cursor-pointer"
+                />
+                <Input 
+                  value={settings.emailBranding?.headerBg || '#3B82F6'} 
+                  onChange={(e) => setSettings({ 
+                    ...settings, 
+                    emailBranding: { ...settings.emailBranding, headerBg: e.target.value }
+                  })}
+                />
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Email Footer Text</Label>
+              <Textarea 
+                value={settings.emailBranding?.footerText || ''} 
+                onChange={(e) => setSettings({ 
+                  ...settings, 
+                  emailBranding: { ...settings.emailBranding, footerText: e.target.value }
+                })}
+                placeholder="© 2024 Your Company. All rights reserved."
+                rows={2}
+              />
+            </div>
+
+            {/* Email Preview */}
+            <div className="p-4 border rounded-lg bg-white">
+              <Label className="mb-2 block">Email Preview</Label>
+              <div className="border rounded overflow-hidden text-sm">
+                <div 
+                  className="p-4 text-white font-semibold" 
+                  style={{ backgroundColor: settings.emailBranding?.headerBg || '#3B82F6' }}
+                >
+                  {settings.companyName || 'Your Company'}
+                </div>
+                <div className="p-4">
+                  <p>Sample email content will appear here...</p>
+                </div>
+                <div className="p-3 bg-slate-50 text-xs text-muted-foreground text-center border-t">
+                  {settings.emailBranding?.footerText || '© 2024 Your Company'}
+                </div>
+              </div>
+            </div>
+          </div>
+        </GlassCard>
+      )}
+
+      {/* Login Page Section */}
+      {activeSection === 'login' && (
+        <GlassCard className="p-6">
+          <h3 className="text-lg font-semibold mb-6 flex items-center gap-2">
+            <Shield className="h-5 w-5" />
+            Login Page Customization
+          </h3>
+          <div className="grid md:grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <Label>Background Image URL</Label>
+                <Input 
+                  value={settings.loginPage?.backgroundImage || ''} 
+                  onChange={(e) => setSettings({ 
+                    ...settings, 
+                    loginPage: { ...settings.loginPage, backgroundImage: e.target.value }
+                  })}
+                  placeholder="https://example.com/background.jpg"
+                />
+                <p className="text-xs text-muted-foreground">Full HD image recommended (1920x1080px)</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Welcome Text</Label>
+                <Input 
+                  value={settings.loginPage?.welcomeText || 'Welcome Back'} 
+                  onChange={(e) => setSettings({ 
+                    ...settings, 
+                    loginPage: { ...settings.loginPage, welcomeText: e.target.value }
+                  })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Tagline</Label>
+                <Input 
+                  value={settings.loginPage?.tagline || 'Manage your business efficiently'} 
+                  onChange={(e) => setSettings({ 
+                    ...settings, 
+                    loginPage: { ...settings.loginPage, tagline: e.target.value }
+                  })}
+                />
+              </div>
+            </div>
+            <div className="p-4 border rounded-lg bg-slate-50">
+              <Label className="mb-2 block">Login Page Preview</Label>
+              <div className="aspect-video bg-gradient-to-br from-primary to-indigo-600 rounded-lg overflow-hidden relative">
+                {settings.loginPage?.backgroundImage && (
+                  <img 
+                    src={settings.loginPage.backgroundImage} 
+                    alt="Background" 
+                    className="absolute inset-0 w-full h-full object-cover opacity-50"
+                    onError={(e) => e.target.style.display = 'none'}
+                  />
+                )}
+                <div className="relative z-10 flex items-center justify-center h-full text-white p-4">
+                  <div className="text-center">
+                    <h3 className="text-lg font-bold">{settings.loginPage?.welcomeText || 'Welcome Back'}</h3>
+                    <p className="text-xs mt-1">{settings.loginPage?.tagline || 'Manage your business'}</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </GlassCard>
+      )}
+
+      {/* Save Button */}
+      <div className="flex justify-end gap-2">
+        <Button variant="outline" onClick={() => {
+          setSettings({
+            logo: '',
+            favicon: '',
+            primaryColor: '#3B82F6',
+            secondaryColor: '#1E40AF',
+            accentColor: '#10B981',
+            companyName: '',
+            customDomain: '',
+            emailBranding: { enabled: false, headerBg: '#3B82F6', footerText: '' },
+            loginPage: { backgroundImage: '', welcomeText: 'Welcome Back', tagline: 'Manage your business efficiently' },
+            enabled: false
+          })
+          toast.info('Settings reset to defaults')
+        }}>
+          <RefreshCw className="h-4 w-4 mr-2" />
+          Reset to Defaults
+        </Button>
         <Button onClick={handleSave} className="bg-gradient-to-r from-primary to-indigo-600">
+          <CheckCircle2 className="h-4 w-4 mr-2" />
           Save Changes
         </Button>
       </div>
-    </GlassCard>
+    </div>
   )
 }
 
