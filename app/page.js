@@ -2156,6 +2156,7 @@ function ClientDashboard({ user, client, onLogout }) {
               projects={projects}
               onSubmit={async (data) => {
                 try {
+                  console.log('Submitting task data:', data)
                   if (editingItem) {
                     await api.updateTask(editingItem.id, data)
                     toast.success('Task updated successfully')
@@ -2167,7 +2168,8 @@ function ClientDashboard({ user, client, onLogout }) {
                   setEditingItem(null)
                   fetchData()
                 } catch (error) {
-                  toast.error(error.message || 'Operation failed')
+                  console.error('Task submission error:', error)
+                  toast.error(error.message || 'Failed to save task')
                 }
               }}
               onCancel={() => {
