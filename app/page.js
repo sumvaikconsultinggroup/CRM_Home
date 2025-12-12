@@ -1264,10 +1264,27 @@ function ClientDashboard({ user, client, onLogout }) {
   }, [fetchData, client])
 
   // Robust Plan Detection
-  const rawPlan = client?.plan
-  const planId = (typeof rawPlan === 'string' ? rawPlan : rawPlan?.id || 'basic').toLowerCase()
+  const getPlanId = (c) => {
+    if (!c) return 'basic'
+    if (c.plan && typeof c.plan === 'object' && c.plan.id) return c.plan.id
+    if (c.planId) return c.planId
+    if (typeof c.plan === 'string') return c.plan
+    return 'basic'
+  }
+
+  const planId = getPlanId(client).toLowerCase()
   const isEnterprise = planId === 'enterprise'
   const isProfessional = planId === 'professional'
+
+  // Debug Plan
+  useEffect(() => {
+    console.log('DEBUG PLAN:', { 
+      rawClient: client, 
+      detectedPlanId: planId,
+      isEnterprise,
+      isProfessional
+    })
+  }, [client, planId])
 
 
   // Check if wooden flooring module is enabled
