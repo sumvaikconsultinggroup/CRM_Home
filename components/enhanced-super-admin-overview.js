@@ -77,6 +77,32 @@ const KPICard = ({ title, value, change, changeLabel, icon: Icon, color, trend =
   )
 }
 
+// Custom Tooltip Component for Pie Chart
+const PieTooltip = ({ active, payload }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white p-3 rounded-lg shadow-lg border">
+        <p className="font-medium">{payload[0].name}</p>
+        <p className="text-sm text-muted-foreground">{payload[0].value} clients</p>
+      </div>
+    )
+  }
+  return null
+}
+
+// Custom Tooltip Component for Area Chart
+const AreaTooltip = ({ active, payload, label }) => {
+  if (active && payload && payload.length) {
+    return (
+      <div className="bg-white p-3 rounded-lg shadow-lg border">
+        <p className="font-medium">{label}</p>
+        <p className="text-sm text-blue-600">Revenue: ₹{payload[0].value.toLocaleString()}</p>
+      </div>
+    )
+  }
+  return null
+}
+
 // Plan Distribution Card
 const PlanDistributionCard = ({ clients }) => {
   const planCounts = useMemo(() => {
