@@ -42,6 +42,8 @@ import PremiumLanding from '@/components/premium-landing'
 import { LoginPage, RegisterPage, ForgotPasswordPage } from '@/components/auth-ui'
 import { TeamChat } from '@/components/team-chat'
 import { EnhancedDashboard } from '@/components/enhanced-dashboard'
+import { CalendarNotes } from '@/components/calendar-notes'
+import { Integrations } from '@/components/integrations'
 
 // Animation variants
 const fadeIn = {
