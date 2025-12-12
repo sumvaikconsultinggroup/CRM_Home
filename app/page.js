@@ -761,12 +761,14 @@ function ClientDashboard({ user, client, onLogout }) {
     { id: 'projects', icon: Briefcase, label: 'Projects' },
     { id: 'tasks', icon: ClipboardList, label: 'Tasks' },
     { id: 'expenses', icon: Receipt, label: 'Expenses' },
+    { id: 'calendar', icon: CalendarDays, label: 'Calendar & Notes' },
     { id: 'users', icon: Users, label: 'Team' },
     { id: 'chat', icon: MessageSquare, label: 'Team Chat', isChat: true },
     { id: 'reports', icon: BarChart3, label: 'Reports' },
     // Add Wooden Flooring module link if enabled
     ...(hasFlooringModule ? [{ id: 'flooring-module', icon: Layers, label: 'Wooden Flooring', isModule: true }] : []),
     { id: 'modules', icon: Package, label: 'Modules' },
+    { id: 'integrations', icon: Plug, label: 'Integrations' },
     { id: 'whitelabel', icon: Palette, label: 'White Label' },
     { id: 'settings', icon: Settings, label: 'Settings' }
   ]
