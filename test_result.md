@@ -445,6 +445,9 @@ frontend:
       - working: "NA"
         agent: "main"
         comment: "Client portal with stats, leads pipeline, projects, tasks, expenses"
+      - working: "NA"
+        agent: "main"
+        comment: "Implemented White Label color application (instant and on load). Fixed plan-based feature rendering logic."
 
   - task: "Wooden Flooring Module - Frontend Integration"
     implemented: true
