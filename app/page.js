@@ -28,7 +28,7 @@ import {
   ChefHat, Grid3X3, Sofa, HardHat, Paintbrush, Wrench, Zap, Phone, Mail, Target,
   BarChart3, PieChart as PieChartIcon, ArrowUpRight, ArrowDownRight, Calendar, UserPlus, Package,
   Sparkles, Bell, Search, Filter, Download, RefreshCw, Send, MessageSquare, Palette,
-  Globe, Image, FileText, Star, Crown, ChevronDown, ExternalLink
+  Globe, Image, FileText, Star, Crown, ChevronDown, ExternalLink, Lock
 } from 'lucide-react'
 import FlooringModule from './flooring/page'
 import { LeadForm, ProjectForm, TaskForm, ExpenseForm, UserForm } from '@/components/client-forms'
