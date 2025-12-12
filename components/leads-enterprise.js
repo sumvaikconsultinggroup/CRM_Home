@@ -126,7 +126,7 @@ function LeadCard({ lead, onEdit, onSelect, isSelected, isEnterprise, hasAdvance
           {hasAdvancedFeatures && lead.nextFollowUp && (
             <div className="flex items-center gap-1 mt-2 text-xs text-amber-600">
               <Calendar className="h-3 w-3" />
-              <span>{new Date(lead.nextFollowUp).toLocaleDateString()}</span>
+              <span>{new Date(lead.nextFollowUp).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}</span>
             </div>
           )}
         </div>
