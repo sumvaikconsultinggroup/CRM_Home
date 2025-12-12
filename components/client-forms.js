@@ -34,7 +34,7 @@ export function LeadForm({ lead, onSubmit, onCancel }) {
         status: lead.status || 'new',
         value: lead.value || '',
         notes: lead.notes || '',
-        nextFollowUp: lead.nextFollowUp ? new Date(lead.nextFollowUp).toISOString().split('T')[0] : '',
+        nextFollowUp: lead.nextFollowUp ? new Date(lead.nextFollowUp).toISOString().slice(0, 16) : '',
         assignedTo: lead.assignedTo || '',
         priority: lead.priority || 'medium'
       })
