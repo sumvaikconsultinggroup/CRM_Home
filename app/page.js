@@ -881,7 +881,7 @@ function SuperAdminDashboard({ user, onLogout }) {
                               Requesting: <span className="font-medium text-primary">{request.moduleName}</span>
                             </p>
                             {request.message && (
-                              <p className="text-sm mt-1">"{request.message}"</p>
+                              <p className="text-sm mt-1">&quot;{request.message}&quot;</p>
                             )}
                           </div>
                           <div className="flex items-center gap-2">
