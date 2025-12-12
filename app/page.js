@@ -1683,13 +1683,13 @@ function ClientDashboard({ user, client, onLogout }) {
                             onClick={() => { setDialogType('task'); setEditingItem(task); setShowDialog(true); }}
                           >
                             <p className="font-medium text-sm">{task.title}</p>
-                            <p className="text-xs text-muted-foreground mt-1">{task.description}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{task.description || 'No description'}</p>
                             <div className="flex justify-between items-center mt-2">
                               <Badge variant={task.priority === 'urgent' || task.priority === 'high' ? 'destructive' : 'secondary'} className="text-xs">
-                                {task.priority}
+                                {task.priority || 'medium'}
                               </Badge>
                               <span className="text-xs text-muted-foreground">
-                                {new Date(task.dueDate).toLocaleDateString()}
+                                {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}
                               </span>
                             </div>
                           </motion.div>
