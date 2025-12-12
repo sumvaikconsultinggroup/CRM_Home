@@ -1618,6 +1618,7 @@ function ClientDashboard({ user, client, onLogout }) {
                   onUpdateLead={async (leadId, data) => {
                     console.log('Updating lead:', leadId, data)
                     await api.updateLead(leadId, data)
+                    // We call fetchData to ensure state consistency
                     await fetchData()
                   }}
                   onEditLead={(lead) => {
@@ -1626,8 +1627,8 @@ function ClientDashboard({ user, client, onLogout }) {
                     setShowDialog(true)
                   }}
                   onRefresh={fetchData}
-                  isEnterprise={client?.plan?.id === 'enterprise'}
-                  isProfessional={client?.plan?.id === 'professional'}
+                  isEnterprise={isEnterprise}
+                  isProfessional={isProfessional}
                   client={client}
                 />
               </motion.div>
