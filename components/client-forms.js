@@ -397,12 +397,11 @@ export function TaskForm({ task, projects, onSubmit, onCancel }) {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Project</Label>
-          <Select value={formData.projectId} onValueChange={(value) => setFormData({ ...formData, projectId: value })}>
+          <Select value={formData.projectId || undefined} onValueChange={(value) => setFormData({ ...formData, projectId: value })}>
             <SelectTrigger>
-              <SelectValue placeholder="Select project" />
+              <SelectValue placeholder="Select project (optional)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">None</SelectItem>
               {projects?.map((project) => (
                 <SelectItem key={project.id} value={project.id}>
                   {project.name}
@@ -558,12 +557,11 @@ export function ExpenseForm({ expense, projects, onSubmit, onCancel }) {
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
           <Label>Project</Label>
-          <Select value={formData.projectId} onValueChange={(value) => setFormData({ ...formData, projectId: value })}>
+          <Select value={formData.projectId || undefined} onValueChange={(value) => setFormData({ ...formData, projectId: value })}>
             <SelectTrigger>
-              <SelectValue placeholder="Select project" />
+              <SelectValue placeholder="Select project (optional)" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="">None</SelectItem>
               {projects?.map((project) => (
                 <SelectItem key={project.id} value={project.id}>
                   {project.name}
