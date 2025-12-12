@@ -1594,8 +1594,9 @@ function ClientDashboard({ user, client, onLogout }) {
                 <EnterpriseLeads
                   leads={leads}
                   onUpdateLead={async (leadId, data) => {
+                    console.log('Updating lead:', leadId, data)
                     await api.updateLead(leadId, data)
-                    fetchData()
+                    await fetchData()
                   }}
                   onEditLead={(lead) => {
                     setDialogType('lead')
