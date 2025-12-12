@@ -1597,6 +1597,11 @@ function ClientDashboard({ user, client, onLogout }) {
                     await api.updateLead(leadId, data)
                     fetchData()
                   }}
+                  onEditLead={(lead) => {
+                    setDialogType('lead')
+                    setEditingItem(lead)
+                    setShowDialog(true)
+                  }}
                   onRefresh={fetchData}
                   isEnterprise={client?.plan?.id === 'enterprise'}
                   isProfessional={client?.plan?.id === 'professional'}
