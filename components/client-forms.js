@@ -364,7 +364,14 @@ export function TaskForm({ task, projects, onSubmit, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSubmit(formData)
+    // Remove undefined values and empty strings
+    const submitData = { ...formData }
+    Object.keys(submitData).forEach(key => {
+      if (submitData[key] === undefined || submitData[key] === '') {
+        delete submitData[key]
+      }
+    })
+    onSubmit(submitData)
   }
 
   return (
