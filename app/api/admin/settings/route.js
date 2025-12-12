@@ -27,6 +27,11 @@ export async function GET(request) {
           stripe: { enabled: false, publishableKey: '', secretKey: '', webhookSecret: '' },
           paypal: { enabled: false, clientId: '', clientSecret: '', mode: 'sandbox' }
         },
+        aiProvider: {
+          provider: 'openai',
+          customApiKey: '',
+          useEmergentKey: true
+        },
         security: {
           require2FA: false,
           passwordExpiry: 90,
