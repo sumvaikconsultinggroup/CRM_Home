@@ -158,9 +158,12 @@ export function LoginPage({ onBack, onSuccess, onRegister, onForgotPassword }) {
       </div>
       
       <div className="mt-4 pt-4 border-t border-slate-100 text-center">
-         <button onClick={onBack} className="text-sm text-slate-400 hover:text-slate-600 flex items-center justify-center gap-1 mx-auto">
+         <button onClick={onBack} className="text-sm text-slate-400 hover:text-slate-600 flex items-center justify-center gap-1 mx-auto mb-4">
            <ArrowLeft className="h-3 w-3" /> Back to Home
          </button>
+         <div className="text-xs text-slate-300 bg-slate-50 p-2 rounded border border-slate-100 inline-block">
+            Super Admin: admin@buildcrm.com / admin123
+         </div>
       </div>
     </AuthLayout>
   )
