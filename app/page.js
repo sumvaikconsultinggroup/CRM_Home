@@ -1292,6 +1292,11 @@ function ClientDashboard({ user, client, onLogout }) {
     )
   }
 
+  // Render Flooring Module if active
+  if (activeModule === 'flooring') {
+    return <FlooringModule onBack={() => setActiveModule(null)} />
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 flex">
       {/* Sidebar */}
