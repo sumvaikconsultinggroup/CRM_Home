@@ -572,6 +572,7 @@ export function EnterpriseLeads({
           onEdit={onEditLead}
           onDelete={onDeleteLead}
           onView={setViewingLead}
+          onAddRemark={setRemarkLead}
           showScore={features.leadScoring}
         />
       ))}
@@ -589,6 +590,7 @@ export function EnterpriseLeads({
             onDelete={onDeleteLead}
             onView={setViewingLead}
             onStatusChange={handleStatusChange}
+            onAddRemark={setRemarkLead}
             showScore={features.leadScoring}
           />
         ))}
