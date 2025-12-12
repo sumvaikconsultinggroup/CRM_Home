@@ -165,9 +165,9 @@ const LeadCard = ({ lead, index }) => {
 export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = [], expenses = [], users = [], client, onNavigate }) {
   const [timeRange, setTimeRange] = useState('week')
   
-  // Calculate metrics
+  // Calculate metrics from REAL data
   const totalRevenue = expenses.filter(e => e.type === 'income').reduce((sum, e) => sum + (e.amount || 0), 0)
-  const totalExpenses = expenses.filter(e => e.type === 'expense').reduce((sum, e) => sum + (e.amount || 0), 0)
+  const totalExpensesAmount = expenses.filter(e => e.type === 'expense').reduce((sum, e) => sum + (e.amount || 0), 0)
   const pendingTasks = tasks.filter(t => t.status !== 'completed').length
   const completedTasks = tasks.filter(t => t.status === 'completed').length
   const taskCompletionRate = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0
@@ -176,29 +176,107 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
   const wonLeads = leads.filter(l => l.status === 'won').length
   const conversionRate = leads.length > 0 ? Math.round((wonLeads / leads.length) * 100) : 0
 
-  // Generate chart data
-  const chartData = [35, 45, 30, 50, 60, 45, 70]
-  const revenueData = [25000, 32000, 28000, 45000, 38000, 52000, 48000]
+  // Generate REAL chart data from expenses (last 7 entries or generate from actual data)
+  const generateChartData = () => {
+    if (expenses.length === 0) return [0, 0, 0, 0, 0, 0, 0]
+    const incomes = expenses.filter(e => e.type === 'income').slice(-7)
+    if (incomes.length >= 7) {
+      return incomes.map(e => e.amount || 0)
+    }
+    // Pad with zeros if not enough data
+    const data = incomes.map(e => e.amount || 0)
+    while (data.length < 7) data.unshift(0)
+    return data
+  }
+  
+  const revenueData = generateChartData()
+  const chartData = leads.length > 0 
+    ? [leads.filter(l => l.status === 'new').length, 
+       leads.filter(l => l.status === 'contacted').length,
+       leads.filter(l => l.status === 'qualified').length,
+       leads.filter(l => l.status === 'negotiation').length,
+       leads.filter(l => l.status === 'won').length,
+       leads.filter(l => l.status === 'lost').length,
+       leads.length]
+    : [0, 0, 0, 0, 0, 0, 0]
 
-  // Recent activities (mock)
-  const activities = [
-    { type: 'lead', title: 'New lead from website', time: '2 min ago' },
-    { type: 'task', title: 'Site inspection completed', time: '15 min ago' },
-    { type: 'project', title: 'Kitchen renovation started', time: '1 hour ago' },
-    { type: 'payment', title: 'Payment received ₹45,000', time: '2 hours ago' },
-    { type: 'user', title: 'New team member added', time: '3 hours ago' },
-  ]
+  // Generate REAL activities from actual data
+  const generateActivities = () => {
+    const activities = []
+    
+    // Add recent leads
+    leads.slice(0, 2).forEach(lead => {
+      activities.push({
+        type: 'lead',
+        title: `New lead: ${lead.name}`,
+        time: lead.createdAt ? formatTimeAgo(new Date(lead.createdAt)) : 'Recently',
+        timestamp: new Date(lead.createdAt || Date.now())
+      })
+    })
+    
+    // Add recent tasks
+    tasks.filter(t => t.status === 'completed').slice(0, 2).forEach(task => {
+      activities.push({
+        type: 'task',
+        title: `Task completed: ${task.title}`,
+        time: task.updatedAt ? formatTimeAgo(new Date(task.updatedAt)) : 'Recently',
+        timestamp: new Date(task.updatedAt || Date.now())
+      })
+    })
+    
+    // Add recent projects
+    projects.slice(0, 1).forEach(project => {
+      activities.push({
+        type: 'project',
+        title: `Project: ${project.name}`,
+        time: project.createdAt ? formatTimeAgo(new Date(project.createdAt)) : 'Recently',
+        timestamp: new Date(project.createdAt || Date.now())
+      })
+    })
+    
+    // Add recent expenses/payments
+    expenses.filter(e => e.type === 'income').slice(0, 1).forEach(exp => {
+      activities.push({
+        type: 'payment',
+        title: `Payment received ₹${(exp.amount || 0).toLocaleString()}`,
+        time: exp.createdAt ? formatTimeAgo(new Date(exp.createdAt)) : 'Recently',
+        timestamp: new Date(exp.createdAt || Date.now())
+      })
+    })
+    
+    // Sort by timestamp and return top 5
+    return activities
+      .sort((a, b) => b.timestamp - a.timestamp)
+      .slice(0, 5)
+      .map(({ type, title, time }) => ({ type, title, time }))
+  }
+  
+  // Format time ago helper
+  const formatTimeAgo = (date) => {
+    const now = new Date()
+    const diffMs = now - date
+    const diffMins = Math.floor(diffMs / 60000)
+    const diffHours = Math.floor(diffMs / 3600000)
+    const diffDays = Math.floor(diffMs / 86400000)
+    
+    if (diffMins < 1) return 'Just now'
+    if (diffMins < 60) return `${diffMins} min ago`
+    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
+    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
+  }
 
-  // Upcoming tasks
+  const activities = generateActivities()
+
+  // Upcoming tasks from REAL data
   const upcomingTasks = tasks.filter(t => t.status !== 'completed').slice(0, 4).map((t, i) => ({
     ...t,
-    priority: ['high', 'medium', 'low'][i % 3],
-    dueDate: 'Due in ' + (i + 1) + ' days',
+    priority: t.priority || ['high', 'medium', 'low'][i % 3],
+    dueDate: t.dueDate ? formatTimeAgo(new Date(t.dueDate)) : 'No due date',
     project: projects.find(p => p.id === t.projectId)?.name || 'General'
   }))
 
-  // Top leads
-  const topLeads = leads.slice(0, 4)
+  // Top leads from REAL data (sorted by value)
+  const topLeads = [...leads].sort((a, b) => (b.value || 0) - (a.value || 0)).slice(0, 4)
 
   const statCards = [
     { 
