@@ -323,7 +323,7 @@ const ClientDetailDialog = ({ client, modules, open, onOpenChange, onModuleToggl
                     <div className="space-y-4">
                       <div>
                         <Label className="text-muted-foreground text-xs">Next Billing Date</Label>
-                        <p className="font-medium">{new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString()}</p>
+                        <p className="font-medium">In 30 days</p>
                       </div>
                       <div>
                         <Label className="text-muted-foreground text-xs">Payment Method</Label>
