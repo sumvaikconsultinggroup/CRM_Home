@@ -2006,6 +2006,149 @@ function ClientDashboard({ user, client, onLogout }) {
           </AnimatePresence>
         </div>
       </main>
+
+      {/* Dialogs for CRUD operations */}
+      <Dialog open={showDialog} onOpenChange={setShowDialog}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingItem ? 'Edit' : 'Add'} {dialogType?.charAt(0).toUpperCase() + dialogType?.slice(1)}
+            </DialogTitle>
+          </DialogHeader>
+          
+          {dialogType === 'lead' && (
+            <LeadForm 
+              lead={editingItem}
+              onSubmit={async (data) => {
+                try {
+                  if (editingItem) {
+                    await api.updateLead(editingItem.id, data)
+                    toast.success('Lead updated successfully')
+                  } else {
+                    await api.createLead(data)
+                    toast.success('Lead created successfully')
+                  }
+                  setShowDialog(false)
+                  setEditingItem(null)
+                  fetchData()
+                } catch (error) {
+                  toast.error(error.message || 'Operation failed')
+                }
+              }}
+              onCancel={() => {
+                setShowDialog(false)
+                setEditingItem(null)
+              }}
+            />
+          )}
+          
+          {dialogType === 'project' && (
+            <ProjectForm 
+              project={editingItem}
+              onSubmit={async (data) => {
+                try {
+                  if (editingItem) {
+                    await api.updateProject(editingItem.id, data)
+                    toast.success('Project updated successfully')
+                  } else {
+                    await api.createProject(data)
+                    toast.success('Project created successfully')
+                  }
+                  setShowDialog(false)
+                  setEditingItem(null)
+                  fetchData()
+                } catch (error) {
+                  toast.error(error.message || 'Operation failed')
+                }
+              }}
+              onCancel={() => {
+                setShowDialog(false)
+                setEditingItem(null)
+              }}
+            />
+          )}
+          
+          {dialogType === 'task' && (
+            <TaskForm 
+              task={editingItem}
+              projects={projects}
+              onSubmit={async (data) => {
+                try {
+                  if (editingItem) {
+                    await api.updateTask(editingItem.id, data)
+                    toast.success('Task updated successfully')
+                  } else {
+                    await api.createTask(data)
+                    toast.success('Task created successfully')
+                  }
+                  setShowDialog(false)
+                  setEditingItem(null)
+                  fetchData()
+                } catch (error) {
+                  toast.error(error.message || 'Operation failed')
+                }
+              }}
+              onCancel={() => {
+                setShowDialog(false)
+                setEditingItem(null)
+              }}
+            />
+          )}
+          
+          {dialogType === 'expense' && (
+            <ExpenseForm 
+              expense={editingItem}
+              projects={projects}
+              onSubmit={async (data) => {
+                try {
+                  if (editingItem) {
+                    await api.updateExpense(editingItem.id, data)
+                    toast.success('Expense updated successfully')
+                  } else {
+                    await api.createExpense(data)
+                    toast.success('Expense created successfully')
+                  }
+                  setShowDialog(false)
+                  setEditingItem(null)
+                  fetchData()
+                } catch (error) {
+                  toast.error(error.message || 'Operation failed')
+                }
+              }}
+              onCancel={() => {
+                setShowDialog(false)
+                setEditingItem(null)
+              }}
+            />
+          )}
+          
+          {dialogType === 'user' && (
+            <UserForm 
+              user={editingItem}
+              onSubmit={async (data) => {
+                try {
+                  if (editingItem) {
+                    await api.updateUser(editingItem.id, data)
+                    toast.success('User updated successfully')
+                  } else {
+                    await api.createUser(data)
+                    toast.success('User created successfully')
+                  }
+                  setShowDialog(false)
+                  setEditingItem(null)
+                  fetchData()
+                } catch (error) {
+                  toast.error(error.message || 'Operation failed')
+                }
+              }}
+              onCancel={() => {
+                setShowDialog(false)
+                setEditingItem(null)
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
