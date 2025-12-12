@@ -1310,6 +1310,21 @@ function ClientDashboard({ user, client, onLogout }) {
     return <FlooringModule onBack={() => setActiveModule(null)} />
   }
 
+  // Render Upgrade Flow if active
+  if (showUpgradeFlow) {
+    return (
+      <UpgradeFlow
+        currentPlan={client?.plan?.id || 'basic'}
+        onClose={() => setShowUpgradeFlow(false)}
+        onSuccess={(newPlan) => {
+          toast.success(`Upgraded to ${newPlan}!`)
+          setShowUpgradeFlow(false)
+          fetchData()
+        }}
+      />
+    )
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 flex">
       {/* Sidebar */}
