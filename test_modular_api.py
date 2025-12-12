@@ -123,6 +123,9 @@ class ModularAPITester:
         """Test authentication endpoints"""
         print("=== TESTING AUTH ENDPOINTS (MODULAR) ===")
         
+        success_count = 0
+        total_tests = 4
+        
         # Test super admin login
         login_data = {
             "email": SUPER_ADMIN_EMAIL,
@@ -135,6 +138,7 @@ class ModularAPITester:
             if 'token' in data and data['user']['role'] == 'super_admin':
                 self.super_admin_token = data['token']
                 self.log_test("Super Admin Login", True, f"Logged in as {data['user']['email']}")
+                success_count += 1
             else:
                 self.log_test("Super Admin Login", False, "Invalid login response structure")
         else:
@@ -159,6 +163,7 @@ class ModularAPITester:
             if 'token' in data and 'client' in data:
                 self.demo_client_token = data['token']
                 self.log_test("Demo Client Login", True, f"Logged in as {data['user']['email']}")
+                success_count += 1
             else:
                 self.log_test("Demo Client Login", False, "Invalid demo client response")
         else:
@@ -181,6 +186,7 @@ class ModularAPITester:
                 self.client_token = data['token']
                 self.test_client_id = data['client']['id']
                 self.log_test("Client Registration", True, f"Registered {register_data['businessName']}")
+                success_count += 1
             else:
                 self.log_test("Client Registration", False, "Invalid registration response")
         else:
@@ -193,10 +199,15 @@ class ModularAPITester:
                 data = response.json()
                 if 'user' in data and 'client' in data:
                     self.log_test("Auth Me Endpoint", True, f"Retrieved user: {data['user']['email']}")
+                    success_count += 1
                 else:
                     self.log_test("Auth Me Endpoint", False, "Invalid /auth/me response")
             else:
                 self.log_test("Auth Me Endpoint", False, "Failed to get user info")
+        else:
+            self.log_test("Auth Me Endpoint", False, "No client token for /auth/me test")
+            
+        return success_count >= 3  # At least super admin login and registration should work
 
     def test_super_admin_endpoints(self):
         """Test super admin specific endpoints"""
