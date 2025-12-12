@@ -332,8 +332,12 @@ export function EnterpriseLeads({ leads, onUpdateLead, onEditLead, onRefresh, is
     try {
       await onUpdateLead(leadId, { status: newStatus })
       toast.success(`Lead moved to ${newStatus}`)
+      // Refresh data to show updated lead
+      await onRefresh()
     } catch (error) {
       toast.error('Failed to update lead')
+      // Refresh anyway to restore UI state
+      await onRefresh()
     }
   }
 
