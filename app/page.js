@@ -671,6 +671,7 @@ function ClientDashboard({ user, client, onLogout }) {
   const [editingItem, setEditingItem] = useState(null)
   const [activeModule, setActiveModule] = useState(null) // Track which module is open
   const [showUpgradeFlow, setShowUpgradeFlow] = useState(false)
+  const [showChat, setShowChat] = useState(false) // Team Chat state
 
   const fetchData = useCallback(async () => {
     setLoading(true)
