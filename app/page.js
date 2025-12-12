@@ -1846,43 +1846,106 @@ function ClientDashboard({ user, client, onLogout }) {
               >
                 <div>
                   <h2 className="text-2xl font-bold">Industry Modules</h2>
-                  <p className="text-muted-foreground">Request modules from your administrator</p>
+                  <p className="text-muted-foreground">Manage your active modules or request new ones</p>
                 </div>
 
-                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  {modules.map((module, i) => (
-                    <motion.div
-                      key={module.id}
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      transition={{ delay: i * 0.05 }}
-                    >
-                      <GlassCard className={`p-6 ${module.enabled ? 'border-2 border-green-500' : ''}`}>
-                        <div className="flex justify-between items-start mb-4">
-                          <div className="p-2 rounded-lg bg-primary/10">
-                            <Package className="h-6 w-6 text-primary" />
+                {/* Active Modules Section */}
+                {modules.filter(m => m.enabled).length > 0 && (
+                  <div className="mb-8">
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      Your Active Modules
+                    </h3>
+                    <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {modules.filter(m => m.enabled).map((module, i) => {
+                        const moduleIcons = {
+                          'wooden-flooring': Layers,
+                          'kitchens': ChefHat,
+                          'tiles': Grid3X3,
+                          'furniture': Sofa,
+                          'contractors': HardHat,
+                          'painting': Paintbrush,
+                          'plumbing': Wrench,
+                          'electrical': Zap
+                        }
+                        const ModuleIcon = moduleIcons[module.id] || Package
+                        
+                        return (
+                          <motion.div
+                            key={module.id}
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            transition={{ delay: i * 0.05 }}
+                          >
+                            <GlassCard className="p-6 border-2 border-green-500/30 bg-gradient-to-br from-green-50/50 to-emerald-50/50">
+                              <div className="flex justify-between items-start mb-4">
+                                <div className="p-3 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600">
+                                  <ModuleIcon className="h-6 w-6 text-white" />
+                                </div>
+                                <Badge className="bg-green-500">Active</Badge>
+                              </div>
+                              <h3 className="font-semibold text-lg">{module.name}</h3>
+                              <p className="text-sm text-muted-foreground mt-1">{module.description}</p>
+                              <div className="mt-4 pt-4 border-t flex justify-between items-center">
+                                <span className="font-bold text-green-600">₹{module.price}/mo</span>
+                                {module.id === 'wooden-flooring' ? (
+                                  <Button 
+                                    size="sm" 
+                                    className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                                    onClick={() => setActiveModule('flooring')}
+                                  >
+                                    <ExternalLink className="h-4 w-4 mr-1" /> Open Module
+                                  </Button>
+                                ) : (
+                                  <Button size="sm" variant="outline" disabled>
+                                    Coming Soon
+                                  </Button>
+                                )}
+                              </div>
+                            </GlassCard>
+                          </motion.div>
+                        )
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                {/* Available Modules Section */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4">Available Modules</h3>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {modules.filter(m => !m.enabled).map((module, i) => (
+                      <motion.div
+                        key={module.id}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: i * 0.05 }}
+                      >
+                        <GlassCard className="p-6">
+                          <div className="flex justify-between items-start mb-4">
+                            <div className="p-2 rounded-lg bg-primary/10">
+                              <Package className="h-6 w-6 text-primary" />
+                            </div>
+                            {module.requestPending ? (
+                              <Badge variant="secondary">Pending</Badge>
+                            ) : (
+                              <Badge variant="outline">Inactive</Badge>
+                            )}
                           </div>
-                          {module.enabled ? (
-                            <Badge className="bg-green-500">Active</Badge>
-                          ) : module.requestPending ? (
-                            <Badge variant="secondary">Pending</Badge>
-                          ) : (
-                            <Badge variant="outline">Inactive</Badge>
-                          )}
-                        </div>
-                        <h3 className="font-semibold">{module.name}</h3>
-                        <p className="text-sm text-muted-foreground mt-1">{module.description}</p>
-                        <div className="mt-4 pt-4 border-t flex justify-between items-center">
-                          <span className="font-bold">₹{module.price}/mo</span>
-                          {!module.enabled && !module.requestPending && (
-                            <Button size="sm" variant="outline" onClick={() => handleRequestModule(module.id)}>
-                              <Send className="h-4 w-4 mr-1" /> Request
-                            </Button>
-                          )}
-                        </div>
-                      </GlassCard>
-                    </motion.div>
-                  ))}
+                          <h3 className="font-semibold">{module.name}</h3>
+                          <p className="text-sm text-muted-foreground mt-1">{module.description}</p>
+                          <div className="mt-4 pt-4 border-t flex justify-between items-center">
+                            <span className="font-bold">₹{module.price}/mo</span>
+                            {!module.requestPending && (
+                              <Button size="sm" variant="outline" onClick={() => handleRequestModule(module.id)}>
+                                <Send className="h-4 w-4 mr-1" /> Request
+                              </Button>
+                            )}
+                          </div>
+                        </GlassCard>
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
               </motion.div>
             )}
