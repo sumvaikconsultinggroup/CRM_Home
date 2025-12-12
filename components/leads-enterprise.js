@@ -378,7 +378,7 @@ export function EnterpriseLeads({ leads, onUpdateLead, onRefresh, isEnterprise, 
           <AdvancedFilters
             filters={filters}
             onFilterChange={setFilters}
-            isEnterprise={isEnterprise}
+            hasAdvancedFeatures={hasAdvancedFeatures}
           />
         )}
       </AnimatePresence>
