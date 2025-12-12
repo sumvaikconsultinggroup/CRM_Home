@@ -21,7 +21,7 @@ import {
 } from 'lucide-react'
 
 // Draggable Lead Card
-function LeadCard({ lead, onUpdate, onSelect, isSelected, isEnterprise }) {
+function LeadCard({ lead, onUpdate, onSelect, isSelected, isEnterprise, hasAdvancedFeatures }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: lead.id })
   
   const style = {
@@ -44,7 +44,7 @@ function LeadCard({ lead, onUpdate, onSelect, isSelected, isEnterprise }) {
       layout
     >
       <div className="flex items-start gap-3">
-        {isEnterprise && (
+        {hasAdvancedFeatures && (
           <Checkbox
             checked={isSelected}
             onCheckedChange={() => onSelect(lead.id)}
