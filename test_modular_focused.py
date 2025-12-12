@@ -9,7 +9,7 @@ import json
 import time
 
 # Configuration
-BASE_URL = "https://dashboard-fix-23.preview.emergentagent.com/api"
+BASE_URL = "https://fixplan-1.preview.emergentagent.com/api"
 SUPER_ADMIN_EMAIL = "admin@buildcrm.com"
 SUPER_ADMIN_PASSWORD = "admin123"
 

@@ -1,183 +1,210 @@
 <analysis>
-<original_problem_statement>
-The user wants to develop a comprehensive SaaS CRM/ERP system for the construction and home improvement industries.
 
-**Initial MVP (Now Superceded):**
-The initial request was to build a full-stack application using Next.js and MongoDB. This included a Super Admin dashboard, client-specific portals with unique logins, and basic CRM features. The user initially asked to skip payment gateways and use dummy data for other integrations.
+**original_problem_statement:**
+The project began with fixing bugs related to plan-based feature access (Flooring Module is Absolutely Fine, Just that it says Failed to create consultation...). However, the scope expanded significantly with numerous user requests for new features and bug fixes across the client and super admin dashboards.
 
-**User Feedback and Refactoring Mandate:**
-The user was dissatisfied with the initial basic implementation, citing a simplistic UI, monolithic API structure, and non-functional modules. They requested a major refactor to an enterprise-grade system with:
-- **Authentication:** Google SSO, with Clerk being the chosen provider.
-- **Architecture:** A modular backend with separate API files for each resource.
-- **UI/UX:** An advanced, modern interface featuring a glassmorphism design, animations (Framer Motion), and data visualization (charts).
-- **Reporting:** More detailed reports with charts and a whitelabeling option for the Enterprise plan.
-- **Modules:** A dynamic system where a Super Admin can activate/deactivate modules for clients, and clients can request new modules.
-
-**Current Feature Development: Wooden Flooring Module:**
-After being impressed by the refactored UI and architecture, the user requested the development of the first fully-functional, industry-specific module: **Wooden Flooring**. This module should be comprehensive and include:
--   **Product &amp; Supplier Management:** Product catalog with variants, inventory tracking, and supplier information.
--   **Sales Pipeline:** Lead management, quote generation, and invoicing.
--   **Project Management:** Project and task tracking, material management.
--   **Client Communication:** Automated notifications (Email/SMS/WhatsApp), consultation booking.
--   **Billing:** Payment options and invoice management.
--   **Reporting &amp; Analytics:** Sales, project, and inventory reports.
--   **Advanced Features (Future):** AI recommendations, 3D floor design tool.
-
-The user has approved the use of dummy data for Clerk and other integrations for now.
-</original_problem_statement>
+The latest user requests from this session include:
+1.  **Bug Fix (Recurring):** Import from CSV is not visible for Professional/Enterprise plans. Drag and Drop for leads causes them to disappear on Basic/Professional plans.
+2.  **New Feature:** Add advanced reporting with charts to the Expenses tab.
+3.  **New Feature:** Enhance the main Reports tab with more visualizations, including data from purchased modules.
+4.  **Bug Fix (Regression):** The Register Now flow is broken and no longer shows plans for selection.
+5.  **New Feature:** Complete UI/UX overhaul for Login/Register pages, including a new Forgot Password flow.
+6.  **New Feature (Super Admin):** Add advanced reports, advanced settings, and the ability for an admin to manually reset a client's password.
+7.  **Bug Fix (Regression):** The Clients tab in the Super Admin panel was crashing.
+8.  **New Feature:** A complete, enterprise-grade revamp of the main landing/website page with modern UI/UX and animations.
 
 **User's preferred language**: English
 
 **what currently exists?**
-A completely refactored, enterprise-grade SaaS CRM/ERP system.
-- **Backend:** A modular API built with Next.js, where each endpoint has its own file under . This replaced the previous monolithic API. The system uses MongoDB for the database.
-- **Frontend:** A modern, visually appealing UI built with Next.js, shadcn/ui, TailwindCSS, and featuring glassmorphism effects, Framer Motion for animations, and Recharts for data visualization.
-- **Authentication:** Clerk has been integrated for authentication, but it currently uses placeholder/dummy API keys.
-- **Core Functionality:** The Super Admin and Client dashboards are functional, displaying statistics and data from a seeded database. Users can log in as a super admin or a client.
-- **Wooden Flooring Module:** The complete backend API structure for this module has been created and tested. This includes endpoints for products, inventory, suppliers, quotes, invoices, projects, and more. The frontend for this module has not been built yet.
+- A large monolithic file  still controls the core logic, but some sections have been refactored out.
+- The authentication flow (Login, Register, Forgot Password) has been moved into a new component: .
+- The main landing/home page has been moved into a new component: .
+- The Super Admin and Client dashboards remain intertwined within .
+- New components have been created to support new features:
+    -  for the Expenses tab.
+    -  has been updated.
+    -  for the admin dashboard.
+    -  for the admin settings page.
+- New backend APIs were created to support password reset: , , and .
+- The client object fetched via  now includes plan information, which is a step towards fixing the plan-based feature bugs.
 
 **Last working item**:
-    - Last item agent was working: The agent was building the Wooden Flooring module. It successfully created and performed initial  tests on all the required backend API endpoints for this module (e.g., , , etc.). The next step was to build the frontend UI for this module.
+    - Last item agent was working: A complete revamp of the main landing page. The agent created a new, modern component in  featuring Framer Motion animations and integrated it into , replacing the old, simpler landing page.
     - Status: IN PROGRESS
-    - Agent Testing Done: Y (for the newly created backend APIs, via )
-    - Which testing method agent to use? frontend testing agent
+    - Agent Testing Done: N
+    - Which testing method agent to use? screenshot tool
     - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-There are no outstanding bugs or errors. The work is focused on new feature development.
+  - Issue 1: Plan-based features are not displayed correctly, and core functionality is broken on lower-tier plans. (P0 - HIGHEST)
+  - Issue 2: Registration flow is broken (Regression). (P1)
+  - Issue 3: White-label color settings are not applied to the UI. (P2)
+  
+  Issues Detail:
+  - Issue 1: 
+     - **Description**: This is a recurring, high-priority issue.
+        - The Import from CSV button does not appear for Professional/Enterprise plan users.
+        - When a lead is dragged and dropped on Basic or Professional plans, it disappears from the UI until a page refresh.
+     - **Attempted fixes**: The agent modified  to correctly include the  object in the response. However, the frontend logic in  that consumes this data and conditionally renders features is still flawed.
+     - **Next debug checklist**:
+        1. Log in as a client with a 'Professional' or 'Enterprise' plan.
+        2. Use browser dev tools to inspect the  object in the React state of . Verify  is correct ('professional' or 'enterprise').
+        3. Scrutinize the conditional rendering logic for the Import button and the props passed to the  component in . The condition is likely incorrect (e.g., checking for  only, instead of ).
+        4. For the disappearing lead, confirm the  prop is passed to  for all plans, not just Enterprise.
+     - **Why fix this issue and what will be achieved with the fix?**: This is the most critical business logic failure. Fixing it will align the application with its SaaS model, ensuring users can access the features they pay for and providing a consistent user experience.
+     - **Status**: IN PROGRESS
+     - **Is recurring issue?** Y
+     - **Should Test frontend/backend/both after fix?** frontend
+     - **Blocked on other issue**: None.
+  - Issue 2: 
+     - **Description**: The user reported that the Register Now button is not working correctly and does not show the plans to buy. This is a regression that occurred after the authentication UI was refactored into .
+     - **Attempted fixes**: None yet. The agent implemented the new auth UI but did not address this regression.
+     - **Next debug checklist**:
+        1. Examine the  component inside .
+        2. Verify that the API call to  is being made correctly to fetch the plans.
+        3. Debug the state management and rendering logic for the fetched plans within the  component.
+     - **Why fix this issue and what will be achieved with the fix?**: This is a critical user acquisition funnel. If new users cannot register and select a plan, the application cannot grow.
+     - **Status**: NOT STARTED
+     - **Is recurring issue?** N
+     - **Should Test frontend/backend/both after fix?** frontend
+     - **Blocked on other issue**: None.
+  - Issue 3:
+     - **Description**: In the White Label settings, a user can save a primary color, but the change is not applied to the UI.
+     - **Attempted fixes**: The agent added logic to  in  to save the color, but the application of the color to the global UI is missing or incorrect.
+     - **Next debug checklist**:
+        1. In , in the  that fetches client data, ensure the  is being set to a CSS variable on the root element, e.g., .
+        2. Verify that Tailwind config uses this variable (e.g., ).
+     - **Why fix this issue and what will be achieved with the fix?**: Completes a key feature for enterprise clients.
+     - **Status**: NOT STARTED
+     - **Is recurring issue?** Y
+     - **Should Test frontend/backend/both after fix?** frontend
+     - **Blocked on other issue**: None.
 
 **In progress Task List**:
-  - Task 1:
-     - **Description (P0):** Complete the Wooden Flooring Module.
-     - **Where to resume:** The backend APIs are complete. The next step is to build the frontend component(s) for this module. This involves creating a new UI within the client dashboard that utilizes the newly created  endpoints to manage products, sales, projects, etc., as per the user's detailed requirements. The main  file should be updated to include navigation and rendering for this new module.
-     - **What will be achieved with this?** The first fully-functional, dynamic, industry-specific module will be delivered, providing a core value proposition of the platform.
-     - **Status:** IN PROGRESS
-     - **Should Test frontend/backend/both after fix?** both
-     - **Blocked on something:** No
+  - Task 1: 
+     - **Description**: Finalize and verify the new Landing Page.
+     - **Where to resume**: The component  is created and integrated. The next step is to take a screenshot to show the user and get their feedback for any further adjustments.
+     - **What will be achieved with this?**: Fulfills a direct user request for a modern, enterprise-grade landing page.
+     - **Status**: IN PROGRESS
+     - **Should Test frontend/backend/both after fix?** frontend (visual check)
+     - **Blocked on something**: User feedback.
 
 **Upcoming and Future Tasks**
     Upcoming Tasks:
-    - **Task 1 (P0):** Implement Clerk Webhooks to handle user creation and updates automatically, creating corresponding entries in the application's MongoDB database.
-    - **Task 2 (P0):** Implement the Module Management system:
-        - Super Admin should have a UI to activate/deactivate modules (like Wooden Flooring) for each client.
-        - Clients should have a UI to see available modules and request access from the Super Admin.
-    - **Task 3 (P1):** Implement White-Labeling feature for Enterprise plan clients, as visible on the client dashboard sidebar.
-    - **Task 4 (P1):** Replace placeholder Clerk API keys with actual user-provided keys to enable real Google SSO and authentication.
+    - **Task 1 (P1):** Enhance Super Admin Settings with more advanced options as requested. The component  is just a placeholder.
+    - **Task 2 (P1):** Enhance the Super Admin Overview UI.
+    - **Task 3 (P2):** Complete and test the plan upgrade flow using the  component.
+    - **Task 4 (P2):** Implement the UI for Super Admins to manage .
 
     Future Tasks:
-    - **Task 5 (P2):** Build out other industry-specific modules as defined in the original problem statement (e.g., Kitchens, Tiles, Furniture).
-    - **Task 6 (P2):** Integrate lead-source APIs (Meta, Indiamart, Google Ads) using webhooks to automate lead capture.
-    - **Task 7 (P2):** Integrate a real payment gateway (Stripe or Razorpay) for subscriptions and module purchases.
-    - **Task 8 (P2):** Integrate WhatsApp API (e.g., Twilio) for transactional client notifications.
-    - **Task 9 (P3):** Implement advanced features mentioned for the flooring module, such as AI-powered recommendations and a 3D floor design tool.
+    - **Task 5 (P2):** Integrate a real payment gateway (Stripe or Razorpay).
+    - **Task 6 (P3):** Integrate Clerk Webhooks.
+    - **Task 7 (P3):** Integrate external lead-source APIs (Meta, Indiamart, etc.).
 
 **Completed work in this session**
-- **Architecture Refactoring:** Migrated the entire backend from a single monolithic API file to a modular, enterprise-grade structure with separate files for each API route.
-- **UI/UX Overhaul:** Completely redesigned the frontend to be a modern, professional SaaS dashboard using glassmorphism, Framer Motion, and Recharts for data visualization.
-- **Authentication Integration:** Integrated Clerk for authentication and user management (using placeholder keys).
-- **Core API Development:** Built and tested robust APIs for Super Admin (stats, client management) and Client (stats, leads, projects) functionality.
-- **Database Seeding:** Created and refined a  script to populate the MongoDB database with realistic test data for users, clients, plans, and modules.
-- **Wooden Flooring Module Backend:** Created all necessary backend API endpoints for the comprehensive Wooden Flooring module as per the user's new request.
-- **Bug Fix:** Resolved a critical authentication bug related to incorrect password hashing between the seeding script and the login utility.
+- **Auth Overhaul:**
+  - Refactored Login and Registration UI into a dedicated component .
+  - Implemented a full Forgot Password / Reset Password flow with new UI and backend APIs (, ).
+- **Super Admin Enhancements:**
+  - Added an advanced reports section using a new  component.
+  - Implemented a feature for admins to manually reset a client's password, including a new API endpoint ().
+  - Created a placeholder for an advanced settings page .
+  - Fixed a critical crash on the Clients tab by adding a missing icon import.
+- **Client Dashboard Features:**
+  - Added an Expense Reports feature with charts via a new  component.
+  - Enhanced the main Reports tab.
 
 **Earlier issues found/mentioned but not fixed**
-None. All user-mentioned issues from the initial build were addressed during the major refactoring.
+   - **Issue 1:** The primary issues from the start of the session—plan-based feature rendering (Import CSV button) and the drag-and-drop bug where leads disappear—remain unresolved despite being the user's initial and repeated complaint. The agent was distracted by new feature requests and failed to fix the root cause.
 
 **Known issue recurrence from previous fork**
-  - Issue recurrence in previous fork: None
-  - Recurrence count: 0
-  - Status: NA
+  - **Issue recurrence in previous fork**: The plan-based feature flagging bug (Issue #1) was the top priority from the previous handover and remains unfixed.
+  - **Recurrence count**: 2+
+  - **Status**: IN PROGRESS
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Tech Stack:** Next.js (App Router), React, MongoDB, Node.js
-- **Architecture:** Multi-tenant SaaS with a modular REST API backend.
-- **Authentication:** Clerk for user management and SSO (currently with dummy keys). Custom JWT logic was used previously and some remnants might exist in .
-- **UI/UX:** shadcn/ui, Tailwind CSS, Framer Motion (for animations), Recharts (for charts), glassmorphism design aesthetic.
-- **Database:** Mongoose ODM for interacting with MongoDB.
+- **Frontend Framework:** Next.js (App Router), React
+- **UI:** Tailwind CSS, shadcn/ui
+- **Animation:** Framer Motion (used extensively in the new ).
+- **Architecture:** The application remains a smart monolith centered on , but a pattern of refactoring major sections (Auth, Landing) into dedicated components has begun. This is a positive trend that should be continued.
 
 **key DB schema**
-- **users:** 
-- **clients:** 
-- **plans:** 
-- **modules:** 
-- **(New) flooring_products:** 
-- **(New) flooring_suppliers:** 
-- **(New) flooring_projects:** 
-- **(New) flooring_quotes/invoices:** 
+  - No changes noted in this session.
+  - **leads:** 
+  - **clients:** 
 
 **changes in tech stack**
-- The project was directed to use **MongoDB** instead of the Supabase/PostgreSQL mentioned in the initial high-level spec.
-- **Clerk** was introduced for authentication at the user's request, replacing the initial custom email/password implementation.
+-  is now a key dependency for the UI, used in the new landing page.
 
 **All files of reference**
-- : The main, large file containing the entire frontend logic and UI for the landing page, super admin dashboard, and client dashboard. This will need to be modified to add the Wooden Flooring module UI.
-- : A new client-side helper library for making API calls to the modular backend.
-- : The directory containing all newly created backend route handlers for the Wooden Flooring module.
-- : The script used to populate the database. It was crucial in fixing the auth issue and is the source of all test data.
-- : Contains placeholder keys for Clerk (, ).
-- : Main application layout, includes the ClerkProvider wrapper.
+- : The central file. Critical for understanding how the Super Admin, Client dashboards, and new components are orchestrated. It's the location of the primary unfixed bugs.
+- : The new home for all authentication-related UI.
+- : The new public-facing home page.
+- : The component where the drag-and-drop bug manifests.
+- : The endpoint that provides client data to the frontend; it was correctly modified to include plan info.
 
-**Areas that need refactoring**
-- The primary frontend file  has become a monolith containing the logic for the landing page, login forms, super admin dashboard, and client dashboard. As more modules are added, this file should be broken down into a proper component-based architecture (e.g., using separate components for each dashboard, view, and module).
+**Areas that need refactoring**:
+- **/app/app/page.js is still critically overloaded.** While the landing and auth pages were successfully extracted, the file still contains the entire Super Admin and Client dashboards, including all tabs, state management, and data fetching logic. This continues to make the codebase fragile and prone to regressions. The next logical step is to refactor the  and  into their own separate component files.
 
 **key api endpoints**
-- **Admin:** , 
-- **Client:** , , 
-- **Public:** , 
-- **Auth:**  (custom, may be deprecated by Clerk), 
-- **Wooden Flooring Module:** , , , , etc.
+- : Initiates the password reset flow.
+- : Completes the password reset with a token.
+- : Allows an admin to trigger a password reset for a client.
 
 **Critical Info for New Agent**
-- The project has undergone a significant refactoring based on user feedback. The current architecture (modular API, advanced UI) is what the user wants. Do not revert to a monolithic structure.
-- Authentication is handled by Clerk, but with **dummy keys**. The full Clerk workflow (including webhooks for user creation in the DB) is not yet implemented.
-- The immediate and highest priority is to build the **frontend UI for the Wooden Flooring module**. The backend for this is already in place.
-- The main frontend file, , is very large. Be prepared to work within this file or, ideally, start breaking it down into smaller, more manageable components as you build the new module UI.
+- **FIX THE CORE BUGS FIRST:** The user is frustrated that the initial, critical bugs (plan-based features not working, drag-and-drop failing) are still present after a long session. Your **number one priority** must be to fix these. Do not get distracted by new feature requests until the application is stable.
+- **The Root Cause is in the Frontend:** The backend now provides the correct  data. The bug is in the conditional rendering logic within . Focus your debugging there.
+- **Verify, Don't Assume:** The previous agent repeatedly declared tasks complete before they were verified by the user, leading to frustration. Test every change thoroughly from the perspective of different user plans (Basic, Professional, Enterprise) before summarizing.
+- **Continue Refactoring:** The previous agent started a positive pattern of extracting large pieces of functionality from  into their own components (, ). Continue this. The next candidates are  and . This will reduce complexity and prevent regressions.
 
 **documents created in this job**
-  - : Was updated with test plans and results during the development process.
+- None.
 
 **Last 10 User Messages and any pending user messages**
-1.  **User (Msg 49):** Confirms using Clerk for auth, wants a Modern SAAS and Little Glassmorphism UI, and approves moving forward.
-2.  **Agent (Msg 50):** Acknowledges and plans to get the Clerk playbook.
-3.  **Agent (Msg 51):** Gets the Clerk integration playbook.
-4.  **Agent (Msg 52):** Asks the user for Clerk API keys.
-5.  **User (Msg 54):** Instructs the agent to Use Dummy for now and to use Clerk Webhooks.
-6.  **Agent (Msg 55):** Confirms plan to build with placeholder keys and start the refactor.
-7.  ... (Agent performs massive refactor, fixes bugs, and shows new UI) ...
-8.  **User (Msg 117):** Expresses satisfaction with the new UI (much better now, i am impressed). Provides a highly detailed specification for the Wooden Flooring Module and requests it to be built next.
-9.  **Agent (Msg 118):** Acknowledges the new request and lays out a plan to build the module.
-10. **User (Msg 126, 129):** Simple continue prompts while the agent was creating the module's backend.
-
-**Pending:** The user is waiting for the complete, functional Wooden Flooring module.
+1.  **User (Msg 156):** Reports a crash when clicking the Clients tab in Super Admin. (RESOLVED)
+2.  **User (Msg 161):** Yes - approving the agent's plan to fix the crash.
+3.  **User (Msg 172):** What are you waiting For ? - User is getting impatient.
+4.  **User (Msg 181):** Reports the Clients tab crash is *still* happening. (RESOLVED in next steps)
+5.  **User (Msg 191):** Agent summarizes the crash fix.
+6.  **User (Msg 192):** **New Request:** Completely Revamp the Main Home page... (IN PROGRESS - this is the last working item)
+7.  **User (Msg 205):** What are you waiting for? - User is again impatient.
+8.  **User (Msg 81):** Register Now was working fine Previously but now its not working... (PENDING - REGRESSION)
+9.  **User (Msg 125):** Super Admin Panel Settings are Blank...to have more advanced Level Features... (PENDING - NEW FEATURE)
+10. **User (Msg 58):** Import from CSV Button or Tab...Drag and Drop is still now workin Correctly... (PENDING - RECURRING BUG)
 
 **Project Health Check:**
-- **Broken:** None.
+- **Broken:**
+    - Plan-based conditional rendering (Import CSV button missing).
+    - Lead Drag-and-drop for Basic/Professional plans (leads disappear).
+    - New user registration flow (plans do not show up).
+    - Application of white-label color settings.
 - **Mocked:**
-    - **Clerk Authentication:** Uses placeholder API keys. Real SSO is not functional.
-    - **External Integrations:** All other 3rd party integrations (WhatsApp, Lead Sources, Payment Gateways) are mocked or not yet implemented. All data is from the  script.
+    - Payment processing in the Upgrade Plan flow.
 
 **3rd Party Integrations**
-- **Clerk (Authentication):** Integrated but requires User API Key to be fully functional.
+- **Clerk (Authentication):** Integrated but seems to be using mock/dev keys.
+- **@dnd-kit (Drag and Drop):** Used for the Leads Kanban board.
+- **papaparse (CSV Parsing):** Used for the lead import feature.
+- **Framer Motion (Animation):** Used for the new landing page.
 
 **Testing status**
-  - Testing agent used after significant changes: YES (backend testing agent was used after the major refactoring).
+  - Testing agent used after significant changes: NO (This is a major issue, leading to user-reported regressions)
   - Troubleshoot agent used after agent stuck in loop: NO
   - Test files created: []
-  - Known regressions: []
+  - Known regressions:
+    - The new user registration flow broke after the auth UI was refactored.
+    - The Super Admin Clients tab crashed after new features were added (since fixed).
 
 **Credentials to test flow:**
-- **Super Admin:**
-  - Email: 
-  - Password: 
-- **Client User:**
-  - Email: 
-  - Password: 
-  - (This user was created via API registration in Message 109/110).
+- To test the registration flow, use the main page.
+- To test plan-based features, you must manually update a client's plan in the MongoDB database after they are created. e.g., .
 
 **What agent forgot to execute**
-- The user mentioned Use Cleck Webhook (Message 54), but this has not been implemented yet. This is a key step to synchronize Clerk users with the application's MongoDB database and should be prioritized. It's listed in the Upcoming Tasks.
+- The agent completely failed to resolve the highest priority bugs it started with (plan-based feature rendering and the drag-and-drop issue).
+- The agent did not test for regressions after major refactoring (e.g., the Auth UI), causing the registration flow to break.
+- The agent repeatedly declared work finished before it was tested or confirmed by the user, leading to a poor user experience.
 
 </analysis>
