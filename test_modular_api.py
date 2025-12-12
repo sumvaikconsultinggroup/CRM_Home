@@ -66,12 +66,16 @@ class ModularAPITester:
         """Test public endpoints that don't require authentication"""
         print("=== TESTING PUBLIC ENDPOINTS (NEW MODULAR STRUCTURE) ===")
         
+        success_count = 0
+        total_tests = 4
+        
         # Test health check
         response = self.make_request('GET', '/health')
         if response and response.status_code == 200:
             data = response.json()
             if 'status' in data and 'features' in data:
                 self.log_test("Health Check", True, f"API Status: {data.get('status')}, Features: {len(data.get('features', []))}")
+                success_count += 1
             else:
                 self.log_test("Health Check", False, "Missing required fields in health response")
         else:
@@ -83,6 +87,7 @@ class ModularAPITester:
             plans = response.json()
             if isinstance(plans, list) and len(plans) > 0:
                 self.log_test("Get Subscription Plans", True, f"Found {len(plans)} plans")
+                success_count += 1
             else:
                 self.log_test("Get Subscription Plans", False, "No plans returned")
         else:
@@ -94,6 +99,7 @@ class ModularAPITester:
             modules = response.json()
             if isinstance(modules, list):
                 self.log_test("Get Public Modules", True, f"Found {len(modules)} public modules")
+                success_count += 1
             else:
                 self.log_test("Get Public Modules", False, "Invalid modules response")
         else:
@@ -105,10 +111,13 @@ class ModularAPITester:
             modules = response.json()
             if isinstance(modules, list):
                 self.log_test("Get Modules Public (Alternative)", True, f"Found {len(modules)} modules")
+                success_count += 1
             else:
                 self.log_test("Get Modules Public (Alternative)", False, "Invalid response")
         else:
             self.log_test("Get Modules Public (Alternative)", False, "Failed to fetch modules")
+            
+        return success_count == total_tests
 
     def test_auth_endpoints(self):
         """Test authentication endpoints"""
