@@ -1,15 +1,17 @@
 import './globals.css'
+import { Toaster } from 'sonner'
 
 export const metadata = {
-  title: 'Next.js MongoDB Template',
-  description: 'A simple template with App Router, MongoDB, and shadcn/ui',
+  title: 'BuildCRM - Construction & Home Improvement CRM',
+  description: 'Comprehensive CRM/ERP solution for construction and home improvement businesses',
 }
 
 export default function RootLayout({ children }) {
   return (
     <html lang="en">
-      <body>
+      <body className="min-h-screen bg-background antialiased">
         {children}
+        <Toaster position="top-right" richColors />
       </body>
     </html>
   )
