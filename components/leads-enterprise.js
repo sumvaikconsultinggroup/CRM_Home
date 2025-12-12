@@ -438,6 +438,7 @@ export function EnterpriseLeads({ leads, onUpdateLead, onRefresh, isEnterprise, 
                           }}
                           isSelected={selectedLeads.includes(lead.id)}
                           isEnterprise={isEnterprise}
+                          hasAdvancedFeatures={hasAdvancedFeatures}
                         />
                       ))}
                     </div>
