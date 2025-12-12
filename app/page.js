@@ -47,6 +47,7 @@ import { CalendarNotes } from '@/components/calendar-notes'
 import { Integrations } from '@/components/integrations'
 import { EnhancedSuperAdminOverview } from '@/components/enhanced-super-admin-overview'
 import { EnterpriseClientManagement } from '@/components/enterprise-client-management'
+import { MeeAgent, MeePreviewCard } from '@/components/mee-agent'
 
 // Animation variants
 const fadeIn = {
