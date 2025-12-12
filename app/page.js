@@ -707,12 +707,12 @@ function ClientDashboard({ user, client, onLogout }) {
 
     // Apply White Label Colors
     if (client?.whiteLabelSettings?.primaryColor) {
-      document.documentElement.style.setProperty('--primary', client.whiteLabelSettings.primaryColor)
-      // We might need to handle HSL values if using shadcn/ui convention, 
-      // but assuming hex for now as per previous agent's work.
-      // If shadcn uses HSL variables (e.g. --primary: 222.2 47.4% 11.2%), simply setting a hex won't work 
-      // unless we convert it or if the tailwind config is set to use the hex variable directly.
-      // Given the previous context, I'll assume standard CSS variable usage or that I need to be careful.
+      const hslColor = hexToHSL(client.whiteLabelSettings.primaryColor)
+      document.documentElement.style.setProperty('--primary', hslColor)
+      // Also calculate and set a contrasting foreground color
+      const lightness = parseInt(hslColor.split(' ')[2])
+      const foregroundLightness = lightness > 50 ? '0%' : '100%'
+      document.documentElement.style.setProperty('--primary-foreground', `0 0% ${foregroundLightness}`)
     }
   }, [fetchData, client])
 
