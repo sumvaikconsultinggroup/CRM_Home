@@ -38,9 +38,10 @@ import { ExpenseCharts } from '@/components/expense-charts'
 import { UpgradeFlow } from '@/components/upgrade-flow'
 import { SuperAdminReports } from '@/components/super-admin-reports'
 import { SuperAdminSettings } from '@/components/super-admin-settings'
-import EnhancedLanding from '@/components/enhanced-landing'
+import PremiumLanding from '@/components/premium-landing'
 import { LoginPage, RegisterPage, ForgotPasswordPage } from '@/components/auth-ui'
 import { TeamChat } from '@/components/team-chat'
+import { EnhancedDashboard } from '@/components/enhanced-dashboard'
 
 // Animation variants
 const fadeIn = {
