@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { motion } from 'framer-motion'
+import { useState, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -10,19 +10,95 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Textarea } from '@/components/ui/textarea'
-import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
-import { Shield, Bell, FileText, Database, Save, RotateCcw, AlertTriangle, Mail, MessageSquare, DollarSign, Edit, Trash2, Plus, IndianRupee } from 'lucide-react'
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { 
+  Shield, Bell, FileText, Database, Save, AlertTriangle, 
+  DollarSign, Edit, Trash2, Plus, IndianRupee, CreditCard,
+  CheckCircle2, XCircle, Loader2, Eye, EyeOff, RefreshCw,
+  Wallet, Globe, Settings2, Activity
+} from 'lucide-react'
 import { toast } from 'sonner'
+
+// Payment Gateway Logos/Icons
+const GatewayIcon = ({ gateway }) => {
+  const icons = {
+    razorpay: (
+      <div className="h-10 w-10 rounded-lg bg-blue-600 flex items-center justify-center text-white font-bold text-lg">
+        R
+      </div>
+    ),
+    stripe: (
+      <div className="h-10 w-10 rounded-lg bg-purple-600 flex items-center justify-center text-white font-bold text-lg">
+        S
+      </div>
+    ),
+    paypal: (
+      <div className="h-10 w-10 rounded-lg bg-blue-500 flex items-center justify-center text-white font-bold text-lg">
+        P
+      </div>
+    )
+  }
+  return icons[gateway] || <CreditCard className="h-10 w-10" />
+}
 
 export function SuperAdminSettings({ user }) {
   const [loading, setLoading] = useState(false)
   const [plans, setPlans] = useState([])
   const [editingPlan, setEditingPlan] = useState(null)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [settings, setSettings] = useState(null)
+  const [settingsLoading, setSettingsLoading] = useState(true)
+  const [savingSection, setSavingSection] = useState(null)
+  const [showSecrets, setShowSecrets] = useState({})
+  const [testingGateway, setTestingGateway] = useState(null)
+  const [logs, setLogs] = useState([])
+  const [logsLoading, setLogsLoading] = useState(false)
+
+  // Fetch settings
+  const fetchSettings = useCallback(async () => {
+    try {
+      setSettingsLoading(true)
+      const token = localStorage.getItem('token')
+      const res = await fetch('/api/admin/settings', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (data.success) {
+        setSettings(data.data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch settings:', error)
+      toast.error('Failed to load settings')
+    } finally {
+      setSettingsLoading(false)
+    }
+  }, [])
+
+  // Fetch logs
+  const fetchLogs = useCallback(async () => {
+    try {
+      setLogsLoading(true)
+      const token = localStorage.getItem('token')
+      const res = await fetch('/api/admin/logs?limit=20', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      const data = await res.json()
+      if (data.success) {
+        setLogs(data.data?.logs || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch logs:', error)
+    } finally {
+      setLogsLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
     fetchPlans()
-  }, [])
+    fetchSettings()
+    fetchLogs()
+  }, [fetchSettings, fetchLogs])
 
   const fetchPlans = async () => {
     try {
@@ -94,19 +170,97 @@ export function SuperAdminSettings({ user }) {
     }
   }
 
+  // Save settings section
+  const saveSettings = async (section, data) => {
+    try {
+      setSavingSection(section)
+      const token = localStorage.getItem('token')
+      const res = await fetch('/api/admin/settings', {
+        method: 'PUT',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ section, data })
+      })
+
+      const result = await res.json()
+      if (result.success) {
+        toast.success('Settings saved successfully')
+        fetchSettings()
+        fetchLogs()
+      } else {
+        toast.error(result.error || 'Failed to save settings')
+      }
+    } catch (error) {
+      toast.error('Failed to save settings')
+    } finally {
+      setSavingSection(null)
+    }
+  }
+
+  // Test payment gateway
+  const testGateway = async (gateway, credentials) => {
+    try {
+      setTestingGateway(gateway)
+      const token = localStorage.getItem('token')
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ action: 'test-gateway', gateway, credentials })
+      })
+
+      const result = await res.json()
+      if (result.success && result.data?.success) {
+        toast.success(result.data.message || 'Connection successful!')
+      } else {
+        toast.error(result.data?.message || 'Connection failed')
+      }
+    } catch (error) {
+      toast.error('Failed to test connection')
+    } finally {
+      setTestingGateway(null)
+    }
+  }
+
+  // Toggle secret visibility
+  const toggleSecret = (key) => {
+    setShowSecrets(prev => ({ ...prev, [key]: !prev[key] }))
+  }
+
+  // Update gateway settings locally
+  const updateGatewaySettings = (gateway, field, value) => {
+    setSettings(prev => ({
+      ...prev,
+      paymentGateways: {
+        ...prev.paymentGateways,
+        [gateway]: {
+          ...prev.paymentGateways?.[gateway],
+          [field]: value
+        }
+      }
+    }))
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-2xl font-bold">Platform Settings</h2>
-          <p className="text-muted-foreground">Manage global configuration, pricing, and security</p>
+          <p className="text-muted-foreground">Manage global configuration, payment gateways, pricing, and security</p>
         </div>
       </div>
 
-      <Tabs defaultValue="pricing" className="space-y-4">
-        <TabsList>
+      <Tabs defaultValue="payment-gateways" className="space-y-4">
+        <TabsList className="flex flex-wrap gap-1">
+          <TabsTrigger value="payment-gateways" className="flex items-center gap-2">
+            <CreditCard className="h-4 w-4" /> Payment Gateways
+          </TabsTrigger>
           <TabsTrigger value="pricing" className="flex items-center gap-2">
-            <DollarSign className="h-4 w-4" /> Pricing Management
+            <DollarSign className="h-4 w-4" /> Pricing
           </TabsTrigger>
           <TabsTrigger value="security" className="flex items-center gap-2">
             <Shield className="h-4 w-4" /> Security
@@ -121,6 +275,321 @@ export function SuperAdminSettings({ user }) {
             <Database className="h-4 w-4" /> Maintenance
           </TabsTrigger>
         </TabsList>
+
+        {/* Payment Gateways Tab */}
+        <TabsContent value="payment-gateways">
+          <div className="space-y-6">
+            <div className="flex justify-between items-center">
+              <div>
+                <h3 className="text-lg font-semibold">Payment Gateway Configuration</h3>
+                <p className="text-sm text-muted-foreground">Connect your preferred payment processors to accept payments</p>
+              </div>
+              <Button 
+                variant="outline" 
+                size="sm" 
+                onClick={fetchSettings}
+                disabled={settingsLoading}
+              >
+                <RefreshCw className={`h-4 w-4 mr-2 ${settingsLoading ? 'animate-spin' : ''}`} />
+                Refresh
+              </Button>
+            </div>
+
+            {settingsLoading ? (
+              <div className="flex items-center justify-center py-12">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : (
+              <div className="grid gap-6">
+                {/* Razorpay */}
+                <Card className="border-2 hover:border-blue-200 transition-colors">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <GatewayIcon gateway="razorpay" />
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            Razorpay
+                            {settings?.paymentGateways?.razorpay?.enabled && (
+                              <Badge variant="default" className="bg-green-500">Active</Badge>
+                            )}
+                          </CardTitle>
+                          <CardDescription>Accept payments via UPI, Cards, Netbanking in India</CardDescription>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={settings?.paymentGateways?.razorpay?.enabled || false}
+                        onCheckedChange={(checked) => updateGatewaySettings('razorpay', 'enabled', checked)}
+                      />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Key ID</Label>
+                        <Input
+                          placeholder="rzp_live_xxxxx or rzp_test_xxxxx"
+                          value={settings?.paymentGateways?.razorpay?.keyId || ''}
+                          onChange={(e) => updateGatewaySettings('razorpay', 'keyId', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Key Secret</Label>
+                        <div className="relative">
+                          <Input
+                            type={showSecrets.razorpaySecret ? 'text' : 'password'}
+                            placeholder="Enter Key Secret"
+                            value={settings?.paymentGateways?.razorpay?.keySecret || ''}
+                            onChange={(e) => updateGatewaySettings('razorpay', 'keySecret', e.target.value)}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-2 top-1/2 -translate-y-1/2"
+                            onClick={() => toggleSecret('razorpaySecret')}
+                          >
+                            {showSecrets.razorpaySecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Webhook Secret (Optional)</Label>
+                      <Input
+                        type={showSecrets.razorpayWebhook ? 'text' : 'password'}
+                        placeholder="Webhook signing secret"
+                        value={settings?.paymentGateways?.razorpay?.webhookSecret || ''}
+                        onChange={(e) => updateGatewaySettings('razorpay', 'webhookSecret', e.target.value)}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => testGateway('razorpay', settings?.paymentGateways?.razorpay)}
+                        disabled={testingGateway === 'razorpay'}
+                      >
+                        {testingGateway === 'razorpay' ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Activity className="h-4 w-4 mr-2" />
+                        )}
+                        Test Connection
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => saveSettings('paymentGateways', settings?.paymentGateways)}
+                        disabled={savingSection === 'paymentGateways'}
+                      >
+                        {savingSection === 'paymentGateways' ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Save className="h-4 w-4 mr-2" />
+                        )}
+                        Save Razorpay
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Stripe */}
+                <Card className="border-2 hover:border-purple-200 transition-colors">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <GatewayIcon gateway="stripe" />
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            Stripe
+                            {settings?.paymentGateways?.stripe?.enabled && (
+                              <Badge variant="default" className="bg-green-500">Active</Badge>
+                            )}
+                          </CardTitle>
+                          <CardDescription>Accept international payments with cards and wallets</CardDescription>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={settings?.paymentGateways?.stripe?.enabled || false}
+                        onCheckedChange={(checked) => updateGatewaySettings('stripe', 'enabled', checked)}
+                      />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Publishable Key</Label>
+                        <Input
+                          placeholder="pk_live_xxxxx or pk_test_xxxxx"
+                          value={settings?.paymentGateways?.stripe?.publishableKey || ''}
+                          onChange={(e) => updateGatewaySettings('stripe', 'publishableKey', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Secret Key</Label>
+                        <div className="relative">
+                          <Input
+                            type={showSecrets.stripeSecret ? 'text' : 'password'}
+                            placeholder="sk_live_xxxxx or sk_test_xxxxx"
+                            value={settings?.paymentGateways?.stripe?.secretKey || ''}
+                            onChange={(e) => updateGatewaySettings('stripe', 'secretKey', e.target.value)}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-2 top-1/2 -translate-y-1/2"
+                            onClick={() => toggleSecret('stripeSecret')}
+                          >
+                            {showSecrets.stripeSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Webhook Secret (Optional)</Label>
+                      <Input
+                        type={showSecrets.stripeWebhook ? 'text' : 'password'}
+                        placeholder="whsec_xxxxx"
+                        value={settings?.paymentGateways?.stripe?.webhookSecret || ''}
+                        onChange={(e) => updateGatewaySettings('stripe', 'webhookSecret', e.target.value)}
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => testGateway('stripe', settings?.paymentGateways?.stripe)}
+                        disabled={testingGateway === 'stripe'}
+                      >
+                        {testingGateway === 'stripe' ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Activity className="h-4 w-4 mr-2" />
+                        )}
+                        Test Connection
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => saveSettings('paymentGateways', settings?.paymentGateways)}
+                        disabled={savingSection === 'paymentGateways'}
+                      >
+                        {savingSection === 'paymentGateways' ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Save className="h-4 w-4 mr-2" />
+                        )}
+                        Save Stripe
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* PayPal */}
+                <Card className="border-2 hover:border-blue-300 transition-colors">
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <GatewayIcon gateway="paypal" />
+                        <div>
+                          <CardTitle className="flex items-center gap-2">
+                            PayPal
+                            {settings?.paymentGateways?.paypal?.enabled && (
+                              <Badge variant="default" className="bg-green-500">Active</Badge>
+                            )}
+                          </CardTitle>
+                          <CardDescription>Accept PayPal and card payments globally</CardDescription>
+                        </div>
+                      </div>
+                      <Switch
+                        checked={settings?.paymentGateways?.paypal?.enabled || false}
+                        onCheckedChange={(checked) => updateGatewaySettings('paypal', 'enabled', checked)}
+                      />
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="grid md:grid-cols-2 gap-4">
+                      <div className="space-y-2">
+                        <Label>Client ID</Label>
+                        <Input
+                          placeholder="PayPal Client ID"
+                          value={settings?.paymentGateways?.paypal?.clientId || ''}
+                          onChange={(e) => updateGatewaySettings('paypal', 'clientId', e.target.value)}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label>Client Secret</Label>
+                        <div className="relative">
+                          <Input
+                            type={showSecrets.paypalSecret ? 'text' : 'password'}
+                            placeholder="PayPal Client Secret"
+                            value={settings?.paymentGateways?.paypal?.clientSecret || ''}
+                            onChange={(e) => updateGatewaySettings('paypal', 'clientSecret', e.target.value)}
+                          />
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            className="absolute right-2 top-1/2 -translate-y-1/2"
+                            onClick={() => toggleSecret('paypalSecret')}
+                          >
+                            {showSecrets.paypalSecret ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Mode</Label>
+                      <select
+                        className="flex h-10 w-full max-w-[200px] rounded-md border border-input bg-background px-3 py-2 text-sm"
+                        value={settings?.paymentGateways?.paypal?.mode || 'sandbox'}
+                        onChange={(e) => updateGatewaySettings('paypal', 'mode', e.target.value)}
+                      >
+                        <option value="sandbox">Sandbox (Test)</option>
+                        <option value="live">Live (Production)</option>
+                      </select>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => testGateway('paypal', settings?.paymentGateways?.paypal)}
+                        disabled={testingGateway === 'paypal'}
+                      >
+                        {testingGateway === 'paypal' ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Activity className="h-4 w-4 mr-2" />
+                        )}
+                        Test Connection
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => saveSettings('paymentGateways', settings?.paymentGateways)}
+                        disabled={savingSection === 'paymentGateways'}
+                      >
+                        {savingSection === 'paymentGateways' ? (
+                          <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <Save className="h-4 w-4 mr-2" />
+                        )}
+                        Save PayPal
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Security Notice:</strong> API keys and secrets are encrypted and stored securely. 
+                    Never share your secret keys. Use test/sandbox keys during development.
+                  </AlertDescription>
+                </Alert>
+              </div>
+            )}
+          </div>
+        </TabsContent>
 
         {/* Pricing Management */}
         <TabsContent value="pricing">
@@ -222,23 +691,67 @@ export function SuperAdminSettings({ user }) {
                     <Label>Require 2FA for Admin Accounts</Label>
                     <p className="text-sm text-muted-foreground">Force two-factor authentication for all super admins</p>
                   </div>
-                  <Switch />
+                  <Switch 
+                    checked={settings?.security?.require2FA || false}
+                    onCheckedChange={(checked) => setSettings(prev => ({
+                      ...prev,
+                      security: { ...prev?.security, require2FA: checked }
+                    }))}
+                  />
                 </div>
                 <div className="flex items-center justify-between">
                   <div className="space-y-0.5">
                     <Label>Password Expiry</Label>
-                    <p className="text-sm text-muted-foreground">Force password reset every 90 days</p>
+                    <p className="text-sm text-muted-foreground">Force password reset periodically</p>
                   </div>
-                  <Switch defaultChecked />
+                  <div className="flex items-center gap-2">
+                    <Input 
+                      type="number" 
+                      className="w-20"
+                      value={settings?.security?.passwordExpiry || 90}
+                      onChange={(e) => setSettings(prev => ({
+                        ...prev,
+                        security: { ...prev?.security, passwordExpiry: parseInt(e.target.value) }
+                      }))}
+                    />
+                    <span className="text-sm text-muted-foreground">days</span>
+                  </div>
                 </div>
                 <div className="grid gap-2">
                   <Label>Minimum Password Length</Label>
-                  <Input type="number" defaultValue={8} className="max-w-[200px]" />
+                  <Input 
+                    type="number" 
+                    value={settings?.security?.minPasswordLength || 8}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev,
+                      security: { ...prev?.security, minPasswordLength: parseInt(e.target.value) }
+                    }))}
+                    className="max-w-[200px]" 
+                  />
                 </div>
                 <div className="grid gap-2">
                   <Label>Session Timeout (minutes)</Label>
-                  <Input type="number" defaultValue={60} className="max-w-[200px]" />
+                  <Input 
+                    type="number" 
+                    value={settings?.security?.sessionTimeout || 60}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev,
+                      security: { ...prev?.security, sessionTimeout: parseInt(e.target.value) }
+                    }))}
+                    className="max-w-[200px]" 
+                  />
                 </div>
+                <Button 
+                  onClick={() => saveSettings('security', settings?.security)}
+                  disabled={savingSection === 'security'}
+                >
+                  {savingSection === 'security' ? (
+                    <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  ) : (
+                    <Save className="h-4 w-4 mr-2" />
+                  )}
+                  Save Security Settings
+                </Button>
               </CardContent>
             </Card>
           </div>
@@ -255,13 +768,83 @@ export function SuperAdminSettings({ user }) {
               <div className="grid grid-cols-2 gap-4">
                 <div className="grid gap-2">
                   <Label>SMTP Host</Label>
-                  <Input placeholder="smtp.example.com" />
+                  <Input 
+                    placeholder="smtp.example.com"
+                    value={settings?.email?.smtpHost || ''}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev,
+                      email: { ...prev?.email, smtpHost: e.target.value }
+                    }))}
+                  />
                 </div>
                 <div className="grid gap-2">
                   <Label>SMTP Port</Label>
-                  <Input placeholder="587" />
+                  <Input 
+                    placeholder="587"
+                    value={settings?.email?.smtpPort || ''}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev,
+                      email: { ...prev?.email, smtpPort: e.target.value }
+                    }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>SMTP Username</Label>
+                  <Input 
+                    placeholder="username@example.com"
+                    value={settings?.email?.smtpUser || ''}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev,
+                      email: { ...prev?.email, smtpUser: e.target.value }
+                    }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>SMTP Password</Label>
+                  <Input 
+                    type="password"
+                    placeholder="••••••••"
+                    value={settings?.email?.smtpPassword || ''}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev,
+                      email: { ...prev?.email, smtpPassword: e.target.value }
+                    }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>From Email</Label>
+                  <Input 
+                    placeholder="noreply@example.com"
+                    value={settings?.email?.fromEmail || ''}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev,
+                      email: { ...prev?.email, fromEmail: e.target.value }
+                    }))}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label>From Name</Label>
+                  <Input 
+                    placeholder="BuilderCRM"
+                    value={settings?.email?.fromName || ''}
+                    onChange={(e) => setSettings(prev => ({
+                      ...prev,
+                      email: { ...prev?.email, fromName: e.target.value }
+                    }))}
+                  />
                 </div>
               </div>
+              <Button 
+                onClick={() => saveSettings('email', settings?.email)}
+                disabled={savingSection === 'email'}
+              >
+                {savingSection === 'email' ? (
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                ) : (
+                  <Save className="h-4 w-4 mr-2" />
+                )}
+                Save Email Settings
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -270,28 +853,51 @@ export function SuperAdminSettings({ user }) {
         <TabsContent value="logs">
           <Card>
             <CardHeader>
-              <CardTitle>Activity Logs</CardTitle>
-              <CardDescription>Recent system activities and audit trail</CardDescription>
+              <div className="flex justify-between items-center">
+                <div>
+                  <CardTitle>Activity Logs</CardTitle>
+                  <CardDescription>Recent system activities and audit trail</CardDescription>
+                </div>
+                <Button variant="outline" size="sm" onClick={fetchLogs} disabled={logsLoading}>
+                  <RefreshCw className={`h-4 w-4 mr-2 ${logsLoading ? 'animate-spin' : ''}`} />
+                  Refresh
+                </Button>
+              </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {[
-                  { action: 'User Login', user: 'admin@buildcrm.com', time: '2 mins ago', status: 'Success' },
-                  { action: 'Update Plan', user: 'admin@buildcrm.com', time: '15 mins ago', status: 'Success' },
-                ].map((log, i) => (
-                  <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border">
-                    <div className="flex items-center gap-3">
-                      <Badge variant={log.status === 'Success' ? 'outline' : 'destructive'}>
-                        {log.status}
-                      </Badge>
-                      <div>
-                        <p className="font-medium text-sm">{log.action}</p>
-                        <p className="text-xs text-muted-foreground">by {log.user}</p>
-                      </div>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{log.time}</p>
+                {logsLoading ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
                   </div>
-                ))}
+                ) : logs.length === 0 ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    No activity logs found
+                  </div>
+                ) : (
+                  logs.map((log, i) => (
+                    <motion.div 
+                      key={log.id || i}
+                      initial={{ opacity: 0, x: -10 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                      className="flex items-center justify-between p-3 bg-slate-50 rounded-lg border"
+                    >
+                      <div className="flex items-center gap-3">
+                        <Badge variant={log.status === 'success' ? 'outline' : 'destructive'}>
+                          {log.status || 'Success'}
+                        </Badge>
+                        <div>
+                          <p className="font-medium text-sm">{log.action?.replace(/_/g, ' ').toUpperCase()}</p>
+                          <p className="text-xs text-muted-foreground">by {log.userEmail || 'System'}</p>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {log.timestamp ? new Date(log.timestamp).toLocaleString() : 'N/A'}
+                      </p>
+                    </motion.div>
+                  ))
+                )}
               </div>
             </CardContent>
           </Card>
@@ -305,12 +911,28 @@ export function SuperAdminSettings({ user }) {
               <CardDescription>Backup and restore system data</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border">
                 <div>
                   <p className="font-medium">Last Backup</p>
                   <p className="text-sm text-muted-foreground">Today at 04:00 AM (Automated)</p>
                 </div>
                 <Button size="sm">Create New Backup</Button>
+              </div>
+              <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg border">
+                <div>
+                  <p className="font-medium">Maintenance Mode</p>
+                  <p className="text-sm text-muted-foreground">Temporarily disable access for non-admins</p>
+                </div>
+                <Switch 
+                  checked={settings?.general?.maintenanceMode || false}
+                  onCheckedChange={(checked) => {
+                    setSettings(prev => ({
+                      ...prev,
+                      general: { ...prev?.general, maintenanceMode: checked }
+                    }))
+                    saveSettings('general', { ...settings?.general, maintenanceMode: checked })
+                  }}
+                />
               </div>
             </CardContent>
           </Card>
