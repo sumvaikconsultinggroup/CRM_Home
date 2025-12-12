@@ -1246,6 +1246,11 @@ function ClientDashboard({ user, client, onLogout }) {
 
   useEffect(() => {
     fetchData()
+    console.log('Client Dashboard - User & Client:', { 
+      user: user?.email, 
+      clientPlan: client?.plan?.id,
+      planName: client?.plan?.name 
+    })
   }, [fetchData])
 
   // Check if wooden flooring module is enabled
