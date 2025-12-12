@@ -1320,17 +1320,30 @@ function ClientDashboard({ user, client, onLogout }) {
           {menuItems.map((item) => (
             <motion.button
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => {
+                if (item.isModule && item.id === 'flooring-module') {
+                  setActiveModule('flooring')
+                } else {
+                  setActiveTab(item.id)
+                }
+              }}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
                 activeTab === item.id 
                   ? 'bg-gradient-to-r from-primary to-indigo-600 text-white shadow-lg shadow-primary/25' 
-                  : 'hover:bg-slate-100 text-slate-600'
+                  : item.isModule 
+                    ? 'hover:bg-amber-100 text-amber-700 bg-amber-50 border border-amber-200'
+                    : 'hover:bg-slate-100 text-slate-600'
               }`}
               whileHover={{ x: 5 }}
               whileTap={{ scale: 0.98 }}
             >
               <item.icon className="h-5 w-5" />
-              {sidebarOpen && <span>{item.label}</span>}
+              {sidebarOpen && (
+                <span className="flex-1 text-left">{item.label}</span>
+              )}
+              {sidebarOpen && item.isModule && (
+                <ExternalLink className="h-4 w-4 opacity-60" />
+              )}
             </motion.button>
           ))}
         </nav>
