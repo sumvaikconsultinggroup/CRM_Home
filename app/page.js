@@ -36,6 +36,7 @@ import { AdvancedReports } from '@/components/advanced-reports'
 import { EnterpriseLeads } from '@/components/leads-enterprise'
 import { ExpenseCharts } from '@/components/expense-charts'
 import { UpgradeFlow } from '@/components/upgrade-flow'
+import { LoginPage, RegisterPage, ForgotPasswordPage } from '@/components/auth-ui'
 
 // Animation variants
 const fadeIn = {
