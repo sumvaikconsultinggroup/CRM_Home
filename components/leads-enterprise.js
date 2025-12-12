@@ -336,31 +336,18 @@ export function EnterpriseLeads({ leads, onUpdateLead, onEditLead, onRefresh, is
 
     const leadId = active.id
     const newStatus = over.id
-    const lead = leads.find(l => l.id === leadId)
-    const oldStatus = lead?.status
+    
+    // Immediate feedback
+    toast.loading('Moving lead...', { id: 'move-lead' })
 
-    // Optimistic update
-    const updatedLeads = leads.map(l => 
-      l.id === leadId ? { ...l, status: newStatus } : l
-    )
-    
-    // We can't update the parent's state directly, but we can rely on the fact 
-    // that the parent will re-render us with new data soon.
-    // However, to prevent the "jump back" or "disappear", we need the parent to update immediately.
-    // Since we can't control the parent's state from here without a setLeads prop,
-    // we will rely on onUpdateLead to trigger the refresh.
-    
     try {
       await onUpdateLead(leadId, { status: newStatus })
-      toast.success(`Lead moved to ${newStatus}`)
-      // Note: onUpdateLead in parent likely calls refresh, so we don't need to double-call onRefresh here
-      // unless onUpdateLead doesn't refresh.
-      if (!isEnterprise && !isProfessional) {
-        // Force a refresh for Basic plans just in case
-        await onRefresh() 
-      }
+      toast.success(`Lead moved to ${newStatus}`, { id: 'move-lead' })
+      // FORCE REFRESH ALWAYS
+      await onRefresh()
     } catch (error) {
-      toast.error('Failed to update lead')
+      console.error('Drag error:', error)
+      toast.error('Failed to move lead', { id: 'move-lead' })
       await onRefresh()
     }
   }
