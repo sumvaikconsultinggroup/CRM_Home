@@ -356,46 +356,13 @@ function SuperAdminDashboard({ user, onLogout }) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="space-y-6"
               >
-                <SuperAdminReports stats={stats} clients={clients} />
-                
-                {/* Recent Clients */}
-                <GlassCard className="p-6">
-                  <div className="flex justify-between items-center mb-4">
-                    <h3 className="text-lg font-semibold">Recent Clients</h3>
-                    <Button variant="outline" size="sm" onClick={() => setActiveTab('clients')}>
-                      View All <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
-                  </div>
-                  <div className="space-y-3">
-                    {clients.slice(0, 5).map((client, i) => (
-                      <motion.div 
-                        key={client.id}
-                        className="flex items-center justify-between p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.1 }}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white font-semibold">
-                            {client.businessName?.charAt(0)}
-                          </div>
-                          <div>
-                            <p className="font-medium">{client.businessName}</p>
-                            <p className="text-sm text-muted-foreground">{client.email}</p>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3">
-                          <Badge variant={client.subscriptionStatus === 'active' ? 'default' : 'secondary'}>
-                            {client.subscriptionStatus}
-                          </Badge>
-                          <Badge variant="outline">{client.planName}</Badge>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </GlassCard>
+                <EnhancedSuperAdminOverview 
+                  stats={stats} 
+                  clients={clients} 
+                  modules={modules}
+                  onNavigate={setActiveTab}
+                />
               </motion.div>
             )}
 
