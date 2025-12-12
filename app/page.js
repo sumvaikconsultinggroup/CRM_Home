@@ -1599,6 +1599,7 @@ function ClientDashboard({ user, client, onLogout }) {
                   }}
                   onRefresh={fetchData}
                   isEnterprise={client?.plan?.id === 'enterprise'}
+                  isProfessional={client?.plan?.id === 'professional'}
                   client={client}
                 />
               </motion.div>
