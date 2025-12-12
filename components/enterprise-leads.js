@@ -314,7 +314,7 @@ const LeadCard = ({ lead, onEdit, onDelete, onView, onStatusChange, onAddRemark,
 }
 
 // Kanban Column Component
-const KanbanColumn = ({ status, leads, onStatusChange, onEdit, onDelete, onView, showScore }) => {
+const KanbanColumn = ({ status, leads, onStatusChange, onEdit, onDelete, onView, onAddRemark, showScore }) => {
   const statusConfig = LEAD_STATUSES.find(s => s.id === status) || LEAD_STATUSES[0]
   const columnLeads = leads.filter(l => l.status === status)
   const totalValue = columnLeads.reduce((sum, l) => sum + (l.value || 0), 0)
@@ -343,6 +343,7 @@ const KanbanColumn = ({ status, leads, onStatusChange, onEdit, onDelete, onView,
               onDelete={onDelete}
               onView={onView}
               onStatusChange={onStatusChange}
+              onAddRemark={onAddRemark}
               showScore={showScore}
             />
           ))}
