@@ -144,19 +144,7 @@ const PlanDistributionCard = ({ clients }) => {
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>
-              <Tooltip 
-                content={({ active, payload }) => {
-                  if (active && payload && payload.length) {
-                    return (
-                      <div className="bg-white p-3 rounded-lg shadow-lg border">
-                        <p className="font-medium">{payload[0].name}</p>
-                        <p className="text-sm text-muted-foreground">{payload[0].value} clients</p>
-                      </div>
-                    )
-                  }
-                  return null
-                }}
-              />
+              <Tooltip content={PieTooltip} />
             </PieChart>
           </ResponsiveContainer>
         </div>
