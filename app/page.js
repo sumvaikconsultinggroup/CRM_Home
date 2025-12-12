@@ -1801,7 +1801,46 @@ function ClientDashboard({ user, client, onLogout }) {
                 exit={{ opacity: 0, y: -20 }}
                 className="space-y-6"
               >
-                <h2 className="text-2xl font-bold">Reports & Analytics</h2>
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold">Reports & Analytics</h2>
+                  <div className="flex gap-2">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => {
+                        // Generate CSV
+                        const csvData = leads.map(l => ({
+                          Name: l.name,
+                          Email: l.email,
+                          Status: l.status,
+                          Value: l.value,
+                          Source: l.source
+                        }))
+                        const csv = [
+                          Object.keys(csvData[0]).join(','),
+                          ...csvData.map(row => Object.values(row).join(','))
+                        ].join('\n')
+                        const blob = new Blob([csv], { type: 'text/csv' })
+                        const url = URL.createObjectURL(blob)
+                        const a = document.createElement('a')
+                        a.href = url
+                        a.download = `report-${new Date().toISOString().split('T')[0]}.csv`
+                        a.click()
+                        toast.success('Report exported as CSV!')
+                      }}
+                    >
+                      <Download className="h-4 w-4 mr-2" /> Export CSV
+                    </Button>
+                    <Button 
+                      onClick={() => {
+                        window.print()
+                        toast.success('Print dialog opened!')
+                      }}
+                      className="bg-gradient-to-r from-primary to-indigo-600"
+                    >
+                      <FileText className="h-4 w-4 mr-2" /> Export PDF
+                    </Button>
+                  </div>
+                </div>
 
                 <Tabs defaultValue="sales" className="w-full">
                   <TabsList className="mb-4">
