@@ -33,6 +33,8 @@ import {
 import FlooringModule from './flooring/page'
 import { LeadForm, ProjectForm, TaskForm, ExpenseForm, UserForm } from '@/components/client-forms'
 import { AdvancedReports } from '@/components/advanced-reports'
+import { EnterpriseLeads } from '@/components/leads-enterprise'
+import { UpgradeFlow } from '@/components/upgrade-flow'
 
 // Animation variants
 const fadeIn = {
