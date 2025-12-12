@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
 import { api } from '@/lib/api'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -13,21 +14,98 @@ import { Progress } from '@/components/ui/progress'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
-import { ScrollArea } from '@/components/ui/scroll-area'
-import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
+import { Separator } from '@/components/ui/separator'
+import { Textarea } from '@/components/ui/textarea'
+import { 
+  AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend, RadialBarChart, RadialBar
+} from 'recharts'
 import { 
   Building2, Users, TrendingUp, DollarSign, CheckCircle2, Clock, AlertCircle, 
   LayoutDashboard, Briefcase, ClipboardList, Receipt, Settings, LogOut, Menu, X,
   Plus, MoreVertical, Edit, Trash2, Eye, ChevronRight, Building, Shield, Layers,
   ChefHat, Grid3X3, Sofa, HardHat, Paintbrush, Wrench, Zap, Phone, Mail, Target,
-  BarChart3, PieChart, ArrowUpRight, ArrowDownRight, Calendar, UserPlus, Package
+  BarChart3, PieChart as PieChartIcon, ArrowUpRight, ArrowDownRight, Calendar, UserPlus, Package,
+  Sparkles, Bell, Search, Filter, Download, RefreshCw, Send, MessageSquare, Palette,
+  Globe, Image, FileText, Star, Crown, ChevronDown
 } from 'lucide-react'
+
+// Animation variants
+const fadeIn = {
+  initial: { opacity: 0, y: 20 },
+  animate: { opacity: 1, y: 0 },
+  exit: { opacity: 0, y: -20 }
+}
+
+const staggerContainer = {
+  animate: { transition: { staggerChildren: 0.1 } }
+}
+
+const slideIn = {
+  initial: { x: -20, opacity: 0 },
+  animate: { x: 0, opacity: 1 },
+  exit: { x: 20, opacity: 0 }
+}
+
+const scaleIn = {
+  initial: { scale: 0.9, opacity: 0 },
+  animate: { scale: 1, opacity: 1 },
+  exit: { scale: 0.9, opacity: 0 }
+}
+
+// Chart colors
+const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16']
+
+// Glassmorphism card component
+const GlassCard = ({ children, className = '', ...props }) => (
+  <motion.div
+    className={`backdrop-blur-xl bg-white/70 dark:bg-slate-900/70 border border-white/20 rounded-2xl shadow-xl ${className}`}
+    {...props}
+  >
+    {children}
+  </motion.div>
+)
+
+// Animated stat card
+const StatCard = ({ title, value, change, icon: Icon, trend = 'up', delay = 0 }) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ delay, duration: 0.5 }}
+  >
+    <GlassCard className="p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-1">
+      <div className="flex items-center justify-between">
+        <div>
+          <p className="text-sm text-muted-foreground font-medium">{title}</p>
+          <motion.p 
+            className="text-3xl font-bold mt-1"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: delay + 0.2 }}
+          >
+            {value}
+          </motion.p>
+          {change && (
+            <div className={`flex items-center mt-2 text-sm ${trend === 'up' ? 'text-green-500' : 'text-red-500'}`}>
+              {trend === 'up' ? <ArrowUpRight className="h-4 w-4" /> : <ArrowDownRight className="h-4 w-4" />}
+              <span>{change}</span>
+            </div>
+          )}
+        </div>
+        <div className="p-4 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5">
+          <Icon className="h-8 w-8 text-primary" />
+        </div>
+      </div>
+    </GlassCard>
+  </motion.div>
+)
 
 // ==================== LANDING PAGE ====================
 function LandingPage({ onLogin, onRegister }) {
   const [plans, setPlans] = useState([])
   const [modules, setModules] = useState([])
+  const [isScrolled, setIsScrolled] = useState(false)
 
   useEffect(() => {
     const fetchData = async () => {
@@ -43,6 +121,10 @@ function LandingPage({ onLogin, onRegister }) {
       }
     }
     fetchData()
+
+    const handleScroll = () => setIsScrolled(window.scrollY > 50)
+    window.addEventListener('scroll', handleScroll)
+    return () => window.removeEventListener('scroll', handleScroll)
   }, [])
 
   const moduleIcons = {
@@ -57,160 +139,269 @@ function LandingPage({ onLogin, onRegister }) {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-blue-50 to-white">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
+      {/* Animated background */}
+      <div className="fixed inset-0 -z-10 overflow-hidden">
+        <div className="absolute -top-1/2 -left-1/2 w-full h-full bg-gradient-to-br from-blue-400/20 to-purple-400/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute -bottom-1/2 -right-1/2 w-full h-full bg-gradient-to-br from-green-400/20 to-blue-400/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      </div>
+
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b">
+      <motion.header 
+        className={`sticky top-0 z-50 transition-all duration-300 ${isScrolled ? 'bg-white/80 backdrop-blur-xl shadow-lg' : 'bg-transparent'}`}
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center gap-2">
-            <Building2 className="h-8 w-8 text-primary" />
-            <span className="text-2xl font-bold text-primary">BuildCRM</span>
-          </div>
+          <motion.div 
+            className="flex items-center gap-2"
+            whileHover={{ scale: 1.05 }}
+          >
+            <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-indigo-600">
+              <Building2 className="h-6 w-6 text-white" />
+            </div>
+            <span className="text-2xl font-bold bg-gradient-to-r from-primary to-indigo-600 bg-clip-text text-transparent">BuildCRM</span>
+          </motion.div>
           <div className="flex gap-3">
-            <Button variant="ghost" onClick={onLogin}>Login</Button>
-            <Button onClick={onRegister}>Get Started</Button>
+            <Button variant="ghost" onClick={onLogin} className="hover:bg-white/50">Login</Button>
+            <Button onClick={onRegister} className="bg-gradient-to-r from-primary to-indigo-600 hover:opacity-90 shadow-lg shadow-primary/25">
+              Get Started <Sparkles className="ml-2 h-4 w-4" />
+            </Button>
           </div>
         </div>
-      </header>
+      </motion.header>
 
       {/* Hero Section */}
-      <section className="container mx-auto px-4 py-20 text-center">
-        <Badge className="mb-4" variant="secondary">🚀 Built for Construction & Home Improvement</Badge>
-        <h1 className="text-5xl font-bold tracking-tight mb-6">
-          The Complete <span className="text-primary">CRM Solution</span><br />
-          for Your Business
-        </h1>
-        <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-8">
-          Manage leads, projects, tasks, and expenses all in one place. 
-          Industry-specific modules tailored for your business needs.
-        </p>
-        <div className="flex gap-4 justify-center">
-          <Button size="lg" onClick={onRegister}>
-            Start Free Trial <ArrowUpRight className="ml-2 h-4 w-4" />
-          </Button>
-          <Button size="lg" variant="outline">Watch Demo</Button>
-        </div>
-        <div className="mt-12">
-          <img 
-            src="https://images.pexels.com/photos/416405/pexels-photo-416405.jpeg?auto=compress&cs=tinysrgb&w=1200" 
-            alt="Team Collaboration"
-            className="rounded-xl shadow-2xl mx-auto max-w-4xl w-full"
-          />
-        </div>
+      <section className="container mx-auto px-4 py-20 text-center relative">
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+        >
+          <Badge className="mb-6 px-4 py-2 text-sm bg-gradient-to-r from-primary/10 to-indigo-500/10 border-primary/20" variant="outline">
+            <Sparkles className="h-4 w-4 mr-2 text-primary" />
+            Built for Construction & Home Improvement
+          </Badge>
+          <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-tight">
+            The Complete{' '}
+            <span className="bg-gradient-to-r from-primary via-indigo-500 to-purple-500 bg-clip-text text-transparent">
+              CRM Solution
+            </span>
+            <br />for Your Business
+          </h1>
+          <p className="text-xl text-muted-foreground max-w-2xl mx-auto mb-10">
+            Manage leads, projects, tasks, and expenses all in one place. 
+            Industry-specific modules tailored for your business needs.
+          </p>
+          <div className="flex gap-4 justify-center">
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button size="lg" onClick={onRegister} className="bg-gradient-to-r from-primary to-indigo-600 shadow-xl shadow-primary/25 px-8 py-6 text-lg">
+                Start Free Trial <ArrowUpRight className="ml-2 h-5 w-5" />
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button size="lg" variant="outline" className="px-8 py-6 text-lg backdrop-blur-sm bg-white/50">
+                Watch Demo
+              </Button>
+            </motion.div>
+          </div>
+        </motion.div>
+
+        {/* Dashboard Preview */}
+        <motion.div 
+          className="mt-16 relative"
+          initial={{ opacity: 0, y: 50 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+        >
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-50 via-transparent to-transparent z-10" />
+          <GlassCard className="mx-auto max-w-5xl overflow-hidden">
+            <img 
+              src="https://images.pexels.com/photos/416405/pexels-photo-416405.jpeg?auto=compress&cs=tinysrgb&w=1200" 
+              alt="Dashboard Preview"
+              className="w-full h-auto"
+            />
+          </GlassCard>
+        </motion.div>
       </section>
 
       {/* Features Section */}
       <section className="container mx-auto px-4 py-20">
-        <h2 className="text-3xl font-bold text-center mb-4">Everything You Need to Grow</h2>
-        <p className="text-center text-muted-foreground mb-12 max-w-2xl mx-auto">
-          Powerful features designed specifically for construction and home improvement businesses
-        </p>
-        <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <motion.div 
+          className="text-center mb-16"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+        >
+          <h2 className="text-4xl font-bold mb-4">Everything You Need to Grow</h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            Powerful features designed specifically for construction and home improvement businesses
+          </p>
+        </motion.div>
+        <motion.div 
+          className="grid md:grid-cols-2 lg:grid-cols-4 gap-6"
+          variants={staggerContainer}
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true }}
+        >
           {[
-            { icon: Target, title: 'Lead Management', desc: 'Capture and track leads from multiple sources' },
-            { icon: Briefcase, title: 'Project Tracking', desc: 'Monitor projects from start to completion' },
-            { icon: ClipboardList, title: 'Task Management', desc: 'Assign and track tasks with multiple views' },
-            { icon: Receipt, title: 'Expense Tracking', desc: 'Track all business expenses and generate reports' },
-            { icon: Users, title: 'Team Management', desc: 'Manage users with role-based permissions' },
-            { icon: BarChart3, title: 'Analytics', desc: 'Detailed reports and business insights' },
-            { icon: Phone, title: 'WhatsApp Integration', desc: 'Automated notifications via WhatsApp' },
-            { icon: Package, title: 'Industry Modules', desc: 'Specialized modules for your industry' }
+            { icon: Target, title: 'Lead Management', desc: 'Capture and track leads from multiple sources', color: 'from-blue-500 to-cyan-500' },
+            { icon: Briefcase, title: 'Project Tracking', desc: 'Monitor projects from start to completion', color: 'from-green-500 to-emerald-500' },
+            { icon: ClipboardList, title: 'Task Management', desc: 'Assign and track tasks with multiple views', color: 'from-orange-500 to-amber-500' },
+            { icon: Receipt, title: 'Expense Tracking', desc: 'Track all business expenses and reports', color: 'from-purple-500 to-pink-500' },
+            { icon: Users, title: 'Team Management', desc: 'Manage users with role-based permissions', color: 'from-red-500 to-rose-500' },
+            { icon: BarChart3, title: 'Analytics', desc: 'Detailed reports and business insights', color: 'from-indigo-500 to-violet-500' },
+            { icon: Phone, title: 'WhatsApp Integration', desc: 'Automated notifications via WhatsApp', color: 'from-teal-500 to-green-500' },
+            { icon: Package, title: 'Industry Modules', desc: 'Specialized modules for your industry', color: 'from-pink-500 to-fuchsia-500' }
           ].map((feature, i) => (
-            <Card key={i} className="border-none shadow-lg hover:shadow-xl transition-shadow">
-              <CardHeader>
-                <feature.icon className="h-10 w-10 text-primary mb-2" />
-                <CardTitle className="text-lg">{feature.title}</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">{feature.desc}</p>
-              </CardContent>
-            </Card>
+            <motion.div key={i} variants={fadeIn}>
+              <GlassCard className="h-full p-6 hover:shadow-2xl transition-all duration-300 hover:-translate-y-2 group">
+                <div className={`p-3 rounded-xl bg-gradient-to-br ${feature.color} w-fit mb-4 group-hover:scale-110 transition-transform`}>
+                  <feature.icon className="h-6 w-6 text-white" />
+                </div>
+                <h3 className="text-lg font-semibold mb-2">{feature.title}</h3>
+                <p className="text-muted-foreground text-sm">{feature.desc}</p>
+              </GlassCard>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </section>
 
       {/* Modules Section */}
-      <section className="bg-slate-50 py-20">
+      <section className="py-20 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 text-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-4">Industry-Specific Modules</h2>
-          <p className="text-center text-muted-foreground mb-12">
-            Choose the modules that fit your business at ₹999/month each
-          </p>
-          <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-            {modules.map((module) => {
+          <motion.div 
+            className="text-center mb-16"
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <h2 className="text-4xl font-bold mb-4">Industry-Specific Modules</h2>
+            <p className="text-slate-400">Choose the modules that fit your business at ₹999/month each</p>
+          </motion.div>
+          <motion.div 
+            className="grid md:grid-cols-2 lg:grid-cols-4 gap-4"
+            variants={staggerContainer}
+            initial="initial"
+            whileInView="animate"
+            viewport={{ once: true }}
+          >
+            {modules.map((module, i) => {
               const Icon = moduleIcons[module.name] || Package
               return (
-                <Card key={module.id} className="hover:border-primary transition-colors">
-                  <CardHeader className="pb-2">
-                    <Icon className="h-8 w-8 text-primary mb-2" />
-                    <CardTitle className="text-lg">{module.name}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-sm text-muted-foreground">{module.description}</p>
-                    <p className="text-lg font-bold mt-3">₹{module.price}<span className="text-sm font-normal">/month</span></p>
-                  </CardContent>
-                </Card>
+                <motion.div key={module.id} variants={fadeIn}>
+                  <div className="backdrop-blur-xl bg-white/10 border border-white/10 rounded-2xl p-6 hover:bg-white/20 transition-all duration-300 hover:-translate-y-1">
+                    <Icon className="h-10 w-10 text-primary mb-4" />
+                    <h3 className="text-lg font-semibold mb-2">{module.name}</h3>
+                    <p className="text-sm text-slate-400 mb-4">{module.description}</p>
+                    <div className="flex items-end gap-1">
+                      <span className="text-2xl font-bold">₹{module.price}</span>
+                      <span className="text-slate-400">/month</span>
+                    </div>
+                  </div>
+                </motion.div>
               )
             })}
-          </div>
+          </motion.div>
         </div>
       </section>
 
       {/* Pricing Section */}
       <section className="container mx-auto px-4 py-20">
-        <h2 className="text-3xl font-bold text-center mb-4">Simple, Transparent Pricing</h2>
-        <p className="text-center text-muted-foreground mb-12">Choose the plan that works best for your business</p>
-        <div className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto">
-          {plans.map((plan) => (
-            <Card key={plan.id} className={plan.id === 'professional' ? 'border-primary shadow-xl scale-105' : ''}>
-              {plan.id === 'professional' && (
-                <div className="bg-primary text-primary-foreground text-center py-1 text-sm font-medium">
-                  Most Popular
+        <motion.div 
+          className="text-center mb-16"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+        >
+          <h2 className="text-4xl font-bold mb-4">Simple, Transparent Pricing</h2>
+          <p className="text-muted-foreground">Choose the plan that works best for your business</p>
+        </motion.div>
+        <motion.div 
+          className="grid md:grid-cols-3 gap-8 max-w-5xl mx-auto"
+          variants={staggerContainer}
+          initial="initial"
+          whileInView="animate"
+          viewport={{ once: true }}
+        >
+          {plans.map((plan, i) => (
+            <motion.div 
+              key={plan.id} 
+              variants={fadeIn}
+              whileHover={{ y: -10 }}
+            >
+              <GlassCard className={`h-full relative overflow-hidden ${plan.id === 'professional' ? 'border-2 border-primary shadow-2xl shadow-primary/20' : ''}`}>
+                {plan.id === 'professional' && (
+                  <div className="absolute top-0 right-0 bg-gradient-to-r from-primary to-indigo-600 text-white text-xs font-medium px-4 py-1 rounded-bl-xl">
+                    Most Popular
+                  </div>
+                )}
+                {plan.id === 'enterprise' && (
+                  <div className="absolute top-0 right-0 bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs font-medium px-4 py-1 rounded-bl-xl flex items-center gap-1">
+                    <Crown className="h-3 w-3" /> Enterprise
+                  </div>
+                )}
+                <div className="p-8">
+                  <h3 className="text-xl font-bold">{plan.name}</h3>
+                  <div className="mt-4 mb-6">
+                    <span className="text-4xl font-bold">₹{plan.price}</span>
+                    <span className="text-muted-foreground">/{plan.billingCycle}</span>
+                  </div>
+                  <ul className="space-y-3 mb-8">
+                    {plan.features?.map((feature, j) => (
+                      <li key={j} className="flex items-center gap-2">
+                        <CheckCircle2 className="h-5 w-5 text-green-500" />
+                        <span className="text-sm">{feature}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <Button 
+                    className={`w-full ${plan.id === 'professional' ? 'bg-gradient-to-r from-primary to-indigo-600' : ''}`}
+                    variant={plan.id === 'professional' ? 'default' : 'outline'}
+                    onClick={onRegister}
+                  >
+                    Get Started
+                  </Button>
                 </div>
-              )}
-              <CardHeader>
-                <CardTitle>{plan.name}</CardTitle>
-                <CardDescription>
-                  <span className="text-3xl font-bold text-foreground">₹{plan.price}</span>
-                  <span className="text-muted-foreground">/{plan.billingCycle}</span>
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <ul className="space-y-2">
-                  {plan.features?.map((feature, i) => (
-                    <li key={i} className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
-                      <span className="text-sm">{feature}</span>
-                    </li>
-                  ))}
-                </ul>
-              </CardContent>
-              <CardFooter>
-                <Button className="w-full" variant={plan.id === 'professional' ? 'default' : 'outline'} onClick={onRegister}>
-                  Get Started
-                </Button>
-              </CardFooter>
-            </Card>
+              </GlassCard>
+            </motion.div>
           ))}
-        </div>
+        </motion.div>
       </section>
 
       {/* CTA Section */}
-      <section className="bg-primary text-primary-foreground py-20">
-        <div className="container mx-auto px-4 text-center">
-          <h2 className="text-3xl font-bold mb-4">Ready to Transform Your Business?</h2>
-          <p className="text-lg opacity-90 mb-8">Start your 30-day free trial today. No credit card required.</p>
-          <Button size="lg" variant="secondary" onClick={onRegister}>
-            Start Free Trial
-          </Button>
+      <section className="py-20">
+        <div className="container mx-auto px-4">
+          <GlassCard className="bg-gradient-to-r from-primary to-indigo-600 text-white p-12 text-center">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+            >
+              <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Transform Your Business?</h2>
+              <p className="text-lg opacity-90 mb-8 max-w-2xl mx-auto">
+                Start your 30-day free trial today. No credit card required.
+              </p>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button size="lg" variant="secondary" onClick={onRegister} className="px-8 py-6 text-lg">
+                  Start Free Trial <ArrowUpRight className="ml-2 h-5 w-5" />
+                </Button>
+              </motion.div>
+            </motion.div>
+          </GlassCard>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="bg-slate-900 text-slate-300 py-12">
+      <footer className="bg-slate-900 text-slate-400 py-12">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="flex items-center gap-2 mb-4 md:mb-0">
-              <Building2 className="h-6 w-6" />
+              <div className="p-2 rounded-lg bg-primary/20">
+                <Building2 className="h-5 w-5 text-primary" />
+              </div>
               <span className="text-xl font-bold text-white">BuildCRM</span>
             </div>
             <p className="text-sm">© 2025 BuildCRM. All rights reserved.</p>
@@ -221,7 +412,7 @@ function LandingPage({ onLogin, onRegister }) {
   )
 }
 
-// ==================== AUTH PAGES ====================
+// ==================== LOGIN PAGE ====================
 function LoginPage({ onBack, onSuccess, onRegister }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -236,7 +427,7 @@ function LoginPage({ onBack, onSuccess, onRegister }) {
       if (data.client) {
         localStorage.setItem('client', JSON.stringify(data.client))
       }
-      toast.success('Login successful!')
+      toast.success('Welcome back!')
       onSuccess(data.user, data.client)
     } catch (error) {
       toast.error(error.message)
@@ -246,62 +437,89 @@ function LoginPage({ onBack, onSuccess, onRegister }) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <Building2 className="h-12 w-12 text-primary" />
-          </div>
-          <CardTitle className="text-2xl">Welcome Back</CardTitle>
-          <CardDescription>Sign in to your account</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email" 
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-4">
+      {/* Animated background */}
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-indigo-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md relative z-10"
+      >
+        <GlassCard className="bg-white/10 border-white/20">
+          <div className="p-8">
+            <div className="text-center mb-8">
+              <motion.div 
+                className="inline-flex p-4 rounded-2xl bg-gradient-to-br from-primary to-indigo-600 mb-4"
+                whileHover={{ rotate: 360 }}
+                transition={{ duration: 0.5 }}
+              >
+                <Building2 className="h-8 w-8 text-white" />
+              </motion.div>
+              <h1 className="text-2xl font-bold text-white">Welcome Back</h1>
+              <p className="text-slate-400">Sign in to your account</p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password" 
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-slate-300">Email</Label>
+                <Input 
+                  type="email" 
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-slate-500"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-slate-300">Password</Label>
+                <Input 
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-slate-500"
+                  required
+                />
+              </div>
+              <Button type="submit" className="w-full bg-gradient-to-r from-primary to-indigo-600" disabled={loading}>
+                {loading ? (
+                  <motion.div
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                  >
+                    <RefreshCw className="h-4 w-4" />
+                  </motion.div>
+                ) : 'Sign In'}
+              </Button>
+            </form>
+
+            <div className="mt-6 text-center text-sm">
+              <span className="text-slate-400">Don't have an account? </span>
+              <button onClick={onRegister} className="text-primary hover:underline">Register</button>
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign In'}
-            </Button>
-          </form>
-          <div className="mt-4 text-center text-sm">
-            <span className="text-muted-foreground">Don't have an account? </span>
-            <button onClick={onRegister} className="text-primary hover:underline">Register</button>
-          </div>
-          <div className="mt-4">
-            <Button variant="ghost" className="w-full" onClick={onBack}>
+
+            <Button variant="ghost" className="w-full mt-4 text-slate-400 hover:text-white" onClick={onBack}>
               ← Back to Home
             </Button>
+
+            <Separator className="my-6 bg-white/10" />
+            <div className="text-center text-xs text-slate-500">
+              <p>Super Admin: admin@buildcrm.com / admin123</p>
+            </div>
           </div>
-          <Separator className="my-4" />
-          <div className="text-center text-sm text-muted-foreground">
-            <p>Super Admin: admin@buildcrm.com / admin123</p>
-          </div>
-        </CardContent>
-      </Card>
+        </GlassCard>
+      </motion.div>
     </div>
   )
 }
 
+// ==================== REGISTER PAGE ====================
 function RegisterPage({ onBack, onSuccess, onLogin }) {
   const [formData, setFormData] = useState({
     businessName: '',
@@ -330,7 +548,7 @@ function RegisterPage({ onBack, onSuccess, onLogin }) {
       )
       localStorage.setItem('user', JSON.stringify(data.user))
       localStorage.setItem('client', JSON.stringify(data.client))
-      toast.success('Registration successful!')
+      toast.success('Account created successfully!')
       onSuccess(data.user, data.client)
     } catch (error) {
       toast.error(error.message)
@@ -340,88 +558,104 @@ function RegisterPage({ onBack, onSuccess, onLogin }) {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="flex justify-center mb-4">
-            <Building2 className="h-12 w-12 text-primary" />
-          </div>
-          <CardTitle className="text-2xl">Create Account</CardTitle>
-          <CardDescription>Start your 30-day free trial</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="businessName">Business Name</Label>
-              <Input 
-                id="businessName"
-                placeholder="Your Business Name"
-                value={formData.businessName}
-                onChange={(e) => setFormData({...formData, businessName: e.target.value})}
-                required
-              />
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900 p-4">
+      <div className="absolute inset-0 overflow-hidden">
+        <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-pulse" />
+        <div className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-purple-500/20 rounded-full blur-3xl animate-pulse" style={{ animationDelay: '1s' }} />
+      </div>
+
+      <motion.div
+        initial={{ opacity: 0, scale: 0.9 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ duration: 0.5 }}
+        className="w-full max-w-md relative z-10"
+      >
+        <GlassCard className="bg-white/10 border-white/20">
+          <div className="p-8">
+            <div className="text-center mb-8">
+              <motion.div 
+                className="inline-flex p-4 rounded-2xl bg-gradient-to-br from-primary to-indigo-600 mb-4"
+                whileHover={{ scale: 1.1 }}
+              >
+                <Building2 className="h-8 w-8 text-white" />
+              </motion.div>
+              <h1 className="text-2xl font-bold text-white">Create Account</h1>
+              <p className="text-slate-400">Start your 30-day free trial</p>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input 
-                id="email" 
-                type="email"
-                placeholder="you@example.com"
-                value={formData.email}
-                onChange={(e) => setFormData({...formData, email: e.target.value})}
-                required
-              />
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label className="text-slate-300">Business Name</Label>
+                <Input 
+                  placeholder="Your Business Name"
+                  value={formData.businessName}
+                  onChange={(e) => setFormData({...formData, businessName: e.target.value})}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-slate-500"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-slate-300">Email</Label>
+                <Input 
+                  type="email"
+                  placeholder="you@example.com"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-slate-500"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-slate-300">Phone</Label>
+                <Input 
+                  placeholder="+91 9876543210"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-slate-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-slate-300">Password</Label>
+                <Input 
+                  type="password"
+                  placeholder="••••••••"
+                  value={formData.password}
+                  onChange={(e) => setFormData({...formData, password: e.target.value})}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-slate-500"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label className="text-slate-300">Select Plan</Label>
+                <Select value={formData.planId} onValueChange={(value) => setFormData({...formData, planId: value})}>
+                  <SelectTrigger className="bg-white/10 border-white/20 text-white">
+                    <SelectValue placeholder="Select a plan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {plans.map((plan) => (
+                      <SelectItem key={plan.id} value={plan.id}>
+                        {plan.name} - ₹{plan.price}/month
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <Button type="submit" className="w-full bg-gradient-to-r from-primary to-indigo-600" disabled={loading}>
+                {loading ? 'Creating Account...' : 'Create Account'}
+              </Button>
+            </form>
+
+            <div className="mt-6 text-center text-sm">
+              <span className="text-slate-400">Already have an account? </span>
+              <button onClick={onLogin} className="text-primary hover:underline">Sign in</button>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone</Label>
-              <Input 
-                id="phone"
-                placeholder="+91 9876543210"
-                value={formData.phone}
-                onChange={(e) => setFormData({...formData, phone: e.target.value})}
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input 
-                id="password" 
-                type="password"
-                placeholder="••••••••"
-                value={formData.password}
-                onChange={(e) => setFormData({...formData, password: e.target.value})}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Select Plan</Label>
-              <Select value={formData.planId} onValueChange={(value) => setFormData({...formData, planId: value})}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a plan" />
-                </SelectTrigger>
-                <SelectContent>
-                  {plans.map((plan) => (
-                    <SelectItem key={plan.id} value={plan.id}>
-                      {plan.name} - ₹{plan.price}/month
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Creating Account...' : 'Create Account'}
-            </Button>
-          </form>
-          <div className="mt-4 text-center text-sm">
-            <span className="text-muted-foreground">Already have an account? </span>
-            <button onClick={onLogin} className="text-primary hover:underline">Sign in</button>
-          </div>
-          <div className="mt-4">
-            <Button variant="ghost" className="w-full" onClick={onBack}>
+
+            <Button variant="ghost" className="w-full mt-4 text-slate-400 hover:text-white" onClick={onBack}>
               ← Back to Home
             </Button>
           </div>
-        </CardContent>
-      </Card>
+        </GlassCard>
+      </motion.div>
     </div>
   )
 }
@@ -432,6 +666,7 @@ function SuperAdminDashboard({ user, onLogout }) {
   const [stats, setStats] = useState(null)
   const [clients, setClients] = useState([])
   const [modules, setModules] = useState([])
+  const [moduleRequests, setModuleRequests] = useState([])
   const [plans, setPlans] = useState([])
   const [selectedClient, setSelectedClient] = useState(null)
   const [sidebarOpen, setSidebarOpen] = useState(true)
@@ -440,18 +675,20 @@ function SuperAdminDashboard({ user, onLogout }) {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const [statsData, clientsData, modulesData, plansData] = await Promise.all([
+      const [statsData, clientsData, modulesData, plansData, requestsData] = await Promise.all([
         api.getAdminStats(),
         api.getAdminClients(),
         api.getAdminModules(),
-        api.getPlans()
+        api.getPlans(),
+        api.getModuleRequests().catch(() => [])
       ])
       setStats(statsData)
       setClients(clientsData)
       setModules(modulesData)
       setPlans(plansData)
+      setModuleRequests(requestsData)
     } catch (error) {
-      toast.error('Failed to load data')
+      toast.error('Failed to load dashboard data')
     } finally {
       setLoading(false)
     }
@@ -461,9 +698,9 @@ function SuperAdminDashboard({ user, onLogout }) {
     fetchData()
   }, [fetchData])
 
-  const handleToggleStatus = async (clientId) => {
+  const handleToggleClientStatus = async (clientId) => {
     try {
-      await api.toggleClientStatus(clientId)
+      await api.updateAdminClient(clientId, 'toggle-status')
       toast.success('Client status updated')
       fetchData()
     } catch (error) {
@@ -471,14 +708,20 @@ function SuperAdminDashboard({ user, onLogout }) {
     }
   }
 
-  const handleModuleToggle = async (clientId, moduleId, currentlyEnabled) => {
+  const handleModuleToggle = async (clientId, moduleId, enabled) => {
     try {
-      await api.updateClientModules(clientId, moduleId, currentlyEnabled ? 'remove' : 'add')
+      await api.updateAdminClient(clientId, enabled ? 'remove-module' : 'add-module', { moduleId })
       toast.success('Module updated')
-      if (selectedClient) {
-        const updatedClient = await api.getAdminClient(clientId)
-        setSelectedClient(updatedClient)
-      }
+      fetchData()
+    } catch (error) {
+      toast.error(error.message)
+    }
+  }
+
+  const handleModuleRequestAction = async (requestId, action) => {
+    try {
+      await api.updateModuleRequest(requestId, action)
+      toast.success(`Request ${action}d`)
       fetchData()
     } catch (error) {
       toast.error(error.message)
@@ -489,213 +732,322 @@ function SuperAdminDashboard({ user, onLogout }) {
     { id: 'overview', icon: LayoutDashboard, label: 'Overview' },
     { id: 'clients', icon: Building, label: 'Clients' },
     { id: 'modules', icon: Package, label: 'Modules' },
+    { id: 'requests', icon: MessageSquare, label: 'Module Requests', badge: moduleRequests.filter(r => r.status === 'pending').length },
     { id: 'settings', icon: Settings, label: 'Settings' }
   ]
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading dashboard...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-slate-800">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+        >
+          <RefreshCw className="h-12 w-12 text-primary" />
+        </motion.div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 flex">
       {/* Sidebar */}
-      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-slate-900 text-white transition-all duration-300 flex flex-col`}>
-        <div className="p-4 flex items-center gap-3">
-          <Shield className="h-8 w-8 text-primary" />
+      <motion.aside 
+        className={`${sidebarOpen ? 'w-72' : 'w-20'} bg-gradient-to-b from-slate-900 via-slate-800 to-slate-900 text-white transition-all duration-300 flex flex-col`}
+        initial={{ x: -100 }}
+        animate={{ x: 0 }}
+      >
+        <div className="p-6 flex items-center gap-3 border-b border-white/10">
+          <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-indigo-600">
+            <Shield className="h-6 w-6" />
+          </div>
           {sidebarOpen && <span className="text-xl font-bold">Admin Panel</span>}
         </div>
-        <nav className="flex-1 p-4">
+        <nav className="flex-1 p-4 space-y-2">
           {menuItems.map((item) => (
-            <button
+            <motion.button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-2 transition-colors ${
-                activeTab === item.id ? 'bg-primary text-white' : 'hover:bg-slate-800'
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                activeTab === item.id 
+                  ? 'bg-gradient-to-r from-primary to-indigo-600 shadow-lg shadow-primary/25' 
+                  : 'hover:bg-white/10'
               }`}
+              whileHover={{ x: 5 }}
+              whileTap={{ scale: 0.98 }}
             >
               <item.icon className="h-5 w-5" />
-              {sidebarOpen && <span>{item.label}</span>}
-            </button>
+              {sidebarOpen && (
+                <>
+                  <span className="flex-1 text-left">{item.label}</span>
+                  {item.badge > 0 && (
+                    <Badge className="bg-red-500">{item.badge}</Badge>
+                  )}
+                </>
+              )}
+            </motion.button>
           ))}
         </nav>
-        <div className="p-4 border-t border-slate-700">
-          <button
+        <div className="p-4 border-t border-white/10">
+          <motion.button
             onClick={onLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-slate-800 text-red-400"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-500/20 text-red-400 transition-colors"
+            whileHover={{ x: 5 }}
           >
             <LogOut className="h-5 w-5" />
             {sidebarOpen && <span>Logout</span>}
-          </button>
+          </motion.button>
         </div>
-      </aside>
+      </motion.aside>
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         {/* Header */}
-        <header className="bg-white border-b px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+        <motion.header 
+          className="bg-white/80 backdrop-blur-xl border-b px-6 py-4 flex justify-between items-center sticky top-0 z-10"
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+        >
           <div className="flex items-center gap-4">
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 hover:bg-slate-100 rounded-lg">
+            <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)}>
               <Menu className="h-5 w-5" />
-            </button>
-            <h1 className="text-xl font-semibold">
-              {menuItems.find(m => m.id === activeTab)?.label}
-            </h1>
+            </Button>
+            <div>
+              <h1 className="text-xl font-bold">{menuItems.find(m => m.id === activeTab)?.label}</h1>
+              <p className="text-sm text-muted-foreground">Manage your platform</p>
+            </div>
           </div>
           <div className="flex items-center gap-4">
-            <Badge variant="secondary">Super Admin</Badge>
-            <span className="text-sm text-muted-foreground">{user.email}</span>
+            <Button variant="outline" size="icon" onClick={fetchData}>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Badge variant="secondary" className="px-3 py-1">
+              <Shield className="h-4 w-4 mr-1" />
+              Super Admin
+            </Badge>
           </div>
-        </header>
+        </motion.header>
 
         {/* Content */}
         <div className="p-6">
-          {activeTab === 'overview' && stats && (
-            <div className="space-y-6">
-              {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium">Total Clients</CardTitle>
-                    <Building className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.totalClients}</div>
-                    <p className="text-xs text-muted-foreground">
-                      <span className="text-green-500">{stats.activeClients} active</span> / {stats.pausedClients} paused
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium">Total Users</CardTitle>
-                    <Users className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.totalUsers}</div>
-                    <p className="text-xs text-muted-foreground">Across all clients</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium">Monthly Revenue</CardTitle>
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">₹{stats.monthlyRevenue?.toLocaleString()}</div>
-                    <p className="text-xs text-green-500 flex items-center">
-                      <ArrowUpRight className="h-3 w-3" /> 12% from last month
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium">Annual Revenue</CardTitle>
-                    <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">₹{stats.annualRevenue?.toLocaleString()}</div>
-                    <p className="text-xs text-muted-foreground">Projected</p>
-                  </CardContent>
-                </Card>
-              </div>
+          <AnimatePresence mode="wait">
+            {activeTab === 'overview' && stats && (
+              <motion.div
+                key="overview"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
+                {/* Stats Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <StatCard 
+                    title="Total Clients" 
+                    value={stats.overview.totalClients} 
+                    change={`${stats.overview.activeClients} active`}
+                    icon={Building}
+                    delay={0}
+                  />
+                  <StatCard 
+                    title="Total Users" 
+                    value={stats.overview.totalUsers}
+                    icon={Users}
+                    delay={0.1}
+                  />
+                  <StatCard 
+                    title="Monthly Revenue" 
+                    value={`₹${stats.overview.monthlyRevenue?.toLocaleString()}`}
+                    change="+12% from last month"
+                    icon={DollarSign}
+                    delay={0.2}
+                  />
+                  <StatCard 
+                    title="Annual Revenue" 
+                    value={`₹${stats.overview.annualRevenue?.toLocaleString()}`}
+                    icon={TrendingUp}
+                    delay={0.3}
+                  />
+                </div>
 
-              {/* Recent Clients */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>Recent Clients</CardTitle>
-                  <CardDescription>Latest client registrations</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {clients.slice(0, 5).map((client) => (
-                      <div key={client.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                        <div>
-                          <p className="font-medium">{client.businessName}</p>
-                          <p className="text-sm text-muted-foreground">{client.email}</p>
-                        </div>
+                {/* Charts */}
+                <div className="grid lg:grid-cols-2 gap-6">
+                  <GlassCard className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">Revenue Growth</h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <AreaChart data={stats.charts.monthlyGrowth}>
+                        <defs>
+                          <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="#3B82F6" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis dataKey="month" stroke="#6b7280" />
+                        <YAxis stroke="#6b7280" />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'rgba(255,255,255,0.9)', 
+                            backdropFilter: 'blur(10px)',
+                            borderRadius: '12px',
+                            border: '1px solid rgba(0,0,0,0.1)'
+                          }}
+                        />
+                        <Area type="monotone" dataKey="revenue" stroke="#3B82F6" fillOpacity={1} fill="url(#colorRevenue)" strokeWidth={3} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </GlassCard>
+
+                  <GlassCard className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">Plan Distribution</h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={stats.charts.planDistribution}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={100}
+                          fill="#8884d8"
+                          paddingAngle={5}
+                          dataKey="count"
+                          nameKey="plan"
+                          label={({ plan, count }) => `${plan}: ${count}`}
+                        >
+                          {stats.charts.planDistribution.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </GlassCard>
+                </div>
+
+                {/* Recent Clients */}
+                <GlassCard className="p-6">
+                  <div className="flex justify-between items-center mb-4">
+                    <h3 className="text-lg font-semibold">Recent Clients</h3>
+                    <Button variant="outline" size="sm" onClick={() => setActiveTab('clients')}>
+                      View All <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
+                  <div className="space-y-3">
+                    {clients.slice(0, 5).map((client, i) => (
+                      <motion.div 
+                        key={client.id}
+                        className="flex items-center justify-between p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.1 }}
+                      >
                         <div className="flex items-center gap-4">
+                          <div className="h-10 w-10 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white font-semibold">
+                            {client.businessName?.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="font-medium">{client.businessName}</p>
+                            <p className="text-sm text-muted-foreground">{client.email}</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
                           <Badge variant={client.subscriptionStatus === 'active' ? 'default' : 'secondary'}>
                             {client.subscriptionStatus}
                           </Badge>
-                          <Badge variant="outline">{client.planId}</Badge>
+                          <Badge variant="outline">{client.planName}</Badge>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+                </GlassCard>
+              </motion.div>
+            )}
 
-          {activeTab === 'clients' && (
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>All Clients</CardTitle>
-                  <CardDescription>Manage client subscriptions and modules</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {clients.map((client) => (
-                      <div key={client.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg hover:bg-slate-100 transition-colors">
-                        <div className="flex-1">
-                          <p className="font-medium">{client.businessName}</p>
-                          <p className="text-sm text-muted-foreground">{client.email}</p>
-                          <div className="flex gap-2 mt-2">
-                            <Badge variant="outline">{plans.find(p => p.id === client.planId)?.name || client.planId}</Badge>
-                            <Badge variant={client.subscriptionStatus === 'active' ? 'default' : 'destructive'}>
-                              {client.subscriptionStatus}
-                            </Badge>
-                            {client.modules?.length > 0 && (
-                              <Badge variant="secondary">{client.modules.length} modules</Badge>
-                            )}
+            {activeTab === 'clients' && (
+              <motion.div
+                key="clients"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
+                <GlassCard className="p-6">
+                  <div className="flex justify-between items-center mb-6">
+                    <div>
+                      <h3 className="text-lg font-semibold">All Clients</h3>
+                      <p className="text-sm text-muted-foreground">Manage client subscriptions and modules</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Input placeholder="Search clients..." className="w-64" />
+                      <Button variant="outline" size="icon">
+                        <Filter className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    {clients.map((client, i) => (
+                      <motion.div 
+                        key={client.id}
+                        className="flex items-center justify-between p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white font-bold text-lg">
+                            {client.businessName?.charAt(0)}
+                          </div>
+                          <div>
+                            <p className="font-semibold">{client.businessName}</p>
+                            <p className="text-sm text-muted-foreground">{client.email}</p>
+                            <div className="flex gap-2 mt-1">
+                              <Badge variant="outline" className="text-xs">{client.planName}</Badge>
+                              <Badge variant={client.subscriptionStatus === 'active' ? 'default' : 'destructive'} className="text-xs">
+                                {client.subscriptionStatus}
+                              </Badge>
+                              {client.modules?.length > 0 && (
+                                <Badge variant="secondary" className="text-xs">{client.modules.length} modules</Badge>
+                              )}
+                            </div>
                           </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <Dialog>
                             <DialogTrigger asChild>
-                              <Button variant="outline" size="sm" onClick={() => setSelectedClient(client)}>
-                                <Eye className="h-4 w-4 mr-1" /> View
+                              <Button variant="outline" size="sm">
+                                <Eye className="h-4 w-4 mr-1" /> Manage
                               </Button>
                             </DialogTrigger>
                             <DialogContent className="max-w-2xl">
                               <DialogHeader>
                                 <DialogTitle>{client.businessName}</DialogTitle>
-                                <DialogDescription>Manage client details and modules</DialogDescription>
+                                <DialogDescription>Manage client modules and settings</DialogDescription>
                               </DialogHeader>
-                              <div className="space-y-4">
+                              <div className="space-y-4 py-4">
                                 <div className="grid grid-cols-2 gap-4">
                                   <div>
-                                    <Label>Email</Label>
-                                    <p className="text-sm">{client.email}</p>
+                                    <Label className="text-muted-foreground">Email</Label>
+                                    <p className="font-medium">{client.email}</p>
                                   </div>
                                   <div>
-                                    <Label>Phone</Label>
-                                    <p className="text-sm">{client.phone || 'N/A'}</p>
+                                    <Label className="text-muted-foreground">Phone</Label>
+                                    <p className="font-medium">{client.phone || 'N/A'}</p>
                                   </div>
                                   <div>
-                                    <Label>Plan</Label>
-                                    <p className="text-sm">{plans.find(p => p.id === client.planId)?.name}</p>
+                                    <Label className="text-muted-foreground">Plan</Label>
+                                    <p className="font-medium">{client.planName}</p>
                                   </div>
                                   <div>
-                                    <Label>Status</Label>
-                                    <p className="text-sm">{client.subscriptionStatus}</p>
+                                    <Label className="text-muted-foreground">Users</Label>
+                                    <p className="font-medium">{client.userCount || 0}</p>
                                   </div>
                                 </div>
                                 <Separator />
                                 <div>
-                                  <Label className="mb-2 block">Assigned Modules</Label>
-                                  <div className="grid grid-cols-2 gap-2">
+                                  <Label className="mb-3 block font-semibold">Industry Modules</Label>
+                                  <div className="grid grid-cols-2 gap-3">
                                     {modules.map((module) => (
-                                      <div key={module.id} className="flex items-center justify-between p-2 bg-slate-50 rounded">
-                                        <span className="text-sm">{module.name}</span>
+                                      <div key={module.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-50">
+                                        <span className="text-sm font-medium">{module.name}</span>
                                         <Switch
                                           checked={client.modules?.includes(module.id)}
                                           onCheckedChange={() => handleModuleToggle(client.id, module.id, client.modules?.includes(module.id))}
@@ -710,61 +1062,131 @@ function SuperAdminDashboard({ user, onLogout }) {
                           <Button
                             variant={client.subscriptionStatus === 'active' ? 'destructive' : 'default'}
                             size="sm"
-                            onClick={() => handleToggleStatus(client.id)}
+                            onClick={() => handleToggleClientStatus(client.id)}
                           >
                             {client.subscriptionStatus === 'active' ? 'Pause' : 'Activate'}
                           </Button>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+                </GlassCard>
+              </motion.div>
+            )}
 
-          {activeTab === 'modules' && (
-            <div className="space-y-6">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Industry Modules</CardTitle>
-                  <CardDescription>Manage available modules and pricing</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {modules.map((module) => (
-                      <Card key={module.id}>
-                        <CardHeader className="pb-2">
-                          <div className="flex justify-between items-start">
-                            <CardTitle className="text-lg">{module.name}</CardTitle>
+            {activeTab === 'modules' && (
+              <motion.div
+                key="modules"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
+                <GlassCard className="p-6">
+                  <h3 className="text-lg font-semibold mb-6">Industry Modules</h3>
+                  <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {modules.map((module, i) => (
+                      <motion.div
+                        key={module.id}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: i * 0.05 }}
+                      >
+                        <GlassCard className="p-4 hover:shadow-lg transition-shadow">
+                          <div className="flex justify-between items-start mb-3">
+                            <div className="p-2 rounded-lg bg-primary/10">
+                              <Package className="h-5 w-5 text-primary" />
+                            </div>
                             <Badge variant={module.active ? 'default' : 'secondary'}>
                               {module.active ? 'Active' : 'Inactive'}
                             </Badge>
                           </div>
-                        </CardHeader>
-                        <CardContent>
-                          <p className="text-sm text-muted-foreground mb-2">{module.description}</p>
-                          <p className="text-lg font-bold">₹{module.price}/month</p>
-                        </CardContent>
-                      </Card>
+                          <h4 className="font-semibold">{module.name}</h4>
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-2">{module.description}</p>
+                          <div className="flex justify-between items-center mt-4 pt-3 border-t">
+                            <span className="font-bold">₹{module.price}/mo</span>
+                            <span className="text-sm text-muted-foreground">{module.usageCount || 0} clients</span>
+                          </div>
+                        </GlassCard>
+                      </motion.div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
+                </GlassCard>
+              </motion.div>
+            )}
 
-          {activeTab === 'settings' && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Platform Settings</CardTitle>
-                <CardDescription>Configure global platform settings</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <p className="text-muted-foreground">Settings configuration coming soon...</p>
-              </CardContent>
-            </Card>
-          )}
+            {activeTab === 'requests' && (
+              <motion.div
+                key="requests"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
+                <GlassCard className="p-6">
+                  <h3 className="text-lg font-semibold mb-6">Module Requests</h3>
+                  {moduleRequests.length === 0 ? (
+                    <div className="text-center py-12 text-muted-foreground">
+                      <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                      <p>No module requests yet</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {moduleRequests.map((request, i) => (
+                        <motion.div
+                          key={request.id}
+                          className="flex items-center justify-between p-4 rounded-xl bg-slate-50"
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.05 }}
+                        >
+                          <div>
+                            <p className="font-medium">{request.clientName}</p>
+                            <p className="text-sm text-muted-foreground">
+                              Requesting: <span className="font-medium text-primary">{request.moduleName}</span>
+                            </p>
+                            {request.message && (
+                              <p className="text-sm mt-1">"{request.message}"</p>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {request.status === 'pending' ? (
+                              <>
+                                <Button size="sm" variant="outline" onClick={() => handleModuleRequestAction(request.id, 'reject')}>
+                                  Reject
+                                </Button>
+                                <Button size="sm" onClick={() => handleModuleRequestAction(request.id, 'approve')}>
+                                  Approve
+                                </Button>
+                              </>
+                            ) : (
+                              <Badge variant={request.status === 'approved' ? 'default' : 'destructive'}>
+                                {request.status}
+                              </Badge>
+                            )}
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
+                  )}
+                </GlassCard>
+              </motion.div>
+            )}
+
+            {activeTab === 'settings' && (
+              <motion.div
+                key="settings"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                <GlassCard className="p-6">
+                  <h3 className="text-lg font-semibold mb-4">Platform Settings</h3>
+                  <p className="text-muted-foreground">Platform configuration coming soon...</p>
+                </GlassCard>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </main>
     </div>
@@ -783,13 +1205,8 @@ function ClientDashboard({ user, client, onLogout }) {
   const [modules, setModules] = useState([])
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [loading, setLoading] = useState(true)
-
-  // Dialogs
-  const [showLeadDialog, setShowLeadDialog] = useState(false)
-  const [showProjectDialog, setShowProjectDialog] = useState(false)
-  const [showTaskDialog, setShowTaskDialog] = useState(false)
-  const [showExpenseDialog, setShowExpenseDialog] = useState(false)
-  const [showUserDialog, setShowUserDialog] = useState(false)
+  const [showDialog, setShowDialog] = useState(false)
+  const [dialogType, setDialogType] = useState(null)
   const [editingItem, setEditingItem] = useState(null)
 
   const fetchData = useCallback(async () => {
@@ -812,7 +1229,7 @@ function ClientDashboard({ user, client, onLogout }) {
       setUsers(usersData)
       setModules(modulesData)
     } catch (error) {
-      toast.error('Failed to load data')
+      toast.error('Failed to load dashboard')
     } finally {
       setLoading(false)
     }
@@ -828,170 +1245,32 @@ function ClientDashboard({ user, client, onLogout }) {
     { id: 'projects', icon: Briefcase, label: 'Projects' },
     { id: 'tasks', icon: ClipboardList, label: 'Tasks' },
     { id: 'expenses', icon: Receipt, label: 'Expenses' },
-    { id: 'users', icon: Users, label: 'Users' },
+    { id: 'users', icon: Users, label: 'Team' },
     { id: 'reports', icon: BarChart3, label: 'Reports' },
-    { id: 'modules', icon: Package, label: 'Modules' }
+    { id: 'modules', icon: Package, label: 'Modules' },
+    { id: 'whitelabel', icon: Palette, label: 'White Label' }
   ]
 
   const statusColors = {
-    new: 'bg-blue-100 text-blue-800',
-    contacted: 'bg-yellow-100 text-yellow-800',
-    qualified: 'bg-purple-100 text-purple-800',
-    proposal: 'bg-orange-100 text-orange-800',
-    negotiation: 'bg-pink-100 text-pink-800',
-    won: 'bg-green-100 text-green-800',
-    lost: 'bg-red-100 text-red-800',
-    planning: 'bg-blue-100 text-blue-800',
-    in_progress: 'bg-yellow-100 text-yellow-800',
-    on_hold: 'bg-orange-100 text-orange-800',
-    completed: 'bg-green-100 text-green-800',
-    todo: 'bg-slate-100 text-slate-800',
-    review: 'bg-purple-100 text-purple-800',
-    low: 'bg-slate-100 text-slate-800',
-    medium: 'bg-yellow-100 text-yellow-800',
-    high: 'bg-orange-100 text-orange-800',
-    urgent: 'bg-red-100 text-red-800'
+    new: 'bg-blue-500',
+    contacted: 'bg-yellow-500',
+    qualified: 'bg-purple-500',
+    proposal: 'bg-orange-500',
+    negotiation: 'bg-pink-500',
+    won: 'bg-green-500',
+    lost: 'bg-red-500',
+    planning: 'bg-blue-500',
+    in_progress: 'bg-yellow-500',
+    on_hold: 'bg-orange-500',
+    completed: 'bg-green-500',
+    todo: 'bg-slate-500',
+    review: 'bg-purple-500',
   }
 
-  // Lead handlers
-  const handleSaveLead = async (formData) => {
+  const handleRequestModule = async (moduleId) => {
     try {
-      if (editingItem) {
-        await api.updateLead(editingItem.id, formData)
-        toast.success('Lead updated')
-      } else {
-        await api.createLead(formData)
-        toast.success('Lead created')
-      }
-      setShowLeadDialog(false)
-      setEditingItem(null)
-      fetchData()
-    } catch (error) {
-      toast.error(error.message)
-    }
-  }
-
-  const handleDeleteLead = async (id) => {
-    if (!confirm('Delete this lead?')) return
-    try {
-      await api.deleteLead(id)
-      toast.success('Lead deleted')
-      fetchData()
-    } catch (error) {
-      toast.error(error.message)
-    }
-  }
-
-  // Project handlers
-  const handleSaveProject = async (formData) => {
-    try {
-      if (editingItem) {
-        await api.updateProject(editingItem.id, formData)
-        toast.success('Project updated')
-      } else {
-        await api.createProject(formData)
-        toast.success('Project created')
-      }
-      setShowProjectDialog(false)
-      setEditingItem(null)
-      fetchData()
-    } catch (error) {
-      toast.error(error.message)
-    }
-  }
-
-  const handleDeleteProject = async (id) => {
-    if (!confirm('Delete this project?')) return
-    try {
-      await api.deleteProject(id)
-      toast.success('Project deleted')
-      fetchData()
-    } catch (error) {
-      toast.error(error.message)
-    }
-  }
-
-  // Task handlers
-  const handleSaveTask = async (formData) => {
-    try {
-      if (editingItem) {
-        await api.updateTask(editingItem.id, formData)
-        toast.success('Task updated')
-      } else {
-        await api.createTask(formData)
-        toast.success('Task created')
-      }
-      setShowTaskDialog(false)
-      setEditingItem(null)
-      fetchData()
-    } catch (error) {
-      toast.error(error.message)
-    }
-  }
-
-  const handleDeleteTask = async (id) => {
-    if (!confirm('Delete this task?')) return
-    try {
-      await api.deleteTask(id)
-      toast.success('Task deleted')
-      fetchData()
-    } catch (error) {
-      toast.error(error.message)
-    }
-  }
-
-  // Expense handlers
-  const handleSaveExpense = async (formData) => {
-    try {
-      if (editingItem) {
-        await api.updateExpense(editingItem.id, formData)
-        toast.success('Expense updated')
-      } else {
-        await api.createExpense(formData)
-        toast.success('Expense created')
-      }
-      setShowExpenseDialog(false)
-      setEditingItem(null)
-      fetchData()
-    } catch (error) {
-      toast.error(error.message)
-    }
-  }
-
-  const handleDeleteExpense = async (id) => {
-    if (!confirm('Delete this expense?')) return
-    try {
-      await api.deleteExpense(id)
-      toast.success('Expense deleted')
-      fetchData()
-    } catch (error) {
-      toast.error(error.message)
-    }
-  }
-
-  // User handlers
-  const handleSaveUser = async (formData) => {
-    try {
-      if (editingItem) {
-        await api.updateUser(editingItem.id, formData)
-        toast.success('User updated')
-      } else {
-        await api.createUser(formData)
-        toast.success('User created')
-      }
-      setShowUserDialog(false)
-      setEditingItem(null)
-      fetchData()
-    } catch (error) {
-      toast.error(error.message)
-    }
-  }
-
-  const handleDeleteUser = async (id) => {
-    if (!confirm('Delete this user?')) return
-    try {
-      await api.deleteUser(id)
-      toast.success('User deleted')
+      await api.createModuleRequest(moduleId, 'I would like to add this module to my subscription')
+      toast.success('Module request submitted!')
       fetchData()
     } catch (error) {
       toast.error(error.message)
@@ -1000,417 +1279,447 @@ function ClientDashboard({ user, client, onLogout }) {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto"></div>
-          <p className="mt-4 text-muted-foreground">Loading dashboard...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+        >
+          <RefreshCw className="h-12 w-12 text-primary" />
+        </motion.div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 flex">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 flex">
       {/* Sidebar */}
-      <aside className={`${sidebarOpen ? 'w-64' : 'w-20'} bg-white border-r transition-all duration-300 flex flex-col`}>
-        <div className="p-4 flex items-center gap-3 border-b">
-          <Building2 className="h-8 w-8 text-primary" />
+      <motion.aside 
+        className={`${sidebarOpen ? 'w-72' : 'w-20'} bg-white border-r transition-all duration-300 flex flex-col shadow-xl`}
+        initial={{ x: -100 }}
+        animate={{ x: 0 }}
+      >
+        <div className="p-6 flex items-center gap-3 border-b">
+          <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-indigo-600">
+            <Building2 className="h-6 w-6 text-white" />
+          </div>
           {sidebarOpen && <span className="text-xl font-bold">BuildCRM</span>}
         </div>
-        <nav className="flex-1 p-4">
+        <nav className="flex-1 p-4 space-y-1">
           {menuItems.map((item) => (
-            <button
+            <motion.button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg mb-1 transition-colors ${
-                activeTab === item.id ? 'bg-primary text-white' : 'hover:bg-slate-100 text-slate-600'
+              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
+                activeTab === item.id 
+                  ? 'bg-gradient-to-r from-primary to-indigo-600 text-white shadow-lg shadow-primary/25' 
+                  : 'hover:bg-slate-100 text-slate-600'
               }`}
+              whileHover={{ x: 5 }}
+              whileTap={{ scale: 0.98 }}
             >
               <item.icon className="h-5 w-5" />
               {sidebarOpen && <span>{item.label}</span>}
-            </button>
+            </motion.button>
           ))}
         </nav>
         <div className="p-4 border-t">
-          <button
+          <motion.button
             onClick={onLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-red-50 text-red-600"
+            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-50 text-red-600 transition-colors"
+            whileHover={{ x: 5 }}
           >
             <LogOut className="h-5 w-5" />
             {sidebarOpen && <span>Logout</span>}
-          </button>
+          </motion.button>
         </div>
-      </aside>
+      </motion.aside>
 
       {/* Main Content */}
       <main className="flex-1 overflow-auto">
         {/* Header */}
-        <header className="bg-white border-b px-6 py-4 flex justify-between items-center sticky top-0 z-10">
+        <motion.header 
+          className="bg-white/80 backdrop-blur-xl border-b px-6 py-4 flex justify-between items-center sticky top-0 z-10"
+          initial={{ y: -50, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+        >
           <div className="flex items-center gap-4">
-            <button onClick={() => setSidebarOpen(!sidebarOpen)} className="p-2 hover:bg-slate-100 rounded-lg">
+            <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)}>
               <Menu className="h-5 w-5" />
-            </button>
+            </Button>
             <div>
-              <h1 className="text-xl font-semibold">{client?.businessName || 'Dashboard'}</h1>
+              <h1 className="text-xl font-bold">{client?.businessName || 'Dashboard'}</h1>
               <p className="text-sm text-muted-foreground">{menuItems.find(m => m.id === activeTab)?.label}</p>
             </div>
           </div>
           <div className="flex items-center gap-4">
-            <Badge variant="outline">{client?.planId?.toUpperCase()}</Badge>
-            <span className="text-sm text-muted-foreground">{user.name}</span>
+            <Button variant="outline" size="icon" onClick={fetchData}>
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <Badge variant="outline" className="px-3 py-1">
+              {client?.planId?.toUpperCase() || 'BASIC'}
+            </Badge>
+            <div className="flex items-center gap-2">
+              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white font-medium">
+                {user.name?.charAt(0)}
+              </div>
+              <span className="text-sm font-medium">{user.name}</span>
+            </div>
           </div>
-        </header>
+        </motion.header>
 
         {/* Content */}
         <div className="p-6">
-          {/* Dashboard Tab */}
-          {activeTab === 'dashboard' && stats && (
-            <div className="space-y-6">
-              {/* Stats Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium">Total Leads</CardTitle>
-                    <Target className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.totalLeads}</div>
-                    <p className="text-xs text-green-500">{stats.conversionRate}% conversion rate</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium">Pipeline Value</CardTitle>
-                    <DollarSign className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">₹{stats.pipelineValue?.toLocaleString()}</div>
-                    <p className="text-xs text-muted-foreground">{stats.wonLeads} deals won</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium">Active Projects</CardTitle>
-                    <Briefcase className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.activeProjects}</div>
-                    <p className="text-xs text-muted-foreground">of {stats.totalProjects} total</p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between pb-2">
-                    <CardTitle className="text-sm font-medium">Tasks Completed</CardTitle>
-                    <CheckCircle2 className="h-4 w-4 text-muted-foreground" />
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-2xl font-bold">{stats.completedTasks}/{stats.totalTasks}</div>
-                    <Progress value={parseFloat(stats.taskCompletionRate)} className="mt-2" />
-                  </CardContent>
-                </Card>
-              </div>
+          <AnimatePresence mode="wait">
+            {/* Dashboard Tab */}
+            {activeTab === 'dashboard' && stats && (
+              <motion.div
+                key="dashboard"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
+                {/* Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <StatCard title="Total Leads" value={stats.overview.totalLeads} change={`${stats.overview.conversionRate}% conversion`} icon={Target} delay={0} />
+                  <StatCard title="Pipeline Value" value={`₹${stats.overview.pipelineValue?.toLocaleString()}`} change={`${stats.overview.wonLeads} won`} icon={DollarSign} delay={0.1} />
+                  <StatCard title="Active Projects" value={stats.overview.activeProjects} change={`of ${stats.overview.totalProjects} total`} icon={Briefcase} delay={0.2} />
+                  <StatCard title="Tasks Done" value={`${stats.overview.completedTasks}/${stats.overview.totalTasks}`} change={`${stats.overview.taskCompletionRate}%`} icon={CheckCircle2} delay={0.3} />
+                </div>
 
-              {/* Recent Items Grid */}
-              <div className="grid lg:grid-cols-2 gap-6">
-                {/* Recent Leads */}
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                      <CardTitle>Recent Leads</CardTitle>
-                      <CardDescription>Latest lead activity</CardDescription>
+                {/* Charts */}
+                <div className="grid lg:grid-cols-2 gap-6">
+                  <GlassCard className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">Lead Sources</h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <PieChart>
+                        <Pie
+                          data={stats.charts.leadSources}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={100}
+                          fill="#8884d8"
+                          paddingAngle={5}
+                          dataKey="count"
+                          nameKey="source"
+                        >
+                          {stats.charts.leadSources.map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </GlassCard>
+
+                  <GlassCard className="p-6">
+                    <h3 className="text-lg font-semibold mb-4">Pipeline Overview</h3>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={stats.charts.leadStatuses}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
+                        <XAxis dataKey="status" stroke="#6b7280" />
+                        <YAxis stroke="#6b7280" />
+                        <Tooltip 
+                          contentStyle={{ 
+                            backgroundColor: 'rgba(255,255,255,0.9)', 
+                            backdropFilter: 'blur(10px)',
+                            borderRadius: '12px',
+                            border: '1px solid rgba(0,0,0,0.1)'
+                          }}
+                        />
+                        <Bar dataKey="count" fill="#3B82F6" radius={[8, 8, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </GlassCard>
+                </div>
+
+                {/* Recent Activity */}
+                <div className="grid lg:grid-cols-2 gap-6">
+                  <GlassCard className="p-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold">Recent Leads</h3>
+                      <Button variant="ghost" size="sm" onClick={() => setActiveTab('leads')}>
+                        View All <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
                     </div>
-                    <Button size="sm" onClick={() => setActiveTab('leads')}>View All</Button>
-                  </CardHeader>
-                  <CardContent>
                     <div className="space-y-3">
-                      {leads.slice(0, 5).map((lead) => (
-                        <div key={lead.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                      {leads.slice(0, 5).map((lead, i) => (
+                        <motion.div
+                          key={lead.id}
+                          className="flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.05 }}
+                        >
                           <div>
                             <p className="font-medium">{lead.name}</p>
                             <p className="text-sm text-muted-foreground">{lead.source}</p>
                           </div>
-                          <Badge className={statusColors[lead.status]}>{lead.status}</Badge>
-                        </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-medium">₹{lead.value?.toLocaleString()}</span>
+                            <div className={`h-2 w-2 rounded-full ${statusColors[lead.status]}`} />
+                          </div>
+                        </motion.div>
                       ))}
                     </div>
-                  </CardContent>
-                </Card>
+                  </GlassCard>
 
-                {/* Recent Tasks */}
-                <Card>
-                  <CardHeader className="flex flex-row items-center justify-between">
-                    <div>
-                      <CardTitle>Recent Tasks</CardTitle>
-                      <CardDescription>Your task overview</CardDescription>
+                  <GlassCard className="p-6">
+                    <div className="flex justify-between items-center mb-4">
+                      <h3 className="text-lg font-semibold">Upcoming Tasks</h3>
+                      <Button variant="ghost" size="sm" onClick={() => setActiveTab('tasks')}>
+                        View All <ChevronRight className="h-4 w-4 ml-1" />
+                      </Button>
                     </div>
-                    <Button size="sm" onClick={() => setActiveTab('tasks')}>View All</Button>
-                  </CardHeader>
-                  <CardContent>
                     <div className="space-y-3">
-                      {tasks.slice(0, 5).map((task) => (
-                        <div key={task.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                      {tasks.filter(t => t.status !== 'completed').slice(0, 5).map((task, i) => (
+                        <motion.div
+                          key={task.id}
+                          className="flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
+                          initial={{ opacity: 0, x: -20 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: i * 0.05 }}
+                        >
                           <div>
                             <p className="font-medium">{task.title}</p>
                             <p className="text-sm text-muted-foreground">
                               Due: {new Date(task.dueDate).toLocaleDateString()}
                             </p>
                           </div>
-                          <div className="flex gap-2">
-                            <Badge className={statusColors[task.priority]}>{task.priority}</Badge>
-                            <Badge className={statusColors[task.status]}>{task.status}</Badge>
-                          </div>
-                        </div>
+                          <Badge variant={task.priority === 'high' || task.priority === 'urgent' ? 'destructive' : 'secondary'}>
+                            {task.priority}
+                          </Badge>
+                        </motion.div>
                       ))}
                     </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-          )}
+                  </GlassCard>
+                </div>
+              </motion.div>
+            )}
 
-          {/* Leads Tab */}
-          {activeTab === 'leads' && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Leads</h2>
-                <Button onClick={() => { setEditingItem(null); setShowLeadDialog(true); }}>
-                  <Plus className="h-4 w-4 mr-2" /> Add Lead
-                </Button>
-              </div>
+            {/* Leads Tab */}
+            {activeTab === 'leads' && (
+              <motion.div
+                key="leads"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold">Sales Pipeline</h2>
+                  <Button onClick={() => { setDialogType('lead'); setEditingItem(null); setShowDialog(true); }}>
+                    <Plus className="h-4 w-4 mr-2" /> Add Lead
+                  </Button>
+                </div>
 
-              {/* Lead Pipeline View */}
-              <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-7 gap-4">
-                {['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'won', 'lost'].map((status) => (
-                  <Card key={status} className="min-h-[200px]">
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm capitalize flex items-center justify-between">
-                        {status}
+                {/* Kanban Board */}
+                <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                  {['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'won', 'lost'].map((status) => (
+                    <GlassCard key={status} className="min-h-[400px]">
+                      <div className="p-4 border-b flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className={`h-2 w-2 rounded-full ${statusColors[status]}`} />
+                          <span className="font-medium capitalize text-sm">{status}</span>
+                        </div>
                         <Badge variant="secondary">{leads.filter(l => l.status === status).length}</Badge>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2">
-                      {leads.filter(l => l.status === status).map((lead) => (
-                        <div key={lead.id} className="p-2 bg-slate-50 rounded text-sm cursor-pointer hover:bg-slate-100"
-                          onClick={() => { setEditingItem(lead); setShowLeadDialog(true); }}>
-                          <p className="font-medium truncate">{lead.name}</p>
-                          <p className="text-xs text-muted-foreground">₹{lead.value?.toLocaleString()}</p>
-                        </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              {/* Lead Dialog */}
-              <Dialog open={showLeadDialog} onOpenChange={setShowLeadDialog}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{editingItem ? 'Edit Lead' : 'Add New Lead'}</DialogTitle>
-                  </DialogHeader>
-                  <LeadForm 
-                    initialData={editingItem} 
-                    onSave={handleSaveLead} 
-                    onDelete={editingItem ? () => handleDeleteLead(editingItem.id) : null}
-                  />
-                </DialogContent>
-              </Dialog>
-            </div>
-          )}
-
-          {/* Projects Tab */}
-          {activeTab === 'projects' && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Projects</h2>
-                <Button onClick={() => { setEditingItem(null); setShowProjectDialog(true); }}>
-                  <Plus className="h-4 w-4 mr-2" /> Add Project
-                </Button>
-              </div>
-
-              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {projects.map((project) => (
-                  <Card key={project.id} className="hover:shadow-lg transition-shadow">
-                    <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg">{project.name}</CardTitle>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="sm"><MoreVertical className="h-4 w-4" /></Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent>
-                            <DropdownMenuItem onClick={() => { setEditingItem(project); setShowProjectDialog(true); }}>
-                              <Edit className="h-4 w-4 mr-2" /> Edit
-                            </DropdownMenuItem>
-                            <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteProject(project.id)}>
-                              <Trash2 className="h-4 w-4 mr-2" /> Delete
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
                       </div>
-                      <CardDescription>{project.description}</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      <div className="space-y-3">
-                        <div className="flex justify-between text-sm">
-                          <span>Progress</span>
-                          <span>{project.progress}%</span>
-                        </div>
-                        <Progress value={project.progress} />
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Budget: ₹{project.budget?.toLocaleString()}</span>
+                      <div className="p-2 space-y-2 max-h-[500px] overflow-y-auto">
+                        {leads.filter(l => l.status === status).map((lead) => (
+                          <motion.div
+                            key={lead.id}
+                            className="p-3 bg-white rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow border"
+                            whileHover={{ scale: 1.02 }}
+                            onClick={() => { setDialogType('lead'); setEditingItem(lead); setShowDialog(true); }}
+                          >
+                            <p className="font-medium text-sm">{lead.name}</p>
+                            <p className="text-xs text-muted-foreground">{lead.source}</p>
+                            <p className="text-sm font-bold text-primary mt-1">₹{lead.value?.toLocaleString()}</p>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </GlassCard>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* Projects Tab */}
+            {activeTab === 'projects' && (
+              <motion.div
+                key="projects"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold">Projects</h2>
+                  <Button onClick={() => { setDialogType('project'); setEditingItem(null); setShowDialog(true); }}>
+                    <Plus className="h-4 w-4 mr-2" /> Add Project
+                  </Button>
+                </div>
+
+                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {projects.map((project, i) => (
+                    <motion.div
+                      key={project.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: i * 0.05 }}
+                    >
+                      <GlassCard className="p-6 hover:shadow-xl transition-shadow cursor-pointer" onClick={() => { setDialogType('project'); setEditingItem(project); setShowDialog(true); }}>
+                        <div className="flex justify-between items-start mb-4">
+                          <h3 className="font-semibold">{project.name}</h3>
                           <Badge className={statusColors[project.status]}>{project.status?.replace('_', ' ')}</Badge>
                         </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-
-              <Dialog open={showProjectDialog} onOpenChange={setShowProjectDialog}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{editingItem ? 'Edit Project' : 'Add New Project'}</DialogTitle>
-                  </DialogHeader>
-                  <ProjectForm 
-                    initialData={editingItem} 
-                    onSave={handleSaveProject}
-                  />
-                </DialogContent>
-              </Dialog>
-            </div>
-          )}
-
-          {/* Tasks Tab */}
-          {activeTab === 'tasks' && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Tasks</h2>
-                <Button onClick={() => { setEditingItem(null); setShowTaskDialog(true); }}>
-                  <Plus className="h-4 w-4 mr-2" /> Add Task
-                </Button>
-              </div>
-
-              {/* Kanban Board */}
-              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                {['todo', 'in_progress', 'review', 'completed'].map((status) => (
-                  <Card key={status}>
-                    <CardHeader className="pb-2">
-                      <CardTitle className="text-sm capitalize flex items-center justify-between">
-                        {status.replace('_', ' ')}
-                        <Badge variant="secondary">{tasks.filter(t => t.status === status).length}</Badge>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-2 min-h-[300px]">
-                      {tasks.filter(t => t.status === status).map((task) => (
-                        <div key={task.id} className="p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100"
-                          onClick={() => { setEditingItem(task); setShowTaskDialog(true); }}>
-                          <p className="font-medium">{task.title}</p>
-                          <p className="text-xs text-muted-foreground mt-1">{task.description}</p>
-                          <div className="flex justify-between items-center mt-2">
-                            <Badge className={statusColors[task.priority]} variant="secondary">{task.priority}</Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {new Date(task.dueDate).toLocaleDateString()}
-                            </span>
+                        <p className="text-sm text-muted-foreground mb-4">{project.description}</p>
+                        <div className="space-y-2">
+                          <div className="flex justify-between text-sm">
+                            <span>Progress</span>
+                            <span className="font-medium">{project.progress}%</span>
                           </div>
+                          <Progress value={project.progress} className="h-2" />
                         </div>
-                      ))}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+                        <div className="flex justify-between mt-4 pt-4 border-t text-sm">
+                          <span className="text-muted-foreground">Budget</span>
+                          <span className="font-bold">₹{project.budget?.toLocaleString()}</span>
+                        </div>
+                      </GlassCard>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
 
-              <Dialog open={showTaskDialog} onOpenChange={setShowTaskDialog}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{editingItem ? 'Edit Task' : 'Add New Task'}</DialogTitle>
-                  </DialogHeader>
-                  <TaskForm 
-                    initialData={editingItem} 
-                    onSave={handleSaveTask}
-                    onDelete={editingItem ? () => handleDeleteTask(editingItem.id) : null}
-                  />
-                </DialogContent>
-              </Dialog>
-            </div>
-          )}
+            {/* Tasks Tab */}
+            {activeTab === 'tasks' && (
+              <motion.div
+                key="tasks"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold">Task Board</h2>
+                  <Button onClick={() => { setDialogType('task'); setEditingItem(null); setShowDialog(true); }}>
+                    <Plus className="h-4 w-4 mr-2" /> Add Task
+                  </Button>
+                </div>
 
-          {/* Expenses Tab */}
-          {activeTab === 'expenses' && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Expenses</h2>
-                <Button onClick={() => { setEditingItem(null); setShowExpenseDialog(true); }}>
-                  <Plus className="h-4 w-4 mr-2" /> Add Expense
-                </Button>
-              </div>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  {['todo', 'in_progress', 'review', 'completed'].map((status) => (
+                    <GlassCard key={status}>
+                      <div className="p-4 border-b flex items-center justify-between">
+                        <span className="font-medium capitalize">{status.replace('_', ' ')}</span>
+                        <Badge variant="secondary">{tasks.filter(t => t.status === status).length}</Badge>
+                      </div>
+                      <div className="p-3 space-y-2 min-h-[300px]">
+                        {tasks.filter(t => t.status === status).map((task) => (
+                          <motion.div
+                            key={task.id}
+                            className="p-3 bg-white rounded-lg shadow-sm border hover:shadow-md cursor-pointer"
+                            whileHover={{ scale: 1.02 }}
+                            onClick={() => { setDialogType('task'); setEditingItem(task); setShowDialog(true); }}
+                          >
+                            <p className="font-medium text-sm">{task.title}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{task.description}</p>
+                            <div className="flex justify-between items-center mt-2">
+                              <Badge variant={task.priority === 'urgent' || task.priority === 'high' ? 'destructive' : 'secondary'} className="text-xs">
+                                {task.priority}
+                              </Badge>
+                              <span className="text-xs text-muted-foreground">
+                                {new Date(task.dueDate).toLocaleDateString()}
+                              </span>
+                            </div>
+                          </motion.div>
+                        ))}
+                      </div>
+                    </GlassCard>
+                  ))}
+                </div>
+              </motion.div>
+            )}
 
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
-                    {expenses.map((expense) => (
-                      <div key={expense.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+            {/* Expenses Tab */}
+            {activeTab === 'expenses' && (
+              <motion.div
+                key="expenses"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold">Expenses</h2>
+                  <Button onClick={() => { setDialogType('expense'); setEditingItem(null); setShowDialog(true); }}>
+                    <Plus className="h-4 w-4 mr-2" /> Add Expense
+                  </Button>
+                </div>
+
+                <div className="grid lg:grid-cols-3 gap-4">
+                  <StatCard title="Total Expenses" value={`₹${stats?.overview.totalExpenses?.toLocaleString()}`} icon={Receipt} />
+                </div>
+
+                <GlassCard className="p-6">
+                  <h3 className="font-semibold mb-4">Recent Expenses</h3>
+                  <div className="space-y-3">
+                    {expenses.map((expense, i) => (
+                      <motion.div
+                        key={expense.id}
+                        className="flex items-center justify-between p-4 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: i * 0.03 }}
+                      >
                         <div>
                           <p className="font-medium">{expense.description}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {expense.category} • {new Date(expense.date).toLocaleDateString()}
-                          </p>
+                          <p className="text-sm text-muted-foreground">{expense.category} • {new Date(expense.date).toLocaleDateString()}</p>
                         </div>
                         <div className="flex items-center gap-4">
                           <span className="font-bold">₹{expense.amount?.toLocaleString()}</span>
                           <Badge variant={expense.approved ? 'default' : 'secondary'}>
                             {expense.approved ? 'Approved' : 'Pending'}
                           </Badge>
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm"><MoreVertical className="h-4 w-4" /></Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent>
-                              <DropdownMenuItem onClick={() => { setEditingItem(expense); setShowExpenseDialog(true); }}>
-                                <Edit className="h-4 w-4 mr-2" /> Edit
-                              </DropdownMenuItem>
-                              <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteExpense(expense.id)}>
-                                <Trash2 className="h-4 w-4 mr-2" /> Delete
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
+                </GlassCard>
+              </motion.div>
+            )}
 
-              <Dialog open={showExpenseDialog} onOpenChange={setShowExpenseDialog}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{editingItem ? 'Edit Expense' : 'Add New Expense'}</DialogTitle>
-                  </DialogHeader>
-                  <ExpenseForm 
-                    initialData={editingItem} 
-                    onSave={handleSaveExpense}
-                  />
-                </DialogContent>
-              </Dialog>
-            </div>
-          )}
+            {/* Users Tab */}
+            {activeTab === 'users' && (
+              <motion.div
+                key="users"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
+                <div className="flex justify-between items-center">
+                  <h2 className="text-2xl font-bold">Team Members</h2>
+                  <Button onClick={() => { setDialogType('user'); setEditingItem(null); setShowDialog(true); }}>
+                    <UserPlus className="h-4 w-4 mr-2" /> Add User
+                  </Button>
+                </div>
 
-          {/* Users Tab */}
-          {activeTab === 'users' && (
-            <div className="space-y-4">
-              <div className="flex justify-between items-center">
-                <h2 className="text-2xl font-bold">Team Members</h2>
-                <Button onClick={() => { setEditingItem(null); setShowUserDialog(true); }}>
-                  <UserPlus className="h-4 w-4 mr-2" /> Add User
-                </Button>
-              </div>
-
-              <Card>
-                <CardContent className="pt-6">
-                  <div className="space-y-4">
-                    {users.map((u) => (
-                      <div key={u.id} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                <GlassCard className="p-6">
+                  <div className="space-y-3">
+                    {users.map((u, i) => (
+                      <motion.div
+                        key={u.id}
+                        className="flex items-center justify-between p-4 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.05 }}
+                      >
                         <div className="flex items-center gap-4">
-                          <div className="h-10 w-10 rounded-full bg-primary text-white flex items-center justify-center font-medium">
+                          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white font-bold">
                             {u.name?.charAt(0)?.toUpperCase()}
                           </div>
                           <div>
@@ -1418,494 +1727,329 @@ function ClientDashboard({ user, client, onLogout }) {
                             <p className="text-sm text-muted-foreground">{u.email}</p>
                           </div>
                         </div>
-                        <div className="flex items-center gap-4">
-                          <Badge variant="outline">{u.role?.replace('_', ' ')}</Badge>
-                          {u.id !== user.id && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm"><MoreVertical className="h-4 w-4" /></Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent>
-                                <DropdownMenuItem onClick={() => { setEditingItem(u); setShowUserDialog(true); }}>
-                                  <Edit className="h-4 w-4 mr-2" /> Edit
-                                </DropdownMenuItem>
-                                <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteUser(u.id)}>
-                                  <Trash2 className="h-4 w-4 mr-2" /> Delete
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
-                        </div>
-                      </div>
+                        <Badge variant="outline">{u.role?.replace('_', ' ')}</Badge>
+                      </motion.div>
                     ))}
                   </div>
-                </CardContent>
-              </Card>
+                </GlassCard>
+              </motion.div>
+            )}
 
-              <Dialog open={showUserDialog} onOpenChange={setShowUserDialog}>
-                <DialogContent>
-                  <DialogHeader>
-                    <DialogTitle>{editingItem ? 'Edit User' : 'Add New User'}</DialogTitle>
-                  </DialogHeader>
-                  <UserForm 
-                    initialData={editingItem} 
-                    onSave={handleSaveUser}
-                  />
-                </DialogContent>
-              </Dialog>
-            </div>
-          )}
+            {/* Reports Tab */}
+            {activeTab === 'reports' && stats && (
+              <motion.div
+                key="reports"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
+                <h2 className="text-2xl font-bold">Reports & Analytics</h2>
 
-          {/* Reports Tab */}
-          {activeTab === 'reports' && (
-            <ReportsSection />
-          )}
+                <Tabs defaultValue="sales" className="w-full">
+                  <TabsList className="mb-4">
+                    <TabsTrigger value="sales">Sales Report</TabsTrigger>
+                    <TabsTrigger value="expenses">Expense Report</TabsTrigger>
+                  </TabsList>
 
-          {/* Modules Tab */}
-          {activeTab === 'modules' && (
-            <div className="space-y-4">
-              <h2 className="text-2xl font-bold">Industry Modules</h2>
-              <p className="text-muted-foreground">Contact your administrator to enable additional modules.</p>
+                  <TabsContent value="sales" className="space-y-6">
+                    <div className="grid lg:grid-cols-2 gap-6">
+                      <GlassCard className="p-6">
+                        <h3 className="font-semibold mb-4">Monthly Performance</h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <LineChart data={stats.charts.monthlyLeads}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="month" />
+                            <YAxis />
+                            <Tooltip />
+                            <Legend />
+                            <Line type="monotone" dataKey="leads" stroke="#3B82F6" strokeWidth={2} />
+                            <Line type="monotone" dataKey="value" stroke="#10B981" strokeWidth={2} />
+                          </LineChart>
+                        </ResponsiveContainer>
+                      </GlassCard>
 
-              <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
-                {modules.map((module) => (
-                  <Card key={module.id} className={module.enabled ? 'border-primary' : 'opacity-60'}>
-                    <CardHeader>
-                      <div className="flex justify-between items-start">
-                        <CardTitle className="text-lg">{module.name}</CardTitle>
-                        <Badge variant={module.enabled ? 'default' : 'secondary'}>
-                          {module.enabled ? 'Active' : 'Inactive'}
-                        </Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <p className="text-sm text-muted-foreground">{module.description}</p>
-                      <p className="text-lg font-bold mt-2">₹{module.price}/month</p>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </div>
-          )}
+                      <GlassCard className="p-6">
+                        <h3 className="font-semibold mb-4">Lead Sources Performance</h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <BarChart data={stats.charts.leadSources}>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="source" />
+                            <YAxis />
+                            <Tooltip />
+                            <Bar dataKey="count" fill="#3B82F6" radius={[8, 8, 0, 0]} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      </GlassCard>
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="expenses" className="space-y-6">
+                    <div className="grid lg:grid-cols-2 gap-6">
+                      <GlassCard className="p-6">
+                        <h3 className="font-semibold mb-4">Expenses by Category</h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <PieChart>
+                            <Pie
+                              data={stats.charts.expenseCategories}
+                              cx="50%"
+                              cy="50%"
+                              outerRadius={100}
+                              fill="#8884d8"
+                              dataKey="total"
+                              nameKey="category"
+                              label={({ category, total }) => `${category}: ₹${total?.toLocaleString()}`}
+                            >
+                              {stats.charts.expenseCategories.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                              ))}
+                            </Pie>
+                            <Tooltip />
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </GlassCard>
+
+                      <GlassCard className="p-6">
+                        <h3 className="font-semibold mb-4">Monthly Expenses</h3>
+                        <ResponsiveContainer width="100%" height={300}>
+                          <AreaChart data={stats.charts.monthlyExpenses}>
+                            <defs>
+                              <linearGradient id="colorExp" x1="0" y1="0" x2="0" y2="1">
+                                <stop offset="5%" stopColor="#EF4444" stopOpacity={0.3}/>
+                                <stop offset="95%" stopColor="#EF4444" stopOpacity={0}/>
+                              </linearGradient>
+                            </defs>
+                            <CartesianGrid strokeDasharray="3 3" />
+                            <XAxis dataKey="month" />
+                            <YAxis />
+                            <Tooltip />
+                            <Area type="monotone" dataKey="total" stroke="#EF4444" fillOpacity={1} fill="url(#colorExp)" strokeWidth={2} />
+                          </AreaChart>
+                        </ResponsiveContainer>
+                      </GlassCard>
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </motion.div>
+            )}
+
+            {/* Modules Tab */}
+            {activeTab === 'modules' && (
+              <motion.div
+                key="modules"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
+                <div>
+                  <h2 className="text-2xl font-bold">Industry Modules</h2>
+                  <p className="text-muted-foreground">Request modules from your administrator</p>
+                </div>
+
+                <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  {modules.map((module, i) => (
+                    <motion.div
+                      key={module.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: i * 0.05 }}
+                    >
+                      <GlassCard className={`p-6 ${module.enabled ? 'border-2 border-green-500' : ''}`}>
+                        <div className="flex justify-between items-start mb-4">
+                          <div className="p-2 rounded-lg bg-primary/10">
+                            <Package className="h-6 w-6 text-primary" />
+                          </div>
+                          {module.enabled ? (
+                            <Badge className="bg-green-500">Active</Badge>
+                          ) : module.requestPending ? (
+                            <Badge variant="secondary">Pending</Badge>
+                          ) : (
+                            <Badge variant="outline">Inactive</Badge>
+                          )}
+                        </div>
+                        <h3 className="font-semibold">{module.name}</h3>
+                        <p className="text-sm text-muted-foreground mt-1">{module.description}</p>
+                        <div className="mt-4 pt-4 border-t flex justify-between items-center">
+                          <span className="font-bold">₹{module.price}/mo</span>
+                          {!module.enabled && !module.requestPending && (
+                            <Button size="sm" variant="outline" onClick={() => handleRequestModule(module.id)}>
+                              <Send className="h-4 w-4 mr-1" /> Request
+                            </Button>
+                          )}
+                        </div>
+                      </GlassCard>
+                    </motion.div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+
+            {/* White Label Tab */}
+            {activeTab === 'whitelabel' && (
+              <motion.div
+                key="whitelabel"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+                className="space-y-6"
+              >
+                <div>
+                  <h2 className="text-2xl font-bold">White Label Settings</h2>
+                  <p className="text-muted-foreground">Customize your CRM branding (Enterprise plan only)</p>
+                </div>
+
+                {client?.planId === 'enterprise' ? (
+                  <WhiteLabelSettings />
+                ) : (
+                  <GlassCard className="p-12 text-center">
+                    <Crown className="h-16 w-16 text-amber-500 mx-auto mb-4" />
+                    <h3 className="text-xl font-bold mb-2">Enterprise Feature</h3>
+                    <p className="text-muted-foreground mb-6">
+                      White labeling is available on the Enterprise plan. Upgrade to customize your branding.
+                    </p>
+                    <Button className="bg-gradient-to-r from-amber-500 to-orange-500">
+                      <Crown className="h-4 w-4 mr-2" /> Upgrade to Enterprise
+                    </Button>
+                  </GlassCard>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </main>
     </div>
   )
 }
 
-// ==================== FORM COMPONENTS ====================
-function LeadForm({ initialData, onSave, onDelete }) {
-  const [formData, setFormData] = useState({
-    name: initialData?.name || '',
-    email: initialData?.email || '',
-    phone: initialData?.phone || '',
-    source: initialData?.source || 'Website',
-    status: initialData?.status || 'new',
-    value: initialData?.value || 0,
-    notes: initialData?.notes || ''
+// White Label Settings Component
+function WhiteLabelSettings() {
+  const [settings, setSettings] = useState({
+    logo: '',
+    favicon: '',
+    primaryColor: '#3B82F6',
+    secondaryColor: '#1E40AF',
+    companyName: '',
+    customDomain: '',
+    enabled: false
   })
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    onSave(formData)
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Name</Label>
-          <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required />
-        </div>
-        <div className="space-y-2">
-          <Label>Email</Label>
-          <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} />
-        </div>
-        <div className="space-y-2">
-          <Label>Phone</Label>
-          <Input value={formData.phone} onChange={(e) => setFormData({...formData, phone: e.target.value})} />
-        </div>
-        <div className="space-y-2">
-          <Label>Value (₹)</Label>
-          <Input type="number" value={formData.value} onChange={(e) => setFormData({...formData, value: parseInt(e.target.value) || 0})} />
-        </div>
-        <div className="space-y-2">
-          <Label>Source</Label>
-          <Select value={formData.source} onValueChange={(value) => setFormData({...formData, source: value})}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {['Website', 'Referral', 'Meta Ads', 'Google Ads', 'Indiamart', 'Justdial'].map(s => (
-                <SelectItem key={s} value={s}>{s}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Status</Label>
-          <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value})}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'won', 'lost'].map(s => (
-                <SelectItem key={s} value={s}>{s}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
-      <div className="space-y-2">
-        <Label>Notes</Label>
-        <Input value={formData.notes} onChange={(e) => setFormData({...formData, notes: e.target.value})} />
-      </div>
-      <div className="flex justify-between">
-        {onDelete && <Button type="button" variant="destructive" onClick={onDelete}>Delete</Button>}
-        <Button type="submit" className="ml-auto">Save</Button>
-      </div>
-    </form>
-  )
-}
-
-function ProjectForm({ initialData, onSave }) {
-  const [formData, setFormData] = useState({
-    name: initialData?.name || '',
-    description: initialData?.description || '',
-    status: initialData?.status || 'planning',
-    budget: initialData?.budget || 0,
-    progress: initialData?.progress || 0,
-    startDate: initialData?.startDate ? new Date(initialData.startDate).toISOString().split('T')[0] : '',
-    endDate: initialData?.endDate ? new Date(initialData.endDate).toISOString().split('T')[0] : ''
-  })
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    onSave(formData)
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label>Project Name</Label>
-        <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required />
-      </div>
-      <div className="space-y-2">
-        <Label>Description</Label>
-        <Input value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Status</Label>
-          <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value})}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {['planning', 'in_progress', 'on_hold', 'completed'].map(s => (
-                <SelectItem key={s} value={s}>{s.replace('_', ' ')}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Budget (₹)</Label>
-          <Input type="number" value={formData.budget} onChange={(e) => setFormData({...formData, budget: parseInt(e.target.value) || 0})} />
-        </div>
-        <div className="space-y-2">
-          <Label>Progress (%)</Label>
-          <Input type="number" min="0" max="100" value={formData.progress} onChange={(e) => setFormData({...formData, progress: parseInt(e.target.value) || 0})} />
-        </div>
-        <div className="space-y-2">
-          <Label>Start Date</Label>
-          <Input type="date" value={formData.startDate} onChange={(e) => setFormData({...formData, startDate: e.target.value})} />
-        </div>
-      </div>
-      <Button type="submit" className="w-full">Save Project</Button>
-    </form>
-  )
-}
-
-function TaskForm({ initialData, onSave, onDelete }) {
-  const [formData, setFormData] = useState({
-    title: initialData?.title || '',
-    description: initialData?.description || '',
-    status: initialData?.status || 'todo',
-    priority: initialData?.priority || 'medium',
-    dueDate: initialData?.dueDate ? new Date(initialData.dueDate).toISOString().split('T')[0] : ''
-  })
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    onSave(formData)
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label>Task Title</Label>
-        <Input value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} required />
-      </div>
-      <div className="space-y-2">
-        <Label>Description</Label>
-        <Input value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Status</Label>
-          <Select value={formData.status} onValueChange={(value) => setFormData({...formData, status: value})}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {['todo', 'in_progress', 'review', 'completed'].map(s => (
-                <SelectItem key={s} value={s}>{s.replace('_', ' ')}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2">
-          <Label>Priority</Label>
-          <Select value={formData.priority} onValueChange={(value) => setFormData({...formData, priority: value})}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {['low', 'medium', 'high', 'urgent'].map(p => (
-                <SelectItem key={p} value={p}>{p}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2 col-span-2">
-          <Label>Due Date</Label>
-          <Input type="date" value={formData.dueDate} onChange={(e) => setFormData({...formData, dueDate: e.target.value})} />
-        </div>
-      </div>
-      <div className="flex justify-between">
-        {onDelete && <Button type="button" variant="destructive" onClick={onDelete}>Delete</Button>}
-        <Button type="submit" className="ml-auto">Save Task</Button>
-      </div>
-    </form>
-  )
-}
-
-function ExpenseForm({ initialData, onSave }) {
-  const [formData, setFormData] = useState({
-    description: initialData?.description || '',
-    amount: initialData?.amount || 0,
-    category: initialData?.category || 'Materials',
-    date: initialData?.date ? new Date(initialData.date).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
-  })
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    onSave(formData)
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label>Description</Label>
-        <Input value={formData.description} onChange={(e) => setFormData({...formData, description: e.target.value})} required />
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Amount (₹)</Label>
-          <Input type="number" value={formData.amount} onChange={(e) => setFormData({...formData, amount: parseInt(e.target.value) || 0})} required />
-        </div>
-        <div className="space-y-2">
-          <Label>Category</Label>
-          <Select value={formData.category} onValueChange={(value) => setFormData({...formData, category: value})}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
-            <SelectContent>
-              {['Materials', 'Labor', 'Equipment', 'Marketing', 'Office', 'Travel'].map(c => (
-                <SelectItem key={c} value={c}>{c}</SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-2 col-span-2">
-          <Label>Date</Label>
-          <Input type="date" value={formData.date} onChange={(e) => setFormData({...formData, date: e.target.value})} />
-        </div>
-      </div>
-      <Button type="submit" className="w-full">Save Expense</Button>
-    </form>
-  )
-}
-
-function UserForm({ initialData, onSave }) {
-  const [formData, setFormData] = useState({
-    name: initialData?.name || '',
-    email: initialData?.email || '',
-    password: '',
-    role: initialData?.role || 'sales_rep'
-  })
-
-  const handleSubmit = (e) => {
-    e.preventDefault()
-    const data = { ...formData }
-    if (!data.password) delete data.password
-    onSave(data)
-  }
-
-  return (
-    <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <Label>Name</Label>
-        <Input value={formData.name} onChange={(e) => setFormData({...formData, name: e.target.value})} required />
-      </div>
-      <div className="space-y-2">
-        <Label>Email</Label>
-        <Input type="email" value={formData.email} onChange={(e) => setFormData({...formData, email: e.target.value})} required disabled={!!initialData} />
-      </div>
-      <div className="space-y-2">
-        <Label>{initialData ? 'New Password (leave blank to keep current)' : 'Password'}</Label>
-        <Input type="password" value={formData.password} onChange={(e) => setFormData({...formData, password: e.target.value})} required={!initialData} />
-      </div>
-      <div className="space-y-2">
-        <Label>Role</Label>
-        <Select value={formData.role} onValueChange={(value) => setFormData({...formData, role: value})}>
-          <SelectTrigger><SelectValue /></SelectTrigger>
-          <SelectContent>
-            {['client_admin', 'sales_rep', 'project_manager', 'installer'].map(r => (
-              <SelectItem key={r} value={r}>{r.replace('_', ' ')}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-      <Button type="submit" className="w-full">Save User</Button>
-    </form>
-  )
-}
-
-function ReportsSection() {
-  const [salesReport, setSalesReport] = useState(null)
-  const [expensesReport, setExpensesReport] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    const fetchReports = async () => {
-      try {
-        const [sales, expenses] = await Promise.all([
-          api.getSalesReport(),
-          api.getExpensesReport()
-        ])
-        setSalesReport(sales)
-        setExpensesReport(expenses)
-      } catch (error) {
-        toast.error('Failed to load reports')
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchReports()
+    api.getWhitelabel()
+      .then(data => setSettings(s => ({ ...s, ...data })))
+      .catch(console.error)
+      .finally(() => setLoading(false))
   }, [])
 
-  if (loading) {
-    return <div className="text-center py-12">Loading reports...</div>
+  const handleSave = async () => {
+    try {
+      await api.updateWhitelabel(settings)
+      toast.success('White label settings saved!')
+    } catch (error) {
+      toast.error(error.message)
+    }
   }
 
+  if (loading) return <div>Loading...</div>
+
   return (
-    <div className="space-y-6">
-      <h2 className="text-2xl font-bold">Reports & Analytics</h2>
-
-      <Tabs defaultValue="sales">
-        <TabsList>
-          <TabsTrigger value="sales">Sales Report</TabsTrigger>
-          <TabsTrigger value="expenses">Expense Report</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="sales" className="space-y-4">
-          <div className="grid md:grid-cols-2 gap-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Leads by Status</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {Object.entries(salesReport?.byStatus || {}).map(([status, count]) => (
-                    <div key={status} className="flex justify-between items-center">
-                      <span className="capitalize">{status}</span>
-                      <Badge variant="secondary">{count}</Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardHeader>
-                <CardTitle>Leads by Source</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-2">
-                  {Object.entries(salesReport?.bySource || {}).map(([source, count]) => (
-                    <div key={source} className="flex justify-between items-center">
-                      <span>{source}</span>
-                      <Badge variant="secondary">{count}</Badge>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
+    <GlassCard className="p-6">
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Company Name</Label>
+            <Input 
+              value={settings.companyName} 
+              onChange={(e) => setSettings({ ...settings, companyName: e.target.value })}
+              placeholder="Your Company Name"
+            />
           </div>
-          <Card>
-            <CardHeader>
-              <CardTitle>Monthly Performance</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {salesReport?.monthlyData?.map((data) => (
-                  <div key={data.month} className="flex items-center justify-between p-3 bg-slate-50 rounded">
-                    <span className="font-medium">{data.month}</span>
-                    <div className="flex gap-4">
-                      <span>{data.leads} leads</span>
-                      <span className="font-bold">₹{data.value?.toLocaleString()}</span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-
-        <TabsContent value="expenses" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle>Expenses by Category</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {Object.entries(expensesReport?.byCategory || {}).map(([category, amount]) => (
-                  <div key={category} className="flex justify-between items-center p-3 bg-slate-50 rounded">
-                    <span>{category}</span>
-                    <span className="font-bold">₹{amount?.toLocaleString()}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader>
-              <CardTitle>Monthly Expenses</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {expensesReport?.monthlyData?.map((data) => (
-                  <div key={data.month} className="flex items-center justify-between p-3 bg-slate-50 rounded">
-                    <span className="font-medium">{data.month}</span>
-                    <span className="font-bold">₹{data.total?.toLocaleString()}</span>
-                  </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </TabsContent>
-      </Tabs>
-    </div>
+          <div className="space-y-2">
+            <Label>Logo URL</Label>
+            <Input 
+              value={settings.logo || ''} 
+              onChange={(e) => setSettings({ ...settings, logo: e.target.value })}
+              placeholder="https://example.com/logo.png"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Favicon URL</Label>
+            <Input 
+              value={settings.favicon || ''} 
+              onChange={(e) => setSettings({ ...settings, favicon: e.target.value })}
+              placeholder="https://example.com/favicon.ico"
+            />
+          </div>
+          <div className="space-y-2">
+            <Label>Custom Domain</Label>
+            <Input 
+              value={settings.customDomain || ''} 
+              onChange={(e) => setSettings({ ...settings, customDomain: e.target.value })}
+              placeholder="crm.yourdomain.com"
+            />
+          </div>
+        </div>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>Primary Color</Label>
+            <div className="flex gap-2">
+              <Input 
+                type="color" 
+                value={settings.primaryColor} 
+                onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
+                className="w-16 h-10 p-1"
+              />
+              <Input 
+                value={settings.primaryColor} 
+                onChange={(e) => setSettings({ ...settings, primaryColor: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Secondary Color</Label>
+            <div className="flex gap-2">
+              <Input 
+                type="color" 
+                value={settings.secondaryColor} 
+                onChange={(e) => setSettings({ ...settings, secondaryColor: e.target.value })}
+                className="w-16 h-10 p-1"
+              />
+              <Input 
+                value={settings.secondaryColor} 
+                onChange={(e) => setSettings({ ...settings, secondaryColor: e.target.value })}
+              />
+            </div>
+          </div>
+          <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+            <div>
+              <p className="font-medium">Enable White Labeling</p>
+              <p className="text-sm text-muted-foreground">Apply custom branding to your CRM</p>
+            </div>
+            <Switch 
+              checked={settings.enabled} 
+              onCheckedChange={(checked) => setSettings({ ...settings, enabled: checked })}
+            />
+          </div>
+        </div>
+      </div>
+      <div className="mt-6 pt-6 border-t flex justify-end">
+        <Button onClick={handleSave} className="bg-gradient-to-r from-primary to-indigo-600">
+          Save Changes
+        </Button>
+      </div>
+    </GlassCard>
   )
 }
 
 // ==================== MAIN APP ====================
 export default function App() {
-  const [view, setView] = useState('landing') // landing, login, register, admin, client
+  const [view, setView] = useState('landing')
   const [user, setUser] = useState(null)
   const [client, setClient] = useState(null)
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    // Check for existing session
     const checkAuth = async () => {
       const token = localStorage.getItem('token')
       if (token) {
@@ -1913,11 +2057,7 @@ export default function App() {
           const data = await api.getMe()
           setUser(data.user)
           setClient(data.client)
-          if (data.user.role === 'super_admin') {
-            setView('admin')
-          } else {
-            setView('client')
-          }
+          setView(data.user.role === 'super_admin' ? 'admin' : 'client')
         } catch (error) {
           api.logout()
         }
@@ -1930,11 +2070,7 @@ export default function App() {
   const handleLoginSuccess = (user, client) => {
     setUser(user)
     setClient(client)
-    if (user.role === 'super_admin') {
-      setView('admin')
-    } else {
-      setView('client')
-    }
+    setView(user.role === 'super_admin' ? 'admin' : 'client')
   }
 
   const handleLogout = () => {
@@ -1946,43 +2082,59 @@ export default function App() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <Building2 className="h-12 w-12 text-primary mx-auto animate-pulse" />
-          <p className="mt-4 text-muted-foreground">Loading...</p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-slate-900 to-indigo-950">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          className="text-center"
+        >
+          <motion.div
+            animate={{ rotate: 360 }}
+            transition={{ duration: 2, repeat: Infinity, ease: 'linear' }}
+            className="inline-block"
+          >
+            <Building2 className="h-16 w-16 text-primary" />
+          </motion.div>
+          <motion.p 
+            className="mt-4 text-white text-lg"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.5 }}
+          >
+            Loading BuildCRM...
+          </motion.p>
+        </motion.div>
       </div>
     )
   }
 
   return (
-    <>
+    <AnimatePresence mode="wait">
       {view === 'landing' && (
-        <LandingPage 
-          onLogin={() => setView('login')} 
-          onRegister={() => setView('register')} 
-        />
+        <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <LandingPage onLogin={() => setView('login')} onRegister={() => setView('register')} />
+        </motion.div>
       )}
       {view === 'login' && (
-        <LoginPage 
-          onBack={() => setView('landing')} 
-          onSuccess={handleLoginSuccess}
-          onRegister={() => setView('register')}
-        />
+        <motion.div key="login" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <LoginPage onBack={() => setView('landing')} onSuccess={handleLoginSuccess} onRegister={() => setView('register')} />
+        </motion.div>
       )}
       {view === 'register' && (
-        <RegisterPage 
-          onBack={() => setView('landing')} 
-          onSuccess={handleLoginSuccess}
-          onLogin={() => setView('login')}
-        />
+        <motion.div key="register" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <RegisterPage onBack={() => setView('landing')} onSuccess={handleLoginSuccess} onLogin={() => setView('login')} />
+        </motion.div>
       )}
       {view === 'admin' && user && (
-        <SuperAdminDashboard user={user} onLogout={handleLogout} />
+        <motion.div key="admin" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <SuperAdminDashboard user={user} onLogout={handleLogout} />
+        </motion.div>
       )}
       {view === 'client' && user && (
-        <ClientDashboard user={user} client={client} onLogout={handleLogout} />
+        <motion.div key="client" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <ClientDashboard user={user} client={client} onLogout={handleLogout} />
+        </motion.div>
       )}
-    </>
+    </AnimatePresence>
   )
 }
