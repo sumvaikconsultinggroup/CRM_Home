@@ -43,7 +43,18 @@ export function LeadForm({ lead, onSubmit, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSubmit(formData)
+    // Convert number field to actual number
+    const submitData = {
+      ...formData,
+      value: formData.value ? parseFloat(formData.value) : undefined
+    }
+    // Remove undefined values
+    Object.keys(submitData).forEach(key => {
+      if (submitData[key] === undefined || submitData[key] === '') {
+        delete submitData[key]
+      }
+    })
+    onSubmit(submitData)
   }
 
   return (
