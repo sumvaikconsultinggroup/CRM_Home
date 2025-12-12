@@ -1216,6 +1216,7 @@ function ClientDashboard({ user, client, onLogout }) {
   const [dialogType, setDialogType] = useState(null)
   const [editingItem, setEditingItem] = useState(null)
   const [activeModule, setActiveModule] = useState(null) // Track which module is open
+  const [showUpgradeFlow, setShowUpgradeFlow] = useState(false)
 
   const fetchData = useCallback(async () => {
     setLoading(true)
