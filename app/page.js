@@ -372,150 +372,24 @@ function SuperAdminDashboard({ user, onLogout }) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="space-y-6"
               >
-                <GlassCard className="p-6">
-                  <div className="flex justify-between items-center mb-6">
-                    <div>
-                      <h3 className="text-lg font-semibold">All Clients</h3>
-                      <p className="text-sm text-muted-foreground">Manage client subscriptions and modules</p>
-                    </div>
-                    <div className="flex gap-2">
-                      <Input placeholder="Search clients..." className="w-64" />
-                      <Button variant="outline" size="icon">
-                        <Filter className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                  <div className="space-y-3">
-                    {clients.map((client, i) => (
-                      <motion.div 
-                        key={client.id}
-                        className="flex items-center justify-between p-4 rounded-xl bg-slate-50 hover:bg-slate-100 transition-colors"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white font-bold text-lg">
-                            {client.businessName?.charAt(0)}
-                          </div>
-                          <div>
-                            <div className="flex items-center gap-2">
-                              <p className="font-semibold">{client.businessName}</p>
-                              {client.clientCode && (
-                                <Badge variant="secondary" className="text-xs font-mono bg-slate-200">
-                                  {client.clientCode}
-                                </Badge>
-                              )}
-                            </div>
-                            <p className="text-sm text-muted-foreground">{client.email}</p>
-                            <div className="flex gap-2 mt-1">
-                              <Badge variant="outline" className="text-xs">{client.planName}</Badge>
-                              <Badge variant={client.subscriptionStatus === 'active' ? 'default' : 'destructive'} className="text-xs">
-                                {client.subscriptionStatus}
-                              </Badge>
-                              {client.modules?.length > 0 && (
-                                <Badge variant="secondary" className="text-xs">{client.modules.length} modules</Badge>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Dialog>
-                            <DialogTrigger asChild>
-                              <Button variant="outline" size="sm">
-                                <Eye className="h-4 w-4 mr-1" /> Manage
-                              </Button>
-                            </DialogTrigger>
-                            <DialogContent className="max-w-2xl">
-                              <DialogHeader>
-                                <DialogTitle>{client.businessName}</DialogTitle>
-                                <DialogDescription>Manage client modules and settings</DialogDescription>
-                              </DialogHeader>
-                              <div className="space-y-4 py-4">
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div>
-                                    <Label className="text-muted-foreground">Email</Label>
-                                    <p className="font-medium">{client.email}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-muted-foreground">Phone</Label>
-                                    <p className="font-medium">{client.phone || 'N/A'}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-muted-foreground">Plan</Label>
-                                    <p className="font-medium">{client.planName}</p>
-                                  </div>
-                                  <div>
-                                    <Label className="text-muted-foreground">Users</Label>
-                                    <p className="font-medium">{client.userCount || 0}</p>
-                                  </div>
-                                </div>
-                                <Separator />
-                                <div>
-                                  <Label className="mb-3 block font-semibold">Industry Modules</Label>
-                                  <div className="grid grid-cols-2 gap-3">
-                                    {modules.map((module) => (
-                                      <div key={module.id} className="flex items-center justify-between p-3 rounded-lg bg-slate-50">
-                                        <span className="text-sm font-medium">{module.name}</span>
-                                        <Switch
-                                          checked={client.modules?.includes(module.id)}
-                                          onCheckedChange={() => handleModuleToggle(client.id, module.id, client.modules?.includes(module.id))}
-                                        />
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-                              </div>
-                            </DialogContent>
-                          </Dialog>
-                          <Button
-                            variant={client.subscriptionStatus === 'active' ? 'destructive' : 'default'}
-                            size="sm"
-                            onClick={() => handleToggleClientStatus(client.id)}
-                          >
-                            {client.subscriptionStatus === 'active' ? 'Pause' : 'Activate'}
-                          </Button>
-                          <Button 
-                            variant="outline" 
-                            size="sm"
-                            onClick={() => setResetPasswordClient(client)}
-                          >
-                            <Lock className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </GlassCard>
+                <EnterpriseClientManagement
+                  clients={clients}
+                  modules={modules}
+                  onToggleStatus={handleToggleClientStatus}
+                  onModuleToggle={handleModuleToggle}
+                  onResetPassword={async (clientId, password) => {
+                    try {
+                      await api.resetClientPassword(clientId, password)
+                      toast.success('Password reset successfully')
+                    } catch (error) {
+                      toast.error(error.message)
+                    }
+                  }}
+                  onRefresh={fetchData}
+                />
               </motion.div>
             )}
-
-            {/* Password Reset Dialog - Moved OUTSIDE the loop */}
-            <Dialog open={!!resetPasswordClient} onOpenChange={(open) => !open && setResetPasswordClient(null)}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Reset Password</DialogTitle>
-                  <DialogDescription>
-                    Enter new password for {resetPasswordClient?.businessName}
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="py-4">
-                  <Label>New Password</Label>
-                  <Input 
-                    type="password" 
-                    value={newPassword} 
-                    onChange={(e) => setNewPassword(e.target.value)} 
-                    placeholder="Enter new password"
-                  />
-                </div>
-                <DialogFooter>
-                  <Button variant="outline" onClick={() => setResetPasswordClient(null)}>Cancel</Button>
-                  <Button onClick={handleResetPassword}>Reset Password</Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
 
             {activeTab === 'modules' && (
               <motion.div
