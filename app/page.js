@@ -1349,7 +1349,11 @@ function ClientDashboard({ user, client, onLogout }) {
                           'contractors': HardHat,
                           'painting': Paintbrush,
                           'plumbing': Wrench,
-                          'electrical': Zap
+                          'electrical': Zap,
+                          'doors-windows': Square,
+                          'architects': Building2,
+                          'interior-designers': Palette,
+                          'real-estate-brokers': Building
                         }
                         const ModuleIcon = moduleIcons[module.id] || Package
                         
