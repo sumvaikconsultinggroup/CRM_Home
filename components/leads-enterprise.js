@@ -51,12 +51,13 @@ function DroppableColumn({ status, children, count }) {
 }
 
 // Draggable Lead Card
-function LeadCard({ lead, onUpdate, onSelect, isSelected, isEnterprise, hasAdvancedFeatures }) {
-  const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: lead.id })
+function LeadCard({ lead, onEdit, onSelect, isSelected, isEnterprise, hasAdvancedFeatures }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: lead.id })
   
   const style = {
     transform: CSS.Transform.toString(transform),
-    transition
+    transition,
+    opacity: isDragging ? 0.5 : 1
   }
 
   const scoreColor = lead.score >= 70 ? 'text-green-600' : lead.score >= 40 ? 'text-yellow-600' : 'text-red-600'
@@ -65,9 +66,7 @@ function LeadCard({ lead, onUpdate, onSelect, isSelected, isEnterprise, hasAdvan
     <motion.div
       ref={setNodeRef}
       style={style}
-      {...attributes}
-      {...listeners}
-      className={`p-4 bg-white rounded-lg shadow-sm border hover:shadow-md transition-all cursor-move ${
+      className={`p-4 bg-white rounded-lg shadow-sm border hover:shadow-md transition-all ${
         isSelected ? 'border-primary ring-2 ring-primary/20' : 'border-gray-200'
       }`}
       whileHover={{ scale: 1.02 }}
@@ -77,11 +76,19 @@ function LeadCard({ lead, onUpdate, onSelect, isSelected, isEnterprise, hasAdvan
         {hasAdvancedFeatures && (
           <Checkbox
             checked={isSelected}
-            onCheckedChange={() => onSelect(lead.id)}
-            onClick={(e) => e.stopPropagation()}
+            onCheckedChange={(checked) => {
+              if (checked) {
+                onSelect(lead.id)
+              } else {
+                onSelect(lead.id)
+              }
+            }}
           />
         )}
-        <div className="flex-1 min-w-0">
+        <div 
+          className="flex-1 min-w-0 cursor-pointer"
+          onClick={() => onEdit(lead)}
+        >
           <div className="flex items-start justify-between gap-2">
             <div className="flex-1 min-w-0">
               <p className="font-medium text-sm truncate">{lead.name}</p>
@@ -116,12 +123,19 @@ function LeadCard({ lead, onUpdate, onSelect, isSelected, isEnterprise, hasAdvan
             </div>
           )}
           
-          {isEnterprise && lead.nextFollowUp && (
+          {hasAdvancedFeatures && lead.nextFollowUp && (
             <div className="flex items-center gap-1 mt-2 text-xs text-amber-600">
               <Calendar className="h-3 w-3" />
               <span>{new Date(lead.nextFollowUp).toLocaleDateString()}</span>
             </div>
           )}
+        </div>
+        <div 
+          {...attributes}
+          {...listeners}
+          className="cursor-move p-2 hover:bg-slate-100 rounded"
+        >
+          <ChevronDown className="h-4 w-4 text-muted-foreground rotate-90" />
         </div>
       </div>
     </motion.div>
