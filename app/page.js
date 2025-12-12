@@ -435,8 +435,26 @@ function SuperAdminDashboard({ user, onLogout }) {
   const [moduleRequests, setModuleRequests] = useState([])
   const [plans, setPlans] = useState([])
   const [selectedClient, setSelectedClient] = useState(null)
+  const [resetPasswordClient, setResetPasswordClient] = useState(null)
+  const [newPassword, setNewPassword] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [loading, setLoading] = useState(true)
+
+  const handleResetPassword = async () => {
+    if (!newPassword || newPassword.length < 6) {
+      toast.error('Password must be at least 6 characters')
+      return
+    }
+    
+    try {
+      await api.resetClientPassword(resetPasswordClient.id, newPassword)
+      toast.success(`Password reset for ${resetPasswordClient.businessName}`)
+      setResetPasswordClient(null)
+      setNewPassword('')
+    } catch (error) {
+      toast.error(error.message)
+    }
+  }
 
   const fetchData = useCallback(async () => {
     setLoading(true)
