@@ -1772,9 +1772,13 @@ function WhiteLabelSettings() {
     try {
       await api.updateWhitelabel(settings)
       toast.success('White label settings saved successfully!')
-      // Instant Apply
+      // Instant Apply with HSL conversion
       if (settings.primaryColor) {
-        document.documentElement.style.setProperty('--primary', settings.primaryColor)
+        const hslColor = hexToHSL(settings.primaryColor)
+        document.documentElement.style.setProperty('--primary', hslColor)
+        const lightness = parseInt(hslColor.split(' ')[2])
+        const foregroundLightness = lightness > 50 ? '0%' : '100%'
+        document.documentElement.style.setProperty('--primary-foreground', `0 0% ${foregroundLightness}`)
       }
     } catch (error) {
       toast.error(error.message || 'Failed to save settings')
