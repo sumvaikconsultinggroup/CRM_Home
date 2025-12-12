@@ -2684,7 +2684,12 @@ export default function App() {
         try {
           const data = await api.getMe()
           setUser(data.user)
-          setClient(data.client)
+          // Merge whitelabel settings into client object
+          if (data.client) {
+            setClient({ ...data.client, whiteLabelSettings: data.whitelabel })
+          } else {
+            setClient(null)
+          }
           setView(data.user.role === 'super_admin' ? 'admin' : 'client')
         } catch (error) {
           api.logout()
