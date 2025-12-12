@@ -1955,10 +1955,7 @@ function ClientDashboard({ user, client, onLogout }) {
                     </p>
                     <Button 
                       className="bg-gradient-to-r from-amber-500 to-orange-500"
-                      onClick={() => {
-                        toast.info('Upgrade feature coming soon! Contact support for pricing.')
-                        // You can add actual upgrade logic here
-                      }}
+                      onClick={() => setShowUpgradeFlow(true)}
                     >
                       <Crown className="h-4 w-4 mr-2" /> Upgrade to Enterprise
                     </Button>
