@@ -37,6 +37,7 @@ import { EnterpriseLeads } from '@/components/leads-enterprise'
 import { ExpenseCharts } from '@/components/expense-charts'
 import { UpgradeFlow } from '@/components/upgrade-flow'
 import { SuperAdminReports } from '@/components/super-admin-reports'
+import { SuperAdminSettings } from '@/components/super-admin-settings'
 import { LoginPage, RegisterPage, ForgotPasswordPage } from '@/components/auth-ui'
 
 // Animation variants
