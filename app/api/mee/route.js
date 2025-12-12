@@ -103,7 +103,7 @@ export async function POST(request) {
     // Get AI settings (provider preference)
     const settingsCollection = await getCollection('platform_settings')
     const settings = await settingsCollection.findOne({ type: 'global' })
-    const provider = settings?.aiProvider || 'openai'
+    const provider = settings?.aiProvider?.provider || 'openai'
 
     // Get conversation history
     const conversationsCollection = await getCollection('mee_conversations')
@@ -128,23 +128,32 @@ export async function POST(request) {
       if (context.businessName) businessContext += `- Business: ${context.businessName}\n`
     }
 
-    // Prepare messages for API
-    const apiMessages = [
-      { role: 'system', content: MEE_SYSTEM_PROMPT + businessContext },
-      ...messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
-      { role: 'user', content: message }
-    ]
+    let aiResponse = ''
+    
+    // Try calling AI, fallback to pre-defined responses if unavailable
+    try {
+      // Prepare messages for API
+      const apiMessages = [
+        { role: 'system', content: MEE_SYSTEM_PROMPT + businessContext },
+        ...messages.slice(-10).map(m => ({ role: m.role, content: m.content })),
+        { role: 'user', content: message }
+      ]
 
-    // Call AI
-    const client_ai = getAIClient(provider)
-    const completion = await client_ai.chat.completions.create({
-      model: getModel(provider),
-      messages: apiMessages,
-      temperature: 0.7,
-      max_tokens: 1000
-    })
+      // Call AI
+      const client_ai = getAIClient()
+      const completion = await client_ai.chat.completions.create({
+        model: getModel(provider),
+        messages: apiMessages,
+        temperature: 0.7,
+        max_tokens: 1000
+      })
 
-    const aiResponse = completion.choices[0]?.message?.content || "I apologize, I couldn't process that request. Please try again."
+      aiResponse = completion.choices[0]?.message?.content || FALLBACK_RESPONSES[getResponseType(message)]
+    } catch (aiError) {
+      console.error('AI API Error, using fallback:', aiError.message)
+      // Use intelligent fallback responses
+      aiResponse = FALLBACK_RESPONSES[getResponseType(message)]
+    }
 
     // Save conversation
     const newConvId = conversationId || uuidv4()
