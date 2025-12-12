@@ -384,7 +384,7 @@ export function EnterpriseLeads({ leads, onUpdateLead, onRefresh, isEnterprise, 
       </AnimatePresence>
 
       {/* Bulk Actions Bar */}
-      {isEnterprise && selectedLeads.length > 0 && (
+      {hasAdvancedFeatures && selectedLeads.length > 0 && (
         <motion.div
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
