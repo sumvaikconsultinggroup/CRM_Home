@@ -902,9 +902,19 @@ function ClientDashboard({ user, client, onLogout }) {
             <Button variant="outline" size="icon" onClick={fetchData}>
               <RefreshCw className="h-4 w-4" />
             </Button>
+            {/* Client Code Badge */}
+            {client?.clientCode && (
+              <Badge variant="secondary" className="px-3 py-1 bg-slate-100 text-slate-700 font-mono">
+                {client.clientCode}
+              </Badge>
+            )}
             <Badge variant="outline" className="px-3 py-1">
               {client?.planId?.toUpperCase() || 'BASIC'}
             </Badge>
+            {/* Chat Button */}
+            <Button variant="outline" size="icon" onClick={() => setShowChat(true)} className="relative">
+              <MessageSquare className="h-4 w-4" />
+            </Button>
             <div className="flex items-center gap-2">
               <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white font-medium">
                 {user.name?.charAt(0)}
@@ -913,6 +923,29 @@ function ClientDashboard({ user, client, onLogout }) {
             </div>
           </div>
         </motion.header>
+
+        {/* Team Chat Modal */}
+        <AnimatePresence>
+          {showChat && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+              onClick={() => setShowChat(false)}
+            >
+              <motion.div
+                initial={{ scale: 0.9, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.9, opacity: 0 }}
+                className="w-full max-w-2xl h-[600px]"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <TeamChat user={user} users={users} onClose={() => setShowChat(false)} />
+              </motion.div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Content */}
         <div className="p-6">
