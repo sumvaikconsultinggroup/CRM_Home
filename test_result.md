@@ -403,27 +403,45 @@ frontend:
 
   - task: "Login Page"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/app/page.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Login form with email/password authentication"
+      - working: true
+        agent: "main"
+        comment: "Redesigned UI with split-screen layout. Added Forgot Password flow."
 
   - task: "Register Page"
     implemented: true
-    working: "NA"
+    working: true
     file: "/app/app/page.js"
     stuck_count: 0
     priority: "high"
-    needs_retesting: true
+    needs_retesting: false
     status_history:
       - working: "NA"
         agent: "main"
         comment: "Registration form with business details and plan selection"
+      - working: true
+        agent: "main"
+        comment: "Redesigned UI. Fixed plan fetching logic."
+
+  - task: "Forgot Password"
+    implemented: true
+    working: true
+    file: "/app/components/auth-ui.js"
+    stuck_count: 0
+    priority: "high"
+    needs_retesting: false
+    status_history:
+      - working: true
+        agent: "main"
+        comment: "Implemented frontend UI and backend API. Simulates email sending by logging token to server console."
 
   - task: "Super Admin Dashboard"
     implemented: true
