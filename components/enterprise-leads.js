@@ -277,22 +277,35 @@ const LeadCard = ({ lead, onEdit, onDelete, onView, onStatusChange, showScore, c
             </span>
           </div>
         )}
+
+        {/* Remarks Section */}
+        {lead.remarks && lead.remarks.length > 0 && (
+          <div className="p-2 bg-slate-50 rounded-lg">
+            <p className="text-xs text-muted-foreground mb-1">Latest Remark:</p>
+            <p className="text-sm">{lead.remarks[lead.remarks.length - 1]?.text}</p>
+          </div>
+        )}
       </div>
 
       {/* Card Footer - Quick Actions */}
       <div className="px-4 py-3 border-t bg-slate-50 flex justify-between">
         <div className="flex gap-1">
           <Button variant="ghost" size="sm" className="h-8" asChild>
-            <a href={`tel:${lead.phone}`}><Phone className="h-4 w-4" /></a>
+            <a href={`tel:${lead.phone}`} onClick={(e) => e.stopPropagation()}><Phone className="h-4 w-4" /></a>
           </Button>
           <Button variant="ghost" size="sm" className="h-8" asChild>
-            <a href={`mailto:${lead.email}`}><Mail className="h-4 w-4" /></a>
+            <a href={`mailto:${lead.email}`} onClick={(e) => e.stopPropagation()}><Mail className="h-4 w-4" /></a>
           </Button>
-          <Button variant="ghost" size="sm" className="h-8">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8"
+            onClick={(e) => { e.stopPropagation(); onAddRemark?.(lead) }}
+          >
             <MessageSquare className="h-4 w-4" />
           </Button>
         </div>
-        <Button variant="ghost" size="sm" onClick={() => onView?.(lead)}>
+        <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); onView?.(lead) }}>
           View <ChevronRight className="h-4 w-4 ml-1" />
         </Button>
       </div>
