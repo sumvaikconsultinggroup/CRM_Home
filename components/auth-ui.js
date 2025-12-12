@@ -369,14 +369,10 @@ export function ForgotPasswordPage({ onBack, onLogin }) {
     e.preventDefault()
     setLoading(true)
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500))
-      // In a real app, call api.forgotPassword(email)
+      // Call API
+      await api.forgotPassword(email)
       
-      console.log(`Password reset link sent to: ${email}`) // For demo/debugging
-      
-      // Simulate backend logic
-      if (!email.includes('@')) throw new Error('Invalid email address')
+      console.log(`Password reset requested for: ${email}`)
       
       setSent(true)
       toast.success('Reset link sent to your email')
