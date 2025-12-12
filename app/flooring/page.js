@@ -204,11 +204,12 @@ export default function FlooringModule({ onBack }) {
   const handleCreateConsultation = async (formData) => {
     try {
       await flooringApi.createConsultation(formData)
-      toast.success('Consultation scheduled')
+      toast.success('Consultation scheduled successfully')
       setShowDialog(false)
       fetchData()
     } catch (error) {
-      toast.error(error.message)
+      console.error('Failed to create consultation:', error)
+      toast.error(error.message || 'Failed to create consultation. Please try again.')
     }
   }
 
