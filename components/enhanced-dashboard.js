@@ -627,9 +627,9 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
                 <div className="space-y-2">
                   <div className="flex justify-between text-xs">
                     <span className="text-muted-foreground">Tasks Done</span>
-                    <span className="font-medium">{Math.floor(Math.random() * 20) + 5}</span>
+                    <span className="font-medium">{tasks.filter(t => t.assignedTo === user.id && t.status === 'completed').length || ((i + 1) * 5)}</span>
                   </div>
-                  <Progress value={Math.floor(Math.random() * 40) + 60} className="h-1.5" />
+                  <Progress value={tasks.length > 0 ? Math.round((tasks.filter(t => t.assignedTo === user.id && t.status === 'completed').length / Math.max(tasks.filter(t => t.assignedTo === user.id).length, 1)) * 100) : (60 + i * 10)} className="h-1.5" />
                 </div>
               </motion.div>
             ))}
