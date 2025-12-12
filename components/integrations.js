@@ -98,13 +98,15 @@ const INTEGRATIONS = [
   },
   {
     id: 'whatsapp',
-    name: 'WhatsApp Business',
-    description: 'Send automated messages via WhatsApp Business API.',
+    name: 'WhatsApp Business API',
+    description: 'Connect directly with WhatsApp Business API for automated messaging.',
     icon: '📱',
     category: 'communication',
     popular: true,
     color: 'from-green-500 to-green-600',
-    features: ['Lead notifications', 'Follow-up messages', 'Template messages', 'Quick replies']
+    hasDirectConnect: true,
+    requiredFields: ['phoneNumberId', 'accessToken', 'businessAccountId'],
+    features: ['Lead notifications', 'Follow-up messages', 'Template messages', 'Quick replies', 'Media sharing']
   },
   {
     id: 'email-smtp',
@@ -113,7 +115,21 @@ const INTEGRATIONS = [
     icon: '✉️',
     category: 'communication',
     color: 'from-slate-500 to-slate-600',
+    hasDirectConnect: true,
+    requiredFields: ['smtpHost', 'smtpPort', 'smtpUser', 'smtpPassword'],
     features: ['Custom templates', 'Bulk emails', 'Tracking', 'Personalization']
+  },
+  {
+    id: 'tally',
+    name: 'Tally ERP',
+    description: 'Sync invoices, payments, and accounting data with Tally.',
+    icon: '📒',
+    category: 'accounting',
+    popular: true,
+    color: 'from-red-500 to-red-600',
+    hasDirectConnect: true,
+    requiredFields: ['tallyHost', 'tallyPort', 'companyName'],
+    features: ['Invoice sync', 'Payment tracking', 'Ledger updates', 'GST compliance', 'Auto vouchers']
   },
   {
     id: 'indiamart',
