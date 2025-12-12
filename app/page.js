@@ -31,6 +31,7 @@ import {
   Globe, Image, FileText, Star, Crown, ChevronDown, ExternalLink
 } from 'lucide-react'
 import FlooringModule from './flooring/page'
+import { LeadForm, ProjectForm, TaskForm, ExpenseForm, UserForm } from '@/components/client-forms'
 
 // Animation variants
 const fadeIn = {
