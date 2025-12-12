@@ -1953,7 +1953,13 @@ function ClientDashboard({ user, client, onLogout }) {
                     <p className="text-muted-foreground mb-6">
                       White labeling is available on the Enterprise plan. Upgrade to customize your branding.
                     </p>
-                    <Button className="bg-gradient-to-r from-amber-500 to-orange-500">
+                    <Button 
+                      className="bg-gradient-to-r from-amber-500 to-orange-500"
+                      onClick={() => {
+                        toast.info('Upgrade feature coming soon! Contact support for pricing.')
+                        // You can add actual upgrade logic here
+                      }}
+                    >
                       <Crown className="h-4 w-4 mr-2" /> Upgrade to Enterprise
                     </Button>
                   </GlassCard>
