@@ -129,7 +129,14 @@ class ModularAPITester:
             else:
                 self.log_test("Super Admin Login", False, "Invalid login response structure")
         else:
-            self.log_test("Super Admin Login", False, "Super admin login failed")
+            error_msg = "Super admin login failed"
+            if response:
+                try:
+                    error_data = response.json()
+                    error_msg += f" - {error_data.get('message', 'Unknown error')}"
+                except:
+                    error_msg += f" - Status: {response.status_code}"
+            self.log_test("Super Admin Login", False, error_msg)
             
         # Test demo client login
         demo_login_data = {
