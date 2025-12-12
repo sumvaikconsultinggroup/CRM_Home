@@ -1409,10 +1409,38 @@ function ClientDashboard({ user, client, onLogout }) {
               >
                 {/* Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <StatCard title="Total Leads" value={stats.overview.totalLeads} change={`${stats.overview.conversionRate}% conversion`} icon={Target} delay={0} />
-                  <StatCard title="Pipeline Value" value={`₹${stats.overview.pipelineValue?.toLocaleString()}`} change={`${stats.overview.wonLeads} won`} icon={DollarSign} delay={0.1} />
-                  <StatCard title="Active Projects" value={stats.overview.activeProjects} change={`of ${stats.overview.totalProjects} total`} icon={Briefcase} delay={0.2} />
-                  <StatCard title="Tasks Done" value={`${stats.overview.completedTasks}/${stats.overview.totalTasks}`} change={`${stats.overview.taskCompletionRate}%`} icon={CheckCircle2} delay={0.3} />
+                  <StatCard 
+                    title="Total Leads" 
+                    value={stats.overview.totalLeads} 
+                    change={`${stats.overview.conversionRate}% conversion`} 
+                    icon={Target} 
+                    delay={0} 
+                    onClick={() => setActiveTab('leads')}
+                  />
+                  <StatCard 
+                    title="Pipeline Value" 
+                    value={`₹${stats.overview.pipelineValue?.toLocaleString()}`} 
+                    change={`${stats.overview.wonLeads} won`} 
+                    icon={DollarSign} 
+                    delay={0.1}
+                    onClick={() => setActiveTab('leads')}
+                  />
+                  <StatCard 
+                    title="Active Projects" 
+                    value={stats.overview.activeProjects} 
+                    change={`of ${stats.overview.totalProjects} total`} 
+                    icon={Briefcase} 
+                    delay={0.2}
+                    onClick={() => setActiveTab('projects')}
+                  />
+                  <StatCard 
+                    title="Tasks Done" 
+                    value={`${stats.overview.completedTasks}/${stats.overview.totalTasks}`} 
+                    change={`${stats.overview.taskCompletionRate}%`} 
+                    icon={CheckCircle2} 
+                    delay={0.3}
+                    onClick={() => setActiveTab('tasks')}
+                  />
                 </div>
 
                 {/* Charts */}
