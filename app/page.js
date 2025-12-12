@@ -916,44 +916,7 @@ function SuperAdminDashboard({ user, onLogout }) {
                 exit={{ opacity: 0, y: -20 }}
                 className="space-y-6"
               >
-                <GlassCard className="p-6">
-                  <h3 className="text-lg font-semibold mb-4">Admin Profile</h3>
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <Label>Name</Label>
-                        <Input defaultValue={user?.name || 'Super Admin'} />
-                      </div>
-                      <div className="space-y-2">
-                        <Label>Email</Label>
-                        <Input defaultValue={user?.email || ''} disabled />
-                      </div>
-                    </div>
-                    <div className="flex justify-end">
-                      <Button onClick={() => toast.success('Profile updated')}>Save Changes</Button>
-                    </div>
-                  </div>
-                </GlassCard>
-
-                <GlassCard className="p-6">
-                  <h3 className="text-lg font-semibold mb-4">System Configuration</h3>
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                      <div>
-                        <p className="font-medium">New Registrations</p>
-                        <p className="text-sm text-muted-foreground">Allow new clients to sign up</p>
-                      </div>
-                      <Switch defaultChecked />
-                    </div>
-                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
-                      <div>
-                        <p className="font-medium">Maintenance Mode</p>
-                        <p className="text-sm text-muted-foreground">Disable access for all clients</p>
-                      </div>
-                      <Switch />
-                    </div>
-                  </div>
-                </GlassCard>
+                <SuperAdminSettings user={user} />
               </motion.div>
             )}
           </AnimatePresence>
