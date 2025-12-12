@@ -11,7 +11,7 @@ const getAIClient = (provider = 'openai') => {
   // Emergent LLM key works with their unified API
   return new OpenAI({
     apiKey: apiKey,
-    baseURL: 'https://llm.emergentagi.com/v1'
+    baseURL: 'https://api.emergent.sh/v1'
   })
 }
 
