@@ -500,7 +500,18 @@ export function ExpenseForm({ expense, projects, onSubmit, onCancel }) {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    onSubmit(formData)
+    // Convert number field to actual number
+    const submitData = {
+      ...formData,
+      amount: formData.amount ? parseFloat(formData.amount) : undefined
+    }
+    // Remove undefined values
+    Object.keys(submitData).forEach(key => {
+      if (submitData[key] === undefined || submitData[key] === '') {
+        delete submitData[key]
+      }
+    })
+    onSubmit(submitData)
   }
 
   return (
