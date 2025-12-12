@@ -444,37 +444,25 @@ export function EnterpriseLeads({ leads, onUpdateLead, onRefresh, isEnterprise, 
             const statusLeads = filteredLeads.filter(l => l.status === status)
             
             return (
-              <div key={status} className="min-h-[400px]">
-                <Card className="h-full">
-                  <div className="p-4 border-b flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <div className={`h-2 w-2 rounded-full bg-${status === 'won' ? 'green' : status === 'lost' ? 'red' : 'blue'}-500`} />
-                      <span className="font-medium capitalize text-sm">{status}</span>
-                    </div>
-                    <Badge variant="secondary">{statusLeads.length}</Badge>
-                  </div>
-                  
-                  <SortableContext items={statusLeads.map(l => l.id)} strategy={verticalListSortingStrategy}>
-                    <div className="p-2 space-y-2 max-h-[600px] overflow-y-auto">
-                      {statusLeads.map((lead) => (
-                        <LeadCard
-                          key={lead.id}
-                          lead={lead}
-                          onUpdate={onUpdateLead}
-                          onSelect={(id) => {
-                            setSelectedLeads(prev =>
-                              prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
-                            )
-                          }}
-                          isSelected={selectedLeads.includes(lead.id)}
-                          isEnterprise={isEnterprise}
-                          hasAdvancedFeatures={hasAdvancedFeatures}
-                        />
-                      ))}
-                    </div>
-                  </SortableContext>
-                </Card>
-              </div>
+              <DroppableColumn key={status} status={status} count={statusLeads.length}>
+                <SortableContext items={statusLeads.map(l => l.id)} strategy={verticalListSortingStrategy}>
+                  {statusLeads.map((lead) => (
+                    <LeadCard
+                      key={lead.id}
+                      lead={lead}
+                      onUpdate={onUpdateLead}
+                      onSelect={(id) => {
+                        setSelectedLeads(prev =>
+                          prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
+                        )
+                      }}
+                      isSelected={selectedLeads.includes(lead.id)}
+                      isEnterprise={isEnterprise}
+                      hasAdvancedFeatures={hasAdvancedFeatures}
+                    />
+                  ))}
+                </SortableContext>
+              </DroppableColumn>
             )
           })}
         </div>
