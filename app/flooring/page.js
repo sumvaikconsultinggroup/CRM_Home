@@ -1181,6 +1181,10 @@ function ConsultationForm({ onSubmit }) {
         </div>
       </div>
       <div className="space-y-2">
+        <Label>Email</Label>
+        <Input type="email" value={formData.customerEmail} onChange={(e) => setFormData({...formData, customerEmail: e.target.value})} />
+      </div>
+      <div className="space-y-2">
         <Label>Consultation Type</Label>
         <Select value={formData.type} onValueChange={(v) => setFormData({...formData, type: v})}>
           <SelectTrigger><SelectValue /></SelectTrigger>
