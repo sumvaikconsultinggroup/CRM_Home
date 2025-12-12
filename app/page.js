@@ -768,29 +768,6 @@ function SuperAdminDashboard({ user, onLogout }) {
                           >
                             {client.subscriptionStatus === 'active' ? 'Pause' : 'Activate'}
                           </Button>
-                          <Dialog open={!!resetPasswordClient} onOpenChange={(open) => !open && setResetPasswordClient(null)}>
-                            <DialogContent>
-                              <DialogHeader>
-                                <DialogTitle>Reset Password</DialogTitle>
-                                <DialogDescription>
-                                  Enter new password for {resetPasswordClient?.businessName}
-                                </DialogDescription>
-                              </DialogHeader>
-                              <div className="py-4">
-                                <Label>New Password</Label>
-                                <Input 
-                                  type="password" 
-                                  value={newPassword} 
-                                  onChange={(e) => setNewPassword(e.target.value)} 
-                                  placeholder="Enter new password"
-                                />
-                              </div>
-                              <DialogFooter>
-                                <Button variant="outline" onClick={() => setResetPasswordClient(null)}>Cancel</Button>
-                                <Button onClick={handleResetPassword}>Reset Password</Button>
-                              </DialogFooter>
-                            </DialogContent>
-                          </Dialog>
                           <Button 
                             variant="outline" 
                             size="sm"
@@ -805,6 +782,31 @@ function SuperAdminDashboard({ user, onLogout }) {
                 </GlassCard>
               </motion.div>
             )}
+
+            {/* Password Reset Dialog - Moved OUTSIDE the loop */}
+            <Dialog open={!!resetPasswordClient} onOpenChange={(open) => !open && setResetPasswordClient(null)}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Reset Password</DialogTitle>
+                  <DialogDescription>
+                    Enter new password for {resetPasswordClient?.businessName}
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="py-4">
+                  <Label>New Password</Label>
+                  <Input 
+                    type="password" 
+                    value={newPassword} 
+                    onChange={(e) => setNewPassword(e.target.value)} 
+                    placeholder="Enter new password"
+                  />
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setResetPasswordClient(null)}>Cancel</Button>
+                  <Button onClick={handleResetPassword}>Reset Password</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             {activeTab === 'modules' && (
               <motion.div
