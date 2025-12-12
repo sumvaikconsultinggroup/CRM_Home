@@ -144,6 +144,7 @@ export async function POST(request) {
       },
       client: { 
         id: client.id, 
+        clientCode: client.clientCode,
         businessName: client.businessName, 
         planId: client.planId 
       }
