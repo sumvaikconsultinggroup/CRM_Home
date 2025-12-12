@@ -69,7 +69,7 @@ const MessageBubble = ({ message, isUser }) => {
             dangerouslySetInnerHTML={{ __html: formatMessage(message.content) }}
           />
           <p className={`text-xs mt-2 ${isUser ? 'text-white/60' : 'text-slate-400'}`}>
-            {new Date(message.timestamp || Date.now()).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            {message.timestamp ? new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : 'Just now'}
           </p>
         </div>
       </div>
