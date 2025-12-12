@@ -841,6 +841,8 @@ function ClientDashboard({ user, client, onLogout }) {
               onClick={() => {
                 if (item.isModule && item.id === 'flooring-module') {
                   setActiveModule('flooring')
+                } else if (item.isChat) {
+                  setShowChat(true)
                 } else {
                   setActiveTab(item.id)
                 }
@@ -850,7 +852,9 @@ function ClientDashboard({ user, client, onLogout }) {
                   ? 'bg-gradient-to-r from-primary to-indigo-600 text-white shadow-lg shadow-primary/25' 
                   : item.isModule 
                     ? 'hover:bg-amber-100 text-amber-700 bg-amber-50 border border-amber-200'
-                    : 'hover:bg-slate-100 text-slate-600'
+                    : item.isChat
+                      ? 'hover:bg-emerald-100 text-emerald-700 bg-emerald-50 border border-emerald-200'
+                      : 'hover:bg-slate-100 text-slate-600'
               }`}
               whileHover={{ x: 5 }}
               whileTap={{ scale: 0.98 }}
