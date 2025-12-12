@@ -38,7 +38,7 @@ import { ExpenseCharts } from '@/components/expense-charts'
 import { UpgradeFlow } from '@/components/upgrade-flow'
 import { SuperAdminReports } from '@/components/super-admin-reports'
 import { SuperAdminSettings } from '@/components/super-admin-settings'
-import LandingPage from '@/components/landing-page'
+import EnhancedLanding from '@/components/enhanced-landing'
 import { LoginPage, RegisterPage, ForgotPasswordPage } from '@/components/auth-ui'
 
 // Animation variants
