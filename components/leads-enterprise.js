@@ -304,14 +304,18 @@ function AdvancedFilters({ filters, onFilterChange, hasAdvancedFeatures }) {
 }
 
 // Main Enterprise Leads Component
-export function EnterpriseLeads({ leads, onUpdateLead, onRefresh, isEnterprise, isProfessional, client }) {
+export function EnterpriseLeads({ leads, onUpdateLead, onEditLead, onRefresh, isEnterprise, isProfessional, client }) {
   const [selectedLeads, setSelectedLeads] = useState([])
   const [showImport, setShowImport] = useState(false)
   const [showFilters, setShowFilters] = useState(false)
   const [filters, setFilters] = useState({})
   const [searchQuery, setSearchQuery] = useState('')
 
-  const sensors = useSensors(useSensor(PointerSensor))
+  const sensors = useSensors(useSensor(PointerSensor, {
+    activationConstraint: {
+      distance: 8
+    }
+  }))
 
   const statuses = ['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'won', 'lost']
 
