@@ -1576,34 +1576,16 @@ function ClientDashboard({ user, client, onLogout }) {
                   </Button>
                 </div>
 
-                {/* Kanban Board */}
-                <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-7 gap-4">
-                  {['new', 'contacted', 'qualified', 'proposal', 'negotiation', 'won', 'lost'].map((status) => (
-                    <GlassCard key={status} className="min-h-[400px]">
-                      <div className="p-4 border-b flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div className={`h-2 w-2 rounded-full ${statusColors[status]}`} />
-                          <span className="font-medium capitalize text-sm">{status}</span>
-                        </div>
-                        <Badge variant="secondary">{leads.filter(l => l.status === status).length}</Badge>
-                      </div>
-                      <div className="p-2 space-y-2 max-h-[500px] overflow-y-auto">
-                        {leads.filter(l => l.status === status).map((lead) => (
-                          <motion.div
-                            key={lead.id}
-                            className="p-3 bg-white rounded-lg shadow-sm cursor-pointer hover:shadow-md transition-shadow border"
-                            whileHover={{ scale: 1.02 }}
-                            onClick={() => { setDialogType('lead'); setEditingItem(lead); setShowDialog(true); }}
-                          >
-                            <p className="font-medium text-sm">{lead.name}</p>
-                            <p className="text-xs text-muted-foreground">{lead.source}</p>
-                            <p className="text-sm font-bold text-primary mt-1">₹{lead.value?.toLocaleString()}</p>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </GlassCard>
-                  ))}
-                </div>
+                <EnterpriseLeads
+                  leads={leads}
+                  onUpdateLead={async (leadId, data) => {
+                    await api.updateLead(leadId, data)
+                    fetchData()
+                  }}
+                  onRefresh={fetchData}
+                  isEnterprise={client?.plan?.id === 'enterprise'}
+                  client={client}
+                />
               </motion.div>
             )}
 
