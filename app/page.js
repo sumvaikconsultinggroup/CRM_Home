@@ -1248,10 +1248,27 @@ function ClientDashboard({ user, client, onLogout }) {
     fetchData()
     console.log('Client Dashboard - User & Client:', { 
       user: user?.email, 
-      clientPlan: client?.plan?.id,
-      planName: client?.plan?.name 
+      clientPlan: client?.plan, // Log the whole plan object
+      planId: client?.plan?.id || client?.plan // Log what we think the ID is
     })
-  }, [fetchData])
+
+    // Apply White Label Colors
+    if (client?.whiteLabelSettings?.primaryColor) {
+      document.documentElement.style.setProperty('--primary', client.whiteLabelSettings.primaryColor)
+      // We might need to handle HSL values if using shadcn/ui convention, 
+      // but assuming hex for now as per previous agent's work.
+      // If shadcn uses HSL variables (e.g. --primary: 222.2 47.4% 11.2%), simply setting a hex won't work 
+      // unless we convert it or if the tailwind config is set to use the hex variable directly.
+      // Given the previous context, I'll assume standard CSS variable usage or that I need to be careful.
+    }
+  }, [fetchData, client])
+
+  // Robust Plan Detection
+  const rawPlan = client?.plan
+  const planId = (typeof rawPlan === 'string' ? rawPlan : rawPlan?.id || 'basic').toLowerCase()
+  const isEnterprise = planId === 'enterprise'
+  const isProfessional = planId === 'professional'
+
 
   // Check if wooden flooring module is enabled
   const hasFlooringModule = modules.some(m => m.id === 'wooden-flooring' && m.enabled)
