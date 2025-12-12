@@ -554,8 +554,9 @@ export default function EnhancedLanding({ onLogin, onRegister, onModuleClick }) 
     fetch('/api/modules-public')
       .then(res => res.json())
       .then(data => {
-        if (data.success && data.data) {
-          setModules(data.data)
+        // API returns array directly
+        if (Array.isArray(data)) {
+          setModules(data)
         }
       })
       .catch(console.error)
@@ -564,8 +565,9 @@ export default function EnhancedLanding({ onLogin, onRegister, onModuleClick }) 
     fetch('/api/plans')
       .then(res => res.json())
       .then(data => {
-        if (data.success && data.data) {
-          setPlans(data.data)
+        // API returns array directly
+        if (Array.isArray(data)) {
+          setPlans(data)
         }
       })
       .catch(console.error)
