@@ -468,7 +468,7 @@ export function EnterpriseLeads({ leads, onUpdateLead, onEditLead, onRefresh, is
                     <LeadCard
                       key={lead.id}
                       lead={lead}
-                      onUpdate={onUpdateLead}
+                      onEdit={onEditLead}
                       onSelect={(id) => {
                         setSelectedLeads(prev =>
                           prev.includes(id) ? prev.filter(i => i !== id) : [...prev, id]
