@@ -239,6 +239,12 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   // Material Requisition State (for B2B workflow)
   const [materialRequisition, setMaterialRequisition] = useState({}) // { productId: { product, quantity, selected } }
   
+  // Measurement State (for B2C workflow)
+  const [measurementProducts, setMeasurementProducts] = useState({}) // { productId: { product, quantity, selected } }
+  const [technicianName, setTechnicianName] = useState('')
+  const [measurementDate, setMeasurementDate] = useState(new Date().toISOString().split('T')[0])
+  const [measurementNotes, setMeasurementNotes] = useState('')
+  
   // Selection States
   const [selectedProject, setSelectedProject] = useState(null)
   const [selectedCustomer, setSelectedCustomer] = useState(null)
