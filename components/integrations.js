@@ -87,7 +87,8 @@ const INTEGRATIONS = [
     icon: '📊',
     category: 'productivity',
     color: 'from-green-400 to-green-500',
-    features: ['Auto export leads', 'Report generation', 'Data backup', 'Custom views']
+    webhookEndpoint: '/api/webhooks/google-sheets',
+    features: ['Auto export leads', 'Report generation', 'Data backup', 'Custom views', 'Real-time sync']
   },
   {
     id: 'slack',
