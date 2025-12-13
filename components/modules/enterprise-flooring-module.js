@@ -194,6 +194,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   const [installations, setInstallations] = useState([])
   const [inventory, setInventory] = useState({ inventory: [], summary: {} })
   const [crmProjects, setCrmProjects] = useState([]) // CRM Projects for sync
+  const [crmContacts, setCrmContacts] = useState([]) // CRM Contacts for customer selection
   const [moduleSettings, setModuleSettings] = useState(null) // Module settings
   const [reports, setReports] = useState({}) // Reports data
   const [meeAiMessages, setMeeAiMessages] = useState([]) // MEE AI chat
