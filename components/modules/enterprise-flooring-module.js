@@ -5086,8 +5086,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                 {products.length > 0 ? (
                   <div className="space-y-2">
                     {products.map(product => {
-                      const isSelected = selectedProducts[product.id]?.selected
-                      const quantity = selectedProducts[product.id]?.quantity || totalArea
+                      const isSelected = measurementProducts[product.id]?.selected
+                      const quantity = measurementProducts[product.id]?.quantity || totalArea
                       const price = product.price || product.pricing?.sellingPrice || 0
                       const inv = getProductInventory(product.id)
                       const status = getInventoryStatus(product.id, isSelected ? quantity : 0)
