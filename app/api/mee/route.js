@@ -942,20 +942,6 @@ function generateContextualFallback(message, context) {
       `\n\n- Mee 🤖`
   }
 
-  if (msg.includes('invoice') || msg.includes('payment') || msg.includes('revenue') || msg.includes('money') || msg.includes('financial')) {
-    return `💰 **Financial Overview (Real-Time)**\n\n` +
-      `**Revenue:**\n` +
-      `• Total Revenue: ₹${context.businessHealth.revenue.total.toLocaleString()}\n` +
-      `• Pipeline Value: ₹${context.businessHealth.revenue.pipeline.toLocaleString()}\n` +
-      `• Pending Collections: ₹${context.businessHealth.revenue.pending.toLocaleString()}\n\n` +
-      `**Invoices:**\n` +
-      `• Total: ${context.woodenFlooring.invoices.total}\n` +
-      `• Paid: ₹${context.woodenFlooring.invoices.paidAmount.toLocaleString()}\n` +
-      `• Pending: ₹${context.woodenFlooring.invoices.pendingAmount.toLocaleString()}\n` +
-      `• Overdue: ${context.woodenFlooring.invoices.overdueInvoices.length}\n\n` +
-      `**Expenses This Month:** ₹${context.expenses.thisMonth.toLocaleString()}\n\n- Mee 🤖`
-  }
-
   if (msg.includes('customer') || msg.includes('client')) {
     return `👥 **Customer Insights (Real-Time)**\n\n` +
       `**Summary:**\n` +
