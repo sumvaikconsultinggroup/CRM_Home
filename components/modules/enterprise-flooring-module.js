@@ -302,20 +302,53 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }, [token])
 
+  const fetchModuleSettings = useCallback(async () => {
+    try {
+      const res = await fetch('/api/flooring/enhanced/settings', { headers })
+      const data = await res.json()
+      if (data.settings) setModuleSettings(data.settings)
+    } catch (error) {
+      console.error('Settings fetch error:', error)
+    }
+  }, [token])
+
+  const fetchReports = useCallback(async (reportType = 'summary') => {
+    try {
+      const res = await fetch(`/api/flooring/enhanced/reports?type=${reportType}`, { headers })
+      const data = await res.json()
+      if (data) setReports(prev => ({ ...prev, [reportType]: data }))
+    } catch (error) {
+      console.error('Reports fetch error:', error)
+    }
+  }, [token])
+
+  const fetchCrmProjects = useCallback(async () => {
+    try {
+      const res = await fetch('/api/projects', { headers })
+      const data = await res.json()
+      if (Array.isArray(data)) setCrmProjects(data)
+    } catch (error) {
+      console.error('CRM Projects fetch error:', error)
+    }
+  }, [token])
+
   // Load data on mount and when tab changes
   useEffect(() => {
     fetchDashboard()
     fetchProducts()
     fetchProjects()
     fetchCustomers()
-  }, [fetchDashboard, fetchProducts, fetchProjects, fetchCustomers, refreshKey])
+    fetchCrmProjects()
+  }, [fetchDashboard, fetchProducts, fetchProjects, fetchCustomers, fetchCrmProjects, refreshKey])
 
   useEffect(() => {
     if (activeTab === 'quotes') fetchQuotes()
     if (activeTab === 'invoices') fetchInvoices()
     if (activeTab === 'installations') fetchInstallations()
     if (activeTab === 'inventory') fetchInventory()
-  }, [activeTab, fetchQuotes, fetchInvoices, fetchInstallations, fetchInventory])
+    if (activeTab === 'settings') fetchModuleSettings()
+    if (activeTab === 'reports') fetchReports('summary')
+  }, [activeTab, fetchQuotes, fetchInvoices, fetchInstallations, fetchInventory, fetchModuleSettings, fetchReports])
 
   // Refresh data
   const refreshData = () => {
