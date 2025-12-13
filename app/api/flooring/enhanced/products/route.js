@@ -58,15 +58,20 @@ export async function GET(request) {
       products.countDocuments(query)
     ])
 
-    // Get categories summary
+    // Get categories summary (new: categoryId, backward compatible: category)
     const categorySummary = await products.aggregate([
-      { $group: { _id: '$category', count: { $sum: 1 } } }
+      {
+        $group: {
+          _id: { $ifNull: ['$categoryId', '$category'] },
+          count: { $sum: 1 }
+        }
+      }
     ]).toArray()
 
     return successResponse({
       products: sanitizeDocuments(result),
       total,
-      categories: categorySummary.map(c => ({ category: c._id, count: c.count }))
+      categories: categorySummary.map(c => ({ categoryId: c._id, count: c.count }))
     })
   } catch (error) {
     console.error('Products GET Error:', error)
