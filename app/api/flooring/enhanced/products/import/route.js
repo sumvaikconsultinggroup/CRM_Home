@@ -164,12 +164,16 @@ export async function POST(request) {
           continue
         }
 
+        const categorySlug = String(raw.category || raw.Category || '').trim()
+        const categoryIdFromSlug = categorySlug ? categorySlugToId.get(normalizeSlug(categorySlug)) : undefined
+        const categoryId = String(raw.categoryId || raw.CategoryId || '').trim() || categoryIdFromSlug || ''
+
         const doc = {
           name,
           sku: sku || undefined,
           brand: raw.brand || raw.Brand || '',
           collection: raw.collection || raw.Collection || '',
-          categoryId: raw.categoryId || '',
+          categoryId,
           description: raw.description || raw.Description || '',
           status: (raw.status || raw.Status || 'active').toLowerCase(),
           images: []
