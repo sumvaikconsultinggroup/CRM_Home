@@ -4518,10 +4518,35 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   // Measurements Tab (for selected project)
   const renderMeasurements = () => {
     // Filter to show only B2C projects
-    const b2cProjects = projects.filter(p => p.segment === 'b2c' || !p.segment) // Default to B2C if not specified
-    const projectsWithMeasurements = b2cProjects.filter(p => 
-      ['measurement_scheduled', 'measurement_done', 'quote_pending', 'quote_sent'].includes(p.status)
-    )
+    const b2cProjects = projects.filter(p => p.segment === 'b2c' || !p.segment)
+    
+    // Get inventory data for products
+    const inventoryMap = new Map()
+    if (inventory?.inventory) {
+      inventory.inventory.forEach(inv => {
+        inventoryMap.set(inv.productId, inv)
+      })
+    }
+
+    // Get inventory for a product
+    const getProductInventory = (productId) => {
+      const inv = inventoryMap.get(productId)
+      return {
+        totalQty: inv?.quantity || 0,
+        availableQty: inv?.availableQty || 0,
+        reservedQty: inv?.reservedQty || 0,
+        reorderLevel: inv?.reorderLevel || 100
+      }
+    }
+
+    // Get inventory status
+    const getInventoryStatus = (productId, requiredQty = 0) => {
+      const inv = getProductInventory(productId)
+      if (inv.availableQty <= 0) return { status: 'out_of_stock', color: 'text-red-600 bg-red-50', label: 'Out of Stock' }
+      if (requiredQty > 0 && inv.availableQty < requiredQty) return { status: 'insufficient', color: 'text-amber-600 bg-amber-50', label: 'Insufficient' }
+      if (inv.availableQty <= inv.reorderLevel) return { status: 'low_stock', color: 'text-amber-600 bg-amber-50', label: 'Low Stock' }
+      return { status: 'in_stock', color: 'text-emerald-600 bg-emerald-50', label: 'In Stock' }
+    }
 
     // If no project selected, show project selection
     if (!selectedProject || selectedProject.segment === 'b2b') {
@@ -4532,6 +4557,14 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             <div>
               <h3 className="text-lg font-semibold">Room Measurements</h3>
               <p className="text-sm text-muted-foreground">Manage measurements for B2C consumer projects</p>
+            </div>
+            {/* Inventory Summary */}
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg text-sm">
+              <Warehouse className="h-4 w-4 text-slate-600" />
+              <span className="text-slate-600">Stock:</span>
+              <span className="font-semibold">{inventory?.summary?.totalQuantity?.toLocaleString() || 0}</span>
+              <span className="text-slate-400">|</span>
+              <span className="text-emerald-600">Avail: {inventory?.summary?.availableQuantity?.toLocaleString() || 0}</span>
             </div>
           </div>
 
@@ -4551,18 +4584,34 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     <div 
                       key={project.id}
                       className={`p-4 border rounded-lg cursor-pointer transition-all hover:border-cyan-500 hover:bg-cyan-50 ${selectedProject?.id === project.id ? 'border-cyan-500 bg-cyan-50' : ''}`}
-                      onClick={() => setSelectedProject(project)}
+                      onClick={() => {
+                        setSelectedProject(project)
+                        fetchInventory() // Refresh inventory when selecting project
+                      }}
                     >
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium">{project.projectNumber}</p>
                           <p className="text-sm text-muted-foreground">{project.customerName || project.name}</p>
-                          {project.rooms?.length > 0 && (
-                            <p className="text-xs text-cyan-600 mt-1">
-                              <Ruler className="h-3 w-3 inline mr-1" />
-                              {project.rooms.length} rooms • {project.totalArea || 0} sqft total
-                            </p>
-                          )}
+                          <div className="flex items-center gap-3 mt-1">
+                            {project.rooms?.length > 0 && (
+                              <span className="text-xs text-cyan-600">
+                                <Ruler className="h-3 w-3 inline mr-1" />
+                                {project.rooms.length} rooms • {project.totalArea || 0} sqft
+                              </span>
+                            )}
+                            {project.measurementDetails?.technicianName && (
+                              <span className="text-xs text-purple-600">
+                                <Users className="h-3 w-3 inline mr-1" />
+                                {project.measurementDetails.technicianName}
+                              </span>
+                            )}
+                            {project.measurementDetails?.inventoryBlocked && (
+                              <Badge variant="outline" className="text-xs text-amber-600 border-amber-400">
+                                <Lock className="h-3 w-3 mr-1" /> Inventory Blocked
+                              </Badge>
+                            )}
+                          </div>
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge className={ProjectStatusB2C[project.status]?.color || 'bg-slate-100'}>
@@ -4578,7 +4627,6 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                 <div className="text-center py-8">
                   <Ruler className="h-12 w-12 mx-auto text-slate-300 mb-3" />
                   <p className="text-muted-foreground">No B2C projects found</p>
-                  <p className="text-sm text-muted-foreground mt-1">Create a B2C project first or send one for measurement</p>
                   <Button className="mt-4" onClick={() => setActiveTab('projects')}>
                     Go to Projects
                   </Button>
@@ -4592,6 +4640,260 @@ export function EnterpriseFlooringModule({ client, user, token }) {
 
     const rooms = selectedProject.rooms || []
     const totalArea = rooms.reduce((sum, r) => sum + (r.netArea || 0), 0)
+    const measurementDetails = selectedProject.measurementDetails || {}
+
+    // Product selection state for this measurement
+    const [selectedProducts, setSelectedProducts] = React.useState(measurementDetails.selectedProducts || {})
+    const [technicianName, setTechnicianName] = React.useState(measurementDetails.technicianName || '')
+    const [measurementDate, setMeasurementDate] = React.useState(measurementDetails.measurementDate || new Date().toISOString().split('T')[0])
+    const [measurementNotes, setMeasurementNotes] = React.useState(measurementDetails.notes || '')
+
+    // Calculate totals for selected products
+    const getSelectedProductsTotal = () => {
+      return Object.values(selectedProducts).reduce((sum, item) => {
+        if (item.selected) {
+          const price = item.product?.price || item.product?.pricing?.sellingPrice || 0
+          return sum + (price * (item.quantity || totalArea))
+        }
+        return sum
+      }, 0)
+    }
+
+    // Check inventory availability
+    const checkInventoryAvailability = () => {
+      const insufficientItems = []
+      Object.values(selectedProducts).forEach(item => {
+        if (item.selected) {
+          const inv = getProductInventory(item.product.id)
+          const requiredQty = item.quantity || totalArea
+          if (inv.availableQty < requiredQty) {
+            insufficientItems.push({
+              product: item.product.name,
+              required: requiredQty,
+              available: inv.availableQty
+            })
+          }
+        }
+      })
+      return { allAvailable: insufficientItems.length === 0, insufficientItems }
+    }
+
+    // Reserve inventory for measurement
+    const reserveInventoryForMeasurement = async () => {
+      const items = Object.values(selectedProducts).filter(item => item.selected)
+      for (const item of items) {
+        await fetch('/api/flooring/enhanced/inventory', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            action: 'reserve',
+            productId: item.product.id,
+            quantity: item.quantity || totalArea,
+            orderId: selectedProject.id,
+            notes: `Reserved for measurement - ${selectedProject.projectNumber}`
+          })
+        })
+      }
+    }
+
+    // Release inventory
+    const releaseInventoryForMeasurement = async () => {
+      const items = measurementDetails.selectedProducts ? Object.values(measurementDetails.selectedProducts).filter(item => item.selected) : []
+      for (const item of items) {
+        await fetch('/api/flooring/enhanced/inventory', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            action: 'release',
+            productId: item.product?.id || item.productId,
+            quantity: item.quantity || totalArea,
+            orderId: selectedProject.id,
+            notes: `Released from measurement - ${selectedProject.projectNumber}`
+          })
+        })
+      }
+    }
+
+    // Save measurement details
+    const saveMeasurementDetails = async (blockInventory = false) => {
+      try {
+        setLoading(true)
+
+        if (!technicianName.trim()) {
+          toast.error('Please enter technician/person name')
+          return false
+        }
+
+        const hasSelectedProducts = Object.values(selectedProducts).some(p => p.selected)
+        
+        if (blockInventory && hasSelectedProducts) {
+          const { allAvailable, insufficientItems } = checkInventoryAvailability()
+          if (!allAvailable) {
+            toast.error(`Insufficient inventory: ${insufficientItems.map(i => i.product).join(', ')}`)
+            return false
+          }
+          await reserveInventoryForMeasurement()
+        }
+
+        const details = {
+          technicianName,
+          measurementDate,
+          notes: measurementNotes,
+          selectedProducts,
+          inventoryBlocked: blockInventory && hasSelectedProducts,
+          blockedAt: blockInventory ? new Date().toISOString() : null,
+          auditTrail: [
+            ...(measurementDetails.auditTrail || []),
+            {
+              action: blockInventory ? 'measurement_completed' : 'measurement_updated',
+              by: technicianName,
+              at: new Date().toISOString(),
+              details: `${rooms.length} rooms, ${totalArea.toFixed(0)} sqft, ${Object.values(selectedProducts).filter(p => p.selected).length} products`
+            }
+          ]
+        }
+
+        const res = await fetch('/api/flooring/enhanced/projects', {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({
+            id: selectedProject.id,
+            measurementDetails: details,
+            totalArea
+          })
+        })
+
+        if (res.ok) {
+          setSelectedProject(prev => ({ ...prev, measurementDetails: details, totalArea }))
+          fetchProjects()
+          if (blockInventory) fetchInventory()
+          return true
+        }
+        return false
+      } catch (error) {
+        console.error('Save measurement error:', error)
+        toast.error('Failed to save measurement details')
+        return false
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    // Create quote from measurement
+    const createQuoteFromMeasurement = async () => {
+      try {
+        setLoading(true)
+
+        const selectedItems = Object.values(selectedProducts).filter(p => p.selected)
+        if (selectedItems.length === 0) {
+          toast.error('Please select at least one product for the quote')
+          return
+        }
+
+        // Calculate totals
+        const items = selectedItems.map(item => ({
+          itemType: 'material',
+          productId: item.product.id,
+          name: item.product.name,
+          sku: item.product.sku || '',
+          description: item.product.description || '',
+          quantity: item.quantity || totalArea,
+          unit: item.product.unit || 'sqft',
+          unitPrice: item.product.price || item.product.pricing?.sellingPrice || 0,
+          totalPrice: (item.product.price || item.product.pricing?.sellingPrice || 0) * (item.quantity || totalArea),
+          area: item.quantity || totalArea
+        }))
+
+        const subtotal = items.reduce((sum, item) => sum + item.totalPrice, 0)
+
+        // Add labor if any rooms have installation
+        const laborItem = {
+          itemType: 'labor',
+          name: 'Installation Labor',
+          description: `Installation for ${rooms.length} rooms (${totalArea.toFixed(0)} sqft)`,
+          quantity: totalArea,
+          unit: 'sqft',
+          unitPrice: 25, // Default labor rate
+          totalPrice: totalArea * 25,
+          area: totalArea
+        }
+        items.push(laborItem)
+
+        const quoteData = {
+          projectId: selectedProject.id,
+          projectNumber: selectedProject.projectNumber,
+          customer: {
+            id: selectedProject.customerId,
+            name: selectedProject.customerName,
+            email: selectedProject.customerEmail || '',
+            phone: selectedProject.customerPhone || ''
+          },
+          site: {
+            address: selectedProject.site?.address || selectedProject.siteAddress || '',
+            city: selectedProject.site?.city || '',
+            state: selectedProject.site?.state || ''
+          },
+          items,
+          totalArea,
+          rooms: rooms.map(r => ({ name: r.roomName, area: r.netArea, type: r.roomType })),
+          template: 'professional',
+          discountType: 'fixed',
+          discountValue: 0,
+          cgstRate: 9,
+          sgstRate: 9,
+          igstRate: 0,
+          isInterstate: false,
+          validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          paymentTerms: 'Net 30',
+          notes: `Quote for ${selectedProject.customerName}\nMeasurement by: ${technicianName}\nDate: ${measurementDate}\n${measurementNotes}`
+        }
+
+        const res = await fetch('/api/flooring/enhanced/quotes', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(quoteData)
+        })
+
+        if (res.ok) {
+          const newQuote = await res.json()
+          
+          // Update project status
+          await handleUpdateProjectStatus(selectedProject.id, 'quote_pending')
+          setSelectedProject(prev => ({ ...prev, status: 'quote_pending' }))
+          
+          // Add to audit trail
+          const updatedDetails = {
+            ...selectedProject.measurementDetails,
+            auditTrail: [
+              ...(selectedProject.measurementDetails?.auditTrail || []),
+              {
+                action: 'quote_created',
+                by: technicianName || user?.name || 'System',
+                at: new Date().toISOString(),
+                details: `Quote ${newQuote.data?.quoteNumber || ''} created for ₹${(subtotal + laborItem.totalPrice).toLocaleString()}`
+              }
+            ]
+          }
+          await fetch('/api/flooring/enhanced/projects', {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify({ id: selectedProject.id, measurementDetails: updatedDetails })
+          })
+          
+          fetchQuotes()
+          setActiveTab('quotes')
+          toast.success('Quote created successfully!')
+        } else {
+          const error = await res.json()
+          toast.error(error.error || 'Failed to create quote')
+        }
+      } catch (error) {
+        console.error('Create quote error:', error)
+        toast.error('Error creating quote')
+      } finally {
+        setLoading(false)
+      }
+    }
 
     return (
       <div className="space-y-4">
@@ -4616,16 +4918,75 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                 <p className="text-2xl font-bold text-emerald-600">{totalArea.toFixed(0)}</p>
                 <p className="text-sm text-slate-500">Total Sqft</p>
               </div>
-              <div className="text-center px-4">
+              <div className={`text-center px-4 rounded-lg py-2 ${measurementDetails.inventoryBlocked ? 'bg-amber-50' : 'bg-slate-50'}`}>
                 <Badge className={ProjectStatusB2C[selectedProject.status]?.color || 'bg-slate-100'}>
                   {ProjectStatusB2C[selectedProject.status]?.label || selectedProject.status}
                 </Badge>
+                {measurementDetails.inventoryBlocked && (
+                  <p className="text-xs text-amber-600 mt-1"><Lock className="h-3 w-3 inline" /> Stock Blocked</p>
+                )}
               </div>
               <Button onClick={() => setDialogOpen({ type: 'room', data: { projectId: selectedProject.id } })}>
                 <Plus className="h-4 w-4 mr-2" /> Add Room
               </Button>
             </div>
           </div>
+        </Card>
+
+        {/* Technician/Person Details Card */}
+        <Card className="border-2 border-purple-200 bg-purple-50">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm flex items-center gap-2 text-purple-800">
+              <Users className="h-4 w-4" /> Measurement Person Details
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-4 gap-4">
+              <div className="space-y-1">
+                <Label className="text-xs text-purple-700">Technician/Person Name *</Label>
+                <Input 
+                  placeholder="Enter person name"
+                  value={technicianName}
+                  onChange={(e) => setTechnicianName(e.target.value)}
+                  className="bg-white"
+                />
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-purple-700">Measurement Date</Label>
+                <Input 
+                  type="date"
+                  value={measurementDate}
+                  onChange={(e) => setMeasurementDate(e.target.value)}
+                  className="bg-white"
+                />
+              </div>
+              <div className="col-span-2 space-y-1">
+                <Label className="text-xs text-purple-700">Notes</Label>
+                <Input 
+                  placeholder="Any special notes..."
+                  value={measurementNotes}
+                  onChange={(e) => setMeasurementNotes(e.target.value)}
+                  className="bg-white"
+                />
+              </div>
+            </div>
+            {/* Audit Trail */}
+            {measurementDetails.auditTrail?.length > 0 && (
+              <div className="mt-3 pt-3 border-t border-purple-200">
+                <p className="text-xs font-medium text-purple-700 mb-2">Audit Trail:</p>
+                <div className="space-y-1 max-h-20 overflow-y-auto">
+                  {measurementDetails.auditTrail.slice(-3).reverse().map((entry, idx) => (
+                    <div key={idx} className="text-xs text-purple-600 flex items-center gap-2">
+                      <History className="h-3 w-3" />
+                      <span>{new Date(entry.at).toLocaleString()}</span>
+                      <span className="font-medium">{entry.by}</span>
+                      <span>- {entry.action.replace(/_/g, ' ')}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+          </CardContent>
         </Card>
 
         {/* Rooms Grid */}
@@ -4654,21 +5015,16 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           <p className="text-sm text-slate-500">{room.roomType?.replace(/_/g, ' ') || 'Room'}</p>
                         </div>
                       </div>
-                      <div className="flex flex-col items-end gap-1">
-                        <Badge variant="outline" className={`text-xs ${appType.textColor}`}>
-                          {room.applicationType || 'Flooring'}
-                        </Badge>
-                        <Badge variant="secondary" className="text-xs">{room.floor || 'Ground'}</Badge>
-                      </div>
+                      <Badge variant="outline" className="text-xs">{room.floor || 'Ground'}</Badge>
                     </div>
                     
                     <div className="grid grid-cols-3 gap-2 mb-3 text-center">
                       <div className="p-2 bg-slate-50 rounded-lg">
-                        <p className="text-lg font-bold text-slate-900">{room.dimensions?.length || 0}'</p>
-                        <p className="text-xs text-slate-500">{room.applicationType === 'cladding' ? 'Height' : 'Length'}</p>
+                        <p className="text-lg font-bold">{room.dimensions?.length || 0}'</p>
+                        <p className="text-xs text-slate-500">Length</p>
                       </div>
                       <div className="p-2 bg-slate-50 rounded-lg">
-                        <p className="text-lg font-bold text-slate-900">{room.dimensions?.width || 0}'</p>
+                        <p className="text-lg font-bold">{room.dimensions?.width || 0}'</p>
                         <p className="text-xs text-slate-500">Width</p>
                       </div>
                       <div className={`p-2 rounded-lg ${appType.color}`}>
@@ -4677,34 +5033,14 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                       </div>
                     </div>
 
-                    {room.obstacles?.length > 0 && (
-                      <p className="text-xs text-amber-600 mb-2">
-                        <AlertTriangle className="h-3 w-3 inline mr-1" />
-                        {room.obstacles.length} obstacle(s) - {room.obstaclesArea?.toFixed(0) || 0} sqft deducted
-                      </p>
-                    )}
-                    
-                    {room.roomSketch && (
-                      <p className="text-xs text-blue-600 mb-2">
-                        <Camera className="h-3 w-3 inline mr-1" />
-                        Layout sketch attached
-                      </p>
-                    )}
-
-                    <div className="flex items-center justify-between pt-3 border-t">
-                      <div className="flex gap-2 text-xs text-slate-500">
-                        <span>{room.doorways || 1} doorway(s)</span>
-                        <span>•</span>
-                        <span className="capitalize">{(room.subfloorType || 'Concrete').replace(/_/g, ' ')}</span>
-                      </div>
+                    <div className="flex items-center justify-between pt-2 border-t">
+                      <span className="text-xs text-slate-500">{room.subfloorType || 'Concrete'}</span>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'room', data: room })}>
                           <Edit className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => {
-                          if (confirm('Delete this room measurement?')) {
-                            handleDeleteRoom(room.id)
-                          }
+                          if (confirm('Delete this room?')) handleDeleteRoom(room.id)
                         }}>
                           <Trash2 className="h-4 w-4 text-red-500" />
                         </Button>
@@ -4725,7 +5061,115 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           />
         )}
 
-        {/* B2C Workflow Progress & Actions */}
+        {/* Product Selection with Inventory - Show when rooms exist */}
+        {rooms.length > 0 && (
+          <Card className="border-2 border-cyan-200">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2 text-cyan-800">
+                <Package className="h-4 w-4" /> Select Products for Quote (with Real-time Inventory)
+              </CardTitle>
+              <CardDescription>Select flooring products. Inventory will be blocked when measurement is marked done.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="border rounded-lg p-3 max-h-64 overflow-y-auto">
+                {products.length > 0 ? (
+                  <div className="space-y-2">
+                    {products.map(product => {
+                      const isSelected = selectedProducts[product.id]?.selected
+                      const quantity = selectedProducts[product.id]?.quantity || totalArea
+                      const price = product.price || product.pricing?.sellingPrice || 0
+                      const inv = getProductInventory(product.id)
+                      const status = getInventoryStatus(product.id, isSelected ? quantity : 0)
+                      
+                      return (
+                        <div 
+                          key={product.id} 
+                          className={`flex items-center justify-between p-3 border rounded transition-all ${isSelected ? 'border-cyan-500 bg-cyan-50' : 'hover:bg-slate-50'} ${status.status === 'out_of_stock' ? 'opacity-60' : ''}`}
+                        >
+                          <div className="flex items-center gap-3">
+                            <Checkbox 
+                              checked={isSelected}
+                              onCheckedChange={(checked) => {
+                                setSelectedProducts(prev => ({
+                                  ...prev,
+                                  [product.id]: {
+                                    product,
+                                    quantity: totalArea,
+                                    selected: checked
+                                  }
+                                }))
+                              }}
+                              disabled={status.status === 'out_of_stock'}
+                            />
+                            <div>
+                              <p className="font-medium text-sm">{product.name}</p>
+                              <p className="text-xs text-slate-500">{product.sku} • ₹{price}/sqft</p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-4">
+                            {/* Inventory Info */}
+                            <div className="flex items-center gap-2 text-sm">
+                              <div className="text-center px-2">
+                                <p className="text-xs text-slate-500">Available</p>
+                                <p className={`font-medium ${inv.availableQty <= inv.reorderLevel ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                  {inv.availableQty.toLocaleString()}
+                                </p>
+                              </div>
+                              {inv.reservedQty > 0 && (
+                                <div className="text-center px-2 border-l">
+                                  <p className="text-xs text-slate-500">Reserved</p>
+                                  <p className="font-medium text-amber-600">{inv.reservedQty.toLocaleString()}</p>
+                                </div>
+                              )}
+                              <Badge className={`text-xs ${status.color}`}>{status.label}</Badge>
+                            </div>
+                            
+                            {isSelected && (
+                              <>
+                                <Input 
+                                  className={`w-24 h-8 ${quantity > inv.availableQty ? 'border-red-500' : ''}`}
+                                  type="number" 
+                                  min="1"
+                                  value={quantity}
+                                  onChange={(e) => {
+                                    setSelectedProducts(prev => ({
+                                      ...prev,
+                                      [product.id]: {
+                                        ...prev[product.id],
+                                        quantity: parseInt(e.target.value) || totalArea
+                                      }
+                                    }))
+                                  }}
+                                />
+                                <span className="text-sm font-medium text-emerald-600 w-28 text-right">
+                                  ₹{(price * quantity).toLocaleString()}
+                                </span>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-center py-4 text-slate-500">No products available</p>
+                )}
+              </div>
+              {Object.values(selectedProducts).some(p => p.selected) && (
+                <div className="mt-3 p-3 bg-cyan-50 rounded-lg flex items-center justify-between">
+                  <span className="text-sm font-medium text-cyan-800">
+                    {Object.values(selectedProducts).filter(p => p.selected).length} products selected
+                  </span>
+                  <span className="text-lg font-bold text-cyan-700">
+                    Material: ₹{getSelectedProductsTotal().toLocaleString()}
+                  </span>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Workflow Progress & Actions */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm">B2C Workflow Progress</CardTitle>
@@ -4757,17 +5201,70 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               })}
             </div>
             
-            {/* Action Buttons based on status - Similar to Materials tab logic */}
+            {/* Action Buttons */}
             <div className="flex flex-col gap-3 pt-3 border-t">
               {(() => {
                 const status = selectedProject.status
                 const hasRooms = rooms.length > 0
+                const hasProducts = Object.values(selectedProducts).some(p => p.selected)
+                const isInventoryBlocked = measurementDetails.inventoryBlocked
 
-                // Status: measurement_scheduled - Need to add rooms and mark done
+                // Inventory already blocked - show edit/proceed options
+                if (isInventoryBlocked) {
+                  return (
+                    <div className="space-y-3">
+                      <div className="flex gap-3 flex-wrap">
+                        <Button 
+                          variant="outline"
+                          disabled={loading}
+                          onClick={async () => {
+                            setLoading(true)
+                            await releaseInventoryForMeasurement()
+                            const updatedDetails = { ...measurementDetails, inventoryBlocked: false }
+                            await fetch('/api/flooring/enhanced/projects', {
+                              method: 'PUT',
+                              headers,
+                              body: JSON.stringify({ id: selectedProject.id, measurementDetails: updatedDetails, status: 'measurement_scheduled' })
+                            })
+                            setSelectedProject(prev => ({ ...prev, status: 'measurement_scheduled', measurementDetails: updatedDetails }))
+                            fetchInventory()
+                            fetchProjects()
+                            setLoading(false)
+                            toast.success('Inventory released. You can now edit the measurement.')
+                          }}
+                        >
+                          <Unlock className="h-4 w-4 mr-2" />
+                          Edit (Release Inventory)
+                        </Button>
+                        {status === 'measurement_done' && (
+                          <Button 
+                            className="bg-emerald-600 hover:bg-emerald-700"
+                            disabled={loading || !hasProducts}
+                            onClick={createQuoteFromMeasurement}
+                          >
+                            {loading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
+                            Create Quote (₹{(getSelectedProductsTotal() + totalArea * 25).toLocaleString()})
+                          </Button>
+                        )}
+                        {['quote_pending', 'quote_sent'].includes(status) && (
+                          <Button onClick={() => setActiveTab('quotes')}>
+                            <FileText className="h-4 w-4 mr-2" /> View Quotes
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-sm text-amber-700 flex items-center gap-2">
+                        <Lock className="h-4 w-4" />
+                        Inventory is blocked. Click "Edit" to release and modify.
+                      </p>
+                    </div>
+                  )
+                }
+
+                // Not blocked - show normal flow
                 if (status === 'measurement_scheduled' || status === 'pending') {
                   return (
                     <div className="space-y-3">
-                      <div className="flex gap-3">
+                      <div className="flex gap-3 flex-wrap">
                         <Button 
                           variant="outline"
                           onClick={() => setDialogOpen({ type: 'room', data: { projectId: selectedProject.id } })}
@@ -4775,119 +5272,83 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           <Plus className="h-4 w-4 mr-2" /> Add Room
                         </Button>
                         <Button 
-                          className="bg-cyan-600 hover:bg-cyan-700"
-                          disabled={!hasRooms}
+                          variant="outline"
+                          disabled={loading || !technicianName.trim()}
                           onClick={async () => {
-                            await handleUpdateProjectStatus(selectedProject.id, 'measurement_done')
-                            setSelectedProject(prev => ({ ...prev, status: 'measurement_done' }))
-                            toast.success('Measurements completed! You can now proceed to quote.')
+                            const saved = await saveMeasurementDetails(false)
+                            if (saved) toast.success('Details saved')
                           }}
                         >
-                          <CheckCircle2 className="h-4 w-4 mr-2" /> Mark Measurement Done ({rooms.length} rooms, {totalArea.toFixed(0)} sqft)
+                          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> Save Details
+                        </Button>
+                        <Button 
+                          className="bg-cyan-600 hover:bg-cyan-700"
+                          disabled={!hasRooms || !technicianName.trim() || loading}
+                          onClick={async () => {
+                            const saved = await saveMeasurementDetails(true) // Block inventory
+                            if (saved) {
+                              await handleUpdateProjectStatus(selectedProject.id, 'measurement_done')
+                              setSelectedProject(prev => ({ ...prev, status: 'measurement_done' }))
+                              toast.success('Measurement completed! Inventory blocked.')
+                            }
+                          }}
+                        >
+                          {loading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Lock className="h-4 w-4 mr-2" />}
+                          Complete Measurement & Block Inventory
                         </Button>
                       </div>
+                      {!technicianName.trim() && (
+                        <p className="text-sm text-red-500">Please enter technician/person name above.</p>
+                      )}
                       {!hasRooms && (
-                        <p className="text-sm text-slate-500">
-                          Add at least one room measurement before marking as done.
-                        </p>
+                        <p className="text-sm text-slate-500">Add at least one room measurement.</p>
                       )}
                     </div>
                   )
                 }
 
-                // Status: measurement_done - Can edit rooms or proceed to quote
                 if (status === 'measurement_done') {
                   return (
                     <div className="space-y-3">
-                      <div className="flex gap-3">
+                      <div className="flex gap-3 flex-wrap">
                         <Button 
                           variant="outline"
                           onClick={async () => {
                             await handleUpdateProjectStatus(selectedProject.id, 'measurement_scheduled')
                             setSelectedProject(prev => ({ ...prev, status: 'measurement_scheduled' }))
-                            toast.info('Status reverted. You can now edit measurements.')
+                            toast.info('Reverted to scheduled. You can edit.')
                           }}
                         >
                           <Edit className="h-4 w-4 mr-2" /> Edit Measurements
                         </Button>
                         <Button 
                           className="bg-emerald-600 hover:bg-emerald-700"
-                          onClick={() => {
-                            handleUpdateProjectStatus(selectedProject.id, 'quote_pending')
-                            setSelectedProject(prev => ({ ...prev, status: 'quote_pending' }))
-                            handleSendForQuotation(selectedProject)
-                          }}
+                          disabled={loading || !hasProducts}
+                          onClick={createQuoteFromMeasurement}
                         >
-                          <FileText className="h-4 w-4 mr-2" /> Create Quote ({totalArea.toFixed(0)} sqft)
+                          {loading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
+                          Create Quote ({totalArea.toFixed(0)} sqft)
                         </Button>
                       </div>
-                      <p className="text-sm text-emerald-600 flex items-center gap-2">
-                        <CheckCircle2 className="h-4 w-4" />
-                        Measurements complete. Ready to create a quote.
-                      </p>
+                      {!hasProducts && (
+                        <p className="text-sm text-amber-600">Select products above to create a quote.</p>
+                      )}
                     </div>
                   )
                 }
 
-                // Status: quote_pending or quote_sent - Show view quotes
                 if (['quote_pending', 'quote_sent'].includes(status)) {
                   return (
-                    <div className="space-y-3">
-                      <div className="flex gap-3">
-                        <Button 
-                          variant="outline"
-                          onClick={async () => {
-                            await handleUpdateProjectStatus(selectedProject.id, 'measurement_done')
-                            setSelectedProject(prev => ({ ...prev, status: 'measurement_done' }))
-                            toast.info('Status reverted. You can now edit measurements.')
-                          }}
-                        >
-                          <ArrowLeft className="h-4 w-4 mr-2" /> Back to Measurements
-                        </Button>
-                        <Button 
-                          className="bg-emerald-600 hover:bg-emerald-700"
-                          onClick={() => setActiveTab('quotes')}
-                        >
-                          <FileText className="h-4 w-4 mr-2" /> View Quotes
-                        </Button>
-                      </div>
-                      <p className="text-sm text-blue-600 flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        Quote has been created. View in Quotes tab.
-                      </p>
-                    </div>
-                  )
-                }
-
-                // Status: quote_approved, invoice, etc - Show progress
-                if (['quote_approved', 'invoice_sent', 'payment_received', 'installation_scheduled', 'installation_in_progress', 'completed'].includes(status)) {
-                  return (
-                    <div className="space-y-3">
-                      <div className="flex gap-3">
-                        <Button 
-                          variant="outline"
-                          onClick={() => setActiveTab('quotes')}
-                        >
-                          <FileText className="h-4 w-4 mr-2" /> View Quotes
-                        </Button>
-                        <Button 
-                          variant="outline"
-                          onClick={() => setActiveTab('invoices')}
-                        >
-                          <Receipt className="h-4 w-4 mr-2" /> View Invoices
-                        </Button>
-                        {status === 'installation_scheduled' && (
-                          <Button 
-                            className="bg-orange-600 hover:bg-orange-700"
-                            onClick={() => setActiveTab('installations')}
-                          >
-                            <Wrench className="h-4 w-4 mr-2" /> View Installation
-                          </Button>
-                        )}
-                      </div>
-                      <p className="text-sm text-slate-500 flex items-center gap-2">
-                        Current Status: <Badge className={ProjectStatusB2C[status]?.color}>{ProjectStatusB2C[status]?.label}</Badge>
-                      </p>
+                    <div className="flex gap-3">
+                      <Button variant="outline" onClick={async () => {
+                        await handleUpdateProjectStatus(selectedProject.id, 'measurement_done')
+                        setSelectedProject(prev => ({ ...prev, status: 'measurement_done' }))
+                      }}>
+                        <ArrowLeft className="h-4 w-4 mr-2" /> Back to Measurements
+                      </Button>
+                      <Button onClick={() => setActiveTab('quotes')}>
+                        <FileText className="h-4 w-4 mr-2" /> View Quotes
+                      </Button>
                     </div>
                   )
                 }
