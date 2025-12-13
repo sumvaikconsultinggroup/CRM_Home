@@ -183,6 +183,9 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   // Data States
   const [dashboardData, setDashboardData] = useState(null)
   const [products, setProducts] = useState([])
+  const [productSchema, setProductSchema] = useState(null)
+  const [productCategories, setProductCategories] = useState([])
+  const [productsMeta, setProductsMeta] = useState({ total: 0 })
   const [customers, setCustomers] = useState([])
   const [projects, setProjects] = useState([])
   const [quotes, setQuotes] = useState([])
