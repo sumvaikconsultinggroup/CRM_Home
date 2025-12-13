@@ -113,7 +113,8 @@ function PagesManagement() {
       })
       
       const data = await res.json()
-      if (data.success) {
+      // API returns the page object directly on success, or { error } on failure
+      if (res.ok && data && !data.error) {
         toast.success(editingPage ? 'Page updated!' : 'Page created!')
         setIsDialogOpen(false)
         fetchPages()
@@ -132,9 +133,12 @@ function PagesManagement() {
     try {
       const res = await fetch(`/api/pages?id=${id}`, { method: 'DELETE' })
       const data = await res.json()
-      if (data.success) {
+      // API returns { message } on success, or { error } on failure
+      if (res.ok && !data.error) {
         toast.success('Page deleted!')
         fetchPages()
+      } else {
+        toast.error(data.error || 'Failed to delete page')
       }
     } catch (error) {
       toast.error('Failed to delete page')
