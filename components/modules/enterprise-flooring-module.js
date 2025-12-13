@@ -2557,11 +2557,6 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           onDelete={handleDeleteCategory}
           loading={loading}
         />
-          onClose={() => setDialogOpen({ type: null, data: null })}
-          customer={data}
-          onSave={handleSaveCustomer}
-          loading={loading}
-        />
 
         {/* Project Dialog */}
         <ProjectDialog
