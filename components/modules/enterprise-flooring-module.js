@@ -5217,7 +5217,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               {(() => {
                 const status = selectedProject.status
                 const hasRooms = rooms.length > 0
-                const hasProducts = Object.values(selectedProducts).some(p => p.selected)
+                const hasProducts = Object.values(measurementProducts).some(p => p.selected)
                 const isInventoryBlocked = measurementDetails.inventoryBlocked
 
                 // Inventory already blocked - show edit/proceed options
