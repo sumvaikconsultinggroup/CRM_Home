@@ -1,351 +1,294 @@
 import { NextResponse } from 'next/server'
-import { getCollection } from '@/lib/db/mongodb'
-import { ReportTypes } from '@/lib/db/flooring-enhanced-schema'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireClientAccess, getUserDatabaseName } from '@/lib/utils/auth'
+import { successResponse, errorResponse, optionsResponse } from '@/lib/utils/response'
+
+export async function OPTIONS() {
+  return optionsResponse()
+}
 
 // GET - Generate reports
 export async function GET(request) {
   try {
+    const user = getAuthUser(request)
+    requireClientAccess(user)
+
     const { searchParams } = new URL(request.url)
-    const clientId = searchParams.get('clientId')
-    const reportType = searchParams.get('type')
+    const type = searchParams.get('type') || 'summary'
+    const period = parseInt(searchParams.get('period')) || 30
     const startDate = searchParams.get('startDate')
     const endDate = searchParams.get('endDate')
-    const groupBy = searchParams.get('groupBy') // day, week, month, quarter, year
-    const format = searchParams.get('format') // json, csv
 
-    if (!clientId || !reportType) {
-      return NextResponse.json({ error: 'clientId and type required' }, { status: 400 })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+
+    // Collections
+    const products = db.collection('flooring_products')
+    const quotes = db.collection('flooring_quotes_v2')
+    const invoices = db.collection('flooring_invoices')
+    const payments = db.collection('flooring_payments')
+    const inventory = db.collection('flooring_inventory_v2')
+    const installations = db.collection('flooring_installations')
+    const projects = db.collection('flooring_projects')
+    const customers = db.collection('flooring_customers')
+    const leads = db.collection('leads')
+
+    const periodStart = startDate ? new Date(startDate) : new Date(Date.now() - period * 24 * 60 * 60 * 1000)
+    const periodEnd = endDate ? new Date(endDate) : new Date()
+
+    const dateFilter = {
+      createdAt: { $gte: periodStart.toISOString(), $lte: periodEnd.toISOString() }
     }
 
-    // Date range
-    const dateFilter = {}
-    if (startDate) dateFilter.$gte = startDate
-    if (endDate) dateFilter.$lte = endDate
+    switch (type) {
+      case 'summary': {
+        const [allQuotes, allInvoices, allPayments, allProducts, allInstallations, allProjects] = await Promise.all([
+          quotes.find({}).toArray(),
+          invoices.find({}).toArray(),
+          payments.find({}).toArray(),
+          products.find({}).toArray(),
+          installations.find({}).toArray(),
+          projects.find({}).toArray()
+        ])
 
-    const quotes = await getCollection('flooring_quotes_v2')
-    const invoices = await getCollection('flooring_invoices')
-    const inventory = await getCollection('flooring_inventory_v2')
-    const products = await getCollection('flooring_products')
-    const leads = await getCollection('leads')
-    const projects = await getCollection('projects')
-    const movements = await getCollection('flooring_inventory_movements')
+        const periodQuotes = allQuotes.filter(q => new Date(q.createdAt) >= periodStart && new Date(q.createdAt) <= periodEnd)
+        const periodInvoices = allInvoices.filter(i => new Date(i.createdAt) >= periodStart && new Date(i.createdAt) <= periodEnd)
+        const periodPayments = allPayments.filter(p => new Date(p.createdAt) >= periodStart && new Date(p.createdAt) <= periodEnd)
 
-    let reportData = {}
-    const reportInfo = ReportTypes[reportType.toUpperCase()]
-
-    switch (reportType) {
-      case 'sales_summary': {
-        const allInvoices = await invoices.find({ clientId, status: 'paid' }).toArray()
-        const allQuotes = await quotes.find({ clientId }).toArray()
-        
-        reportData = {
-          totalRevenue: allInvoices.reduce((sum, i) => sum + (i.paidAmount || 0), 0),
-          totalInvoices: allInvoices.length,
-          totalQuotes: allQuotes.length,
-          approvedQuotes: allQuotes.filter(q => q.status === 'approved').length,
-          pendingQuotes: allQuotes.filter(q => q.status === 'sent').length,
-          averageOrderValue: allInvoices.length > 0 
-            ? allInvoices.reduce((sum, i) => sum + (i.grandTotal || 0), 0) / allInvoices.length 
-            : 0,
-          conversionRate: allQuotes.length > 0 
-            ? ((allQuotes.filter(q => q.status === 'approved').length / allQuotes.length) * 100).toFixed(1)
-            : 0
-        }
-        break
-      }
-
-      case 'sales_by_category': {
-        const allInvoices = await invoices.find({ clientId, status: 'paid' }).toArray()
-        const byCategory = {}
-        
-        for (const invoice of allInvoices) {
-          const items = invoice.items || []
-          for (const item of items) {
-            const category = item.category || 'Other'
-            if (!byCategory[category]) {
-              byCategory[category] = { revenue: 0, quantity: 0, orders: 0 }
-            }
-            byCategory[category].revenue += item.totalPrice || 0
-            byCategory[category].quantity += item.quantity || 0
-            byCategory[category].orders++
-          }
-        }
-        
-        reportData = {
-          byCategory: Object.entries(byCategory).map(([category, data]) => ({
-            category,
-            ...data,
-            percentage: ((data.revenue / allInvoices.reduce((s, i) => s + i.grandTotal, 0)) * 100).toFixed(1)
-          })).sort((a, b) => b.revenue - a.revenue)
-        }
-        break
-      }
-
-      case 'quote_conversion': {
-        const allQuotes = await quotes.find({ clientId }).toArray()
-        
-        const byMonth = {}
-        allQuotes.forEach(q => {
-          const month = new Date(q.createdAt).toLocaleDateString('en-US', { month: 'short', year: '2-digit' })
-          if (!byMonth[month]) {
-            byMonth[month] = { total: 0, approved: 0, rejected: 0, pending: 0 }
-          }
-          byMonth[month].total++
-          if (q.status === 'approved') byMonth[month].approved++
-          else if (q.status === 'rejected') byMonth[month].rejected++
-          else byMonth[month].pending++
-        })
-
-        reportData = {
-          overall: {
-            total: allQuotes.length,
+        return successResponse({
+          type: 'summary',
+          period: { start: periodStart, end: periodEnd, days: period },
+          overview: {
+            totalQuotes: allQuotes.length,
+            periodQuotes: periodQuotes.length,
+            totalQuoteValue: allQuotes.reduce((sum, q) => sum + (q.grandTotal || 0), 0),
+            periodQuoteValue: periodQuotes.reduce((sum, q) => sum + (q.grandTotal || 0), 0),
+            approvedQuotes: allQuotes.filter(q => q.status === 'approved').length,
+            conversionRate: allQuotes.length > 0 ? Math.round((allQuotes.filter(q => q.status === 'approved').length / allQuotes.length) * 100) : 0,
+            totalInvoices: allInvoices.length,
+            periodInvoices: periodInvoices.length,
+            totalInvoiceValue: allInvoices.reduce((sum, i) => sum + (i.grandTotal || 0), 0),
+            periodInvoiceValue: periodInvoices.reduce((sum, i) => sum + (i.grandTotal || 0), 0),
+            totalCollected: allPayments.reduce((sum, p) => sum + (p.amount || 0), 0),
+            periodCollected: periodPayments.reduce((sum, p) => sum + (p.amount || 0), 0),
+            pendingAmount: allInvoices.reduce((sum, i) => sum + (i.balanceAmount || 0), 0),
+            totalProducts: allProducts.length,
+            activeInstallations: allInstallations.filter(i => ['scheduled', 'in_progress'].includes(i.status)).length,
+            completedInstallations: allInstallations.filter(i => i.status === 'completed').length,
+            totalProjects: allProjects.length
+          },
+          quotesByStatus: {
+            draft: allQuotes.filter(q => q.status === 'draft').length,
+            sent: allQuotes.filter(q => q.status === 'sent').length,
             approved: allQuotes.filter(q => q.status === 'approved').length,
             rejected: allQuotes.filter(q => q.status === 'rejected').length,
-            pending: allQuotes.filter(q => ['sent', 'viewed', 'draft'].includes(q.status)).length,
-            conversionRate: allQuotes.length > 0 
-              ? ((allQuotes.filter(q => q.status === 'approved').length / allQuotes.length) * 100).toFixed(1)
-              : 0
+            converted: allQuotes.filter(q => q.status === 'converted').length
           },
-          byMonth: Object.entries(byMonth).map(([month, data]) => ({
-            month,
-            ...data,
-            conversionRate: data.total > 0 ? ((data.approved / data.total) * 100).toFixed(1) : 0
-          }))
-        }
-        break
+          invoicesByStatus: {
+            draft: allInvoices.filter(i => i.status === 'draft').length,
+            sent: allInvoices.filter(i => i.status === 'sent').length,
+            partially_paid: allInvoices.filter(i => i.status === 'partially_paid').length,
+            paid: allInvoices.filter(i => i.status === 'paid').length,
+            overdue: allInvoices.filter(i => new Date(i.dueDate) < new Date() && i.status !== 'paid').length
+          }
+        })
       }
 
-      case 'quote_aging': {
-        const pendingQuotes = await quotes.find({ 
-          clientId, 
-          status: { $in: ['sent', 'viewed', 'draft'] } 
-        }).toArray()
+      case 'sales': {
+        const allQuotes = await quotes.find({}).toArray()
+        const allInvoices = await invoices.find({}).toArray()
 
+        // Group by month
+        const monthlyData = {}
+        allInvoices.forEach(inv => {
+          const month = inv.createdAt.substring(0, 7)
+          if (!monthlyData[month]) monthlyData[month] = { quotes: 0, quoteValue: 0, invoices: 0, revenue: 0 }
+          monthlyData[month].invoices++
+          monthlyData[month].revenue += inv.paidAmount || 0
+        })
+        allQuotes.forEach(q => {
+          const month = q.createdAt.substring(0, 7)
+          if (!monthlyData[month]) monthlyData[month] = { quotes: 0, quoteValue: 0, invoices: 0, revenue: 0 }
+          monthlyData[month].quotes++
+          monthlyData[month].quoteValue += q.grandTotal || 0
+        })
+
+        return successResponse({
+          type: 'sales',
+          monthlyTrend: Object.entries(monthlyData).sort((a, b) => a[0].localeCompare(b[0])).map(([month, data]) => ({ month, ...data })),
+          topProducts: [],
+          salesByCategory: []
+        })
+      }
+
+      case 'quotes': {
+        const allQuotes = await quotes.find({}).toArray()
+        const periodQuotes = allQuotes.filter(q => new Date(q.createdAt) >= periodStart)
+
+        // Conversion funnel
+        const funnel = {
+          created: periodQuotes.length,
+          sent: periodQuotes.filter(q => q.sentAt).length,
+          viewed: periodQuotes.filter(q => q.viewedAt).length,
+          approved: periodQuotes.filter(q => q.status === 'approved' || q.status === 'converted').length,
+          converted: periodQuotes.filter(q => q.status === 'converted').length
+        }
+
+        // Average values
+        const avgQuoteValue = periodQuotes.length > 0 ? periodQuotes.reduce((sum, q) => sum + (q.grandTotal || 0), 0) / periodQuotes.length : 0
+        const avgTimeToApprove = 0 // Would need to calculate from timestamps
+
+        return successResponse({
+          type: 'quotes',
+          funnel,
+          averageQuoteValue: avgQuoteValue,
+          quotesCreated: periodQuotes.length,
+          quotesApproved: funnel.approved,
+          quotesRejected: periodQuotes.filter(q => q.status === 'rejected').length,
+          conversionRate: periodQuotes.length > 0 ? Math.round((funnel.approved / periodQuotes.length) * 100) : 0
+        })
+      }
+
+      case 'invoices': {
+        const allInvoices = await invoices.find({}).toArray()
+        const periodInvoices = allInvoices.filter(i => new Date(i.createdAt) >= periodStart)
+
+        return successResponse({
+          type: 'invoices',
+          totalInvoiced: periodInvoices.reduce((sum, i) => sum + (i.grandTotal || 0), 0),
+          totalCollected: periodInvoices.reduce((sum, i) => sum + (i.paidAmount || 0), 0),
+          totalPending: periodInvoices.reduce((sum, i) => sum + (i.balanceAmount || 0), 0),
+          invoiceCount: periodInvoices.length,
+          paidCount: periodInvoices.filter(i => i.status === 'paid').length,
+          overdueCount: periodInvoices.filter(i => new Date(i.dueDate) < new Date() && i.status !== 'paid').length,
+          overdueAmount: periodInvoices.filter(i => new Date(i.dueDate) < new Date() && i.status !== 'paid').reduce((sum, i) => sum + (i.balanceAmount || 0), 0)
+        })
+      }
+
+      case 'aging': {
+        const allInvoices = await invoices.find({ status: { $ne: 'paid' } }).toArray()
         const now = new Date()
+
         const aging = {
-          '0-7': [], '8-15': [], '16-30': [], '31-60': [], '60+': []
+          current: { count: 0, amount: 0 },
+          '1-30': { count: 0, amount: 0 },
+          '31-60': { count: 0, amount: 0 },
+          '61-90': { count: 0, amount: 0 },
+          '90+': { count: 0, amount: 0 }
         }
 
-        pendingQuotes.forEach(q => {
-          const days = Math.floor((now - new Date(q.createdAt)) / (1000 * 60 * 60 * 24))
-          if (days <= 7) aging['0-7'].push(q)
-          else if (days <= 15) aging['8-15'].push(q)
-          else if (days <= 30) aging['16-30'].push(q)
-          else if (days <= 60) aging['31-60'].push(q)
-          else aging['60+'].push(q)
-        })
-
-        reportData = {
-          summary: Object.entries(aging).map(([range, quotes]) => ({
-            range,
-            count: quotes.length,
-            value: quotes.reduce((sum, q) => sum + (q.grandTotal || 0), 0)
-          })),
-          details: pendingQuotes.map(q => ({
-            quoteNumber: q.quoteNumber,
-            customer: q.customer?.name,
-            amount: q.grandTotal,
-            createdAt: q.createdAt,
-            daysOld: Math.floor((now - new Date(q.createdAt)) / (1000 * 60 * 60 * 24)),
-            status: q.status
-          }))
-        }
-        break
-      }
-
-      case 'stock_level': {
-        const allInventory = await inventory.find({ clientId }).toArray()
-        const allProducts = await products.find({ clientId }).toArray()
-        const productMap = Object.fromEntries(allProducts.map(p => [p.id, p]))
-
-        reportData = {
-          items: allInventory.map(inv => {
-            const product = productMap[inv.productId]
-            return {
-              sku: product?.sku,
-              name: product?.name,
-              category: product?.category,
-              warehouse: inv.warehouseId,
-              quantity: inv.quantity,
-              available: inv.availableQty,
-              reserved: inv.reservedQty,
-              reorderLevel: inv.reorderLevel,
-              status: inv.availableQty <= 0 ? 'out_of_stock' 
-                : inv.availableQty <= inv.reorderLevel ? 'low_stock' : 'in_stock',
-              value: inv.quantity * (inv.avgCostPrice || 0)
-            }
-          }).sort((a, b) => a.available - b.available),
-          summary: {
-            totalItems: allInventory.length,
-            totalValue: allInventory.reduce((sum, i) => sum + (i.quantity * (i.avgCostPrice || 0)), 0),
-            outOfStock: allInventory.filter(i => i.availableQty <= 0).length,
-            lowStock: allInventory.filter(i => i.availableQty > 0 && i.availableQty <= i.reorderLevel).length
-          }
-        }
-        break
-      }
-
-      case 'stock_movement': {
-        const query = { clientId }
-        if (startDate || endDate) query.createdAt = dateFilter
-
-        const allMovements = await movements.find(query).sort({ createdAt: -1 }).toArray()
-        const allProducts = await products.find({ clientId }).toArray()
-        const productMap = Object.fromEntries(allProducts.map(p => [p.id, p]))
-
-        const byType = {}
-        allMovements.forEach(m => {
-          if (!byType[m.type]) byType[m.type] = { count: 0, quantity: 0, value: 0 }
-          byType[m.type].count++
-          byType[m.type].quantity += Math.abs(m.quantity)
-          byType[m.type].value += m.totalValue || 0
-        })
-
-        reportData = {
-          movements: allMovements.slice(0, 100).map(m => ({
-            ...m,
-            productName: productMap[m.productId]?.name,
-            productSku: productMap[m.productId]?.sku
-          })),
-          byType: Object.entries(byType).map(([type, data]) => ({ type, ...data })),
-          summary: {
-            totalMovements: allMovements.length,
-            receipts: allMovements.filter(m => m.type === 'receipt').length,
-            issues: allMovements.filter(m => m.type === 'issue' || m.type === 'sale').length,
-            transfers: allMovements.filter(m => m.type.includes('transfer')).length,
-            adjustments: allMovements.filter(m => m.type.includes('adjustment')).length
-          }
-        }
-        break
-      }
-
-      case 'outstanding_payments': {
-        const unpaidInvoices = await invoices.find({ 
-          clientId, 
-          status: { $in: ['sent', 'partial'] } 
-        }).toArray()
-
-        const now = new Date()
-        const aging = { current: [], overdue30: [], overdue60: [], overdue90: [] }
-
-        unpaidInvoices.forEach(inv => {
+        allInvoices.forEach(inv => {
           const dueDate = new Date(inv.dueDate)
-          const daysOverdue = Math.floor((now - dueDate) / (1000 * 60 * 60 * 24))
-          
-          if (daysOverdue <= 0) aging.current.push(inv)
-          else if (daysOverdue <= 30) aging.overdue30.push(inv)
-          else if (daysOverdue <= 60) aging.overdue60.push(inv)
-          else aging.overdue90.push(inv)
+          const daysPastDue = Math.floor((now - dueDate) / (1000 * 60 * 60 * 24))
+          const balance = inv.balanceAmount || 0
+
+          if (daysPastDue < 0) {
+            aging.current.count++
+            aging.current.amount += balance
+          } else if (daysPastDue <= 30) {
+            aging['1-30'].count++
+            aging['1-30'].amount += balance
+          } else if (daysPastDue <= 60) {
+            aging['31-60'].count++
+            aging['31-60'].amount += balance
+          } else if (daysPastDue <= 90) {
+            aging['61-90'].count++
+            aging['61-90'].amount += balance
+          } else {
+            aging['90+'].count++
+            aging['90+'].amount += balance
+          }
         })
 
-        reportData = {
-          totalOutstanding: unpaidInvoices.reduce((sum, i) => sum + (i.balanceAmount || 0), 0),
-          invoiceCount: unpaidInvoices.length,
-          aging: {
-            current: { count: aging.current.length, amount: aging.current.reduce((s, i) => s + i.balanceAmount, 0) },
-            '1-30': { count: aging.overdue30.length, amount: aging.overdue30.reduce((s, i) => s + i.balanceAmount, 0) },
-            '31-60': { count: aging.overdue60.length, amount: aging.overdue60.reduce((s, i) => s + i.balanceAmount, 0) },
-            '60+': { count: aging.overdue90.length, amount: aging.overdue90.reduce((s, i) => s + i.balanceAmount, 0) }
-          },
-          details: unpaidInvoices.map(inv => ({
-            invoiceNumber: inv.invoiceNumber,
-            customer: inv.customer?.name,
-            total: inv.grandTotal,
-            paid: inv.paidAmount,
-            balance: inv.balanceAmount,
-            dueDate: inv.dueDate,
-            daysOverdue: Math.max(0, Math.floor((now - new Date(inv.dueDate)) / (1000 * 60 * 60 * 24)))
-          })).sort((a, b) => b.daysOverdue - a.daysOverdue)
-        }
-        break
+        return successResponse({
+          type: 'aging',
+          aging,
+          totalOutstanding: allInvoices.reduce((sum, i) => sum + (i.balanceAmount || 0), 0)
+        })
       }
 
-      case 'best_sellers': {
-        const allInvoices = await invoices.find({ clientId, status: 'paid' }).toArray()
+      case 'inventory': {
+        const allInventory = await inventory.find({}).toArray()
+        const allProducts = await products.find({}).toArray()
+        const productMap = new Map(allProducts.map(p => [p.id, p]))
+
+        const summary = {
+          totalProducts: allInventory.length,
+          totalQuantity: allInventory.reduce((sum, i) => sum + (i.quantity || 0), 0),
+          totalValue: allInventory.reduce((sum, i) => sum + ((i.quantity || 0) * (i.avgCostPrice || 0)), 0),
+          lowStock: allInventory.filter(i => i.availableQty <= (i.reorderLevel || 100) && i.availableQty > 0).length,
+          outOfStock: allInventory.filter(i => i.availableQty <= 0).length
+        }
+
+        // By category
+        const byCategory = {}
+        allInventory.forEach(item => {
+          const product = productMap.get(item.productId)
+          const cat = product?.category || 'unknown'
+          if (!byCategory[cat]) byCategory[cat] = { quantity: 0, value: 0 }
+          byCategory[cat].quantity += item.quantity || 0
+          byCategory[cat].value += (item.quantity || 0) * (item.avgCostPrice || 0)
+        })
+
+        return successResponse({
+          type: 'inventory',
+          summary,
+          byCategory
+        })
+      }
+
+      case 'products': {
+        const allProducts = await products.find({}).toArray()
+        const allQuotes = await quotes.find({}).toArray()
+
+        // Calculate product popularity from quotes
         const productSales = {}
-
-        for (const invoice of allInvoices) {
-          const items = invoice.items || []
-          for (const item of items) {
-            if (!item.productId) continue
-            if (!productSales[item.productId]) {
-              productSales[item.productId] = {
-                productId: item.productId,
-                name: item.name,
-                category: item.category,
-                revenue: 0,
-                quantity: 0,
-                orders: 0
-              }
+        allQuotes.forEach(q => {
+          (q.items || []).forEach(item => {
+            if (item.productId) {
+              if (!productSales[item.productId]) productSales[item.productId] = { quantity: 0, revenue: 0 }
+              productSales[item.productId].quantity += item.area || 0
+              productSales[item.productId].revenue += item.totalPrice || 0
             }
-            productSales[item.productId].revenue += item.totalPrice || 0
-            productSales[item.productId].quantity += item.quantity || 0
-            productSales[item.productId].orders++
-          }
-        }
-
-        const sorted = Object.values(productSales).sort((a, b) => b.revenue - a.revenue)
-        
-        reportData = {
-          byRevenue: sorted.slice(0, 20),
-          byQuantity: [...sorted].sort((a, b) => b.quantity - a.quantity).slice(0, 20),
-          byOrders: [...sorted].sort((a, b) => b.orders - a.orders).slice(0, 20)
-        }
-        break
-      }
-
-      case 'gst_tax': {
-        const query = { clientId, status: 'paid' }
-        if (startDate || endDate) query.createdAt = dateFilter
-        
-        const paidInvoices = await invoices.find(query).toArray()
-
-        const byMonth = {}
-        paidInvoices.forEach(inv => {
-          const month = new Date(inv.createdAt).toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
-          if (!byMonth[month]) {
-            byMonth[month] = { taxable: 0, cgst: 0, sgst: 0, igst: 0, total: 0 }
-          }
-          byMonth[month].taxable += inv.taxableAmount || 0
-          byMonth[month].cgst += inv.cgst || 0
-          byMonth[month].sgst += inv.sgst || 0
-          byMonth[month].igst += inv.igst || 0
-          byMonth[month].total += inv.totalTax || 0
+          })
         })
 
-        reportData = {
-          summary: {
-            totalTaxable: paidInvoices.reduce((s, i) => s + (i.taxableAmount || 0), 0),
-            totalCGST: paidInvoices.reduce((s, i) => s + (i.cgst || 0), 0),
-            totalSGST: paidInvoices.reduce((s, i) => s + (i.sgst || 0), 0),
-            totalIGST: paidInvoices.reduce((s, i) => s + (i.igst || 0), 0),
-            totalTax: paidInvoices.reduce((s, i) => s + (i.totalTax || 0), 0)
-          },
-          byMonth: Object.entries(byMonth).map(([month, data]) => ({ month, ...data }))
-        }
-        break
+        const topProducts = allProducts.map(p => ({
+          ...p,
+          sales: productSales[p.id] || { quantity: 0, revenue: 0 }
+        })).sort((a, b) => b.sales.revenue - a.sales.revenue).slice(0, 10)
+
+        return successResponse({
+          type: 'products',
+          totalProducts: allProducts.length,
+          topProducts,
+          byCategory: allProducts.reduce((acc, p) => {
+            acc[p.category] = (acc[p.category] || 0) + 1
+            return acc
+          }, {})
+        })
+      }
+
+      case 'installations': {
+        const allInstallations = await installations.find({}).toArray()
+        const periodInstallations = allInstallations.filter(i => new Date(i.createdAt) >= periodStart)
+
+        return successResponse({
+          type: 'installations',
+          total: periodInstallations.length,
+          scheduled: periodInstallations.filter(i => i.status === 'scheduled').length,
+          inProgress: periodInstallations.filter(i => i.status === 'in_progress').length,
+          completed: periodInstallations.filter(i => i.status === 'completed').length,
+          onHold: periodInstallations.filter(i => i.status === 'on_hold').length,
+          totalAreaInstalled: periodInstallations.filter(i => i.status === 'completed').reduce((sum, i) => sum + (i.totalArea || 0), 0)
+        })
       }
 
       default:
-        // Return list of available reports
-        return NextResponse.json({
-          availableReports: Object.values(ReportTypes).map(r => ({
-            id: r.id,
-            name: r.name,
-            category: r.category
-          }))
-        })
+        return errorResponse('Invalid report type', 400)
     }
-
-    return NextResponse.json({
-      reportType,
-      reportName: reportInfo?.name || reportType,
-      generatedAt: new Date().toISOString(),
-      dateRange: { startDate, endDate },
-      data: reportData
-    })
   } catch (error) {
     console.error('Reports GET Error:', error)
-    return NextResponse.json({ error: 'Failed to generate report' }, { status: 500 })
+    return errorResponse('Failed to generate report', 500, error.message)
   }
 }
