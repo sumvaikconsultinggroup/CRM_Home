@@ -642,26 +642,31 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       setLoading(true)
       
       // Calculate areas
-      const grossArea = (roomData.length || 0) * (roomData.width || 0)
+      const grossArea = (parseFloat(roomData.length) || 0) * (parseFloat(roomData.width) || 0)
       const obstaclesArea = (roomData.obstacles || []).reduce((sum, obs) => {
-        return sum + ((obs.length || 0) * (obs.width || 0))
+        return sum + ((parseFloat(obs.length) || 0) * (parseFloat(obs.width) || 0))
       }, 0)
       const netArea = grossArea - obstaclesArea
       
-      // Prepare room data
+      // Prepare room data with all fields
       const room = {
         ...roomData,
         projectId: selectedProject.id,
+        applicationType: roomData.applicationType || 'flooring',
         dimensions: {
-          length: roomData.length,
-          width: roomData.width,
-          height: roomData.height || 10
+          length: parseFloat(roomData.length) || 0,
+          width: parseFloat(roomData.width) || 0,
+          height: parseFloat(roomData.height) || 10
         },
         grossArea,
         obstaclesArea,
         netArea,
         wastagePercentage: roomData.wastagePercentage || 10,
-        totalAreaWithWastage: netArea * (1 + (roomData.wastagePercentage || 10) / 100)
+        totalAreaWithWastage: netArea * (1 + (roomData.wastagePercentage || 10) / 100),
+        roomSketch: roomData.roomSketch || null,
+        subfloorType: roomData.subfloorType || 'concrete',
+        subfloorCondition: roomData.subfloorCondition || 'good',
+        specialInstructions: roomData.specialInstructions || ''
       }
       
       // Update project with room data
