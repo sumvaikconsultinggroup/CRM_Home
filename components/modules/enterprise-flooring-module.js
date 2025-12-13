@@ -449,6 +449,16 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     if (activeTab === 'reports') fetchReports('summary')
   }, [activeTab, fetchQuotes, fetchInvoices, fetchInstallations, fetchInventory, fetchModuleSettings, fetchReports])
 
+  // Initialize measurement state when project changes (for B2C workflow)
+  useEffect(() => {
+    if (selectedProject && selectedProject.segment !== 'b2b') {
+      const measurementDetails = selectedProject.measurementDetails || {}
+      setMeasurementProducts(measurementDetails.selectedProducts || {})
+      setTechnicianName(measurementDetails.technicianName || '')
+      setMeasurementDate(measurementDetails.measurementDate || new Date().toISOString().split('T')[0])
+      setMeasurementNotes(measurementDetails.notes || '')
+    }
+  }, [selectedProject?.id, selectedProject?.measurementDetails])
 
   // Refresh data
   const refreshData = () => {
