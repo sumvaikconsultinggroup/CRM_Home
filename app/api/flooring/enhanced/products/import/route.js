@@ -164,6 +164,13 @@ export async function POST(request) {
           continue
         }
 
+        if (!categoryId) {
+          // category is required in schema; skip but keep import going
+          results.skipped++
+          results.errors.push({ sku, error: 'Missing category (categoryId or category slug)' })
+          continue
+        }
+
         const categorySlug = String(raw.category || raw.Category || '').trim()
         const categoryIdFromSlug = categorySlug ? categorySlugToId.get(normalizeSlug(categorySlug)) : undefined
         const categoryId = String(raw.categoryId || raw.CategoryId || '').trim() || categoryIdFromSlug || ''
