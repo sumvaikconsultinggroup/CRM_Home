@@ -4243,7 +4243,7 @@ function GoodsReceiptDialog({ open, onClose, products, onSave, loading }) {
 // Advanced Room Measurement Dialog
 // Simple Canvas Drawing Component for Room Sketches
 function RoomDrawingCanvas({ width, height, obstacles, onDrawingComplete }) {
-  const canvasRef = React.useRef(null)
+  const canvasRef = useRef(null)
   const [isDrawing, setIsDrawing] = useState(false)
   const [tool, setTool] = useState('pen') // pen, eraser, rect
   const [color, setColor] = useState('#3b82f6')
