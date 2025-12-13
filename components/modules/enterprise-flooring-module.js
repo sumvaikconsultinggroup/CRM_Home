@@ -2533,6 +2533,11 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         {/* Customer Dialog */}
         <CustomerDialog
           open={type === 'customer'}
+          onClose={() => setDialogOpen({ type: null, data: null })}
+          customer={data}
+          onSave={handleSaveCustomer}
+          loading={loading}
+        />
 
         {/* Import Products Dialog */}
         <ImportProductsDialog
