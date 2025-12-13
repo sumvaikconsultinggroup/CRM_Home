@@ -265,6 +265,9 @@ export function SuperAdminSettings({ user }) {
           <TabsTrigger value="pricing" className="flex items-center gap-2">
             <DollarSign className="h-4 w-4" /> Pricing
           </TabsTrigger>
+          <TabsTrigger value="pages" className="flex items-center gap-2">
+            <Globe className="h-4 w-4" /> Pages
+          </TabsTrigger>
           <TabsTrigger value="security" className="flex items-center gap-2">
             <Shield className="h-4 w-4" /> Security
           </TabsTrigger>
