@@ -962,6 +962,58 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }
 
+  // Handle Send for Installation (B2C only - after invoice is paid)
+  const handleSendForInstallation = async (invoice) => {
+    try {
+      setLoading(true)
+      
+      // Find the related project
+      const project = projects.find(p => p.id === invoice.projectId)
+      if (!project) {
+        toast.error('Project not found for this invoice')
+        return
+      }
+
+      // Create installation record
+      const res = await fetch('/api/flooring/enhanced/installations', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          projectId: project.id,
+          projectNumber: project.projectNumber,
+          invoiceId: invoice.id,
+          invoiceNumber: invoice.invoiceNumber,
+          customerId: project.customerId,
+          customerName: project.customerName,
+          siteAddress: project.site?.address || '',
+          totalArea: project.totalArea || invoice.totalArea || 0,
+          status: 'scheduled',
+          notes: `Installation for ${invoice.invoiceNumber}`
+        })
+      })
+      
+      if (res.ok) {
+        // Update project status
+        await handleUpdateProjectStatus(project.id, 'installation_scheduled')
+        
+        // Navigate to installations tab
+        setSelectedProject(project)
+        setActiveTab('installations')
+        
+        toast.success('Installation scheduled! Manage it in the Installations tab.')
+        fetchInvoices()
+        fetchInstallations()
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to create installation')
+      }
+    } catch (error) {
+      toast.error('Failed to send for installation')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // =============================================
   // RENDER TABS
   // =============================================
