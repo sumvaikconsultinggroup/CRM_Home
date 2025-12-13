@@ -2497,10 +2497,12 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     return (
       <>
         {/* Product Dialog */}
-        <ProductDialog
+        <FlooringProductDialog
           open={type === 'product'}
           onClose={() => setDialogOpen({ type: null, data: null })}
           product={data}
+          schema={productSchema}
+          categories={productCategories}
           onSave={handleSaveProduct}
           loading={loading}
         />
