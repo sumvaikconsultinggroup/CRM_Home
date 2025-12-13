@@ -1456,8 +1456,6 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           </SelectContent>
                         </Select>
                       </td>
-                        </div>
-                      </td>
                     </tr>
                   ))}
                 </tbody>
