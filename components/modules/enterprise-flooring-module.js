@@ -1073,6 +1073,9 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             </Select>
           </div>
           <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={handleExportProducts}>
+              <Download className="h-4 w-4 mr-2" /> Export
+            </Button>
             <Button variant="outline" onClick={() => setDialogOpen({ type: 'import_products', data: null })}>
               <Upload className="h-4 w-4 mr-2" /> Import
             </Button>
