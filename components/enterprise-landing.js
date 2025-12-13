@@ -653,7 +653,7 @@ export default function EnterpriseLanding({ onLogin }) {
   return (
     <div className="min-h-screen bg-white overflow-x-hidden">
       {/* CSS for animations */}
-      <style jsx global>{`
+      <style dangerouslySetInnerHTML={{ __html: `
         @keyframes float {
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-10px); }
@@ -671,7 +671,7 @@ export default function EnterpriseLanding({ onLogin }) {
           background-size: 200% 200%;
           animation: gradient-shift 3s ease infinite;
         }
-      `}</style>
+      `}} />
 
       {/* Progress Bar */}
       <motion.div 
