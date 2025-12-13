@@ -2763,13 +2763,308 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     const filteredQuotes = quotes.filter(q => {
       const matchesSearch = !searchTerm || 
         q.quoteNumber?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        q.customer?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+        q.customer?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        q.projectNumber?.toLowerCase().includes(searchTerm.toLowerCase())
       const matchesStatus = statusFilter === 'all' || q.status === statusFilter
       return matchesSearch && matchesStatus
     })
 
+    // Summary calculations
+    const summary = quotes.reduce((acc, q) => {
+      acc.total++
+      acc.totalValue += q.grandTotal || 0
+      if (q.status === 'draft') acc.draft++
+      if (q.status === 'sent') acc.sent++
+      if (q.status === 'approved') { acc.approved++; acc.approvedValue += q.grandTotal || 0 }
+      if (q.status === 'rejected') acc.rejected++
+      if (q.status === 'revised') acc.revised++
+      return acc
+    }, { total: 0, totalValue: 0, draft: 0, sent: 0, approved: 0, rejected: 0, revised: 0, approvedValue: 0 })
+
+    // Quote status definitions with actions
+    const QuoteStatusConfig = {
+      draft: { label: 'Draft', color: 'bg-slate-100 text-slate-700', actions: ['edit', 'send', 'delete'] },
+      sent: { label: 'Sent', color: 'bg-blue-100 text-blue-700', actions: ['approve', 'reject', 'revise', 'resend'] },
+      approved: { label: 'Approved', color: 'bg-emerald-100 text-emerald-700', actions: ['create_invoice', 'download'] },
+      rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700', actions: ['revise', 'delete'] },
+      revised: { label: 'Needs Revision', color: 'bg-amber-100 text-amber-700', actions: ['edit', 'send'] },
+      invoiced: { label: 'Invoiced', color: 'bg-purple-100 text-purple-700', actions: ['download', 'view_invoice'] },
+      expired: { label: 'Expired', color: 'bg-gray-100 text-gray-700', actions: ['revise', 'delete'] }
+    }
+
+    // Handle quote actions
+    const handleQuoteStatusChange = async (quoteId, newStatus, note = '') => {
+      try {
+        setLoading(true)
+        const res = await fetch('/api/flooring/enhanced/quotes', {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({
+            id: quoteId,
+            status: newStatus,
+            statusNote: note,
+            statusChangedAt: new Date().toISOString()
+          })
+        })
+        if (res.ok) {
+          fetchQuotes()
+          toast.success(`Quote ${newStatus === 'approved' ? 'approved' : newStatus === 'rejected' ? 'rejected' : 'updated'} successfully`)
+        }
+      } catch (error) {
+        toast.error('Failed to update quote status')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    // Create invoice from quote
+    const handleCreateInvoiceFromQuote = async (quote) => {
+      try {
+        setLoading(true)
+        const invoiceData = {
+          quoteId: quote.id,
+          quoteNumber: quote.quoteNumber,
+          projectId: quote.projectId,
+          projectNumber: quote.projectNumber,
+          customer: quote.customer,
+          site: quote.site,
+          items: quote.items,
+          subtotal: quote.subtotal,
+          discountType: quote.discountType,
+          discountValue: quote.discountValue,
+          discountAmount: quote.discountAmount,
+          taxableAmount: quote.taxableAmount,
+          cgstRate: quote.cgstRate,
+          cgstAmount: quote.cgstAmount,
+          sgstRate: quote.sgstRate,
+          sgstAmount: quote.sgstAmount,
+          igstRate: quote.igstRate,
+          igstAmount: quote.igstAmount,
+          totalTax: quote.totalTax,
+          grandTotal: quote.grandTotal,
+          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          notes: `Invoice generated from Quote ${quote.quoteNumber}`
+        }
+
+        const res = await fetch('/api/flooring/enhanced/invoices', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(invoiceData)
+        })
+
+        if (res.ok) {
+          // Update quote status to invoiced
+          await handleQuoteStatusChange(quote.id, 'invoiced')
+          
+          // Update project status if exists
+          if (quote.projectId) {
+            await handleUpdateProjectStatus(quote.projectId, 'invoice_sent')
+          }
+          
+          fetchInvoices()
+          setActiveTab('invoices')
+          toast.success('Invoice created successfully!')
+        } else {
+          toast.error('Failed to create invoice')
+        }
+      } catch (error) {
+        toast.error('Error creating invoice')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    // Download quote as PDF
+    const handleDownloadQuote = (quote) => {
+      // Generate a detailed quote HTML for printing/PDF
+      const quoteHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <title>Quote ${quote.quoteNumber}</title>
+          <style>
+            body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+            .header { display: flex; justify-content: space-between; border-bottom: 3px solid #2563eb; padding-bottom: 20px; margin-bottom: 20px; }
+            .logo { font-size: 24px; font-weight: bold; color: #2563eb; }
+            .quote-title { font-size: 28px; color: #1e40af; text-align: right; }
+            .quote-number { font-size: 14px; color: #666; }
+            .section { margin: 20px 0; }
+            .section-title { font-size: 14px; font-weight: bold; color: #333; margin-bottom: 10px; border-bottom: 1px solid #ddd; padding-bottom: 5px; }
+            .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+            .info-box { background: #f8fafc; padding: 15px; border-radius: 8px; }
+            .info-label { font-size: 12px; color: #666; }
+            .info-value { font-size: 14px; font-weight: 500; color: #333; }
+            table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+            th { background: #1e40af; color: white; padding: 12px; text-align: left; font-size: 12px; }
+            td { padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+            .text-right { text-align: right; }
+            .totals { margin-left: auto; width: 300px; }
+            .totals-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
+            .totals-row.grand { background: #1e40af; color: white; padding: 12px; margin: 0 -12px; font-size: 16px; font-weight: bold; }
+            .footer { margin-top: 40px; text-align: center; color: #666; font-size: 12px; border-top: 1px solid #ddd; padding-top: 20px; }
+            .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+            .status-approved { background: #d1fae5; color: #059669; }
+            .status-sent { background: #dbeafe; color: #2563eb; }
+            .status-draft { background: #f1f5f9; color: #475569; }
+            .terms { background: #fef3c7; padding: 15px; border-radius: 8px; margin-top: 20px; font-size: 12px; }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <div>
+              <div class="logo">🪵 FloorCraft Pro</div>
+              <p style="color: #666; font-size: 12px;">Professional Flooring Solutions</p>
+            </div>
+            <div style="text-align: right;">
+              <div class="quote-title">QUOTATION</div>
+              <div class="quote-number">${quote.quoteNumber}</div>
+              <span class="status-badge status-${quote.status}">${QuoteStatusConfig[quote.status]?.label || quote.status}</span>
+            </div>
+          </div>
+
+          <div class="grid-2">
+            <div class="info-box">
+              <div class="section-title">Customer Details</div>
+              <div class="info-label">Name</div>
+              <div class="info-value">${quote.customer?.name || '-'}</div>
+              <div class="info-label" style="margin-top: 8px;">Email</div>
+              <div class="info-value">${quote.customer?.email || '-'}</div>
+              <div class="info-label" style="margin-top: 8px;">Phone</div>
+              <div class="info-value">${quote.customer?.phone || '-'}</div>
+            </div>
+            <div class="info-box">
+              <div class="section-title">Quote Information</div>
+              <div class="info-label">Date</div>
+              <div class="info-value">${new Date(quote.createdAt).toLocaleDateString()}</div>
+              <div class="info-label" style="margin-top: 8px;">Valid Until</div>
+              <div class="info-value">${new Date(quote.validUntil).toLocaleDateString()}</div>
+              <div class="info-label" style="margin-top: 8px;">Project</div>
+              <div class="info-value">${quote.projectNumber || '-'}</div>
+            </div>
+          </div>
+
+          ${quote.site?.address ? `
+          <div class="section">
+            <div class="section-title">Site Address</div>
+            <p>${quote.site.address}${quote.site.city ? ', ' + quote.site.city : ''}${quote.site.state ? ', ' + quote.site.state : ''}</p>
+          </div>
+          ` : ''}
+
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 40px;">#</th>
+                <th>Description</th>
+                <th style="width: 80px;">Qty</th>
+                <th style="width: 60px;">Unit</th>
+                <th style="width: 100px;" class="text-right">Rate</th>
+                <th style="width: 120px;" class="text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(quote.items || []).map((item, idx) => `
+                <tr>
+                  <td>${idx + 1}</td>
+                  <td>
+                    <strong>${item.name || item.description || '-'}</strong>
+                    ${item.sku ? `<br><span style="color: #666; font-size: 11px;">SKU: ${item.sku}</span>` : ''}
+                  </td>
+                  <td>${item.quantity || item.area || 0}</td>
+                  <td>${item.unit || 'sqft'}</td>
+                  <td class="text-right">₹${(item.unitPrice || item.rate || 0).toLocaleString()}</td>
+                  <td class="text-right">₹${(item.totalPrice || item.total || 0).toLocaleString()}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+
+          <div class="totals">
+            <div class="totals-row">
+              <span>Subtotal</span>
+              <span>₹${(quote.subtotal || 0).toLocaleString()}</span>
+            </div>
+            ${quote.discountAmount > 0 ? `
+            <div class="totals-row">
+              <span>Discount (${quote.discountType === 'percentage' ? quote.discountValue + '%' : 'Fixed'})</span>
+              <span>-₹${(quote.discountAmount || 0).toLocaleString()}</span>
+            </div>
+            ` : ''}
+            ${quote.cgstAmount > 0 ? `
+            <div class="totals-row">
+              <span>CGST (${quote.cgstRate}%)</span>
+              <span>₹${(quote.cgstAmount || 0).toLocaleString()}</span>
+            </div>
+            ` : ''}
+            ${quote.sgstAmount > 0 ? `
+            <div class="totals-row">
+              <span>SGST (${quote.sgstRate}%)</span>
+              <span>₹${(quote.sgstAmount || 0).toLocaleString()}</span>
+            </div>
+            ` : ''}
+            ${quote.igstAmount > 0 ? `
+            <div class="totals-row">
+              <span>IGST (${quote.igstRate}%)</span>
+              <span>₹${(quote.igstAmount || 0).toLocaleString()}</span>
+            </div>
+            ` : ''}
+            <div class="totals-row grand">
+              <span>Grand Total</span>
+              <span>₹${(quote.grandTotal || 0).toLocaleString()}</span>
+            </div>
+          </div>
+
+          ${quote.notes ? `
+          <div class="terms">
+            <strong>Notes & Terms:</strong><br>
+            ${quote.notes}
+          </div>
+          ` : ''}
+
+          <div class="footer">
+            <p>Thank you for your business!</p>
+            <p>This is a computer-generated quotation. For queries, contact us at support@floorcraft.com</p>
+          </div>
+        </body>
+        </html>
+      `
+
+      // Open in new window for printing
+      const printWindow = window.open('', '_blank')
+      printWindow.document.write(quoteHtml)
+      printWindow.document.close()
+      printWindow.print()
+    }
+
     return (
       <div className="space-y-4">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-6 gap-4">
+          <Card className="p-4">
+            <p className="text-sm text-slate-500">Total Quotes</p>
+            <p className="text-2xl font-bold">{summary.total}</p>
+          </Card>
+          <Card className="p-4 bg-slate-50">
+            <p className="text-sm text-slate-500">Draft</p>
+            <p className="text-2xl font-bold text-slate-600">{summary.draft}</p>
+          </Card>
+          <Card className="p-4 bg-blue-50">
+            <p className="text-sm text-blue-700">Sent</p>
+            <p className="text-2xl font-bold text-blue-600">{summary.sent}</p>
+          </Card>
+          <Card className="p-4 bg-emerald-50">
+            <p className="text-sm text-emerald-700">Approved</p>
+            <p className="text-2xl font-bold text-emerald-600">{summary.approved}</p>
+          </Card>
+          <Card className="p-4 bg-amber-50">
+            <p className="text-sm text-amber-700">Revised/Pending</p>
+            <p className="text-2xl font-bold text-amber-600">{summary.revised}</p>
+          </Card>
+          <Card className="p-4 bg-purple-50">
+            <p className="text-sm text-purple-700">Approved Value</p>
+            <p className="text-xl font-bold text-purple-600">₹{summary.approvedValue.toLocaleString()}</p>
+          </Card>
+        </div>
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -2783,87 +3078,202 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               />
             </div>
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[160px]">
+              <SelectTrigger className="w-[180px]">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Status</SelectItem>
-                {Object.entries(QuoteStatus).map(([key, { label }]) => (
+                {Object.entries(QuoteStatusConfig).map(([key, { label }]) => (
                   <SelectItem key={key} value={key}>{label}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={() => setDialogOpen({ type: 'quote', data: null })}>
-            <Plus className="h-4 w-4 mr-2" /> Create Quote
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => {
+              // Export quotes to CSV
+              const csvData = quotes.map(q => ({
+                'Quote Number': q.quoteNumber,
+                'Customer': q.customer?.name || '',
+                'Project': q.projectNumber || '',
+                'Status': QuoteStatusConfig[q.status]?.label || q.status,
+                'Amount': q.grandTotal || 0,
+                'Created': new Date(q.createdAt).toLocaleDateString(),
+                'Valid Until': new Date(q.validUntil).toLocaleDateString()
+              }))
+              const headers = Object.keys(csvData[0] || {}).join(',')
+              const rows = csvData.map(row => Object.values(row).join(',')).join('\n')
+              const csv = `${headers}\n${rows}`
+              const blob = new Blob([csv], { type: 'text/csv' })
+              const url = URL.createObjectURL(blob)
+              const a = document.createElement('a')
+              a.href = url
+              a.download = `quotes_export_${new Date().toISOString().split('T')[0]}.csv`
+              a.click()
+              toast.success('Quotes exported!')
+            }}>
+              <Download className="h-4 w-4 mr-2" /> Export
+            </Button>
+            <Button onClick={() => setDialogOpen({ type: 'quote', data: null })}>
+              <Plus className="h-4 w-4 mr-2" /> Create Quote
+            </Button>
+          </div>
         </div>
 
-        {/* Quotes Grid */}
+        {/* Quotes Table */}
         {filteredQuotes.length > 0 ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {filteredQuotes.map(quote => (
-              <motion.div key={quote.id} whileHover={{ y: -2 }}>
-                <Card className="overflow-hidden hover:shadow-lg transition-all">
-                  <CardContent className="p-5">
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <div className="flex items-center gap-2 mb-1">
-                          <h3 className="font-semibold text-slate-900">{quote.quoteNumber}</h3>
-                          {quote.version > 1 && <Badge variant="outline" className="text-xs">v{quote.version}</Badge>}
-                        </div>
-                        <p className="text-sm text-slate-500">{quote.customer?.name || 'No customer'}</p>
-                      </div>
-                      <Badge className={QuoteStatus[quote.status]?.color}>{QuoteStatus[quote.status]?.label}</Badge>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-2 mb-3 text-sm">
-                      <div className="flex items-center gap-2 text-slate-500">
-                        <Square className="h-4 w-4" />
-                        {quote.totalArea?.toFixed(0) || 0} sqft
-                      </div>
-                      <div className="flex items-center gap-2 text-slate-500">
-                        <Home className="h-4 w-4" />
-                        {quote.rooms?.length || 0} rooms
-                      </div>
-                    </div>
-
-                    <div className="flex items-end justify-between pt-3 border-t">
-                      <div>
-                        <p className="text-2xl font-bold text-emerald-600">₹{(quote.grandTotal || 0).toLocaleString()}</p>
-                        <p className="text-xs text-slate-500">
-                          Valid until: {new Date(quote.validUntil).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'view_quote', data: quote })}>
-                          <Eye className="h-4 w-4" />
-                        </Button>
-                        {quote.status === 'draft' && (
-                          <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => handleQuoteAction(quote.id, 'send')}>
-                            <Send className="h-4 w-4 mr-1" /> Send
-                          </Button>
-                        )}
-                        {quote.status === 'sent' && (
-                          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleQuoteAction(quote.id, 'approve')}>
-                            <CheckCircle2 className="h-4 w-4 mr-1" /> Approve
-                          </Button>
-                        )}
-                        {quote.status === 'approved' && (
-                          <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white" onClick={() => handleQuoteAction(quote.id, 'create_invoice')}>
-                            <Receipt className="h-4 w-4 mr-1" /> Invoice
-                          </Button>
-                        )}
-                        <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'quote', data: quote })}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </motion.div>
-            ))}
-          </div>
+          <Card>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50 border-b">
+                  <tr>
+                    <TableHeader>Quote #</TableHeader>
+                    <TableHeader>Customer</TableHeader>
+                    <TableHeader>Project</TableHeader>
+                    <TableHeader>Items</TableHeader>
+                    <TableHeader>Amount</TableHeader>
+                    <TableHeader>Created</TableHeader>
+                    <TableHeader>Valid Until</TableHeader>
+                    <TableHeader>Status</TableHeader>
+                    <TableHeader>Actions</TableHeader>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {filteredQuotes.map(quote => {
+                    const isExpired = new Date(quote.validUntil) < new Date() && !['approved', 'invoiced'].includes(quote.status)
+                    const statusConfig = QuoteStatusConfig[isExpired ? 'expired' : quote.status] || QuoteStatusConfig.draft
+                    
+                    return (
+                      <tr key={quote.id} className={`hover:bg-slate-50 ${isExpired ? 'bg-red-50/50' : ''}`}>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium text-slate-900">{quote.quoteNumber}</p>
+                            {quote.version > 1 && <Badge variant="outline" className="text-xs">v{quote.version}</Badge>}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="font-medium">{quote.customer?.name || '-'}</p>
+                          <p className="text-xs text-slate-500">{quote.customer?.phone || quote.customer?.email || ''}</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge variant="outline">{quote.projectNumber || '-'}</Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <p>{quote.items?.length || 0} items</p>
+                          <p className="text-xs text-slate-500">{quote.totalArea?.toFixed(0) || 0} sqft</p>
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="font-semibold text-emerald-600">₹{(quote.grandTotal || 0).toLocaleString()}</p>
+                        </td>
+                        <td className="px-4 py-3 text-sm text-slate-500">
+                          {new Date(quote.createdAt).toLocaleDateString()}
+                        </td>
+                        <td className="px-4 py-3 text-sm">
+                          <span className={isExpired ? 'text-red-600 font-medium' : 'text-slate-500'}>
+                            {new Date(quote.validUntil).toLocaleDateString()}
+                            {isExpired && ' (Expired)'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3">
+                          <Badge className={statusConfig.color}>{statusConfig.label}</Badge>
+                        </td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center gap-1">
+                            {/* View */}
+                            <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'view_quote', data: quote })} title="View">
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            
+                            {/* Edit - only for draft/revised */}
+                            {['draft', 'revised'].includes(quote.status) && (
+                              <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'quote', data: quote })} title="Edit">
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            )}
+                            
+                            {/* Download */}
+                            <Button variant="ghost" size="sm" onClick={() => handleDownloadQuote(quote)} title="Download/Print">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                            
+                            {/* Status Actions Dropdown */}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                {/* Draft actions */}
+                                {quote.status === 'draft' && (
+                                  <>
+                                    <DropdownMenuItem onClick={() => handleQuoteAction(quote.id, 'send')}>
+                                      <Send className="h-4 w-4 mr-2 text-blue-600" /> Send to Customer
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleDeleteQuote(quote.id)} className="text-red-600">
+                                      <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                                
+                                {/* Sent actions */}
+                                {quote.status === 'sent' && (
+                                  <>
+                                    <DropdownMenuItem onClick={() => handleQuoteStatusChange(quote.id, 'approved')}>
+                                      <CheckCircle2 className="h-4 w-4 mr-2 text-emerald-600" /> Mark Approved
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleQuoteStatusChange(quote.id, 'rejected')}>
+                                      <X className="h-4 w-4 mr-2 text-red-600" /> Mark Rejected
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleQuoteStatusChange(quote.id, 'revised')}>
+                                      <Edit className="h-4 w-4 mr-2 text-amber-600" /> Needs Revision
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleQuoteAction(quote.id, 'send')}>
+                                      <RefreshCw className="h-4 w-4 mr-2" /> Resend
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                                
+                                {/* Approved actions */}
+                                {quote.status === 'approved' && (
+                                  <DropdownMenuItem onClick={() => handleCreateInvoiceFromQuote(quote)}>
+                                    <Receipt className="h-4 w-4 mr-2 text-purple-600" /> Create Invoice
+                                  </DropdownMenuItem>
+                                )}
+                                
+                                {/* Rejected/Revised actions */}
+                                {['rejected', 'revised', 'expired'].includes(quote.status) && (
+                                  <>
+                                    <DropdownMenuItem onClick={() => setDialogOpen({ type: 'quote', data: { ...quote, id: null, version: (quote.version || 1) + 1 } })}>
+                                      <Copy className="h-4 w-4 mr-2" /> Create Revision
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleDeleteQuote(quote.id)} className="text-red-600">
+                                      <Trash2 className="h-4 w-4 mr-2" /> Delete
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                                
+                                {/* Invoiced - view invoice */}
+                                {quote.status === 'invoiced' && (
+                                  <DropdownMenuItem onClick={() => {
+                                    const inv = invoices.find(i => i.quoteId === quote.id)
+                                    if (inv) setDialogOpen({ type: 'view_invoice', data: inv })
+                                    else setActiveTab('invoices')
+                                  }}>
+                                    <Receipt className="h-4 w-4 mr-2" /> View Invoice
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                          </div>
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </Card>
         ) : (
           <EmptyState
             icon={FileText}
