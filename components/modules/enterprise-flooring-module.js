@@ -4080,28 +4080,90 @@ export function EnterpriseFlooringModule({ client, user, token }) {
 
   // Measurements Tab (for selected project)
   const renderMeasurements = () => {
-    if (!selectedProject) {
+    // Filter to show only B2C projects
+    const b2cProjects = projects.filter(p => p.segment === 'b2c' || !p.segment) // Default to B2C if not specified
+    const projectsWithMeasurements = b2cProjects.filter(p => 
+      ['measurement_scheduled', 'measurement_done', 'quote_pending', 'quote_sent'].includes(p.status)
+    )
+
+    // If no project selected, show project selection
+    if (!selectedProject || selectedProject.segment === 'b2b') {
       return (
-        <EmptyState
-          icon={Ruler}
-          title="Select a Project"
-          description="Choose a project from the Projects tab to manage room measurements."
-          action={() => setActiveTab('projects')}
-          actionLabel="Go to Projects"
-        />
+        <div className="space-y-4">
+          {/* Header */}
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-lg font-semibold">Room Measurements</h3>
+              <p className="text-sm text-muted-foreground">Manage measurements for B2C consumer projects</p>
+            </div>
+          </div>
+
+          {/* Project Selection */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Ruler className="h-5 w-5 text-cyan-600" />
+                Select a B2C Project
+              </CardTitle>
+              <CardDescription>Choose a B2C project to add or manage room measurements</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {b2cProjects.length > 0 ? (
+                <div className="grid gap-3">
+                  {b2cProjects.map(project => (
+                    <div 
+                      key={project.id}
+                      className={`p-4 border rounded-lg cursor-pointer transition-all hover:border-cyan-500 hover:bg-cyan-50 ${selectedProject?.id === project.id ? 'border-cyan-500 bg-cyan-50' : ''}`}
+                      onClick={() => setSelectedProject(project)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{project.projectNumber}</p>
+                          <p className="text-sm text-muted-foreground">{project.customerName || project.name}</p>
+                          {project.rooms?.length > 0 && (
+                            <p className="text-xs text-cyan-600 mt-1">
+                              <Ruler className="h-3 w-3 inline mr-1" />
+                              {project.rooms.length} rooms • {project.totalArea || 0} sqft total
+                            </p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge className={ProjectStatusB2C[project.status]?.color || 'bg-slate-100'}>
+                            {ProjectStatusB2C[project.status]?.label || project.status}
+                          </Badge>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Ruler className="h-12 w-12 mx-auto text-slate-300 mb-3" />
+                  <p className="text-muted-foreground">No B2C projects found</p>
+                  <p className="text-sm text-muted-foreground mt-1">Create a B2C project first or send one for measurement</p>
+                  <Button className="mt-4" onClick={() => setActiveTab('projects')}>
+                    Go to Projects
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
       )
     }
 
     const rooms = selectedProject.rooms || []
+    const totalArea = rooms.reduce((sum, r) => sum + (r.netArea || 0), 0)
 
     return (
       <div className="space-y-4">
-        {/* Project Info */}
+        {/* Project Info Header */}
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <Button variant="ghost" size="sm" onClick={() => { setSelectedProject(null); setActiveTab('projects') }}>
-                <ArrowLeft className="h-4 w-4 mr-1" /> Back
+              <Button variant="outline" size="sm" onClick={() => setSelectedProject(null)}>
+                <ArrowLeft className="h-4 w-4 mr-1" /> Change Project
               </Button>
               <div>
                 <h3 className="font-semibold text-lg">{selectedProject.projectNumber}</h3>
@@ -4109,9 +4171,18 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <div className="text-right">
-                <p className="text-2xl font-bold text-blue-600">{selectedProject.totalArea || 0} sqft</p>
-                <p className="text-sm text-slate-500">{rooms.length} rooms</p>
+              <div className="text-center px-4 border-r">
+                <p className="text-2xl font-bold text-cyan-600">{rooms.length}</p>
+                <p className="text-sm text-slate-500">Rooms</p>
+              </div>
+              <div className="text-center px-4 border-r">
+                <p className="text-2xl font-bold text-emerald-600">{totalArea.toFixed(0)}</p>
+                <p className="text-sm text-slate-500">Total Sqft</p>
+              </div>
+              <div className="text-center px-4">
+                <Badge className={ProjectStatusB2C[selectedProject.status]?.color || 'bg-slate-100'}>
+                  {ProjectStatusB2C[selectedProject.status]?.label || selectedProject.status}
+                </Badge>
               </div>
               <Button onClick={() => setDialogOpen({ type: 'room', data: { projectId: selectedProject.id } })}>
                 <Plus className="h-4 w-4 mr-2" /> Add Room
@@ -4217,70 +4288,178 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           />
         )}
 
-        {/* B2C Workflow Actions */}
-        {rooms.length > 0 && (
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm">B2C Workflow Progress</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center gap-2 mb-4">
-                {[
-                  { status: 'measurement_scheduled', label: 'Scheduled', icon: Calendar },
-                  { status: 'measurement_done', label: 'Measured', icon: Ruler },
-                  { status: 'quote_pending', label: 'Quote', icon: FileText },
-                  { status: 'invoice_sent', label: 'Invoice', icon: Receipt },
-                  { status: 'installation_scheduled', label: 'Install', icon: Wrench },
-                  { status: 'completed', label: 'Complete', icon: CheckCircle2 }
-                ].map((step, idx) => {
-                  const statusOrder = ['pending', 'measurement_scheduled', 'measurement_done', 'quote_pending', 'quote_sent', 'quote_approved', 'invoice_sent', 'payment_received', 'installation_scheduled', 'installation_in_progress', 'completed']
-                  const currentIdx = statusOrder.indexOf(selectedProject.status)
-                  const stepIdx = statusOrder.indexOf(step.status)
-                  const isActive = currentIdx >= stepIdx
-                  const Icon = step.icon
+        {/* B2C Workflow Progress & Actions */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">B2C Workflow Progress</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center gap-2 mb-4">
+              {[
+                { status: 'measurement_scheduled', label: 'Scheduled', icon: Calendar },
+                { status: 'measurement_done', label: 'Measured', icon: Ruler },
+                { status: 'quote_pending', label: 'Quote', icon: FileText },
+                { status: 'invoice_sent', label: 'Invoice', icon: Receipt },
+                { status: 'installation_scheduled', label: 'Install', icon: Wrench },
+                { status: 'completed', label: 'Complete', icon: CheckCircle2 }
+              ].map((step, idx) => {
+                const statusOrder = ['pending', 'measurement_scheduled', 'measurement_done', 'quote_pending', 'quote_sent', 'quote_approved', 'invoice_sent', 'payment_received', 'installation_scheduled', 'installation_in_progress', 'completed']
+                const currentIdx = statusOrder.indexOf(selectedProject.status)
+                const stepIdx = statusOrder.indexOf(step.status)
+                const isActive = currentIdx >= stepIdx
+                const Icon = step.icon
+                return (
+                  <div key={step.status} className="flex items-center gap-2">
+                    <div className={`p-2 rounded-full ${isActive ? 'bg-cyan-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                      <Icon className="h-4 w-4" />
+                    </div>
+                    <span className={`text-xs ${isActive ? 'text-cyan-600 font-medium' : 'text-slate-400'}`}>{step.label}</span>
+                    {idx < 5 && <div className={`w-8 h-0.5 ${isActive ? 'bg-cyan-600' : 'bg-slate-200'}`} />}
+                  </div>
+                )
+              })}
+            </div>
+            
+            {/* Action Buttons based on status - Similar to Materials tab logic */}
+            <div className="flex flex-col gap-3 pt-3 border-t">
+              {(() => {
+                const status = selectedProject.status
+                const hasRooms = rooms.length > 0
+
+                // Status: measurement_scheduled - Need to add rooms and mark done
+                if (status === 'measurement_scheduled' || status === 'pending') {
                   return (
-                    <div key={step.status} className="flex items-center gap-2">
-                      <div className={`p-2 rounded-full ${isActive ? 'bg-green-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
-                        <Icon className="h-4 w-4" />
+                    <div className="space-y-3">
+                      <div className="flex gap-3">
+                        <Button 
+                          variant="outline"
+                          onClick={() => setDialogOpen({ type: 'room', data: { projectId: selectedProject.id } })}
+                        >
+                          <Plus className="h-4 w-4 mr-2" /> Add Room
+                        </Button>
+                        <Button 
+                          className="bg-cyan-600 hover:bg-cyan-700"
+                          disabled={!hasRooms}
+                          onClick={async () => {
+                            await handleUpdateProjectStatus(selectedProject.id, 'measurement_done')
+                            setSelectedProject(prev => ({ ...prev, status: 'measurement_done' }))
+                            toast.success('Measurements completed! You can now proceed to quote.')
+                          }}
+                        >
+                          <CheckCircle2 className="h-4 w-4 mr-2" /> Mark Measurement Done ({rooms.length} rooms, {totalArea.toFixed(0)} sqft)
+                        </Button>
                       </div>
-                      <span className={`text-xs ${isActive ? 'text-green-600 font-medium' : 'text-slate-400'}`}>{step.label}</span>
-                      {idx < 5 && <div className={`w-8 h-0.5 ${isActive ? 'bg-green-600' : 'bg-slate-200'}`} />}
+                      {!hasRooms && (
+                        <p className="text-sm text-slate-500">
+                          Add at least one room measurement before marking as done.
+                        </p>
+                      )}
                     </div>
                   )
-                })}
-              </div>
-              
-              {/* Action Buttons based on status */}
-              <div className="flex gap-3 pt-3 border-t">
-                {selectedProject.status === 'measurement_scheduled' && (
-                  <Button 
-                    className="bg-cyan-600 hover:bg-cyan-700"
-                    onClick={async () => {
-                      await handleUpdateProjectStatus(selectedProject.id, 'measurement_done')
-                      toast.success('Measurements completed!')
-                    }}
-                  >
-                    <CheckCircle2 className="h-4 w-4 mr-2" /> Mark Measurement Done
-                  </Button>
-                )}
-                {selectedProject.status === 'measurement_done' && (
-                  <Button 
-                    className="bg-emerald-600 hover:bg-emerald-700"
-                    onClick={() => {
-                      handleUpdateProjectStatus(selectedProject.id, 'quote_pending')
-                      handleSendForQuotation(selectedProject)
-                    }}
-                  >
-                    <FileText className="h-4 w-4 mr-2" /> Send for Quote
-                  </Button>
-                )}
-                {['quote_sent', 'quote_approved', 'invoice_sent', 'payment_received'].includes(selectedProject.status) && (
-                  <Badge className="py-2 px-4">{ProjectStatusB2C[selectedProject.status]?.label}</Badge>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                }
+
+                // Status: measurement_done - Can edit rooms or proceed to quote
+                if (status === 'measurement_done') {
+                  return (
+                    <div className="space-y-3">
+                      <div className="flex gap-3">
+                        <Button 
+                          variant="outline"
+                          onClick={async () => {
+                            await handleUpdateProjectStatus(selectedProject.id, 'measurement_scheduled')
+                            setSelectedProject(prev => ({ ...prev, status: 'measurement_scheduled' }))
+                            toast.info('Status reverted. You can now edit measurements.')
+                          }}
+                        >
+                          <Edit className="h-4 w-4 mr-2" /> Edit Measurements
+                        </Button>
+                        <Button 
+                          className="bg-emerald-600 hover:bg-emerald-700"
+                          onClick={() => {
+                            handleUpdateProjectStatus(selectedProject.id, 'quote_pending')
+                            setSelectedProject(prev => ({ ...prev, status: 'quote_pending' }))
+                            handleSendForQuotation(selectedProject)
+                          }}
+                        >
+                          <FileText className="h-4 w-4 mr-2" /> Create Quote ({totalArea.toFixed(0)} sqft)
+                        </Button>
+                      </div>
+                      <p className="text-sm text-emerald-600 flex items-center gap-2">
+                        <CheckCircle2 className="h-4 w-4" />
+                        Measurements complete. Ready to create a quote.
+                      </p>
+                    </div>
+                  )
+                }
+
+                // Status: quote_pending or quote_sent - Show view quotes
+                if (['quote_pending', 'quote_sent'].includes(status)) {
+                  return (
+                    <div className="space-y-3">
+                      <div className="flex gap-3">
+                        <Button 
+                          variant="outline"
+                          onClick={async () => {
+                            await handleUpdateProjectStatus(selectedProject.id, 'measurement_done')
+                            setSelectedProject(prev => ({ ...prev, status: 'measurement_done' }))
+                            toast.info('Status reverted. You can now edit measurements.')
+                          }}
+                        >
+                          <ArrowLeft className="h-4 w-4 mr-2" /> Back to Measurements
+                        </Button>
+                        <Button 
+                          className="bg-emerald-600 hover:bg-emerald-700"
+                          onClick={() => setActiveTab('quotes')}
+                        >
+                          <FileText className="h-4 w-4 mr-2" /> View Quotes
+                        </Button>
+                      </div>
+                      <p className="text-sm text-blue-600 flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        Quote has been created. View in Quotes tab.
+                      </p>
+                    </div>
+                  )
+                }
+
+                // Status: quote_approved, invoice, etc - Show progress
+                if (['quote_approved', 'invoice_sent', 'payment_received', 'installation_scheduled', 'installation_in_progress', 'completed'].includes(status)) {
+                  return (
+                    <div className="space-y-3">
+                      <div className="flex gap-3">
+                        <Button 
+                          variant="outline"
+                          onClick={() => setActiveTab('quotes')}
+                        >
+                          <FileText className="h-4 w-4 mr-2" /> View Quotes
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          onClick={() => setActiveTab('invoices')}
+                        >
+                          <Receipt className="h-4 w-4 mr-2" /> View Invoices
+                        </Button>
+                        {status === 'installation_scheduled' && (
+                          <Button 
+                            className="bg-orange-600 hover:bg-orange-700"
+                            onClick={() => setActiveTab('installations')}
+                          >
+                            <Wrench className="h-4 w-4 mr-2" /> View Installation
+                          </Button>
+                        )}
+                      </div>
+                      <p className="text-sm text-slate-500 flex items-center gap-2">
+                        Current Status: <Badge className={ProjectStatusB2C[status]?.color}>{ProjectStatusB2C[status]?.label}</Badge>
+                      </p>
+                    </div>
+                  )
+                }
+
+                return null
+              })()}
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
