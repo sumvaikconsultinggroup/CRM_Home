@@ -219,17 +219,21 @@ export function MeeAgent({ client, user, stats, leads = [], tasks = [], onUpgrad
 
       const data = await response.json()
 
-      if (data.success) {
+      // Check if response has the expected data (response field means success)
+      if (data.response) {
         const aiMessage = {
           role: 'assistant',
-          content: data.data.response,
+          content: data.response,
           timestamp: new Date()
         }
         setMessages(prev => [...prev, aiMessage])
         
-        if (data.data.conversationId) {
-          setConversationId(data.data.conversationId)
+        if (data.conversationId) {
+          setConversationId(data.conversationId)
         }
+      } else if (data.error) {
+        // Handle error response
+        toast.error(data.error || 'Failed to get response from Mee')
       } else {
         toast.error('Failed to get response from Mee')
       }
