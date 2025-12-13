@@ -288,7 +288,8 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
       icon: DollarSign,
       color: 'from-emerald-500 to-green-600',
       bgColor: 'bg-emerald-50',
-      chartData: revenueData
+      chartData: revenueData,
+      onClick: () => onNavigate?.('expenses')
     },
     { 
       title: 'Active Leads', 
@@ -298,7 +299,8 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
       icon: Target,
       color: 'from-blue-500 to-indigo-600',
       bgColor: 'bg-blue-50',
-      chartData
+      chartData,
+      onClick: () => onNavigate?.('leads')
     },
     { 
       title: 'Active Projects', 
@@ -308,7 +310,8 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
       icon: Briefcase,
       color: 'from-purple-500 to-pink-600',
       bgColor: 'bg-purple-50',
-      chartData: [20, 35, 25, 40, 30, 45, 35]
+      chartData: [20, 35, 25, 40, 30, 45, 35],
+      onClick: () => onNavigate?.('projects')
     },
     { 
       title: 'Task Completion', 
