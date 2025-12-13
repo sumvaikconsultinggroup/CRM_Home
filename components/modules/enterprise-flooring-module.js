@@ -4691,7 +4691,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
 
     // Reserve inventory for measurement
     const reserveInventoryForMeasurement = async () => {
-      const items = Object.values(selectedProducts).filter(item => item.selected)
+      const items = Object.values(measurementProducts).filter(item => item.selected)
       for (const item of items) {
         await fetch('/api/flooring/enhanced/inventory', {
           method: 'POST',
