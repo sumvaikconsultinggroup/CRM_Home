@@ -2706,6 +2706,14 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           loading={loading}
         />
 
+        {/* View Project Dialog */}
+        <ViewProjectDialog
+          open={type === 'view_project'}
+          onClose={() => setDialogOpen({ type: null, data: null })}
+          project={data}
+          onSendForQuotation={handleSendForQuotation}
+        />
+
         {/* Record Payment Dialog */}
         <PaymentDialog
           open={type === 'record_payment'}
