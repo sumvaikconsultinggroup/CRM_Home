@@ -234,6 +234,9 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   const [meeAiInput, setMeeAiInput] = useState('')
   const [meeAiLoading, setMeeAiLoading] = useState(false)
   
+  // Material Requisition State (for B2B workflow)
+  const [materialRequisition, setMaterialRequisition] = useState({}) // { productId: { product, quantity, selected } }
+  
   // Selection States
   const [selectedProject, setSelectedProject] = useState(null)
   const [selectedCustomer, setSelectedCustomer] = useState(null)
