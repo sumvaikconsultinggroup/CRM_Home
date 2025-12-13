@@ -445,6 +445,18 @@ export function Integrations({ client }) {
 
           {selectedIntegration && (
             <div className="space-y-6 py-4">
+              {/* Webhook endpoint info badge */}
+              {selectedIntegration.webhookEndpoint && (
+                <div className="p-3 rounded-lg bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200">
+                  <div className="flex items-center gap-2 mb-1">
+                    <Shield className="h-4 w-4 text-indigo-600" />
+                    <span className="text-sm font-semibold text-indigo-700">Dedicated Webhook Endpoint</span>
+                    <Badge variant="outline" className="ml-auto text-xs bg-white">Secure</Badge>
+                  </div>
+                  <code className="text-xs text-indigo-600 font-mono">{selectedIntegration.webhookEndpoint}</code>
+                </div>
+              )}
+
               {/* For automation tools */}
               {selectedIntegration.category === 'automation' && (
                 <div className="space-y-4">
@@ -454,14 +466,25 @@ export function Integrations({ client }) {
                       Step 1: Generate Webhook URL
                     </h4>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Create a webhook URL to receive data from {selectedIntegration.name}
+                      Create a unique webhook URL for {selectedIntegration.name}
                     </p>
                     {webhookUrl ? (
-                      <div className="flex gap-2">
-                        <Input value={webhookUrl} readOnly className="font-mono text-sm" />
-                        <Button variant="outline" size="icon" onClick={() => copyToClipboard(webhookUrl)}>
-                          {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-                        </Button>
+                      <div className="space-y-2">
+                        <div className="flex gap-2">
+                          <Input value={webhookUrl} readOnly className="font-mono text-sm" />
+                          <Button variant="outline" size="icon" onClick={() => copyToClipboard(webhookUrl)}>
+                            {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                          </Button>
+                        </div>
+                        {webhookSecret && (
+                          <div className="flex items-center gap-2 mt-2">
+                            <span className="text-xs text-muted-foreground">Secret:</span>
+                            <code className="text-xs bg-slate-100 px-2 py-1 rounded font-mono">{webhookSecret}</code>
+                            <Button variant="ghost" size="sm" className="h-6 px-2" onClick={() => copyToClipboard(webhookSecret)}>
+                              <Copy className="h-3 w-3" />
+                            </Button>
+                          </div>
+                        )}
                       </div>
                     ) : (
                       <Button onClick={() => handleGenerateWebhook(selectedIntegration)}>
@@ -489,12 +512,14 @@ export function Integrations({ client }) {
                     <pre className="text-xs bg-slate-900 text-green-400 p-4 rounded-lg overflow-x-auto">
 {`{
   "event": "lead.create",
-  "name": "John Doe",
-  "email": "john@example.com",
-  "phone": "+91 98765 43210",
-  "source": "Website",
-  "value": 50000,
-  "notes": "Interested in kitchen renovation"
+  "data": {
+    "name": "John Doe",
+    "email": "john@example.com",
+    "phone": "+91 98765 43210",
+    "company": "ABC Corp",
+    "value": 50000,
+    "notes": "Interested in kitchen renovation"
+  }
 }`}
                     </pre>
                   </div>
