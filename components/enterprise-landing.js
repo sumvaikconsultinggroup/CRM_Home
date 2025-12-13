@@ -644,7 +644,7 @@ export default function EnterpriseLanding({ onLogin }) {
                   <h3 className="text-xl font-bold mb-2">AI Assistant - Mee</h3>
                   <p className="text-amber-200 text-sm">Get instant insights from your data</p>
                   <div className="mt-4 bg-white/20 rounded-lg p-3">
-                    <p className="text-sm italic">"Show me leads that need follow-up today</p>
+                    <p className="text-sm italic">Show me leads that need follow-up today</p>
                   </div>
                 </CardContent>
               </Card>
