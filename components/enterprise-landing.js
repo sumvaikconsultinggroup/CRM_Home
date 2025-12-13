@@ -1343,6 +1343,101 @@ export default function EnterpriseLanding({ onLogin }) {
         </div>
       </section>
 
+      {/* How It Works Section */}
+      <section className="py-16 lg:py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12 lg:mb-16"
+          >
+            <Badge className="bg-cyan-100 text-cyan-700 mb-4">Getting Started</Badge>
+            <h2 className="text-3xl lg:text-5xl font-bold mb-4">
+              Up and Running in 3 Steps
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              No complex setup. No IT team required. Get started in under 30 minutes.
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
+            {[
+              {
+                step: '01',
+                title: 'Sign Up & Configure',
+                description: 'Create your account, choose your industry module, and import your existing data from Excel or other CRMs. Our setup wizard guides you through everything.',
+                icon: Settings,
+                time: '10 mins'
+              },
+              {
+                step: '02',
+                title: 'Invite Your Team',
+                description: 'Add team members with role-based access. Sales can see leads, operations can manage projects, and finance handles invoices. Everyone sees what they need.',
+                icon: Users,
+                time: '5 mins'
+              },
+              {
+                step: '03',
+                title: 'Start Growing',
+                description: 'Begin capturing leads, creating quotes, and managing projects. Our AI assistant Mee helps you get the most out of every feature.',
+                icon: Rocket,
+                time: '15 mins'
+              }
+            ].map((step, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.2 }}
+                className="relative"
+              >
+                {/* Connector line */}
+                {i < 2 && (
+                  <div className="hidden md:block absolute top-20 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-gray-300 to-gray-100" />
+                )}
+                
+                <div className="bg-gray-50 rounded-2xl p-6 lg:p-8 border border-gray-100 hover:shadow-lg transition-all relative z-10">
+                  <div className="flex items-start justify-between mb-6">
+                    <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white">
+                      <step.icon className="h-7 w-7" />
+                    </div>
+                    <span className="text-5xl font-bold text-gray-100">{step.step}</span>
+                  </div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-3">{step.title}</h3>
+                  <p className="text-gray-600 mb-4">{step.description}</p>
+                  <div className="inline-flex items-center gap-2 text-sm text-blue-600 font-medium">
+                    <Clock className="h-4 w-4" />
+                    <span>{step.time}</span>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mt-12 text-center"
+          >
+            <div className="inline-flex items-center gap-4 bg-blue-50 border border-blue-200 rounded-2xl px-6 py-4">
+              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+                <Headphones className="h-6 w-6 text-blue-600" />
+              </div>
+              <div className="text-left">
+                <p className="font-semibold text-gray-900">Need help setting up?</p>
+                <p className="text-sm text-gray-600">Our team provides free onboarding calls for all new accounts</p>
+              </div>
+              <Button onClick={onLogin} variant="outline" className="ml-4 border-blue-300 text-blue-600 hover:bg-blue-50">
+                Book a Call
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Pricing Section */}
       <section id="pricing" className="py-16 lg:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
