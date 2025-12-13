@@ -5408,26 +5408,180 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                 </div>
               ) : (
               <>
-                <div className="border rounded-lg p-3 max-h-64 overflow-y-auto">
-                  {products.length > 0 ? (
-                    <div className="space-y-2">
-                      {products.map(product => {
-                        const isSelected = measurementProducts[product.id]?.selected
-                        const quantity = measurementProducts[product.id]?.quantity || totalArea
-                        const price = product.price || product.pricing?.sellingPrice || 0
-                        const inv = getProductInventory(product.id)
-                        const status = getInventoryStatus(product.id, isSelected ? quantity : 0)
-                        
+                {/* Search and Product Dropdown */}
+                <div className="space-y-3">
+                  {/* Search Input */}
+                  <div className="relative">
+                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input 
+                      placeholder="Search products by name, SKU, category..."
+                      value={productSearchTerm || ''}
+                      onChange={(e) => setProductSearchTerm(e.target.value)}
+                      className="pl-10"
+                    />
+                  </div>
+                  
+                  {/* Product Dropdown List - Top 7 with scroll */}
+                  <div className="border rounded-lg max-h-72 overflow-y-auto">
+                    {(() => {
+                      const searchTerm = (productSearchTerm || '').toLowerCase()
+                      const filteredProducts = products.filter(p => 
+                        p.name?.toLowerCase().includes(searchTerm) ||
+                        p.sku?.toLowerCase().includes(searchTerm) ||
+                        p.category?.toLowerCase().includes(searchTerm)
+                      )
+                      // Show top 7 or filtered results
+                      const displayProducts = searchTerm ? filteredProducts : filteredProducts.slice(0, 7)
+                      
+                      if (displayProducts.length === 0) {
                         return (
-                          <div 
-                            key={product.id} 
-                            className={`flex items-center justify-between p-3 border rounded transition-all ${isSelected ? 'border-cyan-500 bg-cyan-50' : 'hover:bg-slate-50'} ${status.status === 'out_of_stock' ? 'opacity-60' : ''}`}
-                          >
-                            <div className="flex items-center gap-3">
-                              <Checkbox 
-                                checked={isSelected}
-                                onCheckedChange={(checked) => {
-                                  setMeasurementProducts(prev => ({
+                          <div className="p-4 text-center text-slate-500">
+                            <Package className="h-8 w-8 mx-auto mb-2 text-slate-300" />
+                            <p>No products found</p>
+                          </div>
+                        )
+                      }
+                      
+                      return (
+                        <div className="divide-y">
+                          {displayProducts.map(product => {
+                            const isSelected = measurementProducts[product.id]?.selected
+                            const quantity = measurementProducts[product.id]?.quantity || totalArea
+                            const price = product.price || product.pricing?.sellingPrice || 0
+                            const inv = getProductInventory(product.id)
+                            const invStatus = getInventoryStatus(product.id, isSelected ? quantity : 0)
+                            
+                            return (
+                              <div 
+                                key={product.id} 
+                                className={`flex items-center justify-between p-3 transition-all cursor-pointer ${isSelected ? 'bg-cyan-50 border-l-4 border-l-cyan-500' : 'hover:bg-slate-50'} ${invStatus.status === 'out_of_stock' ? 'opacity-60' : ''}`}
+                                onClick={() => {
+                                  if (invStatus.status !== 'out_of_stock') {
+                                    setMeasurementProducts(prev => ({
+                                      ...prev,
+                                      [product.id]: {
+                                        product,
+                                        quantity: totalArea,
+                                        selected: !prev[product.id]?.selected
+                                      }
+                                    }))
+                                  }
+                                }}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <Checkbox 
+                                    checked={isSelected}
+                                    onCheckedChange={(checked) => {
+                                      setMeasurementProducts(prev => ({
+                                        ...prev,
+                                        [product.id]: {
+                                          product,
+                                          quantity: totalArea,
+                                          selected: checked
+                                        }
+                                      }))
+                                    }}
+                                    disabled={invStatus.status === 'out_of_stock'}
+                                  />
+                                  <div>
+                                    <p className="font-medium text-sm">{product.name}</p>
+                                    <p className="text-xs text-slate-500">{product.sku} • {product.category} • ₹{price}/sqft</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  <div className="text-right text-xs">
+                                    <span className={`${inv.availableQty > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                      {inv.availableQty.toLocaleString()} avail
+                                    </span>
+                                  </div>
+                                  <Badge className={`text-xs ${invStatus.color}`}>{invStatus.label}</Badge>
+                                </div>
+                              </div>
+                            )
+                          })}
+                          {!searchTerm && filteredProducts.length > 7 && (
+                            <div className="p-2 text-center text-xs text-slate-500 bg-slate-50">
+                              Showing top 7 • Search to see more ({filteredProducts.length} total)
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })()}
+                  </div>
+                  
+                  {/* Selected Products Summary */}
+                  {Object.values(measurementProducts).some(p => p.selected) && (
+                    <div className="bg-cyan-50 rounded-lg p-3 border border-cyan-200">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-sm font-semibold text-cyan-800">
+                          Selected Products ({Object.values(measurementProducts).filter(p => p.selected).length})
+                        </span>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          className="text-red-500 hover:text-red-700"
+                          onClick={() => setMeasurementProducts({})}
+                        >
+                          Clear All
+                        </Button>
+                      </div>
+                      <div className="space-y-2 max-h-40 overflow-y-auto">
+                        {Object.values(measurementProducts).filter(p => p.selected).map(item => {
+                          const price = item.product.price || item.product.pricing?.sellingPrice || 0
+                          return (
+                            <div key={item.product.id} className="flex items-center justify-between bg-white rounded px-3 py-2">
+                              <div className="flex items-center gap-2">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-6 w-6 p-0 text-red-500"
+                                  onClick={() => {
+                                    setMeasurementProducts(prev => {
+                                      const updated = { ...prev }
+                                      delete updated[item.product.id]
+                                      return updated
+                                    })
+                                  }}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                                <span className="text-sm font-medium">{item.product.name}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Input 
+                                  type="number" 
+                                  className="w-20 h-7 text-sm"
+                                  value={item.quantity}
+                                  min="1"
+                                  onChange={(e) => {
+                                    setMeasurementProducts(prev => ({
+                                      ...prev,
+                                      [item.product.id]: {
+                                        ...prev[item.product.id],
+                                        quantity: parseInt(e.target.value) || totalArea
+                                      }
+                                    }))
+                                  }}
+                                />
+                                <span className="text-xs text-slate-500">sqft</span>
+                                <span className="text-sm font-semibold text-emerald-600 w-24 text-right">
+                                  ₹{(price * item.quantity).toLocaleString()}
+                                </span>
+                              </div>
+                            </div>
+                          )
+                        })}
+                      </div>
+                      <Separator className="my-2" />
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm text-cyan-700">Material Total:</span>
+                        <span className="text-lg font-bold text-cyan-800">₹{getSelectedProductsTotal().toLocaleString()}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </>
+              )}
                                     ...prev,
                                     [product.id]: {
                                       product,
