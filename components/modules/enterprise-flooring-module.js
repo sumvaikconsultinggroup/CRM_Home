@@ -4750,7 +4750,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           technicianName,
           measurementDate,
           notes: measurementNotes,
-          selectedProducts,
+          selectedProducts: measurementProducts,
           inventoryBlocked: blockInventory && hasSelectedProducts,
           blockedAt: blockInventory ? new Date().toISOString() : null,
           auditTrail: [
