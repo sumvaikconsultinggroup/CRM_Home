@@ -1419,6 +1419,158 @@ export default function EnterpriseLanding({ onLogin }) {
         </div>
       </section>
 
+      {/* ==================== MEE AI SHOWCASE ==================== */}
+      <section className="py-16 lg:py-24 bg-gradient-to-br from-violet-950 via-purple-950 to-slate-950 text-white overflow-hidden relative">
+        {/* Animated Background */}
+        <div className="absolute inset-0">
+          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-violet-900/30 via-transparent to-transparent" />
+          <motion.div 
+            className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-600 rounded-full blur-[150px] opacity-20"
+            animate={{ scale: [1, 1.3, 1], x: [0, 50, 0] }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div 
+            className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-violet-600 rounded-full blur-[150px] opacity-20"
+            animate={{ scale: [1.3, 1, 1.3], x: [0, -50, 0] }}
+            transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </div>
+        
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid lg:grid-cols-2 gap-12 items-center">
+            {/* Left - Content */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+            >
+              <Badge className="bg-violet-500/20 text-violet-300 border border-violet-500/30 mb-6">AI-Powered</Badge>
+              <h2 className="text-4xl lg:text-5xl font-bold mb-6">
+                Meet <span className="bg-gradient-to-r from-violet-400 via-purple-400 to-pink-400 bg-clip-text text-transparent">Mee</span>
+              </h2>
+              <p className="text-lg text-gray-300 mb-8 leading-relaxed">
+                Your intelligent AI assistant with <strong className="text-white">real-time access</strong> to all your business data. 
+                Ask questions in plain English, get instant insights powered by GPT-4.
+              </p>
+              
+              <div className="space-y-4 mb-8">
+                {[
+                  { icon: Database, text: 'Real-time access to leads, projects, inventory & invoices' },
+                  { icon: MessageSquare, text: 'Natural language queries - ask anything about your business' },
+                  { icon: Lightbulb, text: 'Smart recommendations to improve performance' },
+                  { icon: Activity, text: 'Business health monitoring with automated alerts' }
+                ].map((item, i) => (
+                  <motion.div 
+                    key={i}
+                    initial={{ opacity: 0, x: -20 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    className="flex items-center gap-4"
+                  >
+                    <div className="w-10 h-10 bg-violet-500/20 rounded-xl flex items-center justify-center">
+                      <item.icon className="h-5 w-5 text-violet-400" />
+                    </div>
+                    <span className="text-gray-300">{item.text}</span>
+                  </motion.div>
+                ))}
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-4">
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button 
+                    size="lg"
+                    onClick={() => window.location.href = '/mee'}
+                    className="bg-gradient-to-r from-violet-600 to-purple-600 hover:from-violet-700 hover:to-purple-700 shadow-xl shadow-violet-500/30 h-12 px-6"
+                  >
+                    Explore Mee AI
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </motion.div>
+                <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                  <Button 
+                    size="lg"
+                    variant="outline"
+                    onClick={onLogin}
+                    className="border-white/20 text-white hover:bg-white/10 h-12 px-6"
+                  >
+                    Try It Free
+                  </Button>
+                </motion.div>
+              </div>
+            </motion.div>
+            
+            {/* Right - Chat Demo */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
+              {/* Glow */}
+              <div className="absolute -inset-4 bg-gradient-to-r from-violet-500/20 via-purple-500/20 to-pink-500/20 rounded-3xl blur-2xl" />
+              
+              {/* Chat Window */}
+              <div className="relative bg-slate-900/80 backdrop-blur-xl rounded-3xl border border-white/10 overflow-hidden shadow-2xl">
+                {/* Header */}
+                <div className="bg-slate-800/50 px-5 py-4 border-b border-white/5 flex items-center gap-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-violet-500 to-purple-600 rounded-xl flex items-center justify-center">
+                    <Sparkles className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-white">Mee AI</p>
+                    <p className="text-xs text-green-400 flex items-center gap-1">
+                      <span className="w-2 h-2 bg-green-400 rounded-full animate-pulse" />
+                      Online
+                    </p>
+                  </div>
+                </div>
+                
+                {/* Messages */}
+                <div className="p-5 space-y-4">
+                  {/* User */}
+                  <div className="flex justify-end">
+                    <div className="bg-violet-600 rounded-2xl rounded-tr-sm px-4 py-2.5 max-w-xs">
+                      <p className="text-white text-sm">What&apos;s my business health score?</p>
+                    </div>
+                  </div>
+                  
+                  {/* Mee Response */}
+                  <div className="flex gap-3">
+                    <div className="w-8 h-8 bg-gradient-to-br from-violet-500 to-purple-600 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <span className="text-white text-xs font-bold">M</span>
+                    </div>
+                    <div className="bg-slate-800/50 rounded-2xl rounded-tl-sm px-4 py-3 max-w-sm">
+                      <p className="text-white text-sm font-semibold mb-2">📊 Business Health Report</p>
+                      <p className="text-gray-300 text-sm mb-2"><strong className="text-green-400">Score: 78/100</strong></p>
+                      <ul className="text-gray-400 text-xs space-y-1">
+                        <li>• Lead Conversion: 32% ✓</li>
+                        <li>• Task Completion: 89% ✓</li>
+                        <li>• 3 leads need follow-up ⚠️</li>
+                      </ul>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Input */}
+                <div className="px-5 py-4 border-t border-white/5">
+                  <div className="flex items-center gap-3 bg-slate-800/50 rounded-xl px-4 py-2.5">
+                    <input 
+                      type="text" 
+                      placeholder="Ask Mee anything..."
+                      className="flex-1 bg-transparent text-white placeholder-gray-500 outline-none text-sm"
+                      disabled
+                    />
+                    <Button size="sm" className="bg-violet-600 hover:bg-violet-700 h-8 w-8 p-0">
+                      <ArrowRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        </div>
+      </section>
+
       {/* ==================== BEFORE VS AFTER ==================== */}
       <section className="py-16 lg:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
