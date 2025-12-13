@@ -1127,6 +1127,7 @@ function ClientDashboard({ user, client, onLogout }) {
                           'plumbing': Wrench,
                           'electrical': Zap,
                           'doors-windows': Square,
+                          'doors-and-windows': Square,
                           'architects': Building2,
                           'interior-designers': Palette,
                           'real-estate-brokers': Building
