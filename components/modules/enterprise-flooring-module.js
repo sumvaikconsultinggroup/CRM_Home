@@ -5169,7 +5169,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               {Object.values(measurementProducts).some(p => p.selected) && (
                 <div className="mt-3 p-3 bg-cyan-50 rounded-lg flex items-center justify-between">
                   <span className="text-sm font-medium text-cyan-800">
-                    {Object.values(selectedProducts).filter(p => p.selected).length} products selected
+                    {Object.values(measurementProducts).filter(p => p.selected).length} products selected
                   </span>
                   <span className="text-lg font-bold text-cyan-700">
                     Material: ₹{getSelectedProductsTotal().toLocaleString()}
