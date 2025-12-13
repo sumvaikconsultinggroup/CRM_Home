@@ -996,14 +996,34 @@ export function EnterpriseFlooringModule({ client, user, token }) {
 
   // Products Tab
   const renderProducts = () => {
-    const filteredProducts = products.filter(p => {
-      const matchesSearch = !searchTerm || 
-        p.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.sku?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        p.brand?.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesCategory = categoryFilter === 'all' || p.category === categoryFilter
-      return matchesSearch && matchesCategory
-    })
+    const flatCategories = []
+    const walk = (nodes, depth = 0) => {
+      for (const n of nodes || []) {
+        flatCategories.push({ ...n, depth })
+        if (n.children?.length) walk(n.children, depth + 1)
+      }
+    }
+    walk(productCategories)
+
+    const categoryLabelById = new Map(flatCategories.map(c => [c.id, c.name]))
+    const categoryColorById = new Map(flatCategories.map(c => [c.id, c.color]))
+
+    const filteredProducts = products // already filtered server-side
+
+    const sortOptions = [
+      { label: 'Newest', value: 'createdAt' },
+      { label: 'Name', value: 'name' },
+      { label: 'SKU', value: 'sku' },
+      { label: 'Brand', value: 'brand' },
+      { label: 'Category', value: 'categoryId' },
+      { label: 'Selling Price', value: 'pricing.sellingPrice' },
+      { label: 'MRP', value: 'pricing.mrp' },
+      { label: 'Dealer Price', value: 'pricing.dealerPrice' },
+      { label: 'Cost Price', value: 'pricing.costPrice' },
+      { label: 'Thickness (mm)', value: 'specs.thicknessMm' },
+      { label: 'Wear Layer (mm)', value: 'specs.wearLayerMm' },
+      { label: 'Janka', value: 'specs.janka' }
+    ]
 
     return (
       <div className="space-y-4">
