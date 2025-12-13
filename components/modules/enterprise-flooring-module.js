@@ -1349,9 +1349,23 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                         <p className="font-semibold text-emerald-600">₹{(project.estimatedValue || 0).toLocaleString()}</p>
                       </td>
                       <td className="px-4 py-3">
-                        <Badge className={ProjectStatus[project.status]?.color}>
-                          {ProjectStatus[project.status]?.label}
-                        </Badge>
+                        <Select 
+                          value={project.status} 
+                          onValueChange={(v) => handleUpdateProjectStatus(project.id, v)}
+                        >
+                          <SelectTrigger className="w-[150px] h-8">
+                            <Badge className={ProjectStatus[project.status]?.color}>
+                              {ProjectStatus[project.status]?.label}
+                            </Badge>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(ProjectStatus).map(([key, { label, color }]) => (
+                              <SelectItem key={key} value={key}>
+                                <span className={`px-2 py-0.5 rounded text-xs ${color}`}>{label}</span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
