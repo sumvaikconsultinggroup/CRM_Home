@@ -1,5 +1,5 @@
-import { getCollection, Collections } from '@/lib/db/mongodb'
-import { getAuthUser, requireClientAccess } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireClientAccess, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -18,13 +18,14 @@ export async function POST(request) {
       return errorResponse('Invalid request: action and leadIds required', 400)
     }
 
-    const leadsCollection = await getCollection(Collections.LEADS)
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const leadsCollection = db.collection('leads')
 
     let result
     switch (action) {
       case 'delete':
         result = await leadsCollection.deleteMany({
-          clientId: user.clientId,
           id: { $in: leadIds }
         })
         break
@@ -34,7 +35,7 @@ export async function POST(request) {
           return errorResponse('Status required for updateStatus action', 400)
         }
         result = await leadsCollection.updateMany(
-          { clientId: user.clientId, id: { $in: leadIds } },
+          { id: { $in: leadIds } },
           { $set: { status: data.status, updatedAt: new Date() } }
         )
         break
@@ -44,7 +45,7 @@ export async function POST(request) {
           return errorResponse('assignedTo required for assign action', 400)
         }
         result = await leadsCollection.updateMany(
-          { clientId: user.clientId, id: { $in: leadIds } },
+          { id: { $in: leadIds } },
           { $set: { assignedTo: data.assignedTo, updatedAt: new Date() } }
         )
         break
@@ -54,7 +55,7 @@ export async function POST(request) {
           return errorResponse('tags array required for addTags action', 400)
         }
         result = await leadsCollection.updateMany(
-          { clientId: user.clientId, id: { $in: leadIds } },
+          { id: { $in: leadIds } },
           { $addToSet: { tags: { $each: data.tags } }, $set: { updatedAt: new Date() } }
         )
         break
@@ -64,7 +65,7 @@ export async function POST(request) {
           return errorResponse('tags array required for removeTags action', 400)
         }
         result = await leadsCollection.updateMany(
-          { clientId: user.clientId, id: { $in: leadIds } },
+          { id: { $in: leadIds } },
           { $pull: { tags: { $in: data.tags } }, $set: { updatedAt: new Date() } }
         )
         break

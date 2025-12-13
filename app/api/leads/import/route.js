@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection, Collections } from '@/lib/db/mongodb'
-import { getAuthUser, requireClientAccess } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireClientAccess, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -30,7 +30,10 @@ export async function POST(request) {
     const headers = lines[0].split(',').map(h => h.trim().toLowerCase())
     const data = lines.slice(1)
 
-    const leadsCollection = await getCollection(Collections.LEADS)
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const leadsCollection = db.collection('leads')
+    
     const imported = []
     const errors = []
 
@@ -51,7 +54,6 @@ export async function POST(request) {
 
         // Check for duplicate email
         const existing = await leadsCollection.findOne({ 
-          clientId: user.clientId, 
           email: row.email 
         })
         

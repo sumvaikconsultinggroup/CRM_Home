@@ -1,4 +1,4 @@
-import { getCollection, Collections } from '@/lib/db/mongodb'
+import { getMainDb } from '@/lib/db/multitenancy'
 import { getAuthUser, requireClientAccess, hashPassword } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse } from '@/lib/utils/response'
 
@@ -11,8 +11,11 @@ export async function GET(request, { params }) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
-    const userId = params.userId
-    const usersCollection = await getCollection(Collections.USERS)
+    const { userId } = await params
+    
+    // Users are in main database (platform-level)
+    const mainDb = await getMainDb()
+    const usersCollection = mainDb.collection('users')
 
     const foundUser = await usersCollection.findOne({ id: userId, clientId: user.clientId })
     if (!foundUser) {
@@ -35,9 +38,12 @@ export async function PUT(request, { params }) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
-    const userId = params.userId
+    const { userId } = await params
     const body = await request.json()
-    const usersCollection = await getCollection(Collections.USERS)
+    
+    // Users are in main database (platform-level)
+    const mainDb = await getMainDb()
+    const usersCollection = mainDb.collection('users')
 
     const updateData = { updatedAt: new Date() }
     if (body.name) updateData.name = body.name
@@ -70,14 +76,16 @@ export async function DELETE(request, { params }) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
-    const userId = params.userId
+    const { userId } = await params
 
     // Prevent self-deletion
     if (userId === user.id) {
       return errorResponse('Cannot delete your own account', 400)
     }
 
-    const usersCollection = await getCollection(Collections.USERS)
+    // Users are in main database (platform-level)
+    const mainDb = await getMainDb()
+    const usersCollection = mainDb.collection('users')
 
     const result = await usersCollection.deleteOne({ id: userId, clientId: user.clientId })
 

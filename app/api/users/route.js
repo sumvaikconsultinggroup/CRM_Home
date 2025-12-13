@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection, Collections } from '@/lib/db/mongodb'
+import { getMainDb } from '@/lib/db/multitenancy'
 import { getAuthUser, requireClientAccess, hashPassword } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments } from '@/lib/utils/response'
 import { validateUserData } from '@/lib/utils/validation'
@@ -13,7 +13,9 @@ export async function GET(request) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
-    const usersCollection = await getCollection(Collections.USERS)
+    // Users are in main database (platform-level)
+    const mainDb = await getMainDb()
+    const usersCollection = mainDb.collection('users')
 
     const users = await usersCollection
       .find({ clientId: user.clientId })
@@ -47,17 +49,23 @@ export async function POST(request) {
       return errorResponse(validation.message, 400)
     }
 
-    const usersCollection = await getCollection(Collections.USERS)
-    const clientsCollection = await getCollection(Collections.CLIENTS)
-    const plansCollection = await getCollection(Collections.PLANS)
+    // Users are in main database (platform-level)
+    const mainDb = await getMainDb()
+    const usersCollection = mainDb.collection('users')
+    const clientsCollection = mainDb.collection('clients')
+    const plansCollection = mainDb.collection('plans')
 
-    // Check user limit
-    const clientDoc = await clientsCollection.findOne({ id: user.clientId })
-    const plan = await plansCollection.findOne({ id: clientDoc.planId })
+    // Find client by new clientId format or old id format
+    let clientDoc = await clientsCollection.findOne({ clientId: user.clientId })
+    if (!clientDoc) {
+      clientDoc = await clientsCollection.findOne({ id: user.clientId })
+    }
+
+    const plan = await plansCollection.findOne({ id: clientDoc?.planId })
     const currentUsers = await usersCollection.countDocuments({ clientId: user.clientId })
 
-    if (plan.userLimit !== -1 && currentUsers >= plan.userLimit) {
-      return errorResponse(`User limit reached. Your plan allows ${plan.userLimit} users. Upgrade to add more.`, 400)
+    if (plan?.userLimit !== -1 && currentUsers >= (plan?.userLimit || 1)) {
+      return errorResponse(`User limit reached. Your plan allows ${plan?.userLimit || 1} users. Upgrade to add more.`, 400)
     }
 
     // Check if email exists
@@ -69,6 +77,7 @@ export async function POST(request) {
     const newUser = {
       id: uuidv4(),
       clientId: user.clientId,
+      databaseName: user.databaseName || user.clientId,
       email: body.email,
       password: hashPassword(body.password),
       name: body.name,
