@@ -111,7 +111,7 @@ const flooringApi = {
   getReports: (type) => api.request(`/modules/flooring/reports?type=${type}`)
 }
 
-export default function FlooringModule({ onBack }) {
+export default function FlooringModule({ onBack, client, user, onUpgrade }) {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [loading, setLoading] = useState(true)
   const [dashboard, setDashboard] = useState(null)
@@ -126,6 +126,7 @@ export default function FlooringModule({ onBack }) {
   const [showDialog, setShowDialog] = useState(false)
   const [dialogType, setDialogType] = useState(null)
   const [editingItem, setEditingItem] = useState(null)
+  const [showMeeAgent, setShowMeeAgent] = useState(false)
 
   const fetchDashboard = useCallback(async () => {
     try {
