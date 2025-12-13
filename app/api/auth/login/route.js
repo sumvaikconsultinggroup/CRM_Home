@@ -1,4 +1,4 @@
-import { getCollection, Collections } from '@/lib/db/mongodb'
+import { getMainDb } from '@/lib/db/multitenancy'
 import { seedDatabase } from '@/lib/db/seed'
 import { verifyPassword, generateToken } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocument } from '@/lib/utils/response'
@@ -20,8 +20,10 @@ export async function POST(request) {
       return errorResponse(validation.message, 400)
     }
 
-    const usersCollection = await getCollection(Collections.USERS)
-    const clientsCollection = await getCollection(Collections.CLIENTS)
+    // Use main database for users and clients (platform-level data)
+    const mainDb = await getMainDb()
+    const usersCollection = mainDb.collection('users')
+    const clientsCollection = mainDb.collection('clients')
 
     console.log('Login attempt for:', email)
     const foundUser = await usersCollection.findOne({ email })
@@ -46,15 +48,35 @@ export async function POST(request) {
       { $set: { lastLogin: new Date() } }
     )
 
-    const token = generateToken(foundUser)
     let clientData = null
+    let databaseName = null
 
+    // Find client data - support both old (id field) and new (clientId field) formats
     if (foundUser.clientId) {
-      const clientDoc = await clientsCollection.findOne({ id: foundUser.clientId })
+      // First try to find by the new clientId format (CL-XXXXXX)
+      let clientDoc = await clientsCollection.findOne({ clientId: foundUser.clientId })
+      
+      // If not found, try to find by old id format
+      if (!clientDoc) {
+        clientDoc = await clientsCollection.findOne({ id: foundUser.clientId })
+      }
+      
       if (clientDoc) {
         clientData = sanitizeDocument(clientDoc)
+        // Get the database name from the client document (new format)
+        databaseName = clientDoc.databaseName || clientDoc.clientId || foundUser.clientId
+      } else {
+        // Fallback to user's stored databaseName or clientId
+        databaseName = foundUser.databaseName || foundUser.clientId
       }
     }
+
+    // Generate token with databaseName included
+    const userForToken = {
+      ...foundUser,
+      databaseName: databaseName
+    }
+    const token = generateToken(userForToken)
 
     return successResponse({
       token,
@@ -64,6 +86,7 @@ export async function POST(request) {
         name: foundUser.name, 
         role: foundUser.role, 
         clientId: foundUser.clientId,
+        databaseName: databaseName,
         avatar: foundUser.avatar 
       },
       client: clientData
