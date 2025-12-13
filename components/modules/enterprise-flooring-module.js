@@ -3387,6 +3387,16 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           onSave={(receiptData) => handleInventoryAction('goods_receipt', receiptData)}
           loading={loading}
         />
+
+        {/* Room Measurement Dialog */}
+        <RoomMeasurementDialog
+          open={type === 'room'}
+          onClose={() => setDialogOpen({ type: null, data: null })}
+          room={data}
+          project={selectedProject}
+          onSave={handleSaveRoom}
+          loading={loading}
+        />
       </>
     )
   }
