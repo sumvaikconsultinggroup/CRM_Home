@@ -268,7 +268,11 @@ const ContactFormDialog = ({ open, onOpenChange, contact, onSave }) => {
     try {
       const data = {
         ...formData,
-        tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean)
+        displayName: formData.displayName || formData.name,
+        tags: formData.tags.split(',').map(t => t.trim()).filter(Boolean),
+        creditLimit: formData.creditLimit ? parseFloat(formData.creditLimit) : 0,
+        // Combine address fields for compatibility
+        address: formData.billingAddress
       }
       await onSave(data)
       onOpenChange(false)
@@ -281,113 +285,277 @@ const ContactFormDialog = ({ open, onOpenChange, contact, onSave }) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{contact ? 'Edit Contact' : 'Add New Contact'}</DialogTitle>
           <DialogDescription>
-            {contact ? 'Update contact information' : 'Add a new customer, lead, or vendor'}
+            {contact ? 'Update contact information' : 'Add a new customer, lead, or vendor with complete details'}
           </DialogDescription>
         </DialogHeader>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="grid grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="space-y-6">
+          {/* Basic Information Section */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-slate-700 flex items-center gap-2">
+              <User className="h-4 w-4" /> Basic Information
+            </h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Name *</Label>
+                <Input
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  placeholder="Full name"
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Display Name</Label>
+                <Input
+                  value={formData.displayName}
+                  onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
+                  placeholder="How to address"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Type *</Label>
+                <Select value={formData.type} onValueChange={(v) => setFormData({ ...formData, type: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="customer">Customer</SelectItem>
+                    <SelectItem value="lead">Lead</SelectItem>
+                    <SelectItem value="vendor">Vendor</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Company / Organization</Label>
+                <Input
+                  value={formData.company}
+                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                  placeholder="Company name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Website</Label>
+                <Input
+                  value={formData.website}
+                  onChange={(e) => setFormData({ ...formData, website: e.target.value })}
+                  placeholder="https://example.com"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Contact Details Section */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-slate-700 flex items-center gap-2">
+              <Phone className="h-4 w-4" /> Contact Details
+            </h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input
+                  type="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  placeholder="email@example.com"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Phone</Label>
+                <Input
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  placeholder="+91 9876543210"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Alternate Phone</Label>
+                <Input
+                  value={formData.alternatePhone}
+                  onChange={(e) => setFormData({ ...formData, alternatePhone: e.target.value })}
+                  placeholder="+91 9876543211"
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Tax & Billing Section */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-slate-700 flex items-center gap-2">
+              <FileText className="h-4 w-4" /> Tax & Billing Information
+            </h3>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>GSTIN</Label>
+                <Input
+                  value={formData.gstin}
+                  onChange={(e) => setFormData({ ...formData, gstin: e.target.value.toUpperCase() })}
+                  placeholder="22AAAAA0000A1Z5"
+                  maxLength={15}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>PAN</Label>
+                <Input
+                  value={formData.pan}
+                  onChange={(e) => setFormData({ ...formData, pan: e.target.value.toUpperCase() })}
+                  placeholder="AAAAA0000A"
+                  maxLength={10}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Payment Terms</Label>
+                <Select value={formData.paymentTerms} onValueChange={(v) => setFormData({ ...formData, paymentTerms: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="immediate">Immediate</SelectItem>
+                    <SelectItem value="net7">Net 7</SelectItem>
+                    <SelectItem value="net15">Net 15</SelectItem>
+                    <SelectItem value="net30">Net 30</SelectItem>
+                    <SelectItem value="net45">Net 45</SelectItem>
+                    <SelectItem value="net60">Net 60</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Credit Limit (₹)</Label>
+                <Input
+                  type="number"
+                  value={formData.creditLimit}
+                  onChange={(e) => setFormData({ ...formData, creditLimit: e.target.value })}
+                  placeholder="0"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Source</Label>
+                <Select value={formData.source} onValueChange={(v) => setFormData({ ...formData, source: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="manual">Manual Entry</SelectItem>
+                    <SelectItem value="website">Website</SelectItem>
+                    <SelectItem value="referral">Referral</SelectItem>
+                    <SelectItem value="import">Import</SelectItem>
+                    <SelectItem value="social">Social Media</SelectItem>
+                    <SelectItem value="exhibition">Exhibition</SelectItem>
+                    <SelectItem value="advertisement">Advertisement</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+
+          {/* Address Section */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-slate-700 flex items-center gap-2">
+              <MapPin className="h-4 w-4" /> Address
+            </h3>
             <div className="space-y-2">
-              <Label>Name *</Label>
-              <Input
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder="Full name"
-                required
+              <Label>Billing Address</Label>
+              <Textarea
+                value={formData.billingAddress}
+                onChange={(e) => setFormData({ ...formData, billingAddress: e.target.value })}
+                placeholder="Complete billing address"
+                rows={2}
               />
             </div>
             <div className="space-y-2">
-              <Label>Type</Label>
-              <Select value={formData.type} onValueChange={(v) => setFormData({ ...formData, type: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="customer">Customer</SelectItem>
-                  <SelectItem value="lead">Lead</SelectItem>
-                  <SelectItem value="vendor">Vendor</SelectItem>
-                  <SelectItem value="other">Other</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="flex items-center gap-2 mb-1">
+                <Label>Shipping Address</Label>
+                <label className="flex items-center gap-1 text-xs text-muted-foreground cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={sameAsShipping}
+                    onChange={(e) => {
+                      setSameAsShipping(e.target.checked)
+                      if (e.target.checked) {
+                        setFormData({ ...formData, shippingAddress: formData.billingAddress })
+                      }
+                    }}
+                    className="h-3 w-3"
+                  />
+                  Same as billing
+                </label>
+              </div>
+              <Textarea
+                value={formData.shippingAddress}
+                onChange={(e) => setFormData({ ...formData, shippingAddress: e.target.value })}
+                placeholder="Complete shipping address"
+                rows={2}
+                disabled={sameAsShipping}
+              />
+            </div>
+            <div className="grid grid-cols-4 gap-4">
+              <div className="space-y-2">
+                <Label>City</Label>
+                <Input
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                  placeholder="City"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>State</Label>
+                <Input
+                  value={formData.state}
+                  onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                  placeholder="State"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Pincode</Label>
+                <Input
+                  value={formData.pincode}
+                  onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+                  placeholder="Pincode"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Country</Label>
+                <Input
+                  value={formData.country}
+                  onChange={(e) => setFormData({ ...formData, country: e.target.value })}
+                  placeholder="Country"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-4">
+          {/* Additional Information */}
+          <div className="space-y-4">
+            <h3 className="font-semibold text-sm text-slate-700 flex items-center gap-2">
+              <Tag className="h-4 w-4" /> Additional Information
+            </h3>
             <div className="space-y-2">
-              <Label>Email</Label>
+              <Label>Tags (comma separated)</Label>
               <Input
-                type="email"
-                value={formData.email}
-                onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                placeholder="email@example.com"
+                value={formData.tags}
+                onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
+                placeholder="VIP, Premium, New, Follow-up"
               />
             </div>
             <div className="space-y-2">
-              <Label>Phone</Label>
-              <Input
-                value={formData.phone}
-                onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                placeholder="+91 9876543210"
+              <Label>Notes</Label>
+              <Textarea
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                placeholder="Add notes about this contact..."
+                rows={3}
               />
             </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label>Company</Label>
-              <Input
-                value={formData.company}
-                onChange={(e) => setFormData({ ...formData, company: e.target.value })}
-                placeholder="Company name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Source</Label>
-              <Select value={formData.source} onValueChange={(v) => setFormData({ ...formData, source: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="manual">Manual Entry</SelectItem>
-                  <SelectItem value="website">Website</SelectItem>
-                  <SelectItem value="referral">Referral</SelectItem>
-                  <SelectItem value="import">Import</SelectItem>
-                  <SelectItem value="social">Social Media</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <Label>Address</Label>
-            <Input
-              value={formData.address}
-              onChange={(e) => setFormData({ ...formData, address: e.target.value })}
-              placeholder="Full address"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Tags (comma separated)</Label>
-            <Input
-              value={formData.tags}
-              onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-              placeholder="VIP, Follow-up, New"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <Label>Notes</Label>
-            <Textarea
-              value={formData.notes}
-              onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-              placeholder="Add notes about this contact..."
-              rows={3}
-            />
           </div>
 
           <DialogFooter>
