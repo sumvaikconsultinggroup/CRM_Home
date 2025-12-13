@@ -581,27 +581,34 @@ const ContactDetailDialog = ({ contact, open, onOpenChange, onEdit }) => {
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-start gap-4">
             <ContactAvatar name={contact.name} size="lg" />
-            <div>
-              <DialogTitle className="text-xl">{contact.name}</DialogTitle>
+            <div className="flex-1">
+              <DialogTitle className="text-xl">{contact.displayName || contact.name}</DialogTitle>
               <div className="flex items-center gap-2 mt-1">
                 <Badge variant="outline" className={typeColors[contact.type]}>
                   <TypeIcon className="h-3 w-3 mr-1" />
                   {contact.type}
                 </Badge>
                 {contact.company && (
-                  <span className="text-sm text-muted-foreground">{contact.company}</span>
+                  <span className="text-sm text-muted-foreground flex items-center gap-1">
+                    <Building2 className="h-3 w-3" />
+                    {contact.company}
+                  </span>
                 )}
               </div>
             </div>
+            <Button variant="outline" size="sm" onClick={() => onEdit(contact)}>
+              <Edit className="h-4 w-4 mr-1" /> Edit
+            </Button>
           </div>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-6 py-4">
-          <div className="space-y-4">
+        <div className="space-y-6 py-4">
+          {/* Contact Information */}
+          <div className="grid grid-cols-3 gap-6">
             <div>
               <Label className="text-xs text-muted-foreground">Email</Label>
               <p className="font-medium flex items-center gap-2">
@@ -617,31 +624,83 @@ const ContactDetailDialog = ({ contact, open, onOpenChange, onEdit }) => {
               </p>
             </div>
             <div>
-              <Label className="text-xs text-muted-foreground">Address</Label>
+              <Label className="text-xs text-muted-foreground">Alternate Phone</Label>
               <p className="font-medium flex items-center gap-2">
-                <MapPin className="h-4 w-4 text-muted-foreground" />
-                {contact.address || 'Not provided'}
+                <Phone className="h-4 w-4 text-muted-foreground" />
+                {contact.alternatePhone || 'Not provided'}
               </p>
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div>
-              <Label className="text-xs text-muted-foreground">Source</Label>
-              <p className="font-medium capitalize">{contact.source || 'Unknown'}</p>
+          {/* Tax Information */}
+          {(contact.gstin || contact.pan) && (
+            <div className="p-4 bg-slate-50 rounded-lg">
+              <h4 className="text-sm font-semibold mb-3 flex items-center gap-2">
+                <FileText className="h-4 w-4" /> Tax & Billing
+              </h4>
+              <div className="grid grid-cols-3 gap-4">
+                <div>
+                  <Label className="text-xs text-muted-foreground">GSTIN</Label>
+                  <p className="font-mono font-medium">{contact.gstin || '-'}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">PAN</Label>
+                  <p className="font-mono font-medium">{contact.pan || '-'}</p>
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">Payment Terms</Label>
+                  <p className="font-medium capitalize">{contact.paymentTerms?.replace('net', 'Net ') || 'Net 30'}</p>
+                </div>
+              </div>
+              {contact.creditLimit > 0 && (
+                <div className="mt-3">
+                  <Label className="text-xs text-muted-foreground">Credit Limit</Label>
+                  <p className="font-medium text-green-600">₹{contact.creditLimit?.toLocaleString()}</p>
+                </div>
+              )}
             </div>
+          )}
+
+          {/* Address Information */}
+          <div className="grid grid-cols-2 gap-6">
             <div>
-              <Label className="text-xs text-muted-foreground">Total Revenue</Label>
-              <p className="font-medium text-green-600">₹{(contact.totalRevenue || 0).toLocaleString()}</p>
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">Added On</Label>
-              <p className="font-medium">
-                {contact.createdAt ? new Date(contact.createdAt).toLocaleDateString() : 'N/A'}
+              <Label className="text-xs text-muted-foreground">Billing Address</Label>
+              <p className="font-medium flex items-start gap-2 mt-1">
+                <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                <span>
+                  {contact.billingAddress || contact.address || 'Not provided'}
+                  {contact.city && <><br />{contact.city}</>}
+                  {contact.state && <>, {contact.state}</>}
+                  {contact.pincode && <> - {contact.pincode}</>}
+                </span>
               </p>
             </div>
+            {contact.shippingAddress && (
+              <div>
+                <Label className="text-xs text-muted-foreground">Shipping Address</Label>
+                <p className="font-medium flex items-start gap-2 mt-1">
+                  <MapPin className="h-4 w-4 text-muted-foreground mt-0.5" />
+                  {contact.shippingAddress}
+                </p>
+              </div>
+            )}
           </div>
-        </div>
+
+          {/* Stats */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="p-3 bg-green-50 rounded-lg text-center">
+              <Label className="text-xs text-green-600">Total Revenue</Label>
+              <p className="text-xl font-bold text-green-700">₹{(contact.totalRevenue || 0).toLocaleString()}</p>
+            </div>
+            <div className="p-3 bg-blue-50 rounded-lg text-center">
+              <Label className="text-xs text-blue-600">Projects</Label>
+              <p className="text-xl font-bold text-blue-700">{contact.totalProjects || 0}</p>
+            </div>
+            <div className="p-3 bg-purple-50 rounded-lg text-center">
+              <Label className="text-xs text-purple-600">Source</Label>
+              <p className="text-xl font-bold text-purple-700 capitalize">{contact.source || 'Manual'}</p>
+            </div>
+          </div>
 
         {contact.tags && contact.tags.length > 0 && (
           <div className="py-2">
