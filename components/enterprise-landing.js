@@ -347,14 +347,13 @@ const AnimatedCounter = ({ value, suffix = '', prefix = '' }) => {
   const [count, setCount] = useState(0)
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, margin: "-100px" })
+  const hasAnimated = useRef(false)
   
   useEffect(() => {
-    if (isInView) {
+    if (isInView && !hasAnimated.current) {
+      hasAnimated.current = true
       const numValue = parseInt(value.toString().replace(/[^0-9]/g, '')) || 0
-      if (numValue === 0) {
-        setCount(0)
-        return
-      }
+      if (numValue === 0) return
       
       const duration = 2000
       const steps = 60
