@@ -2477,58 +2477,211 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   </div>
                 )}
 
-                {/* Action Buttons */}
-                <div className="flex gap-3 mt-6">
-                  {selectedProject.status === 'material_requisition' && (
-                    <Button 
-                      className="bg-purple-600 hover:bg-purple-700"
-                      disabled={loading || getSelectedProducts().length === 0 || !checkInventoryAvailability().allAvailable}
-                      onClick={handleProcessOrder}
-                    >
-                      {loading ? (
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <Lock className="h-4 w-4 mr-2" />
-                      )}
-                      Process Order & Block Inventory ({getSelectedProducts().length} items)
-                    </Button>
-                  )}
-                  {selectedProject.status === 'material_processing' && (
-                    <>
-                      <Button 
-                        variant="outline"
-                        disabled={loading}
-                        onClick={handleUpdateMaterials}
-                      >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Update Materials (Release & Edit)
-                      </Button>
-                      <Button 
-                        className="bg-teal-600 hover:bg-teal-700"
-                        disabled={loading}
-                        onClick={handleMarkReady}
-                      >
-                        <CheckCircle2 className="h-4 w-4 mr-2" /> Mark Materials Ready
-                      </Button>
-                    </>
-                  )}
-                  {selectedProject.status === 'material_ready' && (
-                    <>
-                      <Button 
-                        variant="outline"
-                        disabled={loading}
-                        onClick={handleUpdateMaterials}
-                      >
-                        <Edit className="h-4 w-4 mr-2" />
-                        Update Materials
-                      </Button>
-                      <Button 
-                        className="bg-emerald-600 hover:bg-emerald-700"
-                        disabled={loading}
-                        onClick={handleCreateQuoteFromMaterials}
-                      >
-                        {loading ? (
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                {/* Action Buttons - Logic based on status AND inventory state */}
+                <div className="flex flex-col gap-4 mt-6">
+                  {/* Determine the actual state */}
+                  {(() => {
+                    const isInventoryBlocked = selectedProject.materialRequisition?.inventoryBlocked
+                    const hasSelectedProducts = getSelectedProducts().length > 0
+                    const hasSavedRequisition = selectedProject.materialRequisition?.items?.length > 0
+                    const { allAvailable, insufficientItems } = checkInventoryAvailability()
+                    const status = selectedProject.status
+
+                    // Case 1: Inventory is already blocked - show edit and proceed options
+                    if (isInventoryBlocked) {
+                      return (
+                        <div className="space-y-3">
+                          <div className="flex gap-3">
+                            <Button 
+                              variant="outline"
+                              disabled={loading}
+                              onClick={handleUpdateMaterials}
+                            >
+                              <Edit className="h-4 w-4 mr-2" />
+                              Edit Materials (Release Inventory)
+                            </Button>
+                            {status === 'material_requisition' && (
+                              <Button 
+                                className="bg-purple-600 hover:bg-purple-700"
+                                disabled={loading}
+                                onClick={async () => {
+                                  await handleUpdateProjectStatus(selectedProject.id, 'material_processing')
+                                  toast.success('Proceeding to processing. Inventory remains blocked.')
+                                }}
+                              >
+                                <ArrowRight className="h-4 w-4 mr-2" />
+                                Proceed to Processing
+                              </Button>
+                            )}
+                            {status === 'material_processing' && (
+                              <Button 
+                                className="bg-teal-600 hover:bg-teal-700"
+                                disabled={loading}
+                                onClick={handleMarkReady}
+                              >
+                                <CheckCircle2 className="h-4 w-4 mr-2" /> Mark Materials Ready
+                              </Button>
+                            )}
+                            {status === 'material_ready' && (
+                              <Button 
+                                className="bg-emerald-600 hover:bg-emerald-700"
+                                disabled={loading}
+                                onClick={handleCreateQuoteFromMaterials}
+                              >
+                                {loading ? (
+                                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                                ) : (
+                                  <FileText className="h-4 w-4 mr-2" />
+                                )}
+                                Create Quote from Materials
+                              </Button>
+                            )}
+                          </div>
+                          <p className="text-sm text-amber-700 flex items-center gap-2">
+                            <Lock className="h-4 w-4" />
+                            Inventory is blocked. Click "Edit Materials" to release and modify the requisition.
+                          </p>
+                        </div>
+                      )
+                    }
+
+                    // Case 2: No inventory blocked, status is material_requisition - show process button
+                    if (status === 'material_requisition') {
+                      return (
+                        <div className="space-y-3">
+                          <div className="flex gap-3">
+                            {hasSavedRequisition && !hasSelectedProducts && (
+                              <Button 
+                                variant="outline"
+                                onClick={() => {
+                                  // Load saved requisition into selection
+                                  if (selectedProject.materialRequisition?.items) {
+                                    const items = {}
+                                    selectedProject.materialRequisition.items.forEach(item => {
+                                      const prod = products.find(p => p.id === item.productId)
+                                      if (prod) {
+                                        items[item.productId] = { product: prod, quantity: item.quantity, selected: true }
+                                      }
+                                    })
+                                    setMaterialRequisition(items)
+                                    toast.info('Loaded saved requisition. You can now edit and process.')
+                                  }
+                                }}
+                              >
+                                <RefreshCw className="h-4 w-4 mr-2" />
+                                Load Saved Requisition
+                              </Button>
+                            )}
+                            <Button 
+                              className="bg-purple-600 hover:bg-purple-700"
+                              disabled={loading || !hasSelectedProducts || !allAvailable}
+                              onClick={handleProcessOrder}
+                            >
+                              {loading ? (
+                                <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <Lock className="h-4 w-4 mr-2" />
+                              )}
+                              Process Order & Block Inventory ({getSelectedProducts().length} items)
+                            </Button>
+                          </div>
+                          {!hasSelectedProducts && (
+                            <p className="text-sm text-slate-500">
+                              Select products above to create a material requisition.
+                            </p>
+                          )}
+                          {hasSelectedProducts && !allAvailable && (
+                            <p className="text-sm text-red-600 flex items-center gap-2">
+                              <AlertTriangle className="h-4 w-4" />
+                              Cannot process: {insufficientItems.map(i => `${i.product} (need ${i.required}, have ${i.available})`).join(', ')}
+                            </p>
+                          )}
+                        </div>
+                      )
+                    }
+
+                    // Case 3: Status is material_processing without blocked inventory (edge case)
+                    if (status === 'material_processing') {
+                      return (
+                        <div className="flex gap-3">
+                          <Button 
+                            variant="outline"
+                            disabled={loading}
+                            onClick={handleUpdateMaterials}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit Materials
+                          </Button>
+                          <Button 
+                            className="bg-teal-600 hover:bg-teal-700"
+                            disabled={loading}
+                            onClick={handleMarkReady}
+                          >
+                            <CheckCircle2 className="h-4 w-4 mr-2" /> Mark Materials Ready
+                          </Button>
+                        </div>
+                      )
+                    }
+
+                    // Case 4: Status is material_ready
+                    if (status === 'material_ready') {
+                      return (
+                        <div className="flex gap-3">
+                          <Button 
+                            variant="outline"
+                            disabled={loading}
+                            onClick={handleUpdateMaterials}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit Materials
+                          </Button>
+                          <Button 
+                            className="bg-emerald-600 hover:bg-emerald-700"
+                            disabled={loading}
+                            onClick={handleCreateQuoteFromMaterials}
+                          >
+                            {loading ? (
+                              <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                            ) : (
+                              <FileText className="h-4 w-4 mr-2" />
+                            )}
+                            Create Quote from Materials
+                          </Button>
+                        </div>
+                      )
+                    }
+
+                    // Case 5: Quote stages - show view quotes button
+                    if (['quote_pending', 'quote_sent', 'quote_approved'].includes(status)) {
+                      return (
+                        <div className="flex gap-3">
+                          <Button 
+                            variant="outline"
+                            onClick={() => setActiveTab('quotes')}
+                          >
+                            <FileText className="h-4 w-4 mr-2" /> View Quotes
+                          </Button>
+                        </div>
+                      )
+                    }
+
+                    // Case 6: Invoice/Delivery stages
+                    if (['invoice_sent', 'in_transit', 'delivered', 'completed'].includes(status)) {
+                      return (
+                        <div className="flex gap-3">
+                          <Button 
+                            variant="outline"
+                            onClick={() => setActiveTab('invoices')}
+                          >
+                            <Receipt className="h-4 w-4 mr-2" /> View Invoices
+                          </Button>
+                        </div>
+                      )
+                    }
+
+                    return null
+                  })()}
+                </div>
                         ) : (
                           <FileText className="h-4 w-4 mr-2" />
                         )}
