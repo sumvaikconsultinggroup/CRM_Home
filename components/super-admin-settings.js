@@ -79,11 +79,17 @@ function PagesManagement() {
       setLoading(true)
       const res = await fetch('/api/pages?admin=true')
       const data = await res.json()
-      if (data.success) {
+      // API returns array directly or { success, data } format
+      if (Array.isArray(data)) {
+        setPages(data)
+      } else if (data.success) {
         setPages(data.data || [])
+      } else {
+        setPages([])
       }
     } catch (error) {
       console.error('Failed to fetch pages:', error)
+      setPages([])
     } finally {
       setLoading(false)
     }
