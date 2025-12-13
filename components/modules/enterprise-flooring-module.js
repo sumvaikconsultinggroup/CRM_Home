@@ -17,6 +17,7 @@ import { Progress } from '@/components/ui/progress'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { Checkbox } from '@/components/ui/checkbox'
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
 import {
   LayoutDashboard, Package, Ruler, FileText, Wrench, Warehouse, Users,
   Plus, Edit, Trash2, Eye, Search, Filter, RefreshCw, Download, Upload,
