@@ -7902,7 +7902,7 @@ function QuoteEditDialog({ open, onClose, quote, projects, products, moduleSetti
                 <SelectContent>
                   {projects.filter(p => p.status !== 'completed' && p.status !== 'cancelled').map(proj => (
                     <SelectItem key={proj.id} value={proj.id}>
-                      {proj.projectNumber} - {proj.customer?.name || 'No Customer'}
+                      {proj.projectNumber} - {proj.customer?.name || proj.customerName || 'No Customer'}
                     </SelectItem>
                   ))}
                 </SelectContent>
