@@ -3058,7 +3058,11 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           </TabsTrigger>
           <TabsTrigger value="measurements" className="flex items-center gap-2">
             <Ruler className="h-4 w-4" /> Measurements
-            {selectedProject && <Badge variant="secondary" className="ml-1 text-xs">{selectedProject.projectNumber}</Badge>}
+            {selectedProject && selectedProject.segment !== 'b2b' && <Badge variant="secondary" className="ml-1 text-xs">{selectedProject.projectNumber}</Badge>}
+          </TabsTrigger>
+          <TabsTrigger value="materials" className="flex items-center gap-2">
+            <Boxes className="h-4 w-4" /> Materials
+            {selectedProject && selectedProject.segment === 'b2b' && <Badge variant="secondary" className="ml-1 text-xs">{selectedProject.projectNumber}</Badge>}
           </TabsTrigger>
           <TabsTrigger value="quotes" className="flex items-center gap-2">
             <FileText className="h-4 w-4" /> Quotes
@@ -3085,6 +3089,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           <TabsContent value="products">{renderProducts()}</TabsContent>
           <TabsContent value="projects">{renderProjects()}</TabsContent>
           <TabsContent value="measurements">{renderMeasurements()}</TabsContent>
+          <TabsContent value="materials">{renderMaterials()}</TabsContent>
           <TabsContent value="quotes">{renderQuotes()}</TabsContent>
           <TabsContent value="invoices">{renderInvoices()}</TabsContent>
           <TabsContent value="installations">{renderInstallations()}</TabsContent>
