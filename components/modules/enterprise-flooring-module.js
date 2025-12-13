@@ -873,7 +873,67 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }
 
-  // Handle Send For Quotation - Creates a new quote for approved project
+  // Handle Send For Measurement (B2C Flow)
+  const handleSendForMeasurement = async (project) => {
+    try {
+      setLoading(true)
+      
+      // Update project status to measurement_scheduled
+      await fetch('/api/flooring/enhanced/projects', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ 
+          id: project.id, 
+          action: 'update_status', 
+          status: 'measurement_scheduled',
+          statusNotes: 'Sent for measurement'
+        })
+      })
+      
+      // Set selected project and navigate to measurements tab
+      setSelectedProject(project)
+      setActiveTab('measurements')
+      
+      toast.success('Project sent for measurement. Add measurements in the Measurements tab.')
+      fetchProjects()
+    } catch (error) {
+      toast.error('Failed to send for measurement')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Handle Send For Material Requisition (B2B Flow)
+  const handleSendForMaterialRequisition = async (project) => {
+    try {
+      setLoading(true)
+      
+      // Update project status to material_requisition
+      await fetch('/api/flooring/enhanced/projects', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ 
+          id: project.id, 
+          action: 'update_status', 
+          status: 'material_requisition',
+          statusNotes: 'Material requisition initiated'
+        })
+      })
+      
+      // Set selected project and navigate to material tab
+      setSelectedProject(project)
+      setActiveTab('materials')
+      
+      toast.success('Material requisition initiated. Add materials in the Materials tab.')
+      fetchProjects()
+    } catch (error) {
+      toast.error('Failed to send for material requisition')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Handle Send For Quotation - Creates a new quote for project
   const handleSendForQuotation = async (project) => {
     try {
       setLoading(true)
@@ -894,7 +954,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         } 
       })
       
-      toast.success('Creating quotation for approved project...')
+      toast.success('Creating quotation for project...')
     } catch (error) {
       toast.error('Failed to initiate quotation')
     } finally {
