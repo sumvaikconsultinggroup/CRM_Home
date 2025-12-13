@@ -382,7 +382,10 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.1 }}
           >
-            <Card className="p-6 hover:shadow-xl transition-all duration-300 border-0 shadow-lg group cursor-pointer overflow-hidden relative">
+            <Card 
+              className="p-6 hover:shadow-xl transition-all duration-300 border-0 shadow-lg group cursor-pointer overflow-hidden relative"
+              onClick={stat.onClick}
+            >
               <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br ${stat.color} blur-3xl`} style={{ transform: 'scale(0.5)', transformOrigin: 'top left' }} />
               <div className="relative">
                 <div className="flex justify-between items-start mb-4">
