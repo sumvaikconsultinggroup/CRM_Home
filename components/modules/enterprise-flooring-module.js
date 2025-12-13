@@ -764,6 +764,40 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }
 
+  // Handle Installation Complete - Also marks project as complete (B2C)
+  const handleInstallationComplete = async (installation) => {
+    try {
+      setLoading(true)
+      
+      // First, complete the installation
+      await fetch('/api/flooring/enhanced/installations', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ 
+          id: installation.id, 
+          action: 'update_status', 
+          status: 'completed',
+          completedDate: new Date().toISOString()
+        })
+      })
+      
+      // Then, update the project status to completed
+      if (installation.projectId) {
+        await handleUpdateProjectStatus(installation.projectId, 'completed')
+        toast.success('Installation completed and project marked as complete!')
+      } else {
+        toast.success('Installation completed!')
+      }
+      
+      fetchInstallations()
+      fetchProjects()
+    } catch (error) {
+      toast.error('Failed to complete installation')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleInventoryAction = async (action, data) => {
     try {
       setLoading(true)
