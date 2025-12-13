@@ -7777,11 +7777,19 @@ function QuoteEditDialog({ open, onClose, quote, projects, products, moduleSetti
     const proj = projects.find(p => p.id === projectId)
     if (proj) {
       setSelectedProject(proj)
+      // Build customer object from project's flat customer fields OR nested customer object
+      const customerData = proj.customer || {
+        name: proj.customerName || '',
+        email: proj.customerEmail || '',
+        phone: proj.customerPhone || '',
+        company: proj.customerCompany || '',
+        gstin: proj.customerGstin || ''
+      }
       setForm(prev => ({
         ...prev,
         projectId: proj.id,
         projectNumber: proj.projectNumber,
-        customer: proj.customer || null,
+        customer: customerData,
         site: proj.site || null
       }))
     }
