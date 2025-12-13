@@ -1753,7 +1753,7 @@ function WhiteLabelSettings() {
                   onChange={(e) => setSettings({ ...settings, customDomain: e.target.value })}
                   placeholder="crm.yourdomain.com"
                 />
-                <p className="text-xs text-muted-foreground">Point your domain's CNAME to our servers</p>
+                <p className="text-xs text-muted-foreground">Point your domain&apos;s CNAME to our servers</p>
               </div>
               {/* Preview Section */}
               <div className="p-4 border rounded-lg bg-slate-50">
