@@ -271,6 +271,19 @@ export default function FlooringModule({ onBack, client, user, onUpgrade }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Mee AI Button */}
+            <Button 
+              variant={showMeeAgent ? "default" : "outline"} 
+              size="sm"
+              onClick={() => setShowMeeAgent(!showMeeAgent)}
+              className={showMeeAgent ? "bg-gradient-to-r from-amber-500 to-orange-600" : ""}
+            >
+              <Layers className="h-4 w-4 mr-2" />
+              Mee AI
+              {client?.planId?.toLowerCase() !== 'enterprise' && (
+                <Badge className="ml-2 bg-yellow-500 text-xs">PRO</Badge>
+              )}
+            </Button>
             <Button variant="outline" size="icon" onClick={fetchData}>
               <RefreshCw className="h-4 w-4" />
             </Button>
