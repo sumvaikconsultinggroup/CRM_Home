@@ -11,7 +11,8 @@ export async function GET() {
   try {
     await seedDatabase()
     const modulesCollection = await getCollection(Collections.MODULES)
-    const modules = await modulesCollection.find({ active: true }).toArray()
+    // Get all modules (don't filter by active since some have 'enabled' field)
+    const modules = await modulesCollection.find({}).toArray()
     return successResponse(sanitizeDocuments(modules))
   } catch (error) {
     console.error('Modules API Error:', error)
