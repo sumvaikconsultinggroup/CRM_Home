@@ -2023,25 +2023,59 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         // First release previously reserved inventory
         if (selectedProject.materialRequisition?.inventoryBlocked) {
           await releaseInventory(selectedProject.materialRequisition.items, selectedProject.id)
-          toast.info('Previous inventory reservation released')
+          toast.info('Inventory reservation released - stock is now available')
         }
         
         // Change status back to material_requisition to allow editing
         await handleUpdateProjectStatus(selectedProject.id, 'material_requisition')
         
-        // Clear inventory blocked flag
-        await fetch('/api/flooring/enhanced/projects', {
+        // Clear inventory blocked flag and update material requisition
+        const updatedMaterialRequisition = {
+          ...selectedProject.materialRequisition,
+          inventoryBlocked: false,
+          reservations: []
+        }
+        
+        const res = await fetch('/api/flooring/enhanced/projects', {
           method: 'PUT',
           headers,
           body: JSON.stringify({
             id: selectedProject.id,
-            'materialRequisition.inventoryBlocked': false
+            materialRequisition: updatedMaterialRequisition,
+            status: 'material_requisition'
           })
         })
         
-        fetchInventory()
-        toast.success('You can now edit the material requisition')
+        if (res.ok) {
+          // Update local selected project state immediately
+          setSelectedProject(prev => ({
+            ...prev,
+            status: 'material_requisition',
+            materialRequisition: updatedMaterialRequisition
+          }))
+          
+          // Reload selection with saved items
+          if (selectedProject.materialRequisition?.items) {
+            const items = {}
+            selectedProject.materialRequisition.items.forEach(item => {
+              const prod = products.find(p => p.id === item.productId)
+              if (prod) {
+                items[item.productId] = { product: prod, quantity: item.quantity, selected: true }
+              }
+            })
+            setMaterialRequisition(items)
+          }
+          
+          // Refresh data
+          await fetchInventory()
+          await fetchProjects()
+          
+          toast.success('You can now edit the material requisition. Inventory is released.')
+        } else {
+          toast.error('Failed to update project')
+        }
       } catch (error) {
+        console.error('Update materials error:', error)
         toast.error('Failed to update materials')
       } finally {
         setLoading(false)
