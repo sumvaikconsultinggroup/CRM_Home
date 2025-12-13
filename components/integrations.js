@@ -26,6 +26,7 @@ const INTEGRATIONS = [
     popular: true,
     color: 'from-orange-500 to-orange-600',
     setupUrl: 'https://zapier.com/apps/webhook/integrations',
+    webhookEndpoint: '/api/webhooks/zapier',
     features: ['Trigger on new leads', 'Create tasks automatically', 'Sync contacts', 'Update project status']
   },
   {
@@ -37,6 +38,7 @@ const INTEGRATIONS = [
     popular: true,
     color: 'from-blue-500 to-blue-600',
     setupUrl: 'https://www.pabbly.com/connect/',
+    webhookEndpoint: '/api/webhooks/pabbly',
     features: ['Webhook triggers', 'Multi-step workflows', 'Data formatting', 'Conditional logic']
   },
   {
