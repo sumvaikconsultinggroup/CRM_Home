@@ -4759,7 +4759,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               action: blockInventory ? 'measurement_completed' : 'measurement_updated',
               by: technicianName,
               at: new Date().toISOString(),
-              details: `${rooms.length} rooms, ${totalArea.toFixed(0)} sqft, ${Object.values(selectedProducts).filter(p => p.selected).length} products`
+              details: `${rooms.length} rooms, ${totalArea.toFixed(0)} sqft, ${Object.values(measurementProducts).filter(p => p.selected).length} products`
             }
           ]
         }
