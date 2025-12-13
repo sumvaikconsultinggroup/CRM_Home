@@ -1502,6 +1502,11 @@ function ClientDashboard({ user, client, onLogout }) {
           {dialogType === 'project' && (
             <ProjectForm 
               project={editingItem}
+              contacts={contacts}
+              onAddContact={() => {
+                // Switch to add contact dialog, then return to project
+                setDialogType('contact_for_project')
+              }}
               onSubmit={async (data) => {
                 try {
                   console.log('Submitting project data:', data)
@@ -1525,6 +1530,28 @@ function ClientDashboard({ user, client, onLogout }) {
                 setEditingItem(null)
               }}
             />
+          )}
+
+          {dialogType === 'contact_for_project' && (
+            <div className="space-y-4">
+              <div className="text-center mb-4">
+                <h3 className="text-lg font-semibold">Add New Customer</h3>
+                <p className="text-sm text-muted-foreground">Create a customer to assign to your project</p>
+              </div>
+              <QuickContactForm 
+                onSubmit={async (data) => {
+                  try {
+                    await api.createContact({ ...data, type: 'customer' })
+                    toast.success('Customer added successfully')
+                    await fetchData() // Refresh contacts
+                    setDialogType('project') // Go back to project form
+                  } catch (error) {
+                    toast.error(error.message || 'Failed to add customer')
+                  }
+                }}
+                onCancel={() => setDialogType('project')}
+              />
+            </div>
           )}
           
           {dialogType === 'task' && (
