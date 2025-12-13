@@ -18,7 +18,8 @@ export async function GET(request) {
     const moduleRequestsCollection = await getCollection(Collections.MODULE_REQUESTS)
 
     const clientDoc = await clientsCollection.findOne({ id: clientId })
-    const allModules = await modulesCollection.find({ active: true }).toArray()
+    // Get all modules where active is true OR active is not set (for backward compatibility)
+    const allModules = await modulesCollection.find({ active: { $ne: false } }).toArray()
     const pendingRequests = await moduleRequestsCollection.find({ 
       clientId, 
       status: 'pending' 
