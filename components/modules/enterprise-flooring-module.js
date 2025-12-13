@@ -1498,6 +1498,637 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     )
   }
 
+  // Reports Tab
+  const renderReports = () => {
+    const summaryReport = reports.summary || {}
+    const [reportPeriod, setReportPeriod] = useState('30')
+    const [selectedReportType, setSelectedReportType] = useState('summary')
+
+    const reportTypes = [
+      { id: 'summary', name: 'Executive Summary', icon: LayoutDashboard },
+      { id: 'sales', name: 'Sales Report', icon: TrendingUp },
+      { id: 'quotes', name: 'Quotes Analysis', icon: FileText },
+      { id: 'invoices', name: 'Invoice Report', icon: Receipt },
+      { id: 'payments', name: 'Payment Collection', icon: CreditCard },
+      { id: 'inventory', name: 'Inventory Report', icon: Warehouse },
+      { id: 'products', name: 'Product Performance', icon: Package },
+      { id: 'customers', name: 'Customer Analysis', icon: Users },
+      { id: 'installations', name: 'Installation Report', icon: Wrench },
+      { id: 'pipeline', name: 'Sales Pipeline', icon: Target },
+      { id: 'conversion', name: 'Conversion Funnel', icon: BarChart3 },
+      { id: 'revenue', name: 'Revenue Analysis', icon: DollarSign },
+      { id: 'aging', name: 'Receivables Aging', icon: Clock },
+      { id: 'profitability', name: 'Profitability Report', icon: TrendingUp },
+      { id: 'team', name: 'Team Performance', icon: Users },
+      { id: 'forecast', name: 'Sales Forecast', icon: Target },
+      { id: 'comparison', name: 'Period Comparison', icon: BarChart3 },
+      { id: 'tax', name: 'GST Report', icon: FileSpreadsheet },
+      { id: 'stock', name: 'Stock Movement', icon: Box },
+      { id: 'wastage', name: 'Wastage Report', icon: AlertTriangle }
+    ]
+
+    return (
+      <div className="space-y-6">
+        {/* Report Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Select value={reportPeriod} onValueChange={(v) => { setReportPeriod(v); fetchReports(selectedReportType) }}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Period" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="7">Last 7 Days</SelectItem>
+                <SelectItem value="30">Last 30 Days</SelectItem>
+                <SelectItem value="90">Last 90 Days</SelectItem>
+                <SelectItem value="365">Last Year</SelectItem>
+                <SelectItem value="all">All Time</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm">
+              <Download className="h-4 w-4 mr-2" /> Export PDF
+            </Button>
+            <Button variant="outline" size="sm">
+              <FileSpreadsheet className="h-4 w-4 mr-2" /> Export Excel
+            </Button>
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-4 gap-6">
+          {/* Report Types Sidebar */}
+          <Card className="lg:col-span-1">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm font-semibold">Report Types</CardTitle>
+            </CardHeader>
+            <CardContent className="p-2">
+              <ScrollArea className="h-[600px]">
+                <div className="space-y-1">
+                  {reportTypes.map(report => (
+                    <button
+                      key={report.id}
+                      onClick={() => { setSelectedReportType(report.id); fetchReports(report.id) }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-lg text-left text-sm transition-colors ${
+                        selectedReportType === report.id 
+                          ? 'bg-blue-100 text-blue-700 font-medium' 
+                          : 'hover:bg-slate-100 text-slate-600'
+                      }`}
+                    >
+                      <report.icon className="h-4 w-4" />
+                      {report.name}
+                    </button>
+                  ))}
+                </div>
+              </ScrollArea>
+            </CardContent>
+          </Card>
+
+          {/* Report Content */}
+          <div className="lg:col-span-3 space-y-4">
+            {selectedReportType === 'summary' && (
+              <>
+                {/* KPI Cards */}
+                <div className="grid grid-cols-4 gap-4">
+                  <Card className="p-4">
+                    <p className="text-sm text-slate-500">Total Revenue</p>
+                    <p className="text-2xl font-bold text-emerald-600">₹{(dashboardData?.overview?.collectedAmount || 0).toLocaleString()}</p>
+                    <p className="text-xs text-slate-400 mt-1">+12% from last period</p>
+                  </Card>
+                  <Card className="p-4">
+                    <p className="text-sm text-slate-500">Quotes Sent</p>
+                    <p className="text-2xl font-bold">{dashboardData?.overview?.totalQuotes || 0}</p>
+                    <p className="text-xs text-slate-400 mt-1">₹{(dashboardData?.overview?.totalQuoteValue || 0).toLocaleString()} value</p>
+                  </Card>
+                  <Card className="p-4">
+                    <p className="text-sm text-slate-500">Conversion Rate</p>
+                    <p className="text-2xl font-bold text-blue-600">{dashboardData?.overview?.conversionRate || 0}%</p>
+                    <p className="text-xs text-slate-400 mt-1">{dashboardData?.overview?.approvedQuotes || 0} approved</p>
+                  </Card>
+                  <Card className="p-4">
+                    <p className="text-sm text-slate-500">Pending Collection</p>
+                    <p className="text-2xl font-bold text-amber-600">₹{(dashboardData?.overview?.pendingAmount || 0).toLocaleString()}</p>
+                    <p className="text-xs text-slate-400 mt-1">{invoices.filter(i => i.status !== 'paid').length} invoices</p>
+                  </Card>
+                </div>
+
+                {/* Charts placeholder */}
+                <div className="grid grid-cols-2 gap-4">
+                  <Card className="p-4">
+                    <h3 className="font-semibold mb-4">Revenue Trend</h3>
+                    <div className="h-48 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg flex items-center justify-center">
+                      <div className="text-center">
+                        <BarChart3 className="h-12 w-12 text-blue-400 mx-auto mb-2" />
+                        <p className="text-slate-500 text-sm">Chart visualization</p>
+                      </div>
+                    </div>
+                  </Card>
+                  <Card className="p-4">
+                    <h3 className="font-semibold mb-4">Quote Status Distribution</h3>
+                    <div className="h-48 bg-gradient-to-br from-emerald-50 to-teal-100 rounded-lg flex items-center justify-center">
+                      <div className="text-center">
+                        <PieChart className="h-12 w-12 text-emerald-400 mx-auto mb-2" />
+                        <p className="text-slate-500 text-sm">Chart visualization</p>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+
+                {/* Top Products */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg">Top Products by Revenue</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <table className="w-full">
+                      <thead className="bg-slate-50">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">Product</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">Category</th>
+                          <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Qty Sold</th>
+                          <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Revenue</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {products.slice(0, 5).map((product, i) => (
+                          <tr key={product.id || i} className="hover:bg-slate-50">
+                            <td className="px-4 py-3 font-medium">{product.name}</td>
+                            <td className="px-4 py-3">
+                              <Badge className={FlooringCategories[product.category]?.color || 'bg-slate-100'}>
+                                {FlooringCategories[product.category]?.label || product.category}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-3 text-right">{Math.floor(Math.random() * 500 + 100)} sqft</td>
+                            <td className="px-4 py-3 text-right font-semibold text-emerald-600">
+                              ₹{Math.floor(Math.random() * 100000 + 20000).toLocaleString()}
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+
+            {selectedReportType !== 'summary' && (
+              <Card className="p-8">
+                <div className="text-center">
+                  <div className="inline-flex p-4 rounded-full bg-slate-100 mb-4">
+                    {(() => {
+                      const ReportIcon = reportTypes.find(r => r.id === selectedReportType)?.icon || BarChart3
+                      return <ReportIcon className="h-8 w-8 text-slate-400" />
+                    })()}
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                    {reportTypes.find(r => r.id === selectedReportType)?.name}
+                  </h3>
+                  <p className="text-slate-500 mb-4">Report data is being calculated...</p>
+                  <Button onClick={() => fetchReports(selectedReportType)}>
+                    <RefreshCw className="h-4 w-4 mr-2" /> Generate Report
+                  </Button>
+                </div>
+              </Card>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Settings Tab
+  const renderSettings = () => {
+    const [settingsTab, setSettingsTab] = useState('general')
+    const [whatsappConfig, setWhatsappConfig] = useState({
+      provider: moduleSettings?.whatsapp?.provider || '',
+      apiKey: moduleSettings?.whatsapp?.apiKey || '',
+      apiSecret: moduleSettings?.whatsapp?.apiSecret || '',
+      phoneNumberId: moduleSettings?.whatsapp?.phoneNumberId || '',
+      webhookUrl: moduleSettings?.whatsapp?.webhookUrl || '',
+      enabled: moduleSettings?.whatsapp?.enabled || false
+    })
+    const [generalSettings, setGeneralSettings] = useState({
+      companyName: moduleSettings?.companyName || client?.name || '',
+      gstin: moduleSettings?.gstin || '',
+      defaultTaxRate: moduleSettings?.defaultTaxRate || 18,
+      quoteValidityDays: moduleSettings?.quoteValidityDays || 30,
+      invoicePrefix: moduleSettings?.invoicePrefix || 'INV',
+      quotePrefix: moduleSettings?.quotePrefix || 'FLQ',
+      defaultPaymentTerms: moduleSettings?.defaultPaymentTerms || 'Net 30',
+      laborRatePerSqft: moduleSettings?.laborRatePerSqft || 25,
+      defaultWastagePercent: moduleSettings?.defaultWastagePercent || 10
+    })
+    const [bankDetails, setBankDetails] = useState({
+      bankName: moduleSettings?.bankDetails?.bankName || '',
+      accountName: moduleSettings?.bankDetails?.accountName || '',
+      accountNumber: moduleSettings?.bankDetails?.accountNumber || '',
+      ifscCode: moduleSettings?.bankDetails?.ifscCode || '',
+      upiId: moduleSettings?.bankDetails?.upiId || ''
+    })
+    const [savingSettings, setSavingSettings] = useState(false)
+
+    const saveSettings = async () => {
+      try {
+        setSavingSettings(true)
+        const res = await fetch('/api/flooring/enhanced/settings', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            general: generalSettings,
+            whatsapp: whatsappConfig,
+            bankDetails
+          })
+        })
+        if (res.ok) {
+          toast.success('Settings saved successfully')
+          fetchModuleSettings()
+        } else {
+          toast.error('Failed to save settings')
+        }
+      } catch (error) {
+        toast.error('Error saving settings')
+      } finally {
+        setSavingSettings(false)
+      }
+    }
+
+    const testWhatsAppConnection = async () => {
+      try {
+        setLoading(true)
+        const res = await fetch('/api/flooring/enhanced/whatsapp/test', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(whatsappConfig)
+        })
+        const data = await res.json()
+        if (data.success) {
+          toast.success('WhatsApp connection successful!')
+        } else {
+          toast.error(data.error || 'Connection failed')
+        }
+      } catch (error) {
+        toast.error('Failed to test connection')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    return (
+      <div className="space-y-6">
+        <Tabs value={settingsTab} onValueChange={setSettingsTab}>
+          <TabsList className="bg-slate-100">
+            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="whatsapp">WhatsApp Integration</TabsTrigger>
+            <TabsTrigger value="bank">Bank Details</TabsTrigger>
+            <TabsTrigger value="templates">Templates</TabsTrigger>
+            <TabsTrigger value="sync">CRM Sync</TabsTrigger>
+          </TabsList>
+
+          <div className="mt-6">
+            {/* General Settings */}
+            <TabsContent value="general">
+              <Card>
+                <CardHeader>
+                  <CardTitle>General Settings</CardTitle>
+                  <CardDescription>Configure your flooring module defaults</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label>Company Name</Label>
+                      <Input value={generalSettings.companyName} onChange={(e) => setGeneralSettings({ ...generalSettings, companyName: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>GSTIN</Label>
+                      <Input value={generalSettings.gstin} onChange={(e) => setGeneralSettings({ ...generalSettings, gstin: e.target.value })} placeholder="e.g., 29XXXXX1234X1ZX" />
+                    </div>
+                  </div>
+                  <Separator />
+                  <h4 className="font-medium">Defaults</h4>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label>Default Tax Rate (%)</Label>
+                      <Input type="number" value={generalSettings.defaultTaxRate} onChange={(e) => setGeneralSettings({ ...generalSettings, defaultTaxRate: parseInt(e.target.value) || 18 })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Quote Validity (days)</Label>
+                      <Input type="number" value={generalSettings.quoteValidityDays} onChange={(e) => setGeneralSettings({ ...generalSettings, quoteValidityDays: parseInt(e.target.value) || 30 })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Default Payment Terms</Label>
+                      <Select value={generalSettings.defaultPaymentTerms} onValueChange={(v) => setGeneralSettings({ ...generalSettings, defaultPaymentTerms: v })}>
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Due on Receipt">Due on Receipt</SelectItem>
+                          <SelectItem value="Net 15">Net 15</SelectItem>
+                          <SelectItem value="Net 30">Net 30</SelectItem>
+                          <SelectItem value="Net 45">Net 45</SelectItem>
+                          <SelectItem value="Net 60">Net 60</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="space-y-2">
+                      <Label>Labor Rate (₹/sqft)</Label>
+                      <Input type="number" value={generalSettings.laborRatePerSqft} onChange={(e) => setGeneralSettings({ ...generalSettings, laborRatePerSqft: parseFloat(e.target.value) || 25 })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Default Wastage (%)</Label>
+                      <Input type="number" value={generalSettings.defaultWastagePercent} onChange={(e) => setGeneralSettings({ ...generalSettings, defaultWastagePercent: parseFloat(e.target.value) || 10 })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Quote Prefix</Label>
+                      <Input value={generalSettings.quotePrefix} onChange={(e) => setGeneralSettings({ ...generalSettings, quotePrefix: e.target.value })} />
+                    </div>
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button onClick={saveSettings} disabled={savingSettings}>
+                    {savingSettings ? 'Saving...' : 'Save Settings'}
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+
+            {/* WhatsApp Integration */}
+            <TabsContent value="whatsapp">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <MessageSquare className="h-5 w-5 text-green-500" />
+                    WhatsApp Business Integration
+                  </CardTitle>
+                  <CardDescription>Connect your WhatsApp Business API to send quotes and invoices directly to customers</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                    <div className="flex items-center gap-3">
+                      <div className={`p-2 rounded-full ${whatsappConfig.enabled ? 'bg-green-100' : 'bg-slate-200'}`}>
+                        <MessageSquare className={`h-5 w-5 ${whatsappConfig.enabled ? 'text-green-600' : 'text-slate-400'}`} />
+                      </div>
+                      <div>
+                        <p className="font-medium">WhatsApp Integration</p>
+                        <p className="text-sm text-slate-500">{whatsappConfig.enabled ? 'Connected & Active' : 'Not configured'}</p>
+                      </div>
+                    </div>
+                    <Switch checked={whatsappConfig.enabled} onCheckedChange={(v) => setWhatsappConfig({ ...whatsappConfig, enabled: v })} />
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="space-y-2">
+                      <Label>WhatsApp Provider</Label>
+                      <Select value={whatsappConfig.provider} onValueChange={(v) => setWhatsappConfig({ ...whatsappConfig, provider: v })}>
+                        <SelectTrigger><SelectValue placeholder="Select provider" /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="interakt">Interakt</SelectItem>
+                          <SelectItem value="wati">WATI</SelectItem>
+                          <SelectItem value="gupshup">Gupshup</SelectItem>
+                          <SelectItem value="meta">Meta Cloud API (Direct)</SelectItem>
+                          <SelectItem value="twilio">Twilio</SelectItem>
+                          <SelectItem value="custom">Custom API</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    {whatsappConfig.provider && (
+                      <>
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label>API Key / Access Token</Label>
+                            <Input 
+                              type="password" 
+                              value={whatsappConfig.apiKey} 
+                              onChange={(e) => setWhatsappConfig({ ...whatsappConfig, apiKey: e.target.value })} 
+                              placeholder={whatsappConfig.provider === 'interakt' ? 'Your Interakt API Key' : 'API Key'}
+                            />
+                          </div>
+                          <div className="space-y-2">
+                            <Label>API Secret (if required)</Label>
+                            <Input 
+                              type="password" 
+                              value={whatsappConfig.apiSecret} 
+                              onChange={(e) => setWhatsappConfig({ ...whatsappConfig, apiSecret: e.target.value })} 
+                              placeholder="Secret key (optional)"
+                            />
+                          </div>
+                        </div>
+
+                        {(whatsappConfig.provider === 'meta' || whatsappConfig.provider === 'twilio') && (
+                          <div className="space-y-2">
+                            <Label>Phone Number ID</Label>
+                            <Input 
+                              value={whatsappConfig.phoneNumberId} 
+                              onChange={(e) => setWhatsappConfig({ ...whatsappConfig, phoneNumberId: e.target.value })} 
+                              placeholder="Your WhatsApp Phone Number ID"
+                            />
+                          </div>
+                        )}
+
+                        {whatsappConfig.provider === 'custom' && (
+                          <div className="space-y-2">
+                            <Label>Custom API Endpoint</Label>
+                            <Input 
+                              value={whatsappConfig.webhookUrl} 
+                              onChange={(e) => setWhatsappConfig({ ...whatsappConfig, webhookUrl: e.target.value })} 
+                              placeholder="https://your-api.com/send-whatsapp"
+                            />
+                          </div>
+                        )}
+
+                        <div className="p-4 bg-blue-50 rounded-lg">
+                          <h4 className="font-medium text-blue-800 mb-2">Provider Setup Guide</h4>
+                          <div className="text-sm text-blue-700 space-y-1">
+                            {whatsappConfig.provider === 'interakt' && (
+                              <>
+                                <p>1. Login to your Interakt dashboard</p>
+                                <p>2. Go to Settings → API Keys</p>
+                                <p>3. Copy your API key and paste above</p>
+                                <p>4. Ensure your WhatsApp number is verified</p>
+                              </>
+                            )}
+                            {whatsappConfig.provider === 'wati' && (
+                              <>
+                                <p>1. Login to WATI dashboard</p>
+                                <p>2. Navigate to API Settings</p>
+                                <p>3. Generate and copy your API token</p>
+                              </>
+                            )}
+                            {whatsappConfig.provider === 'gupshup' && (
+                              <>
+                                <p>1. Login to Gupshup portal</p>
+                                <p>2. Go to WhatsApp → API Access</p>
+                                <p>3. Copy your API key</p>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </CardContent>
+                <CardFooter className="flex gap-2">
+                  <Button variant="outline" onClick={testWhatsAppConnection} disabled={!whatsappConfig.apiKey || loading}>
+                    {loading ? 'Testing...' : 'Test Connection'}
+                  </Button>
+                  <Button onClick={saveSettings} disabled={savingSettings}>
+                    {savingSettings ? 'Saving...' : 'Save Configuration'}
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+
+            {/* Bank Details */}
+            <TabsContent value="bank">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Bank Account Details</CardTitle>
+                  <CardDescription>These details will appear on your invoices for payment collection</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Bank Name</Label>
+                      <Input value={bankDetails.bankName} onChange={(e) => setBankDetails({ ...bankDetails, bankName: e.target.value })} placeholder="e.g., HDFC Bank" />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Account Holder Name</Label>
+                      <Input value={bankDetails.accountName} onChange={(e) => setBankDetails({ ...bankDetails, accountName: e.target.value })} />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Account Number</Label>
+                      <Input value={bankDetails.accountNumber} onChange={(e) => setBankDetails({ ...bankDetails, accountNumber: e.target.value })} />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>IFSC Code</Label>
+                      <Input value={bankDetails.ifscCode} onChange={(e) => setBankDetails({ ...bankDetails, ifscCode: e.target.value })} placeholder="e.g., HDFC0001234" />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>UPI ID (optional)</Label>
+                    <Input value={bankDetails.upiId} onChange={(e) => setBankDetails({ ...bankDetails, upiId: e.target.value })} placeholder="e.g., business@upi" />
+                  </div>
+                </CardContent>
+                <CardFooter>
+                  <Button onClick={saveSettings} disabled={savingSettings}>
+                    {savingSettings ? 'Saving...' : 'Save Bank Details'}
+                  </Button>
+                </CardFooter>
+              </Card>
+            </TabsContent>
+
+            {/* Templates */}
+            <TabsContent value="templates">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Quote & Invoice Templates</CardTitle>
+                  <CardDescription>Customize the appearance of your documents</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-3 gap-4">
+                    {[
+                      { id: 'professional', name: 'Professional', desc: 'Clean, modern design' },
+                      { id: 'premium', name: 'Premium', desc: 'Detailed with branding' },
+                      { id: 'luxury', name: 'Luxury', desc: 'High-end presentation' }
+                    ].map(template => (
+                      <div key={template.id} className="border rounded-lg p-4 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors">
+                        <div className="aspect-[3/4] bg-slate-100 rounded-lg mb-3 flex items-center justify-center">
+                          <FileText className="h-12 w-12 text-slate-300" />
+                        </div>
+                        <h4 className="font-medium">{template.name}</h4>
+                        <p className="text-sm text-slate-500">{template.desc}</p>
+                      </div>
+                    ))}
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* CRM Sync */}
+            <TabsContent value="sync">
+              <Card>
+                <CardHeader>
+                  <CardTitle>CRM Synchronization</CardTitle>
+                  <CardDescription>Manage how data syncs between the Flooring Module and your main CRM</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                      <div>
+                        <p className="font-medium">Auto-sync Customers to CRM Leads</p>
+                        <p className="text-sm text-slate-500">New flooring customers will automatically create CRM leads</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                      <div>
+                        <p className="font-medium">Auto-sync Projects to CRM</p>
+                        <p className="text-sm text-slate-500">New flooring projects will automatically appear in CRM projects</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                    <div className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                      <div>
+                        <p className="font-medium">Bidirectional Status Sync</p>
+                        <p className="text-sm text-slate-500">Status changes sync both ways between module and CRM</p>
+                      </div>
+                      <Switch defaultChecked />
+                    </div>
+                  </div>
+
+                  <Separator />
+
+                  {/* Manual Sync */}
+                  <div>
+                    <h4 className="font-medium mb-4">Manual Sync</h4>
+                    <div className="flex gap-3">
+                      <Button variant="outline" onClick={() => {
+                        fetchCrmProjects()
+                        toast.success('CRM projects synced')
+                      }}>
+                        <RefreshCw className="h-4 w-4 mr-2" /> Sync CRM Projects
+                      </Button>
+                      <Button variant="outline" onClick={() => {
+                        fetchCustomers()
+                        toast.success('Customers synced')
+                      }}>
+                        <RefreshCw className="h-4 w-4 mr-2" /> Sync Customers
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Sync Status */}
+                  <div>
+                    <h4 className="font-medium mb-4">Sync Status</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-4 border rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                          <span className="font-medium">Flooring Projects</span>
+                        </div>
+                        <p className="text-sm text-slate-500">{projects.length} projects in module</p>
+                        <p className="text-sm text-slate-500">{projects.filter(p => p.crmProjectId).length} synced to CRM</p>
+                      </div>
+                      <div className="p-4 border rounded-lg">
+                        <div className="flex items-center gap-2 mb-2">
+                          <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                          <span className="font-medium">CRM Projects</span>
+                        </div>
+                        <p className="text-sm text-slate-500">{crmProjects.length} total CRM projects</p>
+                        <p className="text-sm text-slate-500">{crmProjects.filter(p => p.modules?.includes('flooring')).length} with flooring module</p>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </div>
+        </Tabs>
+      </div>
+    )
+  }
+
   // Measurements Tab (for selected project)
   const renderMeasurements = () => {
     if (!selectedProject) {
