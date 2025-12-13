@@ -282,15 +282,12 @@ function PagesManagement() {
             </div>
             
             <div className="space-y-2">
-              <Label>Content (HTML supported)</Label>
-              <Textarea 
-                value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                placeholder="<h2>Your Page Title</h2><p>Your content here...</p>"
-                rows={15}
-                className="font-mono text-sm"
+              <Label>Content</Label>
+              <RichTextEditor
+                content={formData.content}
+                onChange={(html) => setFormData({ ...formData, content: html })}
+                placeholder="Start writing your page content..."
               />
-              <p className="text-xs text-muted-foreground">HTML tags like &lt;h2&gt;, &lt;p&gt;, &lt;ul&gt;, &lt;li&gt;, &lt;strong&gt;, &lt;a href=&quot;&quot;&gt; are supported</p>
             </div>
           </div>
           
