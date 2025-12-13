@@ -435,6 +435,135 @@ export function ProjectForm({ project, onSubmit, onCancel, contacts = [], onAddC
   )
 }
 
+// Quick Contact Form - For adding a customer inline when creating a project
+export function QuickContactForm({ onSubmit, onCancel }) {
+  const [formData, setFormData] = useState({
+    name: '',
+    displayName: '',
+    email: '',
+    phone: '',
+    company: '',
+    gstin: '',
+    billingAddress: '',
+    city: '',
+    state: '',
+    pincode: ''
+  })
+
+  const handleSubmit = (e) => {
+    e.preventDefault()
+    if (!formData.name) {
+      alert('Name is required')
+      return
+    }
+    onSubmit({
+      ...formData,
+      displayName: formData.displayName || formData.name,
+      type: 'customer'
+    })
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="space-y-4">
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Name *</Label>
+          <Input
+            value={formData.name}
+            onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+            placeholder="Customer name"
+            required
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Display Name</Label>
+          <Input
+            value={formData.displayName}
+            onChange={(e) => setFormData({ ...formData, displayName: e.target.value })}
+            placeholder="How to address"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Email</Label>
+          <Input
+            type="email"
+            value={formData.email}
+            onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+            placeholder="email@example.com"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>Phone</Label>
+          <Input
+            value={formData.phone}
+            onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+            placeholder="+91 9876543210"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-4">
+        <div className="space-y-2">
+          <Label>Company</Label>
+          <Input
+            value={formData.company}
+            onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+            placeholder="Company name"
+          />
+        </div>
+        <div className="space-y-2">
+          <Label>GSTIN</Label>
+          <Input
+            value={formData.gstin}
+            onChange={(e) => setFormData({ ...formData, gstin: e.target.value.toUpperCase() })}
+            placeholder="22AAAAA0000A1Z5"
+            maxLength={15}
+          />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Address</Label>
+        <Input
+          value={formData.billingAddress}
+          onChange={(e) => setFormData({ ...formData, billingAddress: e.target.value })}
+          placeholder="Street address"
+        />
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        <Input
+          value={formData.city}
+          onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+          placeholder="City"
+        />
+        <Input
+          value={formData.state}
+          onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+          placeholder="State"
+        />
+        <Input
+          value={formData.pincode}
+          onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+          placeholder="Pincode"
+        />
+      </div>
+
+      <div className="flex gap-2 justify-end pt-4">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          ← Back to Project
+        </Button>
+        <Button type="submit">
+          Add Customer & Continue
+        </Button>
+      </div>
+    </form>
+  )
+}
+
 // Task Form Component
 export function TaskForm({ task, projects, onSubmit, onCancel }) {
   const [formData, setFormData] = useState({
