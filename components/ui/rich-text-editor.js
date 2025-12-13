@@ -225,6 +225,7 @@ export function RichTextEditor({ content, onChange, placeholder = 'Start writing
         class: 'prose prose-sm max-w-none focus:outline-none min-h-[300px] p-4',
       },
     },
+    immediatelyRender: false,
   })
 
   // Update editor content when content prop changes
