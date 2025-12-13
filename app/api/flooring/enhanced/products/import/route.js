@@ -109,6 +109,13 @@ function setByPath(obj, path, value) {
 // { csv: "..." , upsertBySku: true }
 // OR { rows: [{...}] , upsertBySku: true }
 export async function POST(request) {
+
+    // Build slug->id map for categories to support import with category slug
+    const categoryDocs = await categoriesCol.find({ status: { $ne: 'deleted' } }).toArray()
+    const categorySlugToId = new Map(
+      (categoryDocs || []).map(c => [normalizeSlug(c.slug || c.name), c.id])
+    )
+
   try {
     const user = getAuthUser(request)
     requireClientAccess(user)
