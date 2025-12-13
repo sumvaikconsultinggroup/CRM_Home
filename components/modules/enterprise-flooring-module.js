@@ -1934,19 +1934,24 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           return sum + (price * item.quantity)
         }, 0)
 
-        // Create the quote
+        // Create the quote with proper structure for the API
         const quoteData = {
           projectId: selectedProject.id,
           projectNumber: selectedProject.projectNumber,
-          customerId: selectedProject.customerId,
-          customerName: selectedProject.customerName,
+          leadId: selectedProject.crmLeadId || null,
           customer: {
             id: selectedProject.customerId,
             name: selectedProject.customerName,
             email: selectedProject.customerEmail || '',
             phone: selectedProject.customerPhone || ''
           },
+          site: {
+            address: selectedProject.site?.address || selectedProject.siteAddress || '',
+            city: selectedProject.site?.city || selectedProject.siteCity || '',
+            state: selectedProject.site?.state || selectedProject.siteState || ''
+          },
           items: items.map(item => ({
+            itemType: 'material', // API expects this field
             productId: item.product?.id || item.productId,
             name: item.product?.name || item.productName,
             sku: item.product?.sku || item.sku || '',
@@ -1954,14 +1959,18 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             quantity: item.quantity,
             unit: item.product?.unit || 'sqft',
             unitPrice: item.product?.price || item.product?.pricing?.sellingPrice || item.unitPrice || 0,
-            total: (item.product?.price || item.product?.pricing?.sellingPrice || item.unitPrice || 0) * item.quantity
+            totalPrice: (item.product?.price || item.product?.pricing?.sellingPrice || item.unitPrice || 0) * item.quantity, // API expects totalPrice not total
+            area: item.quantity // For area calculation
           })),
-          subtotal,
-          taxRate: 18,
-          taxAmount: subtotal * 0.18,
-          total: subtotal * 1.18,
-          status: 'draft',
+          template: 'professional',
+          discountType: 'fixed',
+          discountValue: 0,
+          cgstRate: 9,
+          sgstRate: 9,
+          igstRate: 18,
+          isInterstate: false,
           validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          paymentTerms: 'Net 30',
           notes: `Material requisition for B2B project ${selectedProject.projectNumber}`
         }
 
