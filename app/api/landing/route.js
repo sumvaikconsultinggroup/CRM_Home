@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getCollection, Collections, sanitizeDocuments } from '@/lib/db'
+import { getCollection, Collections, sanitizeDocuments } from '@/lib/db/mongodb'
 
 // Helper for success response
 const successResponse = (data) => NextResponse.json({ success: true, data })
