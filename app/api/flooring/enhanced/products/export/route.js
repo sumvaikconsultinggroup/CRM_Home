@@ -70,6 +70,8 @@ export async function GET(request) {
       'pricing.dealerPrice',
       'pricing.sellingPrice',
       'pack.coverageSqftPerBox',
+      'hsnCode',
+      'gstRate',
       'tax.hsnCode',
       'tax.gstRate',
       'status'
