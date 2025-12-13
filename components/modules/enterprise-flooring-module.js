@@ -1684,6 +1684,12 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           <TabsTrigger value="inventory" className="flex items-center gap-2">
             <Warehouse className="h-4 w-4" /> Inventory
           </TabsTrigger>
+          <TabsTrigger value="reports" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" /> Reports
+          </TabsTrigger>
+          <TabsTrigger value="settings" className="flex items-center gap-2">
+            <Settings className="h-4 w-4" /> Settings
+          </TabsTrigger>
         </TabsList>
 
         <div className="mt-6">
@@ -1695,6 +1701,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           <TabsContent value="invoices">{renderInvoices()}</TabsContent>
           <TabsContent value="installations">{renderInstallations()}</TabsContent>
           <TabsContent value="inventory">{renderInventory()}</TabsContent>
+          <TabsContent value="reports">{renderReports()}</TabsContent>
+          <TabsContent value="settings">{renderSettings()}</TabsContent>
         </div>
       </Tabs>
 
