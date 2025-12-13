@@ -38,8 +38,9 @@ export async function GET(request) {
     }
 
     // Build query
-    const query = {}
-    if (category) query.category = category
+    const query = { status: { $ne: 'deleted' } }
+    if (category) query.category = category // backward compatible
+    if (categoryId) query.categoryId = categoryId
     if (brand) query.brand = brand
     if (status) query.status = status
     if (search) {
