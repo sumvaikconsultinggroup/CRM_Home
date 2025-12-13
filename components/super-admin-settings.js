@@ -59,7 +59,7 @@ function PagesManagement() {
   const fetchPages = async () => {
     try {
       setLoading(true)
-      const res = await fetch('/api/pages')
+      const res = await fetch('/api/pages?admin=true')
       const data = await res.json()
       if (data.success) {
         setPages(data.data || [])
