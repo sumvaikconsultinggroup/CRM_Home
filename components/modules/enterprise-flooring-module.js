@@ -3075,6 +3075,170 @@ function ProjectDialog({ open, onClose, project, customers, onSave, loading }) {
   )
 }
 
+function ViewProjectDialog({ open, onClose, project, onSendForQuotation, onUpdateStatus }) {
+  if (!project) return null
+
+  const statusColors = {
+    site_visit_pending: 'bg-blue-100 text-blue-700 border-blue-200',
+    measurement_done: 'bg-cyan-100 text-cyan-700 border-cyan-200',
+    quote_sent: 'bg-purple-100 text-purple-700 border-purple-200',
+    approved: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    in_progress: 'bg-amber-100 text-amber-700 border-amber-200',
+    completed: 'bg-green-100 text-green-700 border-green-200',
+    cancelled: 'bg-red-100 text-red-700 border-red-200'
+  }
+
+  const statusLabels = {
+    site_visit_pending: 'Site Visit Pending',
+    measurement_done: 'Measurement Done',
+    quote_sent: 'Quote Sent',
+    approved: 'Approved',
+    in_progress: 'In Progress',
+    completed: 'Completed',
+    cancelled: 'Cancelled'
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-start justify-between">
+            <div>
+              <DialogTitle className="text-xl">{project.projectNumber}</DialogTitle>
+              <DialogDescription>{project.name}</DialogDescription>
+            </div>
+            <Badge className={statusColors[project.status] || 'bg-slate-100 text-slate-700'}>
+              {statusLabels[project.status] || project.status}
+            </Badge>
+          </div>
+        </DialogHeader>
+        
+        <div className="space-y-6 py-4">
+          {/* Customer & Project Info */}
+          <div className="grid grid-cols-2 gap-6">
+            <div className="space-y-4">
+              <div>
+                <Label className="text-slate-500 text-xs uppercase">Customer</Label>
+                <p className="font-medium">{project.customerName || '-'}</p>
+              </div>
+              <div>
+                <Label className="text-slate-500 text-xs uppercase">Project Type</Label>
+                <p className="font-medium capitalize">{project.type || 'Residential'}</p>
+              </div>
+              <div>
+                <Label className="text-slate-500 text-xs uppercase">Flooring Type</Label>
+                <p className="font-medium capitalize">{project.flooringType?.replace('_', ' ') || '-'}</p>
+              </div>
+            </div>
+            <div className="space-y-4">
+              <div>
+                <Label className="text-slate-500 text-xs uppercase">Total Area</Label>
+                <p className="font-medium">{project.totalArea || 0} sqft</p>
+              </div>
+              <div>
+                <Label className="text-slate-500 text-xs uppercase">Estimated Value</Label>
+                <p className="font-medium text-emerald-600">₹{(project.estimatedValue || 0).toLocaleString()}</p>
+              </div>
+              <div>
+                <Label className="text-slate-500 text-xs uppercase">Rooms</Label>
+                <p className="font-medium">{project.roomCount || 0} rooms</p>
+              </div>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Site Address */}
+          <div>
+            <Label className="text-slate-500 text-xs uppercase mb-2 block">Site Address</Label>
+            <div className="p-3 bg-slate-50 rounded-lg">
+              <p className="text-sm">
+                {project.site?.address || project.siteAddress || 'No address provided'}
+                {(project.site?.city || project.siteCity) && (
+                  <>, {project.site?.city || project.siteCity}</>
+                )}
+                {(project.site?.state || project.siteState) && (
+                  <>, {project.site?.state || project.siteState}</>
+                )}
+                {(project.site?.pincode || project.sitePincode) && (
+                  <> - {project.site?.pincode || project.sitePincode}</>
+                )}
+              </p>
+            </div>
+          </div>
+
+          {/* Status History */}
+          {project.statusHistory && project.statusHistory.length > 0 && (
+            <div>
+              <Label className="text-slate-500 text-xs uppercase mb-2 block">Status History</Label>
+              <div className="space-y-2 max-h-40 overflow-y-auto">
+                {project.statusHistory.slice().reverse().map((history, idx) => (
+                  <div key={idx} className="flex items-center gap-3 p-2 bg-slate-50 rounded text-sm">
+                    <div className="w-2 h-2 rounded-full bg-blue-500" />
+                    <div className="flex-1">
+                      <span className="font-medium">{statusLabels[history.status] || history.status}</span>
+                      {history.notes && <span className="text-slate-500 ml-2">- {history.notes}</span>}
+                    </div>
+                    <span className="text-slate-400 text-xs">
+                      {new Date(history.timestamp).toLocaleDateString()}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* CRM Sync Status */}
+          <div className="p-3 rounded-lg border">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                {project.crmProjectId ? (
+                  <>
+                    <CheckCircle2 className="h-5 w-5 text-emerald-500" />
+                    <span className="text-sm font-medium text-emerald-700">Synced to CRM</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="h-5 w-5 text-amber-500" />
+                    <span className="text-sm font-medium text-amber-700">Not synced to CRM</span>
+                  </>
+                )}
+              </div>
+              {project.crmProjectId && (
+                <span className="text-xs text-slate-500">CRM ID: {project.crmProjectId}</span>
+              )}
+            </div>
+          </div>
+
+          {/* Notes */}
+          {project.notes && (
+            <div>
+              <Label className="text-slate-500 text-xs uppercase mb-2 block">Notes</Label>
+              <p className="text-sm text-slate-600 p-3 bg-slate-50 rounded-lg">{project.notes}</p>
+            </div>
+          )}
+        </div>
+
+        <DialogFooter className="flex-col sm:flex-row gap-2">
+          {project.status === 'approved' && (
+            <Button 
+              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+              onClick={() => {
+                onSendForQuotation(project)
+                onClose()
+              }}
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Create Quotation
+            </Button>
+          )}
+          <Button variant="outline" onClick={onClose}>Close</Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function PaymentDialog({ open, onClose, invoice, onSave, loading }) {
   const [form, setForm] = useState({
     amount: 0, method: 'bank_transfer', reference: '', receivedDate: new Date().toISOString().split('T')[0], paymentNotes: ''
