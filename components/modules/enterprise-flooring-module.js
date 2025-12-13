@@ -1775,8 +1775,228 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     // Filter to show only B2B projects
     const b2bProjects = projects.filter(p => p.segment === 'b2b')
     const projectsWithMaterialReq = b2bProjects.filter(p => 
-      ['material_requisition', 'material_processing', 'material_ready'].includes(p.status)
+      ['material_requisition', 'material_processing', 'material_ready', 'quote_pending', 'quote_sent'].includes(p.status)
     )
+
+    // Helper functions for material requisition
+    const toggleProductSelection = (product) => {
+      setMaterialRequisition(prev => {
+        const existing = prev[product.id]
+        if (existing?.selected) {
+          // Deselect
+          const newState = { ...prev }
+          delete newState[product.id]
+          return newState
+        } else {
+          // Select with default quantity
+          return {
+            ...prev,
+            [product.id]: {
+              product,
+              quantity: 1,
+              selected: true
+            }
+          }
+        }
+      })
+    }
+
+    const updateProductQuantity = (productId, quantity) => {
+      setMaterialRequisition(prev => ({
+        ...prev,
+        [productId]: {
+          ...prev[productId],
+          quantity: Math.max(1, parseInt(quantity) || 1)
+        }
+      }))
+    }
+
+    const getSelectedProducts = () => {
+      return Object.values(materialRequisition).filter(item => item.selected)
+    }
+
+    const getTotalValue = () => {
+      return getSelectedProducts().reduce((sum, item) => {
+        const price = item.product.price || item.product.pricing?.sellingPrice || 0
+        return sum + (price * item.quantity)
+      }, 0)
+    }
+
+    // Load existing material requisition from project
+    const loadExistingRequisition = () => {
+      if (selectedProject?.materialRequisition?.items) {
+        const items = {}
+        selectedProject.materialRequisition.items.forEach(item => {
+          const product = products.find(p => p.id === item.productId)
+          if (product) {
+            items[item.productId] = {
+              product,
+              quantity: item.quantity,
+              selected: true
+            }
+          }
+        })
+        setMaterialRequisition(items)
+      }
+    }
+
+    // Save material requisition to project
+    const saveMaterialRequisition = async () => {
+      try {
+        setLoading(true)
+        const selectedItems = getSelectedProducts()
+        
+        if (selectedItems.length === 0) {
+          toast.error('Please select at least one product')
+          return false
+        }
+
+        const materialData = {
+          items: selectedItems.map(item => ({
+            productId: item.product.id,
+            productName: item.product.name,
+            sku: item.product.sku,
+            quantity: item.quantity,
+            unitPrice: item.product.price || item.product.pricing?.sellingPrice || 0,
+            totalPrice: (item.product.price || item.product.pricing?.sellingPrice || 0) * item.quantity
+          })),
+          totalValue: getTotalValue(),
+          createdAt: new Date().toISOString()
+        }
+
+        const res = await fetch('/api/flooring/enhanced/projects', {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({
+            id: selectedProject.id,
+            materialRequisition: materialData
+          })
+        })
+
+        if (res.ok) {
+          // Update local project state
+          setSelectedProject(prev => ({
+            ...prev,
+            materialRequisition: materialData
+          }))
+          fetchProjects()
+          return true
+        } else {
+          toast.error('Failed to save material requisition')
+          return false
+        }
+      } catch (error) {
+        console.error('Save material requisition error:', error)
+        toast.error('Error saving material requisition')
+        return false
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    // Process order - save materials and update status
+    const handleProcessOrder = async () => {
+      const saved = await saveMaterialRequisition()
+      if (saved) {
+        await handleUpdateProjectStatus(selectedProject.id, 'material_processing')
+        toast.success('Material order is being processed')
+      }
+    }
+
+    // Mark ready - ensure materials are saved
+    const handleMarkReady = async () => {
+      await handleUpdateProjectStatus(selectedProject.id, 'material_ready')
+      toast.success('Materials are ready for dispatch')
+    }
+
+    // Create quote from materials
+    const handleCreateQuoteFromMaterials = async () => {
+      try {
+        setLoading(true)
+        
+        const selectedItems = getSelectedProducts()
+        if (selectedItems.length === 0 && !selectedProject?.materialRequisition?.items?.length) {
+          toast.error('No materials to create quote from')
+          return
+        }
+
+        // Use existing requisition if current selection is empty
+        const items = selectedItems.length > 0 
+          ? selectedItems 
+          : (selectedProject?.materialRequisition?.items || []).map(item => {
+              const product = products.find(p => p.id === item.productId) || { name: item.productName, price: item.unitPrice }
+              return { product, quantity: item.quantity, selected: true }
+            })
+
+        // Calculate totals
+        const subtotal = items.reduce((sum, item) => {
+          const price = item.product?.price || item.product?.pricing?.sellingPrice || item.unitPrice || 0
+          return sum + (price * item.quantity)
+        }, 0)
+
+        // Create the quote
+        const quoteData = {
+          projectId: selectedProject.id,
+          projectNumber: selectedProject.projectNumber,
+          customerId: selectedProject.customerId,
+          customerName: selectedProject.customerName,
+          customer: {
+            id: selectedProject.customerId,
+            name: selectedProject.customerName,
+            email: selectedProject.customerEmail || '',
+            phone: selectedProject.customerPhone || ''
+          },
+          items: items.map(item => ({
+            productId: item.product?.id || item.productId,
+            name: item.product?.name || item.productName,
+            sku: item.product?.sku || item.sku || '',
+            description: item.product?.description || '',
+            quantity: item.quantity,
+            unit: item.product?.unit || 'sqft',
+            unitPrice: item.product?.price || item.product?.pricing?.sellingPrice || item.unitPrice || 0,
+            total: (item.product?.price || item.product?.pricing?.sellingPrice || item.unitPrice || 0) * item.quantity
+          })),
+          subtotal,
+          taxRate: 18,
+          taxAmount: subtotal * 0.18,
+          total: subtotal * 1.18,
+          status: 'draft',
+          validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+          notes: `Material requisition for B2B project ${selectedProject.projectNumber}`
+        }
+
+        const res = await fetch('/api/flooring/enhanced/quotes', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(quoteData)
+        })
+
+        if (res.ok) {
+          const newQuote = await res.json()
+          
+          // Update project status
+          await handleUpdateProjectStatus(selectedProject.id, 'quote_pending')
+          
+          // Refresh quotes and switch to quotes tab
+          await fetchQuotes()
+          setActiveTab('quotes')
+          toast.success('Quote created successfully!')
+          
+          // Open the quote for viewing/editing
+          if (newQuote.data || newQuote.quote) {
+            setDialogOpen({ type: 'view_quote', data: newQuote.data || newQuote.quote || newQuote })
+          }
+        } else {
+          const error = await res.json()
+          toast.error(error.error || 'Failed to create quote')
+        }
+      } catch (error) {
+        console.error('Create quote error:', error)
+        toast.error('Error creating quote')
+      } finally {
+        setLoading(false)
+      }
+    }
 
     return (
       <div className="space-y-4">
@@ -1810,12 +2030,32 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     <div 
                       key={project.id}
                       className={`p-4 border rounded-lg cursor-pointer transition-all hover:border-purple-500 hover:bg-purple-50 ${selectedProject?.id === project.id ? 'border-purple-500 bg-purple-50' : ''}`}
-                      onClick={() => setSelectedProject(project)}
+                      onClick={() => {
+                        setSelectedProject(project)
+                        setMaterialRequisition({}) // Reset selection
+                        // Load existing requisition after setting project
+                        if (project.materialRequisition?.items) {
+                          const items = {}
+                          project.materialRequisition.items.forEach(item => {
+                            const prod = products.find(p => p.id === item.productId)
+                            if (prod) {
+                              items[item.productId] = { product: prod, quantity: item.quantity, selected: true }
+                            }
+                          })
+                          setTimeout(() => setMaterialRequisition(items), 0)
+                        }
+                      }}
                     >
                       <div className="flex items-center justify-between">
                         <div>
                           <p className="font-medium">{project.projectNumber}</p>
                           <p className="text-sm text-muted-foreground">{project.customerName || project.name}</p>
+                          {project.materialRequisition?.items?.length > 0 && (
+                            <p className="text-xs text-purple-600 mt-1">
+                              <Package className="h-3 w-3 inline mr-1" />
+                              {project.materialRequisition.items.length} items • ₹{(project.materialRequisition.totalValue || 0).toLocaleString()}
+                            </p>
+                          )}
                         </div>
                         <div className="flex items-center gap-2">
                           <Badge className={ProjectStatusB2B[project.status]?.color || 'bg-slate-100'}>
@@ -1852,7 +2092,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     </CardTitle>
                     <CardDescription>Material requisition for dealer</CardDescription>
                   </div>
-                  <Button variant="outline" size="sm" onClick={() => setSelectedProject(null)}>
+                  <Button variant="outline" size="sm" onClick={() => { setSelectedProject(null); setMaterialRequisition({}) }}>
                     <X className="h-4 w-4 mr-1" /> Change Project
                   </Button>
                 </div>
@@ -1866,75 +2106,155 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     </Badge>
                   </div>
                   <div className="p-3 bg-slate-50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Estimated Value</p>
-                    <p className="font-semibold text-emerald-600">₹{(selectedProject.estimatedValue || 0).toLocaleString()}</p>
+                    <p className="text-sm text-muted-foreground">Selected Items Value</p>
+                    <p className="font-semibold text-emerald-600">₹{getTotalValue().toLocaleString()}</p>
                   </div>
                   <div className="p-3 bg-slate-50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Flooring Type</p>
-                    <p className="font-medium capitalize">{selectedProject.flooringType?.replace('_', ' ') || '-'}</p>
+                    <p className="text-sm text-muted-foreground">Items Selected</p>
+                    <p className="font-medium">{getSelectedProducts().length} products</p>
                   </div>
                 </div>
 
-                {/* Product Selection for Material */}
-                <div className="space-y-4">
-                  <h4 className="font-medium flex items-center gap-2">
-                    <Package className="h-4 w-4" /> Select Products
-                  </h4>
-                  <div className="border rounded-lg p-4">
-                    {products.length > 0 ? (
-                      <div className="grid gap-2 max-h-60 overflow-y-auto">
-                        {products.slice(0, 10).map(product => (
-                          <div key={product.id} className="flex items-center justify-between p-2 border rounded hover:bg-slate-50">
-                            <div className="flex items-center gap-3">
-                              <Checkbox id={`prod-${product.id}`} />
-                              <div>
-                                <p className="font-medium text-sm">{product.name}</p>
-                                <p className="text-xs text-muted-foreground">{product.sku} • ₹{product.price}/unit</p>
-                              </div>
-                            </div>
-                            <Input className="w-20 h-8" type="number" placeholder="Qty" min="1" />
+                {/* Existing Material Requisition Display */}
+                {selectedProject.materialRequisition?.items?.length > 0 && (
+                  <div className="mb-6 p-4 border-2 border-purple-200 bg-purple-50 rounded-lg">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="font-medium text-purple-800 flex items-center gap-2">
+                        <ClipboardList className="h-4 w-4" /> Saved Material Requisition
+                      </h4>
+                      <Badge variant="outline" className="text-purple-700">
+                        ₹{(selectedProject.materialRequisition.totalValue || 0).toLocaleString()}
+                      </Badge>
+                    </div>
+                    <div className="space-y-2">
+                      {selectedProject.materialRequisition.items.map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-2 bg-white rounded border">
+                          <div>
+                            <p className="font-medium text-sm">{item.productName}</p>
+                            <p className="text-xs text-muted-foreground">{item.sku}</p>
                           </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-center py-4 text-muted-foreground">No products available</p>
-                    )}
+                          <div className="text-right">
+                            <p className="font-medium">Qty: {item.quantity}</p>
+                            <p className="text-sm text-emerald-600">₹{item.totalPrice?.toLocaleString()}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {/* Product Selection for Material - Only show for requisition/processing status */}
+                {['material_requisition', 'material_processing'].includes(selectedProject.status) && (
+                  <div className="space-y-4">
+                    <h4 className="font-medium flex items-center gap-2">
+                      <Package className="h-4 w-4" /> Select Products for Requisition
+                    </h4>
+                    <div className="border rounded-lg p-4">
+                      {products.length > 0 ? (
+                        <div className="grid gap-2 max-h-80 overflow-y-auto">
+                          {products.map(product => {
+                            const isSelected = materialRequisition[product.id]?.selected
+                            const quantity = materialRequisition[product.id]?.quantity || 1
+                            const price = product.price || product.pricing?.sellingPrice || 0
+                            
+                            return (
+                              <div 
+                                key={product.id} 
+                                className={`flex items-center justify-between p-3 border rounded transition-all ${isSelected ? 'border-purple-500 bg-purple-50' : 'hover:bg-slate-50'}`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <Checkbox 
+                                    id={`prod-${product.id}`}
+                                    checked={isSelected}
+                                    onCheckedChange={() => toggleProductSelection(product)}
+                                  />
+                                  <div>
+                                    <p className="font-medium text-sm">{product.name}</p>
+                                    <p className="text-xs text-muted-foreground">{product.sku} • ₹{price}/{product.unit || 'unit'}</p>
+                                  </div>
+                                </div>
+                                <div className="flex items-center gap-3">
+                                  {isSelected && (
+                                    <>
+                                      <Input 
+                                        className="w-20 h-8" 
+                                        type="number" 
+                                        min="1"
+                                        value={quantity}
+                                        onChange={(e) => updateProductQuantity(product.id, e.target.value)}
+                                      />
+                                      <span className="text-sm font-medium text-emerald-600 w-24 text-right">
+                                        ₹{(price * quantity).toLocaleString()}
+                                      </span>
+                                    </>
+                                  )}
+                                </div>
+                              </div>
+                            )
+                          })}
+                        </div>
+                      ) : (
+                        <p className="text-center py-4 text-muted-foreground">No products available. Add products first.</p>
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 mt-6">
                   {selectedProject.status === 'material_requisition' && (
                     <Button 
                       className="bg-purple-600 hover:bg-purple-700"
-                      onClick={async () => {
-                        await handleUpdateProjectStatus(selectedProject.id, 'material_processing')
-                        toast.success('Material order is being processed')
-                      }}
+                      disabled={loading || getSelectedProducts().length === 0}
+                      onClick={handleProcessOrder}
                     >
-                      <ClipboardList className="h-4 w-4 mr-2" /> Process Order
+                      {loading ? (
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <ClipboardList className="h-4 w-4 mr-2" />
+                      )}
+                      Process Order ({getSelectedProducts().length} items)
                     </Button>
                   )}
                   {selectedProject.status === 'material_processing' && (
-                    <Button 
-                      className="bg-teal-600 hover:bg-teal-700"
-                      onClick={async () => {
-                        await handleUpdateProjectStatus(selectedProject.id, 'material_ready')
-                        toast.success('Material is ready for dispatch')
-                      }}
-                    >
-                      <CheckCircle2 className="h-4 w-4 mr-2" /> Mark Ready
-                    </Button>
+                    <>
+                      <Button 
+                        variant="outline"
+                        disabled={loading}
+                        onClick={saveMaterialRequisition}
+                      >
+                        <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+                        Update Materials
+                      </Button>
+                      <Button 
+                        className="bg-teal-600 hover:bg-teal-700"
+                        disabled={loading}
+                        onClick={handleMarkReady}
+                      >
+                        <CheckCircle2 className="h-4 w-4 mr-2" /> Mark Materials Ready
+                      </Button>
+                    </>
                   )}
                   {selectedProject.status === 'material_ready' && (
                     <Button 
                       className="bg-emerald-600 hover:bg-emerald-700"
-                      onClick={() => {
-                        handleUpdateProjectStatus(selectedProject.id, 'quote_pending')
-                        handleSendForQuotation(selectedProject)
-                      }}
+                      disabled={loading}
+                      onClick={handleCreateQuoteFromMaterials}
                     >
-                      <FileText className="h-4 w-4 mr-2" /> Send for Quote
+                      {loading ? (
+                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      ) : (
+                        <FileText className="h-4 w-4 mr-2" />
+                      )}
+                      Create Quote from Materials
+                    </Button>
+                  )}
+                  {['quote_pending', 'quote_sent'].includes(selectedProject.status) && (
+                    <Button 
+                      variant="outline"
+                      onClick={() => setActiveTab('quotes')}
+                    >
+                      <FileText className="h-4 w-4 mr-2" /> View Quotes
                     </Button>
                   )}
                 </div>
