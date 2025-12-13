@@ -854,6 +854,269 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }
 
+  // Top-level Quote Status Change handler
+  const handleQuoteStatusChange = async (quoteId, newStatus, note = '') => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/flooring/enhanced/quotes', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          id: quoteId,
+          status: newStatus,
+          statusNote: note,
+          statusChangedAt: new Date().toISOString()
+        })
+      })
+      if (res.ok) {
+        fetchQuotes()
+        setDialogOpen({ type: null, data: null })
+        toast.success(`Quote ${newStatus === 'approved' ? 'approved' : newStatus === 'rejected' ? 'rejected' : 'updated'} successfully`)
+      }
+    } catch (error) {
+      toast.error('Failed to update quote status')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Top-level Create Invoice from Quote
+  const handleCreateInvoiceFromQuote = async (quote) => {
+    try {
+      setLoading(true)
+      const invoiceData = {
+        quoteId: quote.id,
+        quoteNumber: quote.quoteNumber,
+        projectId: quote.projectId,
+        projectNumber: quote.projectNumber,
+        customer: quote.customer,
+        site: quote.site,
+        items: quote.items,
+        subtotal: quote.subtotal,
+        discountType: quote.discountType,
+        discountValue: quote.discountValue,
+        discountAmount: quote.discountAmount,
+        taxableAmount: quote.taxableAmount,
+        cgstRate: quote.cgstRate,
+        cgstAmount: quote.cgstAmount,
+        sgstRate: quote.sgstRate,
+        sgstAmount: quote.sgstAmount,
+        igstRate: quote.igstRate,
+        igstAmount: quote.igstAmount,
+        totalTax: quote.totalTax,
+        grandTotal: quote.grandTotal,
+        dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+        notes: `Invoice generated from Quote ${quote.quoteNumber}`
+      }
+
+      const res = await fetch('/api/flooring/enhanced/invoices', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(invoiceData)
+      })
+
+      if (res.ok) {
+        // Update quote status to invoiced
+        await handleQuoteStatusChange(quote.id, 'invoiced')
+        
+        // Update project status if exists
+        if (quote.projectId) {
+          await handleUpdateProjectStatus(quote.projectId, 'invoice_sent')
+        }
+        
+        fetchInvoices()
+        setDialogOpen({ type: null, data: null })
+        setActiveTab('invoices')
+        toast.success('Invoice created successfully!')
+      } else {
+        toast.error('Failed to create invoice')
+      }
+    } catch (error) {
+      toast.error('Error creating invoice')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Top-level Download Quote (for dialogs)
+  const handleDownloadQuote = (quote) => {
+    const QuoteStatusConfigLocal = {
+      draft: { label: 'Draft', color: 'bg-slate-100 text-slate-700' },
+      sent: { label: 'Sent', color: 'bg-blue-100 text-blue-700' },
+      approved: { label: 'Approved', color: 'bg-emerald-100 text-emerald-700' },
+      rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700' },
+      revised: { label: 'Needs Revision', color: 'bg-amber-100 text-amber-700' },
+      invoiced: { label: 'Invoiced', color: 'bg-purple-100 text-purple-700' },
+      expired: { label: 'Expired', color: 'bg-gray-100 text-gray-700' }
+    }
+    
+    const quoteHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Quote ${quote.quoteNumber}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
+          .header { display: flex; justify-content: space-between; border-bottom: 3px solid #2563eb; padding-bottom: 20px; margin-bottom: 20px; }
+          .logo { font-size: 24px; font-weight: bold; color: #2563eb; }
+          .quote-title { font-size: 28px; color: #1e40af; text-align: right; }
+          .quote-number { font-size: 14px; color: #666; }
+          .section { margin: 20px 0; }
+          .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+          .info-box { background: #f8fafc; padding: 15px; border-radius: 8px; }
+          .info-label { font-size: 12px; color: #666; }
+          .info-value { font-size: 14px; font-weight: 500; color: #333; }
+          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+          th { background: #1e40af; color: white; padding: 12px; text-align: left; font-size: 12px; }
+          td { padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+          .text-right { text-align: right; }
+          .totals { margin-left: auto; width: 300px; }
+          .totals-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
+          .totals-row.grand { background: #1e40af; color: white; padding: 12px; margin: 0 -12px; font-size: 16px; font-weight: bold; }
+          .footer { margin-top: 40px; text-align: center; color: #666; font-size: 12px; border-top: 1px solid #ddd; padding-top: 20px; }
+          .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+          .status-approved { background: #d1fae5; color: #059669; }
+          .status-sent { background: #dbeafe; color: #2563eb; }
+          .status-draft { background: #f1f5f9; color: #475569; }
+          .terms { background: #fef3c7; padding: 15px; border-radius: 8px; margin-top: 20px; font-size: 12px; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div>
+            <div class="logo">🪵 ${moduleSettings?.companyName || 'FloorCraft Pro'}</div>
+            <p style="color: #666; font-size: 12px;">Professional Flooring Solutions</p>
+            ${moduleSettings?.gstin ? `<p style="color: #666; font-size: 11px;">GSTIN: ${moduleSettings.gstin}</p>` : ''}
+          </div>
+          <div style="text-align: right;">
+            <div class="quote-title">QUOTATION</div>
+            <div class="quote-number">${quote.quoteNumber}</div>
+            <span class="status-badge status-${quote.status}">${QuoteStatusConfigLocal[quote.status]?.label || quote.status}</span>
+          </div>
+        </div>
+
+        <div class="grid-2">
+          <div class="info-box">
+            <div class="info-label" style="font-weight: bold; margin-bottom: 8px;">Customer Details</div>
+            <div class="info-label">Name</div>
+            <div class="info-value">${quote.customer?.name || '-'}</div>
+            <div class="info-label" style="margin-top: 8px;">Email</div>
+            <div class="info-value">${quote.customer?.email || '-'}</div>
+            <div class="info-label" style="margin-top: 8px;">Phone</div>
+            <div class="info-value">${quote.customer?.phone || '-'}</div>
+          </div>
+          <div class="info-box">
+            <div class="info-label" style="font-weight: bold; margin-bottom: 8px;">Quote Information</div>
+            <div class="info-label">Date</div>
+            <div class="info-value">${new Date(quote.createdAt).toLocaleDateString()}</div>
+            <div class="info-label" style="margin-top: 8px;">Valid Until</div>
+            <div class="info-value">${new Date(quote.validUntil).toLocaleDateString()}</div>
+            <div class="info-label" style="margin-top: 8px;">Project</div>
+            <div class="info-value">${quote.projectNumber || '-'}</div>
+          </div>
+        </div>
+
+        ${quote.site?.address ? `
+        <div class="section">
+          <div class="info-label" style="font-weight: bold;">Site Address</div>
+          <p>${quote.site.address}${quote.site.city ? ', ' + quote.site.city : ''}${quote.site.state ? ', ' + quote.site.state : ''}</p>
+        </div>
+        ` : ''}
+
+        <table>
+          <thead>
+            <tr>
+              <th style="width: 40px;">#</th>
+              <th>Description</th>
+              <th style="width: 80px;">Qty</th>
+              <th style="width: 60px;">Unit</th>
+              <th style="width: 100px;" class="text-right">Rate</th>
+              <th style="width: 120px;" class="text-right">Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(quote.items || []).map((item, idx) => `
+              <tr>
+                <td>${idx + 1}</td>
+                <td>
+                  <strong>${item.name || item.description || '-'}</strong>
+                  ${item.sku ? `<br><span style="color: #666; font-size: 11px;">SKU: ${item.sku}</span>` : ''}
+                </td>
+                <td>${item.quantity || item.area || 0}</td>
+                <td>${item.unit || 'sqft'}</td>
+                <td class="text-right">₹${(item.unitPrice || item.rate || 0).toLocaleString()}</td>
+                <td class="text-right">₹${(item.totalPrice || item.total || 0).toLocaleString()}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+
+        <div class="totals">
+          <div class="totals-row">
+            <span>Subtotal</span>
+            <span>₹${(quote.subtotal || 0).toLocaleString()}</span>
+          </div>
+          ${quote.discountAmount > 0 ? `
+          <div class="totals-row">
+            <span>Discount (${quote.discountType === 'percentage' ? quote.discountValue + '%' : 'Fixed'})</span>
+            <span>-₹${(quote.discountAmount || 0).toLocaleString()}</span>
+          </div>
+          ` : ''}
+          ${quote.cgstAmount > 0 ? `
+          <div class="totals-row">
+            <span>CGST (${quote.cgstRate}%)</span>
+            <span>₹${(quote.cgstAmount || 0).toLocaleString()}</span>
+          </div>
+          ` : ''}
+          ${quote.sgstAmount > 0 ? `
+          <div class="totals-row">
+            <span>SGST (${quote.sgstRate}%)</span>
+            <span>₹${(quote.sgstAmount || 0).toLocaleString()}</span>
+          </div>
+          ` : ''}
+          ${quote.igstAmount > 0 ? `
+          <div class="totals-row">
+            <span>IGST (${quote.igstRate}%)</span>
+            <span>₹${(quote.igstAmount || 0).toLocaleString()}</span>
+          </div>
+          ` : ''}
+          <div class="totals-row grand">
+            <span>Grand Total</span>
+            <span>₹${(quote.grandTotal || 0).toLocaleString()}</span>
+          </div>
+        </div>
+
+        ${quote.notes ? `
+        <div class="terms">
+          <strong>Notes & Terms:</strong><br>
+          ${quote.notes}
+        </div>
+        ` : ''}
+
+        ${moduleSettings?.bankDetails?.bankName ? `
+        <div class="section" style="margin-top: 30px;">
+          <div class="info-label" style="font-weight: bold;">Bank Details</div>
+          <p style="margin: 5px 0;">Bank: ${moduleSettings.bankDetails.bankName}</p>
+          <p style="margin: 5px 0;">Account: ${moduleSettings.bankDetails.accountNumber}</p>
+          <p style="margin: 5px 0;">IFSC: ${moduleSettings.bankDetails.ifscCode}</p>
+          ${moduleSettings.bankDetails.upiId ? `<p style="margin: 5px 0;">UPI: ${moduleSettings.bankDetails.upiId}</p>` : ''}
+        </div>
+        ` : ''}
+
+        <div class="footer">
+          <p>Thank you for your business!</p>
+          <p>This is a computer-generated quotation.</p>
+        </div>
+      </body>
+      </html>
+    `
+
+    const printWindow = window.open('', '_blank')
+    printWindow.document.write(quoteHtml)
+    printWindow.document.close()
+    printWindow.print()
+  }
+
   // Delete quote
   const handleDeleteQuote = async (quoteId) => {
     if (!confirm('Are you sure you want to delete this quote?')) return
