@@ -1,10 +1,6 @@
 import { NextResponse } from 'next/server'
-import { getCollection, Collections, sanitizeDocuments } from '@/lib/db/mongodb'
-
-// Helper for success response
-const successResponse = (data) => NextResponse.json({ success: true, data })
-const errorResponse = (message, status = 400) => 
-  NextResponse.json({ success: false, error: message }, { status })
+import { getCollection, Collections } from '@/lib/db/mongodb'
+import { successResponse, errorResponse, sanitizeDocuments } from '@/lib/utils/response'
 
 // GET - Fetch public landing page data (pricing plans and modules)
 export async function GET() {
