@@ -227,6 +227,7 @@ export function Integrations({ client }) {
     try {
       const result = await api.generateWebhook(integration.name)
       setWebhookUrl(result.webhookUrl)
+      setWebhookSecret(result.secret || '')
       toast.success('Webhook generated successfully')
       fetchIntegrations()
     } catch (error) {
