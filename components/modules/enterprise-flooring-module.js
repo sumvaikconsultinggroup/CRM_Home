@@ -1334,8 +1334,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   <tr>
                     <TableHeader>Project</TableHeader>
                     <TableHeader>Customer</TableHeader>
+                    <TableHeader>Segment</TableHeader>
                     <TableHeader>Type</TableHeader>
-                    <TableHeader>Area</TableHeader>
                     <TableHeader>Value</TableHeader>
                     <TableHeader>Status</TableHeader>
                     <TableHeader>Actions</TableHeader>
@@ -1356,14 +1356,16 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                         </div>
                       </td>
                       <td className="px-4 py-3">
-                        <p className="text-sm">{project.customerName || '-'}</p>
+                        <p className="text-sm font-medium">{project.customerName || '-'}</p>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge className={project.segment === 'b2b' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}>
+                          {project.segment === 'b2b' ? 'B2B (Dealer)' : 'B2C (Consumer)'}
+                        </Badge>
                       </td>
                       <td className="px-4 py-3">
                         <Badge variant="outline" className="capitalize">{project.type}</Badge>
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="text-sm font-medium">{project.totalArea || 0} sqft</p>
-                        <p className="text-xs text-slate-500">{project.roomCount || 0} rooms</p>
+                        <p className="text-xs text-slate-500 mt-1">{project.totalArea || 0} sqft</p>
                       </td>
                       <td className="px-4 py-3">
                         <p className="font-semibold text-emerald-600">₹{(project.estimatedValue || 0).toLocaleString()}</p>
@@ -1389,15 +1391,14 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
-                          {/* Show "Send for Quotation" button only when project is Approved */}
-                          {project.status === 'approved' && (
-                            <Button 
-                              size="sm" 
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                              onClick={() => handleSendForQuotation(project)}
-                            >
-                              <FileText className="h-4 w-4 mr-1" />
-                              Create Quote
+                          {/* Send to Quote button - available for ALL projects */}
+                          <Button 
+                            size="sm" 
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                            onClick={() => handleSendForQuotation(project)}
+                          >
+                            <FileText className="h-4 w-4 mr-1" />
+                            Quote
                             </Button>
                           )}
                           <Button variant="ghost" size="sm" onClick={() => {
