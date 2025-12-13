@@ -88,7 +88,7 @@ export function WoodenFlooringModule({ client, user }) {
 
   // Fetch functions
   const fetchWithAuth = useCallback(async (url, options = {}) => {
-    const token = localStorage.getItem('auth_token')
+    const token = localStorage.getItem('token')
     const res = await fetch(url, {
       ...options,
       headers: {
