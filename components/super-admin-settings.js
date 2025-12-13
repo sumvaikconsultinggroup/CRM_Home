@@ -805,6 +805,11 @@ export function SuperAdminSettings({ user }) {
           </div>
         </TabsContent>
 
+        {/* Pages Management */}
+        <TabsContent value="pages">
+          <PagesManagement />
+        </TabsContent>
+
         {/* Security Settings */}
         <TabsContent value="security">
           <div className="grid gap-4">
