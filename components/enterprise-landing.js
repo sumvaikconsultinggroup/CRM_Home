@@ -1312,10 +1312,10 @@ export default function EnterpriseLanding({ onLogin }) {
               <Button 
                 size="lg" 
                 onClick={onLogin}
-                className="h-14 px-8 text-lg bg-white/10 hover:bg-white/20 text-white border-2 border-white/30 rounded-xl"
+                className="h-14 px-8 text-lg bg-white hover:bg-gray-100 text-indigo-700 font-semibold border-2 border-white rounded-xl shadow-lg"
               >
                 <Phone className="mr-2 h-5 w-5" />
-                Schedule Demo
+                <span>Schedule Demo</span>
               </Button>
             </div>
             <p className="text-indigo-200 text-sm mt-6">
