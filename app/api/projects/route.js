@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection, Collections } from '@/lib/db/mongodb'
-import { getAuthUser, requireClientAccess } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireClientAccess, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 import { validateProjectData } from '@/lib/utils/validation'
 
@@ -16,9 +16,11 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url)
     const status = searchParams.get('status')
 
-    const projectsCollection = await getCollection(Collections.PROJECTS)
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const projectsCollection = db.collection('projects')
 
-    const filter = { clientId: user.clientId }
+    const filter = {}
     if (status) filter.status = status
 
     const projects = await projectsCollection
@@ -48,7 +50,9 @@ export async function POST(request) {
       return errorResponse(validation.message, 400)
     }
 
-    const projectsCollection = await getCollection(Collections.PROJECTS)
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const projectsCollection = db.collection('projects')
 
     const project = {
       id: uuidv4(),

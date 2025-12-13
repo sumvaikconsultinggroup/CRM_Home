@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection, Collections } from '@/lib/db/mongodb'
-import { getAuthUser, requireClientAccess } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireClientAccess, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 import { validateLeadData } from '@/lib/utils/validation'
 
@@ -18,9 +18,13 @@ export async function GET(request) {
     const source = searchParams.get('source')
     const limit = parseInt(searchParams.get('limit')) || 100
 
-    const leadsCollection = await getCollection(Collections.LEADS)
+    // Get client-specific database
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const leadsCollection = db.collection('leads')
 
-    const filter = { clientId: user.clientId }
+    // No need to filter by clientId - the entire database is for this client
+    const filter = {}
     if (status) filter.status = status
     if (source) filter.source = source
 
@@ -52,11 +56,14 @@ export async function POST(request) {
       return errorResponse(validation.message, 400)
     }
 
-    const leadsCollection = await getCollection(Collections.LEADS)
+    // Get client-specific database
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const leadsCollection = db.collection('leads')
 
     const lead = {
       id: uuidv4(),
-      clientId: user.clientId,
+      clientId: user.clientId, // Keep for reference
       ...body,
       status: body.status || 'new',
       value: body.value || 0,

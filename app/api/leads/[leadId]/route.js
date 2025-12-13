@@ -1,5 +1,5 @@
-import { getCollection, Collections } from '@/lib/db/mongodb'
-import { getAuthUser, requireClientAccess } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireClientAccess, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocument } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -11,10 +11,14 @@ export async function GET(request, { params }) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
-    const leadId = params.leadId
-    const leadsCollection = await getCollection(Collections.LEADS)
+    const { leadId } = await params
 
-    const lead = await leadsCollection.findOne({ id: leadId, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const leadsCollection = db.collection('leads')
+
+    const lead = await leadsCollection.findOne({ id: leadId })
+
     if (!lead) {
       return errorResponse('Lead not found', 404)
     }
@@ -34,20 +38,31 @@ export async function PUT(request, { params }) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
-    const leadId = params.leadId
+    const { leadId } = await params
     const body = await request.json()
-    const leadsCollection = await getCollection(Collections.LEADS)
 
-    const result = await leadsCollection.updateOne(
-      { id: leadId, clientId: user.clientId },
-      { $set: { ...body, updatedAt: new Date() } }
-    )
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const leadsCollection = db.collection('leads')
 
-    if (result.matchedCount === 0) {
+    const existingLead = await leadsCollection.findOne({ id: leadId })
+    if (!existingLead) {
       return errorResponse('Lead not found', 404)
     }
 
-    return successResponse({ message: 'Lead updated successfully' })
+    const updatedLead = {
+      ...existingLead,
+      ...body,
+      id: leadId, // Preserve ID
+      updatedAt: new Date()
+    }
+
+    await leadsCollection.updateOne(
+      { id: leadId },
+      { $set: updatedLead }
+    )
+
+    return successResponse(sanitizeDocument(updatedLead))
   } catch (error) {
     console.error('Lead PUT API Error:', error)
     if (error.message === 'Unauthorized' || error.message.includes('Forbidden')) {
@@ -62,10 +77,13 @@ export async function DELETE(request, { params }) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
-    const leadId = params.leadId
-    const leadsCollection = await getCollection(Collections.LEADS)
+    const { leadId } = await params
 
-    const result = await leadsCollection.deleteOne({ id: leadId, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const leadsCollection = db.collection('leads')
+
+    const result = await leadsCollection.deleteOne({ id: leadId })
 
     if (result.deletedCount === 0) {
       return errorResponse('Lead not found', 404)

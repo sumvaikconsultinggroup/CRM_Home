@@ -1,5 +1,5 @@
-import { getCollection, Collections } from '@/lib/db/mongodb'
-import { getAuthUser, requireClientAccess } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireClientAccess, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocument } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -11,10 +11,14 @@ export async function GET(request, { params }) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
-    const taskId = params.taskId
-    const tasksCollection = await getCollection(Collections.TASKS)
+    const { taskId } = await params
 
-    const task = await tasksCollection.findOne({ id: taskId, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const tasksCollection = db.collection('tasks')
+
+    const task = await tasksCollection.findOne({ id: taskId })
+
     if (!task) {
       return errorResponse('Task not found', 404)
     }
@@ -34,20 +38,31 @@ export async function PUT(request, { params }) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
-    const taskId = params.taskId
+    const { taskId } = await params
     const body = await request.json()
-    const tasksCollection = await getCollection(Collections.TASKS)
 
-    const result = await tasksCollection.updateOne(
-      { id: taskId, clientId: user.clientId },
-      { $set: { ...body, updatedAt: new Date() } }
-    )
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const tasksCollection = db.collection('tasks')
 
-    if (result.matchedCount === 0) {
+    const existingTask = await tasksCollection.findOne({ id: taskId })
+    if (!existingTask) {
       return errorResponse('Task not found', 404)
     }
 
-    return successResponse({ message: 'Task updated successfully' })
+    const updatedTask = {
+      ...existingTask,
+      ...body,
+      id: taskId,
+      updatedAt: new Date()
+    }
+
+    await tasksCollection.updateOne(
+      { id: taskId },
+      { $set: updatedTask }
+    )
+
+    return successResponse(sanitizeDocument(updatedTask))
   } catch (error) {
     console.error('Task PUT API Error:', error)
     if (error.message === 'Unauthorized' || error.message.includes('Forbidden')) {
@@ -62,10 +77,13 @@ export async function DELETE(request, { params }) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
-    const taskId = params.taskId
-    const tasksCollection = await getCollection(Collections.TASKS)
+    const { taskId } = await params
 
-    const result = await tasksCollection.deleteOne({ id: taskId, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const tasksCollection = db.collection('tasks')
+
+    const result = await tasksCollection.deleteOne({ id: taskId })
 
     if (result.deletedCount === 0) {
       return errorResponse('Task not found', 404)

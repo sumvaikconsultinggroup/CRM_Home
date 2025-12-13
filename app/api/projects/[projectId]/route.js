@@ -1,5 +1,5 @@
-import { getCollection, Collections } from '@/lib/db/mongodb'
-import { getAuthUser, requireClientAccess } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireClientAccess, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocument } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -11,22 +11,19 @@ export async function GET(request, { params }) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
-    const projectId = params.projectId
-    const projectsCollection = await getCollection(Collections.PROJECTS)
-    const tasksCollection = await getCollection(Collections.TASKS)
+    const { projectId } = await params
 
-    const project = await projectsCollection.findOne({ id: projectId, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const projectsCollection = db.collection('projects')
+
+    const project = await projectsCollection.findOne({ id: projectId })
+
     if (!project) {
       return errorResponse('Project not found', 404)
     }
 
-    // Get associated tasks
-    const tasks = await tasksCollection.find({ projectId, clientId: user.clientId }).toArray()
-
-    return successResponse({
-      ...sanitizeDocument(project),
-      tasks: tasks.map(t => sanitizeDocument(t))
-    })
+    return successResponse(sanitizeDocument(project))
   } catch (error) {
     console.error('Project GET API Error:', error)
     if (error.message === 'Unauthorized' || error.message.includes('Forbidden')) {
@@ -41,20 +38,31 @@ export async function PUT(request, { params }) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
-    const projectId = params.projectId
+    const { projectId } = await params
     const body = await request.json()
-    const projectsCollection = await getCollection(Collections.PROJECTS)
 
-    const result = await projectsCollection.updateOne(
-      { id: projectId, clientId: user.clientId },
-      { $set: { ...body, updatedAt: new Date() } }
-    )
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const projectsCollection = db.collection('projects')
 
-    if (result.matchedCount === 0) {
+    const existingProject = await projectsCollection.findOne({ id: projectId })
+    if (!existingProject) {
       return errorResponse('Project not found', 404)
     }
 
-    return successResponse({ message: 'Project updated successfully' })
+    const updatedProject = {
+      ...existingProject,
+      ...body,
+      id: projectId,
+      updatedAt: new Date()
+    }
+
+    await projectsCollection.updateOne(
+      { id: projectId },
+      { $set: updatedProject }
+    )
+
+    return successResponse(sanitizeDocument(updatedProject))
   } catch (error) {
     console.error('Project PUT API Error:', error)
     if (error.message === 'Unauthorized' || error.message.includes('Forbidden')) {
@@ -69,18 +77,17 @@ export async function DELETE(request, { params }) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
-    const projectId = params.projectId
-    const projectsCollection = await getCollection(Collections.PROJECTS)
-    const tasksCollection = await getCollection(Collections.TASKS)
+    const { projectId } = await params
 
-    const result = await projectsCollection.deleteOne({ id: projectId, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const projectsCollection = db.collection('projects')
+
+    const result = await projectsCollection.deleteOne({ id: projectId })
 
     if (result.deletedCount === 0) {
       return errorResponse('Project not found', 404)
     }
-
-    // Also delete associated tasks
-    await tasksCollection.deleteMany({ projectId, clientId: user.clientId })
 
     return successResponse({ message: 'Project deleted successfully' })
   } catch (error) {
