@@ -597,10 +597,10 @@ export default function EnterpriseLanding({ onLogin }) {
                 size="lg" 
                 variant="outline"
                 onClick={onLogin}
-                className="w-full sm:w-auto h-14 px-8 text-lg border-2 border-gray-300 hover:border-gray-400 rounded-xl bg-white text-gray-700"
+                className="w-full sm:w-auto h-14 px-8 text-lg border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 rounded-xl bg-white text-gray-900 font-semibold"
               >
-                <Play className="mr-2 h-5 w-5" />
-                Schedule Demo
+                <Play className="mr-2 h-5 w-5 fill-gray-700" />
+                <span className="text-gray-900">Schedule Demo</span>
               </Button>
             </motion.div>
 
