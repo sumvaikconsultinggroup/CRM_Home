@@ -1099,8 +1099,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                         <Layers className="h-12 w-12 text-slate-300" />
                       </div>
                     )}
-                    <Badge className={`absolute top-2 right-2 ${FlooringCategories[product.category]?.color || 'bg-slate-100'}`}>
-                      {FlooringCategories[product.category]?.label || product.category}
+                    <Badge className={`absolute top-2 right-2 ${categoryColorById.get(product.categoryId) || categoryColorById.get(product.category) || 'bg-slate-100 text-slate-700'}`}>
+                      {categoryLabelById.get(product.categoryId) || categoryLabelById.get(product.category) || product.category || 'Category'}
                     </Badge>
                   </div>
                   <CardContent className="p-4">
