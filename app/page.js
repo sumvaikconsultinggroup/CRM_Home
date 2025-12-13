@@ -44,7 +44,7 @@ import { LoginPage, RegisterPage, ForgotPasswordPage } from '@/components/auth-u
 import { TeamChat } from '@/components/team-chat'
 import { EnhancedDashboard } from '@/components/enhanced-dashboard'
 import { CalendarNotes } from '@/components/calendar-notes'
-import { Integrations } from '@/components/integrations'
+import { IntegrationHub } from '@/components/integration-hub'
 import { EnhancedSuperAdminOverview } from '@/components/enhanced-super-admin-overview'
 import { EnterpriseClientManagement } from '@/components/enterprise-client-management'
 import { MeeAgent, MeePreviewCard } from '@/components/mee-agent'
