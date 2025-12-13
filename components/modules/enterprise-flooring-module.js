@@ -3285,66 +3285,89 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         {/* Rooms Grid */}
         {rooms.length > 0 ? (
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {rooms.map(room => (
-              <Card key={room.id} className="overflow-hidden">
-                <CardContent className="p-4">
-                  <div className="flex items-start justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 rounded-lg bg-blue-100">
-                        <Home className="h-5 w-5 text-blue-600" />
+            {rooms.map(room => {
+              const appTypeIcons = {
+                flooring: { icon: '🪵', color: 'bg-amber-100', textColor: 'text-amber-700' },
+                cladding: { icon: '🧱', color: 'bg-slate-100', textColor: 'text-slate-700' },
+                decking: { icon: '🏡', color: 'bg-green-100', textColor: 'text-green-700' },
+                ceiling: { icon: '⬆️', color: 'bg-blue-100', textColor: 'text-blue-700' },
+                staircase: { icon: '🪜', color: 'bg-purple-100', textColor: 'text-purple-700' }
+              }
+              const appType = appTypeIcons[room.applicationType] || appTypeIcons.flooring
+              
+              return (
+                <Card key={room.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between mb-3">
+                      <div className="flex items-center gap-3">
+                        <div className={`p-2 rounded-lg ${appType.color}`}>
+                          <span className="text-xl">{appType.icon}</span>
+                        </div>
+                        <div>
+                          <h3 className="font-semibold text-slate-900">{room.roomName}</h3>
+                          <p className="text-sm text-slate-500">{room.roomType?.replace(/_/g, ' ') || 'Room'}</p>
+                        </div>
                       </div>
-                      <div>
-                        <h3 className="font-semibold text-slate-900">{room.roomName}</h3>
-                        <p className="text-sm text-slate-500">{RoomTypes[room.roomType] || room.roomType}</p>
+                      <div className="flex flex-col items-end gap-1">
+                        <Badge variant="outline" className={`text-xs ${appType.textColor}`}>
+                          {room.applicationType || 'Flooring'}
+                        </Badge>
+                        <Badge variant="secondary" className="text-xs">{room.floor || 'Ground'}</Badge>
                       </div>
                     </div>
-                    <Badge variant="outline">{room.floor || 'Ground'}</Badge>
-                  </div>
-                  
-                  <div className="grid grid-cols-3 gap-2 mb-3 text-center">
-                    <div className="p-2 bg-slate-50 rounded-lg">
-                      <p className="text-lg font-bold text-slate-900">{room.dimensions?.length}'</p>
-                      <p className="text-xs text-slate-500">Length</p>
+                    
+                    <div className="grid grid-cols-3 gap-2 mb-3 text-center">
+                      <div className="p-2 bg-slate-50 rounded-lg">
+                        <p className="text-lg font-bold text-slate-900">{room.dimensions?.length || 0}'</p>
+                        <p className="text-xs text-slate-500">{room.applicationType === 'cladding' ? 'Height' : 'Length'}</p>
+                      </div>
+                      <div className="p-2 bg-slate-50 rounded-lg">
+                        <p className="text-lg font-bold text-slate-900">{room.dimensions?.width || 0}'</p>
+                        <p className="text-xs text-slate-500">Width</p>
+                      </div>
+                      <div className={`p-2 rounded-lg ${appType.color}`}>
+                        <p className={`text-lg font-bold ${appType.textColor}`}>{(room.netArea || 0).toFixed(0)}</p>
+                        <p className="text-xs text-slate-500">Sq.ft</p>
+                      </div>
                     </div>
-                    <div className="p-2 bg-slate-50 rounded-lg">
-                      <p className="text-lg font-bold text-slate-900">{room.dimensions?.width}'</p>
-                      <p className="text-xs text-slate-500">Width</p>
-                    </div>
-                    <div className="p-2 bg-blue-50 rounded-lg">
-                      <p className="text-lg font-bold text-blue-600">{(room.netArea || 0).toFixed(0)}</p>
-                      <p className="text-xs text-slate-500">Sq.ft</p>
-                    </div>
-                  </div>
 
-                  {room.obstacles?.length > 0 && (
-                    <p className="text-xs text-amber-600 mb-2">
-                      <AlertTriangle className="h-3 w-3 inline mr-1" />
-                      {room.obstacles.length} obstacle(s) - {room.obstaclesArea?.toFixed(0) || 0} sqft deducted
-                    </p>
-                  )}
+                    {room.obstacles?.length > 0 && (
+                      <p className="text-xs text-amber-600 mb-2">
+                        <AlertTriangle className="h-3 w-3 inline mr-1" />
+                        {room.obstacles.length} obstacle(s) - {room.obstaclesArea?.toFixed(0) || 0} sqft deducted
+                      </p>
+                    )}
+                    
+                    {room.roomSketch && (
+                      <p className="text-xs text-blue-600 mb-2">
+                        <Camera className="h-3 w-3 inline mr-1" />
+                        Layout sketch attached
+                      </p>
+                    )}
 
-                  <div className="flex items-center justify-between pt-3 border-t">
-                    <div className="flex gap-2 text-xs text-slate-500">
-                      <span>{room.doorways || 1} doorway(s)</span>
-                      <span>•</span>
-                      <span>{room.subfloorType || 'Concrete'}</span>
+                    <div className="flex items-center justify-between pt-3 border-t">
+                      <div className="flex gap-2 text-xs text-slate-500">
+                        <span>{room.doorways || 1} doorway(s)</span>
+                        <span>•</span>
+                        <span className="capitalize">{(room.subfloorType || 'Concrete').replace(/_/g, ' ')}</span>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'room', data: room })}>
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => {
+                          if (confirm('Delete this room measurement?')) {
+                            handleDeleteRoom(room.id)
+                          }
+                        }}>
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
                     </div>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'room', data: room })}>
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => {
-                        if (confirm('Delete this room measurement?')) {
-                          handleDeleteRoom(room.id)
-                        }
-                      }}>
-                        <Trash2 className="h-4 w-4 text-red-500" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              )
+            })}
           </div>
         ) : (
           <EmptyState
