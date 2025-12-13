@@ -1399,18 +1399,20 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           >
                             <FileText className="h-4 w-4 mr-1" />
                             Quote
+                          </Button>
+                          {/* Measurements button - only for B2C */}
+                          {project.segment !== 'b2b' && (
+                            <Button variant="ghost" size="sm" onClick={() => {
+                              setSelectedProject(project)
+                              setActiveTab('measurements')
+                            }} title="Measurements">
+                              <Ruler className="h-4 w-4" />
                             </Button>
                           )}
-                          <Button variant="ghost" size="sm" onClick={() => {
-                            setSelectedProject(project)
-                            setActiveTab('measurements')
-                          }}>
-                            <Ruler className="h-4 w-4" />
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'project', data: project })}>
+                          <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'project', data: project })} title="Edit">
                             <Edit className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'view_project', data: project })}>
+                          <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'view_project', data: project })} title="View">
                             <Eye className="h-4 w-4" />
                           </Button>
                         </div>
