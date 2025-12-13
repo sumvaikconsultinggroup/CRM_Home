@@ -5873,33 +5873,19 @@ function RoomMeasurementDialog({ open, onClose, room, project, onSave, loading }
 
                 <div className="space-y-2">
                   <Label>{form.applicationType === 'cladding' ? 'Wall' : form.applicationType === 'decking' ? 'Area' : 'Room'} Type *</Label>
-                  <ScrollArea className="h-[140px] border rounded-lg p-2">
-                    <div className="grid grid-cols-4 gap-2">
-                      {roomTypes.slice(0, 16).map(type => (
+                  <ScrollArea className="h-[200px] border rounded-lg p-3">
+                    <div className="grid grid-cols-4 gap-3 pr-4">
+                      {roomTypes.map(type => (
                         <div
                           key={type.value}
-                          className={`p-2 rounded-lg border cursor-pointer text-center transition-all ${form.roomType === type.value ? 'border-blue-500 bg-blue-50' : 'hover:border-blue-300'}`}
+                          className={`p-3 rounded-lg border-2 cursor-pointer text-center transition-all ${form.roomType === type.value ? 'border-blue-500 bg-blue-50 shadow-md' : 'border-transparent hover:border-blue-300 hover:bg-blue-50/50'}`}
                           onClick={() => setForm({ ...form, roomType: type.value })}
                         >
-                          <span className="text-lg">{type.icon}</span>
-                          <p className="text-xs mt-1 truncate">{type.label}</p>
+                          <span className="text-2xl block mb-1">{type.icon}</span>
+                          <p className="text-xs font-medium truncate">{type.label}</p>
                         </div>
                       ))}
                     </div>
-                    {roomTypes.length > 16 && (
-                      <div className="grid grid-cols-4 gap-2 mt-2 pt-2 border-t">
-                        {roomTypes.slice(16).map(type => (
-                          <div
-                            key={type.value}
-                            className={`p-2 rounded-lg border cursor-pointer text-center transition-all ${form.roomType === type.value ? 'border-blue-500 bg-blue-50' : 'hover:border-blue-300'}`}
-                            onClick={() => setForm({ ...form, roomType: type.value })}
-                          >
-                            <span className="text-lg">{type.icon}</span>
-                            <p className="text-xs mt-1 truncate">{type.label}</p>
-                          </div>
-                        ))}
-                      </div>
-                    )}
                   </ScrollArea>
                 </div>
               </CardContent>
