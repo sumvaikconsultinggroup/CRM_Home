@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef } from 'react'
-import { motion, useScroll, useTransform, AnimatePresence } from 'framer-motion'
+import { motion, useScroll, useTransform, AnimatePresence, useInView } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -17,111 +17,110 @@ import {
   Hammer, PaintBucket, Wrench, Sofa, Grid3X3, DoorOpen, ChefHat,
   HardHat, Ruler, Calculator, ClipboardList, Truck, Package,
   Receipt, CreditCard, UserCheck, Building, Factory, Warehouse,
-  ShoppingCart, FileSpreadsheet, Quote, Briefcase, Heart
+  ShoppingCart, FileSpreadsheet, Quote, Briefcase, Heart, ExternalLink,
+  MousePointer, Cpu, BookOpen, GraduationCap, Twitter, Linkedin, Youtube, Instagram
 } from 'lucide-react'
 
-// Animation variants
+// Advanced animation variants
 const fadeInUp = {
-  initial: { opacity: 0, y: 30 },
+  initial: { opacity: 0, y: 40 },
   animate: { opacity: 1, y: 0 },
-  transition: { duration: 0.6 }
+  transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
+}
+
+const fadeInLeft = {
+  initial: { opacity: 0, x: -40 },
+  animate: { opacity: 1, x: 0 },
+  transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
+}
+
+const fadeInRight = {
+  initial: { opacity: 0, x: 40 },
+  animate: { opacity: 1, x: 0 },
+  transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
 }
 
 const staggerContainer = {
   initial: {},
-  animate: { transition: { staggerChildren: 0.1 } }
+  animate: { transition: { staggerChildren: 0.08 } }
 }
 
-// Industry Modules Data
-const industryModules = [
+const scaleIn = {
+  initial: { opacity: 0, scale: 0.9 },
+  animate: { opacity: 1, scale: 1 },
+  transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] }
+}
+
+const floatAnimation = {
+  animate: {
+    y: [0, -10, 0],
+    transition: { duration: 3, repeat: Infinity, ease: "easeInOut" }
+  }
+}
+
+// Module icon mapping
+const moduleIcons = {
+  'wooden-flooring': Layers,
+  'doors-windows': DoorOpen,
+  'doors-and-windows': DoorOpen,
+  'modular-kitchens': ChefHat,
+  'kitchens': ChefHat,
+  'interior-design': Sofa,
+  'tiles-stone': Grid3X3,
+  'contractors': HardHat,
+  'painting': PaintBucket,
+  'plumbing-electrical': Wrench,
+  'mep-services': Wrench,
+  'architects': Building2,
+  'real-estate': Building,
+}
+
+// Default modules if API fails
+const defaultModules = [
+  { id: 'wooden-flooring', name: 'Wooden Flooring', description: 'Complete ERP for flooring manufacturers and installers', price: 999 },
+  { id: 'doors-windows', name: 'Doors & Windows', description: 'Manufacturing & fabrication management for D&W businesses', price: 999 },
+  { id: 'modular-kitchens', name: 'Modular Kitchens', description: 'Design-to-delivery workflow for kitchen manufacturers', price: 999 },
+  { id: 'interior-design', name: 'Interior Design', description: 'Project management for interior designers & decorators', price: 999 },
+  { id: 'tiles-stone', name: 'Tiles & Stone', description: 'Inventory and project management for tile dealers', price: 999 },
+  { id: 'contractors', name: 'General Contractors', description: 'End-to-end project management for contractors', price: 999 },
+  { id: 'painting', name: 'Painting Services', description: 'Manage painting projects from estimation to completion', price: 999 },
+  { id: 'mep-services', name: 'MEP Services', description: 'For plumbing, electrical & HVAC service providers', price: 999 },
+]
+
+// Default pricing plans
+const defaultPlans = [
   {
-    id: 'wooden-flooring',
-    name: 'Wooden Flooring',
-    icon: Layers,
-    color: 'from-amber-500 to-orange-600',
-    description: 'Complete ERP for flooring manufacturers and installers',
-    features: ['Inventory by wood type & grade', 'Cut-list optimization', 'Installation scheduling', 'Waste tracking', 'Client site photos'],
-    stats: { users: '120+', projects: '2,400+' }
+    id: 'starter',
+    name: 'Starter',
+    description: 'Perfect for small teams getting started',
+    price: 999,
+    features: ['5 Team Members', 'Lead Management', 'Project Tracking', 'Basic Reports', 'Email Support', '1 Industry Module'],
+    popular: false
   },
   {
-    id: 'doors-windows',
-    name: 'Doors & Windows',
-    icon: DoorOpen,
-    color: 'from-blue-500 to-cyan-600',
-    description: 'Manufacturing & fabrication management for D&W businesses',
-    features: ['Survey & measurement', 'Quotation configurator', 'Production tracking', 'QC checklists', 'Installation management'],
-    stats: { users: '85+', projects: '1,800+' }
+    id: 'professional',
+    name: 'Professional',
+    description: 'Best for growing businesses',
+    price: 2499,
+    features: ['25 Team Members', 'Everything in Starter', 'Advanced Analytics', 'All Integrations', 'Priority Support', '3 Industry Modules', 'AI Assistant (Mee)', 'Custom Workflows'],
+    popular: true
   },
   {
-    id: 'kitchens',
-    name: 'Modular Kitchens',
-    icon: ChefHat,
-    color: 'from-rose-500 to-pink-600',
-    description: 'Design-to-delivery workflow for kitchen manufacturers',
-    features: ['3D design integration', 'Material BOQ', 'Cabinet tracking', 'Appliance management', 'Installation crews'],
-    stats: { users: '95+', projects: '1,500+' }
-  },
-  {
-    id: 'interior-design',
-    name: 'Interior Design',
-    icon: Sofa,
-    color: 'from-purple-500 to-violet-600',
-    description: 'Project management for interior designers & decorators',
-    features: ['Mood boards', 'Vendor management', 'Budget tracking', 'Client approvals', 'Timeline management'],
-    stats: { users: '200+', projects: '3,200+' }
-  },
-  {
-    id: 'tiles-stone',
-    name: 'Tiles & Stone',
-    icon: Grid3X3,
-    color: 'from-slate-500 to-gray-600',
-    description: 'Inventory and project management for tile dealers',
-    features: ['SKU management', 'Lot tracking', 'Cutting orders', 'Delivery scheduling', 'Wastage reports'],
-    stats: { users: '75+', projects: '1,200+' }
-  },
-  {
-    id: 'contractors',
-    name: 'General Contractors',
-    icon: HardHat,
-    color: 'from-yellow-500 to-amber-600',
-    description: 'End-to-end project management for contractors',
-    features: ['Multi-project dashboard', 'Subcontractor management', 'Material procurement', 'Daily logs', 'Payment milestones'],
-    stats: { users: '150+', projects: '2,800+' }
-  },
-  {
-    id: 'painting',
-    name: 'Painting Services',
-    icon: PaintBucket,
-    color: 'from-green-500 to-emerald-600',
-    description: 'Manage painting projects from estimation to completion',
-    features: ['Surface area calculator', 'Paint quantity estimator', 'Color tracking', 'Crew scheduling', 'Before/after photos'],
-    stats: { users: '60+', projects: '900+' }
-  },
-  {
-    id: 'plumbing-electrical',
-    name: 'MEP Services',
-    icon: Wrench,
-    color: 'from-indigo-500 to-blue-600',
-    description: 'For plumbing, electrical & HVAC service providers',
-    features: ['Service tickets', 'AMC management', 'Spare parts inventory', 'Technician tracking', 'Invoice generation'],
-    stats: { users: '110+', projects: '4,500+' }
+    id: 'enterprise',
+    name: 'Enterprise',
+    description: 'For large organizations',
+    price: 4999,
+    features: ['Unlimited Team Members', 'Everything in Professional', 'Dedicated Account Manager', 'Custom Integrations', 'SLA Guarantee (99.9%)', 'All Industry Modules', 'White-label Option', 'Full API Access'],
+    popular: false
   }
 ]
 
-// Construction Industry Stats
-const industryStats = [
-  { value: '₹12L Cr', label: 'Indian Construction Market', sublabel: 'Expected by 2025' },
-  { value: '50M+', label: 'Workers in Industry', sublabel: 'Across India' },
-  { value: '85%', label: 'Still Use Manual Processes', sublabel: 'Opportunity for digital' },
-  { value: '40%', label: 'Time Wasted', sublabel: 'On admin tasks' }
-]
-
-// Feature Details
+// Feature details with mockup previews
 const detailedFeatures = [
   {
     category: 'Lead Management',
     icon: Target,
-    color: 'bg-blue-500',
+    color: 'from-blue-500 to-cyan-500',
     title: 'Convert More Leads into Customers',
     description: 'Capture leads from multiple sources, track every interaction, and close deals faster with our intelligent pipeline.',
     capabilities: [
@@ -130,12 +129,12 @@ const detailedFeatures = [
       { title: 'Follow-up automation', desc: 'Never miss a follow-up with smart reminders and sequences' },
       { title: 'Pipeline analytics', desc: 'See conversion rates, bottlenecks, and revenue forecasts' }
     ],
-    image: '/lead-pipeline.png'
+    mockupType: 'pipeline'
   },
   {
     category: 'Project Management',
     icon: Kanban,
-    color: 'bg-purple-500',
+    color: 'from-purple-500 to-pink-500',
     title: 'Deliver Projects On Time, Every Time',
     description: 'From quote acceptance to final handover, manage every aspect of your projects with complete visibility.',
     capabilities: [
@@ -144,12 +143,12 @@ const detailedFeatures = [
       { title: 'Resource allocation', desc: 'Assign teams, track utilization, prevent overbooking' },
       { title: 'Client updates', desc: 'Share progress photos and status updates automatically' }
     ],
-    image: '/project-management.png'
+    mockupType: 'kanban'
   },
   {
     category: 'Inventory & Procurement',
     icon: Package,
-    color: 'bg-orange-500',
+    color: 'from-orange-500 to-red-500',
     title: 'Never Run Out of Stock Again',
     description: 'Track materials across warehouses, automate reorders, and optimize your inventory costs.',
     capabilities: [
@@ -158,12 +157,12 @@ const detailedFeatures = [
       { title: 'Purchase orders', desc: 'Create POs, track deliveries, manage vendor payments' },
       { title: 'Consumption tracking', desc: 'Link material usage to projects for accurate costing' }
     ],
-    image: '/inventory.png'
+    mockupType: 'inventory'
   },
   {
     category: 'Finance & Invoicing',
     icon: Receipt,
-    color: 'bg-green-500',
+    color: 'from-green-500 to-emerald-500',
     title: 'Get Paid Faster, Track Every Rupee',
     description: 'Generate professional invoices, track payments, and manage expenses all in one place.',
     capabilities: [
@@ -172,39 +171,11 @@ const detailedFeatures = [
       { title: 'Expense tracking', desc: 'Capture receipts, categorize expenses, approve claims' },
       { title: 'Profitability reports', desc: 'See margins by project, client, or product type' }
     ],
-    image: '/finance.png'
+    mockupType: 'finance'
   }
 ]
 
-// Comparison data
-const comparisonData = {
-  tools: [
-    { name: 'BuildCRM', logo: Building2, highlight: true },
-    { name: 'Slack', logo: MessageSquare },
-    { name: 'Jira', logo: ClipboardList },
-    { name: 'Salesforce', logo: Cloud },
-    { name: 'Asana', logo: CheckCircle2 },
-    { name: 'Tally', logo: Calculator }
-  ],
-  features: [
-    { name: 'Lead Management', buildcrm: true, slack: false, jira: false, salesforce: true, asana: false, tally: false },
-    { name: 'Project Tracking', buildcrm: true, slack: false, jira: true, salesforce: false, asana: true, tally: false },
-    { name: 'Team Communication', buildcrm: true, slack: true, jira: false, salesforce: false, asana: true, tally: false },
-    { name: 'Inventory Management', buildcrm: true, slack: false, jira: false, salesforce: false, asana: false, tally: true },
-    { name: 'Invoicing & GST', buildcrm: true, slack: false, jira: false, salesforce: false, asana: false, tally: true },
-    { name: 'Industry-specific Modules', buildcrm: true, slack: false, jira: false, salesforce: false, asana: false, tally: false },
-    { name: 'AI Assistant', buildcrm: true, slack: false, jira: false, salesforce: true, asana: false, tally: false },
-    { name: 'WhatsApp Integration', buildcrm: true, slack: false, jira: false, salesforce: false, asana: false, tally: false },
-    { name: 'Site Survey Tools', buildcrm: true, slack: false, jira: false, salesforce: false, asana: false, tally: false },
-    { name: 'Installation Tracking', buildcrm: true, slack: false, jira: false, salesforce: false, asana: false, tally: false }
-  ],
-  pricing: {
-    buildcrm: '₹2,499',
-    others: '₹15,000+'
-  }
-}
-
-// Integration with proper SVG icons
+// Integrations with real SVG icons
 const integrations = [
   { 
     name: 'Slack', 
@@ -296,8 +267,7 @@ const testimonials = [
     role: "Managing Director",
     company: "Premium Interiors Pvt Ltd",
     location: "Mumbai",
-    avatar: "RA",
-    image: null
+    avatar: "RA"
   },
   {
     quote: "The Wooden Flooring module is exactly what our industry needed. The cut-list optimization alone has saved us 15% on material costs.",
@@ -305,8 +275,7 @@ const testimonials = [
     role: "Operations Head",
     company: "Elite Flooring Co",
     location: "Delhi",
-    avatar: "PS",
-    image: null
+    avatar: "PS"
   },
   {
     quote: "Our sales team now closes deals 3x faster. The automatic WhatsApp follow-ups and lead scoring have been game changers.",
@@ -314,8 +283,7 @@ const testimonials = [
     role: "Sales Manager",
     company: "Modern Windows Ltd",
     location: "Bangalore",
-    avatar: "AK",
-    image: null
+    avatar: "AK"
   },
   {
     quote: "As a contractor, I manage 15+ projects simultaneously. BuildCRM's multi-project dashboard gives me complete visibility without the chaos.",
@@ -323,66 +291,7 @@ const testimonials = [
     role: "Founder",
     company: "Patel Constructions",
     location: "Ahmedabad",
-    avatar: "SP",
-    image: null
-  }
-]
-
-// Pricing plans
-const pricingPlans = [
-  {
-    name: 'Starter',
-    description: 'Perfect for small teams getting started',
-    monthlyPrice: 999,
-    features: [
-      { text: '5 Team Members', included: true },
-      { text: 'Lead Management', included: true },
-      { text: 'Project Tracking', included: true },
-      { text: 'Basic Reports', included: true },
-      { text: 'Email Support', included: true },
-      { text: '1 Industry Module', included: true },
-      { text: 'AI Assistant', included: false },
-      { text: 'Custom Workflows', included: false },
-      { text: 'API Access', included: false }
-    ],
-    cta: 'Start Free Trial',
-    popular: false
-  },
-  {
-    name: 'Professional',
-    description: 'Best for growing businesses',
-    monthlyPrice: 2499,
-    features: [
-      { text: '25 Team Members', included: true },
-      { text: 'Everything in Starter', included: true },
-      { text: 'Advanced Analytics', included: true },
-      { text: 'All Integrations', included: true },
-      { text: 'Priority Support', included: true },
-      { text: '3 Industry Modules', included: true },
-      { text: 'AI Assistant (Mee)', included: true },
-      { text: 'Custom Workflows', included: true },
-      { text: 'API Access', included: false }
-    ],
-    cta: 'Start Free Trial',
-    popular: true
-  },
-  {
-    name: 'Enterprise',
-    description: 'For large organizations',
-    monthlyPrice: 4999,
-    features: [
-      { text: 'Unlimited Team Members', included: true },
-      { text: 'Everything in Professional', included: true },
-      { text: 'Dedicated Account Manager', included: true },
-      { text: 'Custom Integrations', included: true },
-      { text: 'SLA Guarantee (99.9%)', included: true },
-      { text: 'All Industry Modules', included: true },
-      { text: 'White-label Option', included: true },
-      { text: 'On-premise Deployment', included: true },
-      { text: 'Full API Access', included: true }
-    ],
-    cta: 'Contact Sales',
-    popular: false
+    avatar: "SP"
   }
 ]
 
@@ -390,23 +299,23 @@ const pricingPlans = [
 const faqs = [
   {
     question: 'What makes BuildCRM different from generic CRMs?',
-    answer: 'BuildCRM is purpose-built for the construction and home improvement industry. Unlike generic CRMs, we offer industry-specific modules for flooring, doors & windows, kitchens, and more. Features like site surveys, cut-list optimization, and installation tracking are built-in, not afterthoughts.'
+    answer: 'BuildCRM is purpose-built for the construction and home improvement industry. Unlike generic CRMs, we offer industry-specific modules for flooring, doors & windows, kitchens, and more. Each module comes with features tailored to your trade - like cut-list optimization for flooring, survey tools for windows, and cabinet tracking for kitchens.'
   },
   {
     question: 'Can I import my existing data?',
-    answer: 'Yes! We offer free data migration assistance. Our team will help you import leads, customers, projects, and inventory from spreadsheets or your existing software. Most migrations are completed within 48 hours.'
+    answer: 'Yes! We support importing from Excel, CSV, Google Sheets, and other popular CRMs. Our team provides free migration assistance for Professional and Enterprise plans. Most businesses are up and running within a day.'
   },
   {
-    question: 'Is BuildCRM available in regional languages?',
-    answer: 'Currently, BuildCRM is available in English and Hindi. We are actively working on adding support for Tamil, Telugu, Marathi, Gujarati, and other regional languages. Contact us for specific language requirements.'
+    question: 'Is my data secure?',
+    answer: 'Absolutely. We use bank-grade encryption (AES-256), regular backups, and your data is stored in secure cloud servers. We are SOC 2 compliant and GDPR ready. Enterprise plans also offer on-premise deployment options.'
   },
   {
-    question: 'How secure is my data?',
-    answer: 'We take security seriously. All data is encrypted in transit and at rest. We use enterprise-grade cloud infrastructure with daily backups. Each client gets isolated databases ensuring complete data privacy.'
+    question: 'Do you offer a free trial?',
+    answer: 'Yes, all plans come with a 14-day free trial. No credit card required. You get full access to all features during the trial period so you can properly evaluate if BuildCRM is right for your business.'
   },
   {
-    question: 'Can I use BuildCRM on mobile?',
-    answer: 'Absolutely! BuildCRM is fully responsive and works great on mobile browsers. We also have dedicated Android and iOS apps (coming soon) for field teams who need offline access.'
+    question: 'How does pricing work for modules?',
+    answer: 'Our base plans include a set number of industry modules. Starter gets 1 module, Professional gets 3, and Enterprise gets all modules. Additional modules can be added for ₹999/month each.'
   },
   {
     question: 'What support do you offer?',
@@ -414,6 +323,187 @@ const faqs = [
   }
 ]
 
+// Animated counter component
+const AnimatedCounter = ({ value, suffix = '' }) => {
+  const [count, setCount] = useState(0)
+  const ref = useRef(null)
+  const isInView = useInView(ref, { once: true })
+  
+  useEffect(() => {
+    if (isInView) {
+      const numValue = parseInt(value.replace(/[^0-9]/g, ''))
+      const duration = 2000
+      const steps = 60
+      const increment = numValue / steps
+      let current = 0
+      
+      const timer = setInterval(() => {
+        current += increment
+        if (current >= numValue) {
+          setCount(numValue)
+          clearInterval(timer)
+        } else {
+          setCount(Math.floor(current))
+        }
+      }, duration / steps)
+      
+      return () => clearInterval(timer)
+    }
+  }, [isInView, value])
+  
+  return <span ref={ref}>{count.toLocaleString()}{suffix}</span>
+}
+
+// Feature Mockup Component
+const FeatureMockup = ({ type, color }) => {
+  const mockups = {
+    pipeline: (
+      <div className="bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-100">
+        <div className="bg-gray-50 px-4 py-3 border-b flex items-center gap-2">
+          <div className="flex gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-red-400" />
+            <div className="w-3 h-3 rounded-full bg-yellow-400" />
+            <div className="w-3 h-3 rounded-full bg-green-400" />
+          </div>
+          <span className="text-sm text-gray-500 ml-2">Lead Pipeline</span>
+        </div>
+        <div className="p-4 grid grid-cols-4 gap-3">
+          {['New', 'Contacted', 'Qualified', 'Won'].map((stage, i) => (
+            <div key={i} className="space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-semibold text-gray-600">{stage}</span>
+                <span className="text-xs text-gray-400">{4 - i}</span>
+              </div>
+              {[...Array(4 - i)].map((_, j) => (
+                <motion.div
+                  key={j}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.1 + j * 0.05 }}
+                  className="bg-white border rounded-lg p-2 shadow-sm"
+                >
+                  <div className="h-2 w-16 bg-gray-200 rounded mb-1" />
+                  <div className="h-1.5 w-12 bg-gray-100 rounded" />
+                </motion.div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    ),
+    kanban: (
+      <div className="bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-100">
+        <div className="bg-gray-50 px-4 py-3 border-b flex items-center gap-2">
+          <div className="flex gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-red-400" />
+            <div className="w-3 h-3 rounded-full bg-yellow-400" />
+            <div className="w-3 h-3 rounded-full bg-green-400" />
+          </div>
+          <span className="text-sm text-gray-500 ml-2">Project Board</span>
+        </div>
+        <div className="p-4 grid grid-cols-3 gap-3">
+          {['To Do', 'In Progress', 'Done'].map((col, i) => (
+            <div key={i} className={`p-3 rounded-lg ${i === 0 ? 'bg-gray-50' : i === 1 ? 'bg-blue-50' : 'bg-green-50'}`}>
+              <span className="text-xs font-semibold mb-2 block">{col}</span>
+              {[...Array(3 - i)].map((_, j) => (
+                <motion.div
+                  key={j}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.15 + j * 0.1 }}
+                  className="bg-white rounded-lg p-2 mb-2 shadow-sm border"
+                >
+                  <div className="h-2 w-full bg-gray-200 rounded mb-2" />
+                  <div className="flex gap-1">
+                    <div className="w-4 h-4 rounded-full bg-purple-200" />
+                    <div className="h-1.5 w-8 bg-gray-100 rounded mt-1" />
+                  </div>
+                </motion.div>
+              ))}
+            </div>
+          ))}
+        </div>
+      </div>
+    ),
+    inventory: (
+      <div className="bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-100">
+        <div className="bg-gray-50 px-4 py-3 border-b flex items-center gap-2">
+          <div className="flex gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-red-400" />
+            <div className="w-3 h-3 rounded-full bg-yellow-400" />
+            <div className="w-3 h-3 rounded-full bg-green-400" />
+          </div>
+          <span className="text-sm text-gray-500 ml-2">Inventory Dashboard</span>
+        </div>
+        <div className="p-4">
+          <div className="grid grid-cols-3 gap-2 mb-4">
+            {[
+              { label: 'Total Items', value: '1,248', color: 'blue' },
+              { label: 'Low Stock', value: '23', color: 'orange' },
+              { label: 'Out of Stock', value: '5', color: 'red' }
+            ].map((stat, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className={`p-2 rounded-lg bg-${stat.color}-50 text-center`}
+              >
+                <p className="text-xs text-gray-500">{stat.label}</p>
+                <p className={`text-lg font-bold text-${stat.color}-600`}>{stat.value}</p>
+              </motion.div>
+            ))}
+          </div>
+          <div className="space-y-2">
+            {[75, 45, 90, 30].map((w, i) => (
+              <motion.div
+                key={i}
+                initial={{ width: 0 }}
+                animate={{ width: `${w}%` }}
+                transition={{ delay: 0.5 + i * 0.1, duration: 0.8 }}
+                className="h-3 bg-gradient-to-r from-blue-500 to-cyan-500 rounded-full"
+              />
+            ))}
+          </div>
+        </div>
+      </div>
+    ),
+    finance: (
+      <div className="bg-white rounded-xl shadow-2xl overflow-hidden border border-gray-100">
+        <div className="bg-gray-50 px-4 py-3 border-b flex items-center gap-2">
+          <div className="flex gap-1.5">
+            <div className="w-3 h-3 rounded-full bg-red-400" />
+            <div className="w-3 h-3 rounded-full bg-yellow-400" />
+            <div className="w-3 h-3 rounded-full bg-green-400" />
+          </div>
+          <span className="text-sm text-gray-500 ml-2">Financial Overview</span>
+        </div>
+        <div className="p-4">
+          <div className="flex items-end gap-1 h-24 mb-4">
+            {[35, 55, 40, 70, 50, 85, 65, 90, 75, 95, 80, 100].map((h, i) => (
+              <motion.div
+                key={i}
+                initial={{ height: 0 }}
+                animate={{ height: `${h}%` }}
+                transition={{ delay: 0.3 + i * 0.05, duration: 0.5 }}
+                className="flex-1 bg-gradient-to-t from-green-500 to-emerald-400 rounded-t"
+              />
+            ))}
+          </div>
+          <div className="flex justify-between text-xs text-gray-500">
+            <span>Jan</span>
+            <span>Jun</span>
+            <span>Dec</span>
+          </div>
+        </div>
+      </div>
+    )
+  }
+  
+  return mockups[type] || mockups.pipeline
+}
+
+// Main Component
 export default function EnterpriseLanding({ onLogin }) {
   const [isAnnual, setIsAnnual] = useState(true)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
@@ -421,11 +511,48 @@ export default function EnterpriseLanding({ onLogin }) {
   const [activeFeature, setActiveFeature] = useState(0)
   const [activeFaq, setActiveFaq] = useState(null)
   const [activeTestimonial, setActiveTestimonial] = useState(0)
+  const [modules, setModules] = useState(defaultModules)
+  const [plans, setPlans] = useState(defaultPlans)
+  const [loading, setLoading] = useState(true)
+  
+  const { scrollYProgress } = useScroll()
+  const heroRef = useRef(null)
+  const isHeroInView = useInView(heroRef, { once: true })
+
+  // Fetch dynamic data from API
+  useEffect(() => {
+    const fetchLandingData = async () => {
+      try {
+        const response = await fetch('/api/landing')
+        const result = await response.json()
+        if (result.success) {
+          if (result.data.modules?.length > 0) {
+            setModules(result.data.modules)
+          }
+          if (result.data.plans?.length > 0) {
+            // Format plans for display
+            const formattedPlans = result.data.plans.map(plan => ({
+              ...plan,
+              features: plan.features || [],
+              popular: plan.id === 'professional' || plan.name?.toLowerCase().includes('professional')
+            }))
+            setPlans(formattedPlans)
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch landing data:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+    
+    fetchLandingData()
+  }, [])
 
   // Auto-rotate modules and testimonials
   useEffect(() => {
     const moduleInterval = setInterval(() => {
-      setActiveModule((prev) => (prev + 1) % industryModules.length)
+      setActiveModule((prev) => (prev + 1) % modules.length)
     }, 4000)
     
     const testimonialInterval = setInterval(() => {
@@ -436,7 +563,7 @@ export default function EnterpriseLanding({ onLogin }) {
       clearInterval(moduleInterval)
       clearInterval(testimonialInterval)
     }
-  }, [])
+  }, [modules.length])
 
   const calculatePrice = (monthlyPrice) => {
     return isAnnual ? Math.round(monthlyPrice * 0.85) : monthlyPrice
@@ -448,38 +575,49 @@ export default function EnterpriseLanding({ onLogin }) {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white overflow-x-hidden">
+      {/* Progress Bar */}
+      <motion.div 
+        className="fixed top-0 left-0 right-0 h-1 bg-gradient-to-r from-blue-600 to-indigo-600 z-[60] origin-left"
+        style={{ scaleX: scrollYProgress }}
+      />
+
       {/* Navigation - Fixed */}
-      <nav className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100">
+      <motion.nav 
+        className="fixed top-0 left-0 right-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-100"
+        initial={{ y: -100 }}
+        animate={{ y: 0 }}
+        transition={{ duration: 0.5, ease: "easeOut" }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16 lg:h-20">
             {/* Logo */}
-            <div className="flex items-center gap-2 lg:gap-3">
+            <motion.div 
+              className="flex items-center gap-2 lg:gap-3"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
               <div className="w-9 h-9 lg:w-11 lg:h-11 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl flex items-center justify-center shadow-lg shadow-blue-500/30">
                 <Building2 className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
               </div>
               <span className="text-xl lg:text-2xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
                 BuildCRM
               </span>
-            </div>
+            </motion.div>
 
             {/* Desktop Navigation */}
             <div className="hidden lg:flex items-center gap-8">
-              <button onClick={() => scrollToSection('features')} className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
-                Features
-              </button>
-              <button onClick={() => scrollToSection('modules')} className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
-                Modules
-              </button>
-              <button onClick={() => scrollToSection('comparison')} className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
-                Why Us
-              </button>
-              <button onClick={() => scrollToSection('integrations')} className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
-                Integrations
-              </button>
-              <button onClick={() => scrollToSection('pricing')} className="text-gray-600 hover:text-gray-900 font-medium transition-colors">
-                Pricing
-              </button>
+              {['Features', 'Modules', 'Why Us', 'Integrations', 'Pricing'].map((item, i) => (
+                <motion.button
+                  key={item}
+                  onClick={() => scrollToSection(item.toLowerCase().replace(' ', '-'))}
+                  className="text-gray-600 hover:text-gray-900 font-medium transition-colors relative group"
+                  whileHover={{ y: -2 }}
+                >
+                  {item}
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-blue-600 group-hover:w-full transition-all duration-300" />
+                </motion.button>
+              ))}
             </div>
 
             {/* CTA Buttons */}
@@ -487,22 +625,35 @@ export default function EnterpriseLanding({ onLogin }) {
               <Button variant="ghost" onClick={onLogin} className="text-gray-700 font-medium">
                 Sign In
               </Button>
-              <Button 
-                onClick={onLogin} 
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/30 px-6"
-              >
-                Start Free Trial
-                <ArrowRight className="ml-2 h-4 w-4" />
-              </Button>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button 
+                  onClick={onLogin} 
+                  className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg shadow-blue-500/30 px-6"
+                >
+                  Start Free Trial
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </motion.div>
             </div>
 
             {/* Mobile menu button */}
-            <button 
+            <motion.button 
               className="lg:hidden p-2 rounded-lg hover:bg-gray-100"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              whileTap={{ scale: 0.95 }}
             >
-              {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-            </button>
+              <AnimatePresence mode="wait">
+                {mobileMenuOpen ? (
+                  <motion.div key="close" initial={{ rotate: -90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: 90, opacity: 0 }}>
+                    <X className="h-6 w-6" />
+                  </motion.div>
+                ) : (
+                  <motion.div key="menu" initial={{ rotate: 90, opacity: 0 }} animate={{ rotate: 0, opacity: 1 }} exit={{ rotate: -90, opacity: 0 }}>
+                    <Menu className="h-6 w-6" />
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.button>
           </div>
         </div>
 
@@ -513,14 +664,21 @@ export default function EnterpriseLanding({ onLogin }) {
               initial={{ opacity: 0, height: 0 }}
               animate={{ opacity: 1, height: 'auto' }}
               exit={{ opacity: 0, height: 0 }}
-              className="lg:hidden bg-white border-t border-gray-100"
+              className="lg:hidden bg-white border-t border-gray-100 overflow-hidden"
             >
               <div className="px-4 py-6 space-y-4">
-                <button onClick={() => scrollToSection('features')} className="block w-full text-left py-2 text-gray-700 font-medium">Features</button>
-                <button onClick={() => scrollToSection('modules')} className="block w-full text-left py-2 text-gray-700 font-medium">Modules</button>
-                <button onClick={() => scrollToSection('comparison')} className="block w-full text-left py-2 text-gray-700 font-medium">Why Us</button>
-                <button onClick={() => scrollToSection('integrations')} className="block w-full text-left py-2 text-gray-700 font-medium">Integrations</button>
-                <button onClick={() => scrollToSection('pricing')} className="block w-full text-left py-2 text-gray-700 font-medium">Pricing</button>
+                {['Features', 'Modules', 'Why Us', 'Integrations', 'Pricing'].map((item, i) => (
+                  <motion.button
+                    key={item}
+                    initial={{ x: -20, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ delay: i * 0.05 }}
+                    onClick={() => scrollToSection(item.toLowerCase().replace(' ', '-'))}
+                    className="block w-full text-left py-2 text-gray-700 font-medium"
+                  >
+                    {item}
+                  </motion.button>
+                ))}
                 <div className="pt-4 border-t space-y-3">
                   <Button variant="outline" onClick={onLogin} className="w-full">Sign In</Button>
                   <Button onClick={onLogin} className="w-full bg-gradient-to-r from-blue-600 to-indigo-600">Start Free Trial</Button>
@@ -529,49 +687,71 @@ export default function EnterpriseLanding({ onLogin }) {
             </motion.div>
           )}
         </AnimatePresence>
-      </nav>
+      </motion.nav>
 
       {/* Hero Section */}
-      <section className="relative pt-24 lg:pt-32 pb-16 lg:pb-24 overflow-hidden">
+      <section ref={heroRef} className="relative pt-24 lg:pt-32 pb-8 lg:pb-16 overflow-hidden">
         {/* Background */}
         <div className="absolute inset-0 bg-gradient-to-br from-slate-50 via-blue-50/50 to-indigo-50" />
         <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:40px_40px] lg:bg-[size:60px_60px]" />
         
-        {/* Floating elements - hidden on mobile */}
-        <div className="hidden lg:block absolute top-1/4 left-10 w-72 h-72 bg-blue-400 rounded-full blur-[100px] opacity-20" />
-        <div className="hidden lg:block absolute bottom-1/4 right-10 w-72 h-72 bg-purple-400 rounded-full blur-[100px] opacity-20" />
+        {/* Animated floating elements */}
+        <motion.div 
+          className="hidden lg:block absolute top-1/4 left-10 w-72 h-72 bg-blue-400 rounded-full blur-[100px] opacity-20"
+          animate={{ scale: [1, 1.2, 1], x: [0, 20, 0], y: [0, -20, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div 
+          className="hidden lg:block absolute bottom-1/4 right-10 w-72 h-72 bg-purple-400 rounded-full blur-[100px] opacity-20"
+          animate={{ scale: [1.2, 1, 1.2], x: [0, -20, 0], y: [0, 20, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
-            {/* Badge */}
+            {/* Badge with animation */}
             <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="inline-flex items-center gap-2 bg-blue-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6"
+              initial={{ opacity: 0, y: 20, scale: 0.9 }}
+              animate={isHeroInView ? { opacity: 1, y: 0, scale: 1 } : {}}
+              transition={{ duration: 0.5 }}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-100 to-indigo-100 text-blue-700 px-4 py-2 rounded-full text-sm font-medium mb-6 border border-blue-200"
             >
-              <Sparkles className="h-4 w-4" />
+              <motion.div animate={{ rotate: 360 }} transition={{ duration: 3, repeat: Infinity, ease: "linear" }}>
+                <Sparkles className="h-4 w-4" />
+              </motion.div>
               <span>Built for the ₹12 Lakh Crore Construction Industry</span>
             </motion.div>
 
             {/* Main Headline */}
             <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.1 }}
+              initial={{ opacity: 0, y: 30 }}
+              animate={isHeroInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ delay: 0.1, duration: 0.6 }}
               className="text-4xl sm:text-5xl lg:text-7xl font-bold tracking-tight mb-6"
             >
-              <span className="text-gray-900">The Only CRM Built for</span>
-              <br />
-              <span className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent">
+              <motion.span 
+                className="text-gray-900 block"
+                initial={{ opacity: 0, x: -20 }}
+                animate={isHeroInView ? { opacity: 1, x: 0 } : {}}
+                transition={{ delay: 0.2 }}
+              >
+                The Only CRM Built for
+              </motion.span>
+              <motion.span 
+                className="bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent block"
+                initial={{ opacity: 0, x: 20 }}
+                animate={isHeroInView ? { opacity: 1, x: 0 } : {}}
+                transition={{ delay: 0.3 }}
+              >
                 Home Improvement
-              </span>
+              </motion.span>
             </motion.h1>
 
             {/* Subheadline */}
             <motion.p
               initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
+              animate={isHeroInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ delay: 0.4 }}
               className="text-lg sm:text-xl lg:text-2xl text-gray-600 max-w-3xl mx-auto mb-8 leading-relaxed"
             >
               Manage leads, projects, inventory, and teams in one platform. 
@@ -581,141 +761,200 @@ export default function EnterpriseLanding({ onLogin }) {
             {/* CTA Buttons */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.3 }}
+              animate={isHeroInView ? { opacity: 1, y: 0 } : {}}
+              transition={{ delay: 0.5 }}
               className="flex flex-col sm:flex-row gap-4 justify-center items-center mb-8"
             >
-              <Button 
-                size="lg" 
-                onClick={onLogin}
-                className="w-full sm:w-auto h-14 px-8 text-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl shadow-blue-500/30 rounded-xl"
-              >
-                Start Free Trial
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button 
-                size="lg" 
-                variant="outline"
-                onClick={onLogin}
-                className="w-full sm:w-auto h-14 px-8 text-lg border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 rounded-xl bg-white text-gray-900 font-semibold"
-              >
-                <Play className="mr-2 h-5 w-5 fill-gray-700" />
-                <span className="text-gray-900">Schedule Demo</span>
-              </Button>
+              <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
+                <Button 
+                  size="lg" 
+                  onClick={onLogin}
+                  className="w-full sm:w-auto h-14 px-8 text-lg bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-xl shadow-blue-500/30 rounded-xl font-semibold"
+                >
+                  Start Free Trial
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05, y: -2 }} whileTap={{ scale: 0.95 }}>
+                <Button 
+                  size="lg" 
+                  variant="outline"
+                  onClick={onLogin}
+                  className="w-full sm:w-auto h-14 px-8 text-lg border-2 border-gray-300 hover:border-gray-400 hover:bg-gray-50 rounded-xl bg-white text-gray-900 font-semibold"
+                >
+                  <Play className="mr-2 h-5 w-5 fill-gray-700" />
+                  <span className="text-gray-900">Watch Demo</span>
+                </Button>
+              </motion.div>
             </motion.div>
 
             {/* Trust Indicators */}
             <motion.div
               initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.4 }}
+              animate={isHeroInView ? { opacity: 1 } : {}}
+              transition={{ delay: 0.6 }}
               className="flex flex-wrap justify-center items-center gap-6 text-sm text-gray-500"
             >
-              <span className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                No credit card required
-              </span>
-              <span className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                14-day free trial
-              </span>
-              <span className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-green-500" />
-                Free data migration
-              </span>
+              {['No credit card required', '14-day free trial', 'Free data migration'].map((item, i) => (
+                <motion.span 
+                  key={i}
+                  className="flex items-center gap-2"
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={isHeroInView ? { opacity: 1, y: 0 } : {}}
+                  transition={{ delay: 0.7 + i * 0.1 }}
+                >
+                  <CheckCircle2 className="h-4 w-4 text-green-500" />
+                  {item}
+                </motion.span>
+              ))}
             </motion.div>
           </div>
 
-          {/* Dashboard Preview */}
+          {/* Dashboard Preview - Enhanced */}
           <motion.div
-            initial={{ opacity: 0, y: 60 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5, duration: 0.8 }}
+            initial={{ opacity: 0, y: 80 }}
+            animate={isHeroInView ? { opacity: 1, y: 0 } : {}}
+            transition={{ delay: 0.7, duration: 0.8, ease: [0.22, 1, 0.36, 1] }}
             className="mt-12 lg:mt-16 relative"
           >
-            <div className="relative mx-auto max-w-5xl">
+            <div className="relative mx-auto max-w-6xl perspective-1000">
+              {/* Glow effect */}
+              <div className="absolute -inset-4 bg-gradient-to-r from-blue-500/20 via-indigo-500/20 to-purple-500/20 rounded-3xl blur-2xl" />
+              
               {/* Browser Chrome */}
-              <div className="bg-gradient-to-b from-gray-700 to-gray-800 rounded-t-xl lg:rounded-t-2xl p-2 lg:p-3">
-                <div className="flex items-center gap-2">
-                  <div className="flex gap-1.5">
-                    <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-red-500" />
-                    <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-yellow-500" />
-                    <div className="w-2.5 h-2.5 lg:w-3 lg:h-3 rounded-full bg-green-500" />
+              <motion.div 
+                className="relative bg-gradient-to-b from-gray-800 to-gray-900 rounded-t-2xl p-3 lg:p-4"
+                initial={{ rotateX: 10 }}
+                whileInView={{ rotateX: 0 }}
+                transition={{ duration: 0.8 }}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="flex gap-2">
+                    <motion.div whileHover={{ scale: 1.2 }} className="w-3 h-3 rounded-full bg-red-500" />
+                    <motion.div whileHover={{ scale: 1.2 }} className="w-3 h-3 rounded-full bg-yellow-500" />
+                    <motion.div whileHover={{ scale: 1.2 }} className="w-3 h-3 rounded-full bg-green-500" />
                   </div>
-                  <div className="flex-1 bg-gray-600 rounded-md lg:rounded-lg h-6 lg:h-8 flex items-center px-3 lg:px-4 ml-2">
-                    <span className="text-gray-300 text-xs lg:text-sm">app.buildcrm.com/dashboard</span>
+                  <div className="flex-1 bg-gray-700/50 rounded-lg h-8 flex items-center px-4 ml-2">
+                    <Lock className="h-3 w-3 text-green-400 mr-2" />
+                    <span className="text-gray-300 text-sm">app.buildcrm.com/dashboard</span>
                   </div>
                 </div>
-              </div>
+              </motion.div>
               
               {/* Dashboard Content */}
-              <div className="bg-gradient-to-br from-slate-100 to-slate-200 p-4 lg:p-8 rounded-b-xl lg:rounded-b-2xl shadow-2xl">
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-4 lg:mb-6">
+              <div className="relative bg-gradient-to-br from-slate-100 to-slate-200 p-4 lg:p-8 rounded-b-2xl shadow-2xl">
+                {/* Stats Row */}
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 mb-6">
                   {[
-                    { label: 'Revenue', value: '₹24.5L', change: '+12%', icon: TrendingUp, color: 'text-green-600' },
-                    { label: 'Active Leads', value: '156', change: '+8 new', icon: Target, color: 'text-blue-600' },
-                    { label: 'Projects', value: '42', change: '3 due', icon: Briefcase, color: 'text-purple-600' },
-                    { label: 'Tasks', value: '28', change: '5 today', icon: CheckCircle2, color: 'text-orange-600' }
+                    { label: 'Revenue', value: '₹24.5L', change: '+12%', icon: TrendingUp, color: 'green' },
+                    { label: 'Active Leads', value: '156', change: '+8 new', icon: Target, color: 'blue' },
+                    { label: 'Projects', value: '42', change: '3 due', icon: Briefcase, color: 'purple' },
+                    { label: 'Tasks', value: '28', change: '5 today', icon: CheckCircle2, color: 'orange' }
                   ].map((stat, i) => (
-                    <div key={i} className="bg-white rounded-lg lg:rounded-xl p-3 lg:p-4 shadow-sm">
+                    <motion.div 
+                      key={i} 
+                      className="bg-white rounded-xl p-3 lg:p-4 shadow-sm hover:shadow-md transition-shadow border border-gray-100"
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.8 + i * 0.1 }}
+                      whileHover={{ y: -2 }}
+                    >
                       <div className="flex items-center justify-between mb-1 lg:mb-2">
                         <span className="text-xs lg:text-sm text-gray-500">{stat.label}</span>
-                        <stat.icon className={`h-4 w-4 ${stat.color}`} />
+                        <stat.icon className={`h-4 w-4 text-${stat.color}-600`} />
                       </div>
                       <p className="text-lg lg:text-2xl font-bold text-gray-900">{stat.value}</p>
-                      <p className={`text-xs lg:text-sm ${stat.color}`}>{stat.change}</p>
-                    </div>
+                      <p className={`text-xs lg:text-sm text-${stat.color}-600`}>{stat.change}</p>
+                    </motion.div>
                   ))}
                 </div>
                 
-                {/* Chart placeholder */}
-                <div className="bg-white rounded-lg lg:rounded-xl p-4 lg:p-6 shadow-sm">
-                  <div className="flex items-center justify-between mb-4">
-                    <span className="font-semibold text-gray-900">Revenue Overview</span>
-                    <span className="text-sm text-gray-500">Last 12 months</span>
+                {/* Main Dashboard Grid */}
+                <div className="grid lg:grid-cols-3 gap-4">
+                  {/* Chart */}
+                  <div className="lg:col-span-2 bg-white rounded-xl p-4 lg:p-6 shadow-sm border border-gray-100">
+                    <div className="flex items-center justify-between mb-4">
+                      <span className="font-semibold text-gray-900">Revenue Overview</span>
+                      <span className="text-sm text-gray-500">Last 12 months</span>
+                    </div>
+                    <div className="flex items-end gap-1 lg:gap-2 h-32 lg:h-48">
+                      {[35, 55, 40, 70, 50, 85, 65, 90, 75, 95, 80, 100].map((h, i) => (
+                        <motion.div
+                          key={i}
+                          initial={{ height: 0 }}
+                          whileInView={{ height: `${h}%` }}
+                          transition={{ delay: 1 + i * 0.05, duration: 0.5 }}
+                          className="flex-1 bg-gradient-to-t from-blue-600 to-indigo-500 rounded-t hover:from-blue-500 hover:to-indigo-400 transition-colors cursor-pointer"
+                        />
+                      ))}
+                    </div>
+                    <div className="flex justify-between mt-2 text-xs text-gray-400">
+                      {['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'].map(m => (
+                        <span key={m}>{m}</span>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex items-end gap-1 lg:gap-2 h-24 lg:h-40">
-                    {[35, 55, 40, 70, 50, 85, 65, 90, 75, 95, 80, 100].map((h, i) => (
-                      <motion.div
-                        key={i}
-                        initial={{ height: 0 }}
-                        animate={{ height: `${h}%` }}
-                        transition={{ delay: 0.8 + i * 0.05, duration: 0.5 }}
-                        className="flex-1 bg-gradient-to-t from-blue-500 to-indigo-500 rounded-t"
-                      />
-                    ))}
+                  
+                  {/* Recent Activity */}
+                  <div className="bg-white rounded-xl p-4 lg:p-6 shadow-sm border border-gray-100">
+                    <span className="font-semibold text-gray-900 block mb-4">Recent Activity</span>
+                    <div className="space-y-3">
+                      {[
+                        { text: 'New lead from website', time: '2m ago', color: 'blue' },
+                        { text: 'Project #42 completed', time: '15m ago', color: 'green' },
+                        { text: 'Invoice paid ₹45,000', time: '1h ago', color: 'purple' },
+                        { text: 'Meeting scheduled', time: '2h ago', color: 'orange' }
+                      ].map((item, i) => (
+                        <motion.div 
+                          key={i}
+                          className="flex items-center gap-3"
+                          initial={{ opacity: 0, x: -10 }}
+                          whileInView={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 1.2 + i * 0.1 }}
+                        >
+                          <div className={`w-2 h-2 rounded-full bg-${item.color}-500`} />
+                          <div className="flex-1">
+                            <p className="text-sm text-gray-700">{item.text}</p>
+                            <p className="text-xs text-gray-400">{item.time}</p>
+                          </div>
+                        </motion.div>
+                      ))}
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Floating Stats Cards - Hidden on mobile */}
+            {/* Floating Stats Cards */}
             <motion.div
               initial={{ opacity: 0, x: -50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 1 }}
-              className="hidden lg:block absolute -left-4 top-1/3 bg-white rounded-xl shadow-xl p-4 border border-gray-100"
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1.5 }}
+              {...floatAnimation}
+              className="hidden lg:block absolute -left-8 top-1/3 bg-white rounded-2xl shadow-2xl p-4 border border-gray-100"
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
-                  <TrendingUp className="h-5 w-5 text-green-600" />
+                <div className="w-12 h-12 bg-gradient-to-br from-green-400 to-emerald-500 rounded-xl flex items-center justify-center">
+                  <TrendingUp className="h-6 w-6 text-white" />
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">Conversion Rate</p>
-                  <p className="text-lg font-bold text-gray-900">32.5%</p>
+                  <p className="text-xl font-bold text-gray-900">32.5%</p>
                 </div>
               </div>
             </motion.div>
 
             <motion.div
               initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 1.2 }}
-              className="hidden lg:block absolute -right-4 top-1/2 bg-white rounded-xl shadow-xl p-4 border border-gray-100"
+              whileInView={{ opacity: 1, x: 0 }}
+              transition={{ delay: 1.7 }}
+              animate={{ y: [0, -8, 0] }}
+              className="hidden lg:block absolute -right-8 top-1/2 bg-white rounded-2xl shadow-2xl p-4 border border-gray-100"
+              style={{ animation: 'float 4s ease-in-out infinite 0.5s' }}
             >
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 bg-purple-100 rounded-lg flex items-center justify-center">
-                  <Sparkles className="h-5 w-5 text-purple-600" />
+                <div className="w-12 h-12 bg-gradient-to-br from-purple-400 to-pink-500 rounded-xl flex items-center justify-center">
+                  <Sparkles className="h-6 w-6 text-white" />
                 </div>
                 <div>
                   <p className="text-xs text-gray-500">AI Insights</p>
@@ -727,8 +966,34 @@ export default function EnterpriseLanding({ onLogin }) {
         </div>
       </section>
 
-      {/* Pain Points Section - Why Construction Businesses Struggle */}
-      <section className="py-16 lg:py-20 bg-white border-y border-gray-100">
+      {/* Social Proof Bar */}
+      <section className="py-8 lg:py-12 bg-white border-y border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.p
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            className="text-center text-gray-500 text-sm mb-6"
+          >
+            Trusted by 500+ construction and home improvement businesses across India
+          </motion.p>
+          <div className="flex flex-wrap justify-center items-center gap-8 lg:gap-16">
+            {['Premium Interiors', 'Elite Flooring', 'Modern Windows', 'Patel Constructions', 'Royal Kitchens'].map((company, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                transition={{ delay: i * 0.1 }}
+                className="text-lg lg:text-xl font-bold text-gray-300 hover:text-gray-500 transition-colors"
+              >
+                {company}
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Industry Stats - Clean Design */}
+      <section className="py-16 lg:py-20 bg-slate-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -736,118 +1001,31 @@ export default function EnterpriseLanding({ onLogin }) {
             viewport={{ once: true }}
             className="text-center mb-12"
           >
-            <Badge className="bg-red-100 text-red-700 mb-4">The Problem</Badge>
-            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
-              Why 85% of Construction Businesses Struggle to Scale
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Most businesses in the home improvement industry still run on WhatsApp messages, Excel sheets, and scattered notes. Sound familiar?
+            <h2 className="text-3xl lg:text-4xl font-bold mb-4">The Opportunity is Massive</h2>
+            <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+              The Indian construction industry is one of the largest in the world, yet most businesses still run on outdated tools.
             </p>
           </motion.div>
-
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
-            {[
-              {
-                icon: MessageSquare,
-                title: 'Leads Lost in WhatsApp',
-                description: 'Customer inquiries get buried in group chats. No one knows who followed up or what was promised.',
-                stat: '40%',
-                statLabel: 'leads lost to poor tracking'
-              },
-              {
-                icon: FileText,
-                title: 'Excel Chaos',
-                description: 'Multiple versions of the same file. Wrong prices quoted. Inventory counts that never match reality.',
-                stat: '6 hrs',
-                statLabel: 'wasted weekly on data entry'
-              },
-              {
-                icon: Clock,
-                title: 'Project Delays',
-                description: 'Materials arrive late. Workers show up at wrong sites. Clients complain about missed deadlines.',
-                stat: '30%',
-                statLabel: 'of projects run over time'
-              },
-              {
-                icon: Receipt,
-                title: 'Payment Leakages',
-                description: 'Invoices sent late or never. Advance payments not tracked. Margins eaten by unrecorded expenses.',
-                stat: '₹2-3L',
-                statLabel: 'lost yearly to poor billing'
-              },
-              {
-                icon: Users,
-                title: 'Team Confusion',
-                description: 'Installers don\'t know schedules. Office staff can\'t find documents. Everyone calls the owner for everything.',
-                stat: '50%',
-                statLabel: 'time spent on coordination'
-              },
-              {
-                icon: BarChart3,
-                title: 'No Visibility',
-                description: 'Which products sell best? Which salesperson performs? What\'s the profit margin? Nobody really knows.',
-                stat: '0',
-                statLabel: 'real-time business insights'
-              }
-            ].map((pain, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="bg-gray-50 rounded-2xl p-6 border border-gray-100 hover:shadow-lg transition-shadow"
-              >
-                <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-4">
-                  <pain.icon className="h-6 w-6 text-red-600" />
-                </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">{pain.title}</h3>
-                <p className="text-gray-600 text-sm mb-4">{pain.description}</p>
-                <div className="flex items-baseline gap-2">
-                  <span className="text-2xl font-bold text-red-600">{pain.stat}</span>
-                  <span className="text-xs text-gray-500">{pain.statLabel}</span>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mt-12 text-center"
-          >
-            <p className="text-xl font-semibold text-gray-900 mb-4">
-              These problems cost the average construction business ₹15-20 Lakhs annually in lost revenue and wasted time.
-            </p>
-            <Button 
-              onClick={onLogin}
-              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg px-8 h-12"
-            >
-              See How BuildCRM Solves This
-              <ArrowRight className="ml-2 h-4 w-4" />
-            </Button>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Industry Stats Section */}
-      <section className="py-12 lg:py-16 bg-slate-900 text-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 lg:gap-8">
-            {industryStats.map((stat, i) => (
+            {[
+              { value: '12', suffix: 'L Cr', label: 'Indian Construction Market', sublabel: 'Expected by 2025' },
+              { value: '50', suffix: 'M+', label: 'Workers in Industry', sublabel: 'Across India' },
+              { value: '85', suffix: '%', label: 'Still Use Manual Processes', sublabel: 'Opportunity for digital' },
+              { value: '40', suffix: '%', label: 'Time Wasted', sublabel: 'On admin tasks' }
+            ].map((stat, i) => (
               <motion.div
                 key={i}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ delay: i * 0.1 }}
-                className="text-center"
+                transition={{ delay: i * 0.15 }}
+                className="text-center p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:bg-white/10 transition-colors"
               >
-                <p className="text-2xl lg:text-4xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
-                  {stat.value}
+                <p className="text-3xl lg:text-5xl font-bold bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent">
+                  <AnimatedCounter value={stat.value} suffix={stat.suffix} />
                 </p>
-                <p className="text-sm lg:text-base font-medium text-white mt-1">{stat.label}</p>
+                <p className="text-sm lg:text-base font-medium text-white mt-2">{stat.label}</p>
                 <p className="text-xs lg:text-sm text-gray-400">{stat.sublabel}</p>
               </motion.div>
             ))}
@@ -855,7 +1033,7 @@ export default function EnterpriseLanding({ onLogin }) {
         </div>
       </section>
 
-      {/* Industry Modules Section */}
+      {/* Industry Modules Section - Dynamic from API */}
       <section id="modules" className="py-16 lg:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -867,7 +1045,6 @@ export default function EnterpriseLanding({ onLogin }) {
             <Badge className="bg-orange-100 text-orange-700 mb-4">Industry Modules</Badge>
             <h2 className="text-3xl lg:text-5xl font-bold mb-4">
               Purpose-Built for Your
-              <br className="hidden lg:block" />
               <span className="bg-gradient-to-r from-orange-600 to-red-600 bg-clip-text text-transparent"> Industry</span>
             </h2>
             <p className="text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto">
@@ -877,55 +1054,74 @@ export default function EnterpriseLanding({ onLogin }) {
 
           {/* Module Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
-            {industryModules.map((module, i) => (
-              <motion.div
-                key={module.id}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.05 }}
-                onClick={() => setActiveModule(i)}
-                className={`cursor-pointer rounded-2xl p-5 lg:p-6 transition-all duration-300 ${
-                  activeModule === i 
-                    ? `bg-gradient-to-br ${module.color} text-white shadow-xl scale-[1.02]`
-                    : 'bg-gray-50 hover:bg-gray-100 text-gray-900'
-                }`}
-              >
-                <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
-                  activeModule === i ? 'bg-white/20' : `bg-gradient-to-br ${module.color}`
-                }`}>
-                  <module.icon className={`h-6 w-6 ${activeModule === i ? 'text-white' : 'text-white'}`} />
-                </div>
-                <h3 className="text-lg font-bold mb-2">{module.name}</h3>
-                <p className={`text-sm mb-4 ${activeModule === i ? 'text-white/80' : 'text-gray-600'}`}>
-                  {module.description}
-                </p>
-                
-                {activeModule === i && (
-                  <motion.div
-                    initial={{ opacity: 0, height: 0 }}
-                    animate={{ opacity: 1, height: 'auto' }}
-                    className="space-y-2"
-                  >
-                    {module.features.slice(0, 3).map((feature, j) => (
-                      <div key={j} className="flex items-center gap-2 text-sm text-white/90">
-                        <CheckCircle2 className="h-4 w-4 flex-shrink-0" />
-                        <span>{feature}</span>
-                      </div>
-                    ))}
-                    <div className="pt-3 flex items-center gap-4 text-xs">
-                      <span className="bg-white/20 px-2 py-1 rounded">{module.stats.users} users</span>
-                      <span className="bg-white/20 px-2 py-1 rounded">{module.stats.projects} projects</span>
-                    </div>
-                  </motion.div>
-                )}
-              </motion.div>
-            ))}
+            {modules.map((module, i) => {
+              const ModuleIcon = moduleIcons[module.id] || Package
+              const colors = [
+                'from-amber-500 to-orange-600',
+                'from-blue-500 to-cyan-600',
+                'from-rose-500 to-pink-600',
+                'from-purple-500 to-violet-600',
+                'from-slate-500 to-gray-600',
+                'from-yellow-500 to-amber-600',
+                'from-green-500 to-emerald-600',
+                'from-indigo-500 to-blue-600'
+              ]
+              const color = colors[i % colors.length]
+              
+              return (
+                <motion.div
+                  key={module.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: i * 0.05 }}
+                  whileHover={{ y: -5, scale: 1.02 }}
+                  onClick={() => setActiveModule(i)}
+                  className={`cursor-pointer rounded-2xl p-5 lg:p-6 transition-all duration-300 ${
+                    activeModule === i 
+                      ? `bg-gradient-to-br ${color} text-white shadow-xl`
+                      : 'bg-gray-50 hover:bg-gray-100 text-gray-900 border border-gray-100'
+                  }`}
+                >
+                  <div className={`w-12 h-12 rounded-xl flex items-center justify-center mb-4 ${
+                    activeModule === i ? 'bg-white/20' : `bg-gradient-to-br ${color}`
+                  }`}>
+                    <ModuleIcon className="h-6 w-6 text-white" />
+                  </div>
+                  <h3 className="text-lg font-bold mb-2">{module.name}</h3>
+                  <p className={`text-sm mb-4 ${activeModule === i ? 'text-white/80' : 'text-gray-600'}`}>
+                    {module.description}
+                  </p>
+                  
+                  <AnimatePresence>
+                    {activeModule === i && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        className="pt-3 border-t border-white/20"
+                      >
+                        <div className="flex items-center justify-between">
+                          <span className="text-sm font-medium">₹{module.price}/month</span>
+                          <Button 
+                            size="sm" 
+                            onClick={(e) => { e.stopPropagation(); onLogin(); }}
+                            className="bg-white/20 hover:bg-white/30 text-white"
+                          >
+                            Learn More
+                          </Button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              )
+            })}
           </div>
         </div>
       </section>
 
-      {/* Detailed Features Section */}
+      {/* Features Section - With Mockups */}
       <section id="features" className="py-16 lg:py-24 bg-gradient-to-b from-gray-50 to-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -937,7 +1133,6 @@ export default function EnterpriseLanding({ onLogin }) {
             <Badge className="bg-purple-100 text-purple-700 mb-4">Features</Badge>
             <h2 className="text-3xl lg:text-5xl font-bold mb-4">
               Everything You Need to
-              <br className="hidden lg:block" />
               <span className="bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent"> Run Your Business</span>
             </h2>
           </motion.div>
@@ -945,18 +1140,20 @@ export default function EnterpriseLanding({ onLogin }) {
           {/* Feature Tabs */}
           <div className="flex flex-wrap justify-center gap-2 lg:gap-4 mb-8 lg:mb-12">
             {detailedFeatures.map((feature, i) => (
-              <button
+              <motion.button
                 key={i}
                 onClick={() => setActiveFeature(i)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
                 className={`flex items-center gap-2 px-4 lg:px-6 py-2 lg:py-3 rounded-full text-sm lg:text-base font-medium transition-all ${
                   activeFeature === i
-                    ? 'bg-gray-900 text-white shadow-lg'
+                    ? `bg-gradient-to-r ${feature.color} text-white shadow-lg`
                     : 'bg-white text-gray-600 hover:bg-gray-100 border border-gray-200'
                 }`}
               >
                 <feature.icon className="h-4 w-4 lg:h-5 lg:w-5" />
                 <span className="hidden sm:inline">{feature.category}</span>
-              </button>
+              </motion.button>
             ))}
           </div>
 
@@ -967,11 +1164,12 @@ export default function EnterpriseLanding({ onLogin }) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="bg-white rounded-2xl lg:rounded-3xl shadow-xl overflow-hidden"
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-2xl lg:rounded-3xl shadow-xl overflow-hidden border border-gray-100"
             >
               <div className="grid lg:grid-cols-2">
                 <div className="p-6 lg:p-12">
-                  <div className={`inline-flex items-center justify-center w-12 h-12 lg:w-14 lg:h-14 rounded-xl ${detailedFeatures[activeFeature].color} text-white mb-6`}>
+                  <div className={`inline-flex items-center justify-center w-12 h-12 lg:w-14 lg:h-14 rounded-xl bg-gradient-to-r ${detailedFeatures[activeFeature].color} text-white mb-6`}>
                     {(() => {
                       const Icon = detailedFeatures[activeFeature].icon
                       return <Icon className="h-6 w-6 lg:h-7 lg:w-7" />
@@ -986,7 +1184,13 @@ export default function EnterpriseLanding({ onLogin }) {
                   
                   <div className="space-y-4">
                     {detailedFeatures[activeFeature].capabilities.map((cap, i) => (
-                      <div key={i} className="flex gap-4">
+                      <motion.div 
+                        key={i} 
+                        className="flex gap-4"
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: i * 0.1 }}
+                      >
                         <div className="flex-shrink-0 w-6 h-6 rounded-full bg-green-100 flex items-center justify-center">
                           <Check className="h-4 w-4 text-green-600" />
                         </div>
@@ -994,21 +1198,25 @@ export default function EnterpriseLanding({ onLogin }) {
                           <p className="font-semibold text-gray-900">{cap.title}</p>
                           <p className="text-sm text-gray-600">{cap.desc}</p>
                         </div>
-                      </div>
+                      </motion.div>
                     ))}
                   </div>
                 </div>
                 
-                <div className="bg-gradient-to-br from-gray-100 to-gray-200 p-6 lg:p-12 flex items-center justify-center">
-                  <div className="w-full max-w-md aspect-video bg-white rounded-xl shadow-lg flex items-center justify-center">
-                    <div className="text-center p-8">
-                      {(() => {
-                        const Icon = detailedFeatures[activeFeature].icon
-                        return <Icon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-                      })()}
-                      <p className="text-gray-400 text-sm">Feature Preview</p>
-                    </div>
-                  </div>
+                {/* Feature Mockup */}
+                <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-6 lg:p-12 flex items-center justify-center">
+                  <motion.div
+                    key={activeFeature}
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ duration: 0.4 }}
+                    className="w-full max-w-md"
+                  >
+                    <FeatureMockup 
+                      type={detailedFeatures[activeFeature].mockupType} 
+                      color={detailedFeatures[activeFeature].color}
+                    />
+                  </motion.div>
                 </div>
               </div>
             </motion.div>
@@ -1016,8 +1224,8 @@ export default function EnterpriseLanding({ onLogin }) {
         </div>
       </section>
 
-      {/* Comparison Section */}
-      <section id="comparison" className="py-16 lg:py-24 bg-slate-900 text-white">
+      {/* Why BuildCRM - Cleaner Design */}
+      <section id="why-us" className="py-16 lg:py-24 bg-slate-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -1025,97 +1233,113 @@ export default function EnterpriseLanding({ onLogin }) {
             viewport={{ once: true }}
             className="text-center mb-12 lg:mb-16"
           >
-            <Badge className="bg-blue-500/20 text-blue-300 mb-4">Why BuildCRM</Badge>
+            <Badge className="bg-blue-500/20 text-blue-300 mb-4 border border-blue-500/30">Why BuildCRM</Badge>
             <h2 className="text-3xl lg:text-5xl font-bold mb-4">
-              Replace 6+ Tools with
-              <br className="hidden lg:block" />
-              <span className="bg-gradient-to-r from-blue-400 to-cyan-400 bg-clip-text text-transparent"> One Platform</span>
+              Stop Paying for 6 Apps.
+              <span className="text-blue-400"> Use One.</span>
             </h2>
-            <p className="text-lg lg:text-xl text-gray-400 max-w-2xl mx-auto">
-              Stop paying for Slack + Jira + Salesforce + Tally separately. Get everything in BuildCRM.
+            <p className="text-lg text-gray-400 max-w-2xl mx-auto">
+              Replace your fragmented tool stack with one integrated platform built for construction.
             </p>
           </motion.div>
 
-          {/* Cost Comparison */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="bg-white/5 rounded-2xl p-6 lg:p-8 mb-12"
-          >
-            <div className="grid md:grid-cols-2 gap-8 items-center">
-              <div className="text-center md:text-left">
-                <p className="text-gray-400 mb-2">Using multiple tools costs you</p>
-                <p className="text-4xl lg:text-5xl font-bold text-red-400 line-through">₹50,000+/month</p>
-                <div className="flex flex-wrap gap-2 mt-4 justify-center md:justify-start">
-                  {['Slack', 'Jira', 'Salesforce', 'Tally', 'Asana', 'Zoho'].map((tool) => (
-                    <span key={tool} className="px-3 py-1 bg-white/10 rounded-full text-sm text-gray-300">{tool}</span>
-                  ))}
+          {/* Comparison */}
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12 max-w-5xl mx-auto">
+            {/* Without BuildCRM */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="bg-white/5 backdrop-blur-sm rounded-2xl p-6 lg:p-8 border border-white/10"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-red-500/20 rounded-xl flex items-center justify-center">
+                  <X className="h-5 w-5 text-red-400" />
                 </div>
+                <h3 className="text-xl font-bold">Without BuildCRM</h3>
               </div>
-              <div className="text-center md:text-right">
-                <p className="text-gray-400 mb-2">With BuildCRM, pay just</p>
-                <p className="text-4xl lg:text-5xl font-bold text-green-400">₹2,499/month</p>
-                <p className="text-green-400 mt-2">Save ₹47,500+ every month</p>
-              </div>
-            </div>
-          </motion.div>
-
-          {/* Feature Comparison Table */}
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[600px]">
-              <thead>
-                <tr className="border-b border-white/10">
-                  <th className="text-left py-4 px-2 lg:px-4 font-medium text-gray-400">Feature</th>
-                  {comparisonData.tools.map((tool, i) => (
-                    <th key={i} className="py-4 px-2 lg:px-4 text-center">
-                      <div className={`flex flex-col items-center ${tool.highlight ? '' : 'opacity-60'}`}>
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-                          tool.highlight ? 'bg-gradient-to-br from-blue-500 to-indigo-600' : 'bg-white/10'
-                        }`}>
-                          <tool.logo className="h-5 w-5 text-white" />
-                        </div>
-                        <span className={`text-xs lg:text-sm mt-1 ${tool.highlight ? 'font-bold' : ''}`}>{tool.name}</span>
+              <div className="space-y-4">
+                {[
+                  { tool: 'WhatsApp', use: 'Lead Management', cost: '₹0' },
+                  { tool: 'Excel', use: 'Project Tracking', cost: '₹7,000/yr' },
+                  { tool: 'Tally', use: 'Accounting', cost: '₹18,000/yr' },
+                  { tool: 'Google Drive', use: 'Documents', cost: '₹2,400/yr' },
+                  { tool: 'Slack/Zoom', use: 'Communication', cost: '₹12,000/yr' },
+                  { tool: 'Manual', use: 'Inventory', cost: '₹15L+ losses' }
+                ].map((item, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: -10 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="flex items-center justify-between p-3 rounded-lg bg-white/5"
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 bg-gray-700 rounded-lg flex items-center justify-center text-xs font-bold text-gray-400">
+                        {item.tool.charAt(0)}
                       </div>
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {comparisonData.features.map((row, i) => (
-                  <tr key={i} className="border-b border-white/5 hover:bg-white/5">
-                    <td className="py-3 lg:py-4 px-2 lg:px-4 text-sm lg:text-base font-medium">{row.name}</td>
-                    <td className="py-3 lg:py-4 px-2 lg:px-4 text-center">
-                      {row.buildcrm && (
-                        <div className="inline-flex items-center justify-center w-7 h-7 bg-green-500/20 rounded-full">
-                          <Check className="h-4 w-4 text-green-400" />
-                        </div>
-                      )}
-                    </td>
-                    <td className="py-3 lg:py-4 px-2 lg:px-4 text-center opacity-60">
-                      {row.slack && <Check className="h-4 w-4 text-gray-500 inline" />}
-                      {!row.slack && <span className="text-gray-600">—</span>}
-                    </td>
-                    <td className="py-3 lg:py-4 px-2 lg:px-4 text-center opacity-60">
-                      {row.jira && <Check className="h-4 w-4 text-gray-500 inline" />}
-                      {!row.jira && <span className="text-gray-600">—</span>}
-                    </td>
-                    <td className="py-3 lg:py-4 px-2 lg:px-4 text-center opacity-60">
-                      {row.salesforce && <Check className="h-4 w-4 text-gray-500 inline" />}
-                      {!row.salesforce && <span className="text-gray-600">—</span>}
-                    </td>
-                    <td className="py-3 lg:py-4 px-2 lg:px-4 text-center opacity-60">
-                      {row.asana && <Check className="h-4 w-4 text-gray-500 inline" />}
-                      {!row.asana && <span className="text-gray-600">—</span>}
-                    </td>
-                    <td className="py-3 lg:py-4 px-2 lg:px-4 text-center opacity-60">
-                      {row.tally && <Check className="h-4 w-4 text-gray-500 inline" />}
-                      {!row.tally && <span className="text-gray-600">—</span>}
-                    </td>
-                  </tr>
+                      <div>
+                        <p className="font-medium text-sm">{item.tool}</p>
+                        <p className="text-xs text-gray-500">{item.use}</p>
+                      </div>
+                    </div>
+                    <span className="text-sm text-red-400">{item.cost}</span>
+                  </motion.div>
                 ))}
-              </tbody>
-            </table>
+              </div>
+              <div className="mt-6 p-4 bg-red-500/10 rounded-xl border border-red-500/20">
+                <p className="text-center">
+                  <span className="text-red-400 font-bold">Total: ₹50,000+/year</span>
+                  <span className="text-gray-500 text-sm block">+ countless hours lost</span>
+                </p>
+              </div>
+            </motion.div>
+
+            {/* With BuildCRM */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="bg-gradient-to-br from-blue-500/10 to-indigo-500/10 backdrop-blur-sm rounded-2xl p-6 lg:p-8 border border-blue-500/20"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 bg-green-500/20 rounded-xl flex items-center justify-center">
+                  <Check className="h-5 w-5 text-green-400" />
+                </div>
+                <h3 className="text-xl font-bold">With BuildCRM</h3>
+              </div>
+              <div className="space-y-4">
+                {[
+                  'Lead & Pipeline Management',
+                  'Project & Task Tracking',
+                  'Invoicing & GST Billing',
+                  'Document Management',
+                  'Team Chat & Video',
+                  'Inventory Management',
+                  'AI Assistant (Mee)',
+                  'Industry-specific Modules'
+                ].map((feature, i) => (
+                  <motion.div
+                    key={i}
+                    initial={{ opacity: 0, x: 10 }}
+                    whileInView={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    className="flex items-center gap-3 p-3 rounded-lg bg-white/5"
+                  >
+                    <div className="w-6 h-6 bg-green-500/20 rounded-full flex items-center justify-center">
+                      <Check className="h-3 w-3 text-green-400" />
+                    </div>
+                    <span className="text-sm">{feature}</span>
+                  </motion.div>
+                ))}
+              </div>
+              <div className="mt-6 p-4 bg-green-500/10 rounded-xl border border-green-500/20">
+                <p className="text-center">
+                  <span className="text-green-400 font-bold text-2xl">₹2,499/month</span>
+                  <span className="text-gray-400 text-sm block">Everything included</span>
+                </p>
+              </div>
+            </motion.div>
           </div>
         </div>
       </section>
@@ -1132,8 +1356,7 @@ export default function EnterpriseLanding({ onLogin }) {
             <Badge className="bg-green-100 text-green-700 mb-4">Integrations</Badge>
             <h2 className="text-3xl lg:text-5xl font-bold mb-4">
               Connect Your Favorite
-              <br className="hidden lg:block" />
-              <span className="bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent"> Tools Seamlessly</span>
+              <span className="bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent"> Tools</span>
             </h2>
             <p className="text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto">
               Direct, company-built integrations. Not hacky workarounds that break.
@@ -1149,6 +1372,7 @@ export default function EnterpriseLanding({ onLogin }) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05 }}
+                whileHover={{ y: -5, scale: 1.02 }}
                 className="bg-white border-2 border-gray-100 rounded-xl lg:rounded-2xl p-4 lg:p-6 text-center hover:border-gray-200 hover:shadow-lg transition-all group"
               >
                 <div 
@@ -1169,127 +1393,7 @@ export default function EnterpriseLanding({ onLogin }) {
         </div>
       </section>
 
-      {/* Before vs After Section */}
-      <section className="py-16 lg:py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-12 lg:mb-16"
-          >
-            <Badge className="bg-green-100 text-green-700 mb-4">Transformation</Badge>
-            <h2 className="text-3xl lg:text-5xl font-bold mb-4">
-              From Chaos to Control
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              See how businesses transform their operations with BuildCRM
-            </p>
-          </motion.div>
-
-          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
-            {/* Before */}
-            <motion.div
-              initial={{ opacity: 0, x: -30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="relative"
-            >
-              <div className="absolute -top-4 left-4 bg-red-500 text-white px-4 py-1 rounded-full text-sm font-bold z-10">
-                BEFORE
-              </div>
-              <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6 lg:p-8">
-                <h3 className="text-xl font-bold text-red-700 mb-6">Without BuildCRM</h3>
-                <div className="space-y-4">
-                  {[
-                    { text: 'Leads tracked in WhatsApp groups', icon: X },
-                    { text: 'Quotes made in Word/Excel - no standardization', icon: X },
-                    { text: 'No idea which salesperson performs best', icon: X },
-                    { text: 'Inventory counts done manually weekly', icon: X },
-                    { text: 'Project updates via phone calls', icon: X },
-                    { text: 'Invoices created at month-end in bulk', icon: X },
-                    { text: 'Customer history lost when staff leaves', icon: X },
-                    { text: '6+ apps for communication', icon: X }
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-3 text-gray-700">
-                      <div className="w-6 h-6 bg-red-200 rounded-full flex items-center justify-center flex-shrink-0">
-                        <item.icon className="h-4 w-4 text-red-600" />
-                      </div>
-                      <span className="text-sm lg:text-base">{item.text}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-6 p-4 bg-red-100 rounded-xl">
-                  <p className="text-red-800 font-semibold text-center">
-                    Average time spent on admin: 4+ hours/day
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-
-            {/* After */}
-            <motion.div
-              initial={{ opacity: 0, x: 30 }}
-              whileInView={{ opacity: 1, x: 0 }}
-              viewport={{ once: true }}
-              className="relative"
-            >
-              <div className="absolute -top-4 left-4 bg-green-500 text-white px-4 py-1 rounded-full text-sm font-bold z-10">
-                AFTER
-              </div>
-              <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-6 lg:p-8">
-                <h3 className="text-xl font-bold text-green-700 mb-6">With BuildCRM</h3>
-                <div className="space-y-4">
-                  {[
-                    { text: 'All leads in one dashboard with full history', icon: Check },
-                    { text: 'Professional quotes generated in 2 minutes', icon: Check },
-                    { text: 'Real-time sales leaderboard and analytics', icon: Check },
-                    { text: 'Live inventory with automatic low-stock alerts', icon: Check },
-                    { text: 'Automatic client updates via WhatsApp', icon: Check },
-                    { text: 'One-click GST invoices with payment tracking', icon: Check },
-                    { text: 'Complete customer history in CRM forever', icon: Check },
-                    { text: 'Everything in one integrated platform', icon: Check }
-                  ].map((item, i) => (
-                    <div key={i} className="flex items-center gap-3 text-gray-700">
-                      <div className="w-6 h-6 bg-green-200 rounded-full flex items-center justify-center flex-shrink-0">
-                        <item.icon className="h-4 w-4 text-green-600" />
-                      </div>
-                      <span className="text-sm lg:text-base">{item.text}</span>
-                    </div>
-                  ))}
-                </div>
-                <div className="mt-6 p-4 bg-green-100 rounded-xl">
-                  <p className="text-green-800 font-semibold text-center">
-                    Average time spent on admin: Under 1 hour/day
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          </div>
-
-          {/* Result Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mt-12 grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6"
-          >
-            {[
-              { value: '3x', label: 'Faster Quote Generation' },
-              { value: '40%', label: 'More Leads Converted' },
-              { value: '6 hrs', label: 'Saved Weekly on Admin' },
-              { value: '₹5L+', label: 'Recovered Revenue/Year' }
-            ].map((stat, i) => (
-              <div key={i} className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl p-4 lg:p-6 text-center text-white">
-                <p className="text-2xl lg:text-4xl font-bold mb-1">{stat.value}</p>
-                <p className="text-sm text-blue-100">{stat.label}</p>
-              </div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Testimonials Section */}
+      {/* Testimonials */}
       <section className="py-16 lg:py-24 bg-gradient-to-br from-slate-50 to-blue-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -1301,12 +1405,10 @@ export default function EnterpriseLanding({ onLogin }) {
             <Badge className="bg-amber-100 text-amber-700 mb-4">Testimonials</Badge>
             <h2 className="text-3xl lg:text-5xl font-bold mb-4">
               Trusted by 500+ Businesses
-              <br className="hidden lg:block" />
               <span className="bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent"> Across India</span>
             </h2>
           </motion.div>
 
-          {/* Testimonial Cards */}
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6">
             {testimonials.map((testimonial, i) => (
               <motion.div
@@ -1315,7 +1417,8 @@ export default function EnterpriseLanding({ onLogin }) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className={`bg-white rounded-xl lg:rounded-2xl p-5 lg:p-6 shadow-lg ${
+                whileHover={{ y: -5 }}
+                className={`bg-white rounded-xl lg:rounded-2xl p-5 lg:p-6 shadow-lg transition-all ${
                   activeTestimonial === i ? 'ring-2 ring-blue-500 shadow-xl' : ''
                 }`}
               >
@@ -1334,7 +1437,7 @@ export default function EnterpriseLanding({ onLogin }) {
                   <div>
                     <p className="font-semibold text-gray-900 text-sm">{testimonial.author}</p>
                     <p className="text-xs text-gray-500">{testimonial.role}</p>
-                    <p className="text-xs text-gray-400">{testimonial.company}, {testimonial.location}</p>
+                    <p className="text-xs text-gray-400">{testimonial.company}</p>
                   </div>
                 </div>
               </motion.div>
@@ -1343,102 +1446,7 @@ export default function EnterpriseLanding({ onLogin }) {
         </div>
       </section>
 
-      {/* How It Works Section */}
-      <section className="py-16 lg:py-24 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="text-center mb-12 lg:mb-16"
-          >
-            <Badge className="bg-cyan-100 text-cyan-700 mb-4">Getting Started</Badge>
-            <h2 className="text-3xl lg:text-5xl font-bold mb-4">
-              Up and Running in 3 Steps
-            </h2>
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              No complex setup. No IT team required. Get started in under 30 minutes.
-            </p>
-          </motion.div>
-
-          <div className="grid md:grid-cols-3 gap-8 lg:gap-12">
-            {[
-              {
-                step: '01',
-                title: 'Sign Up & Configure',
-                description: 'Create your account, choose your industry module, and import your existing data from Excel or other CRMs. Our setup wizard guides you through everything.',
-                icon: Settings,
-                time: '10 mins'
-              },
-              {
-                step: '02',
-                title: 'Invite Your Team',
-                description: 'Add team members with role-based access. Sales can see leads, operations can manage projects, and finance handles invoices. Everyone sees what they need.',
-                icon: Users,
-                time: '5 mins'
-              },
-              {
-                step: '03',
-                title: 'Start Growing',
-                description: 'Begin capturing leads, creating quotes, and managing projects. Our AI assistant Mee helps you get the most out of every feature.',
-                icon: Rocket,
-                time: '15 mins'
-              }
-            ].map((step, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: i * 0.2 }}
-                className="relative"
-              >
-                {/* Connector line */}
-                {i < 2 && (
-                  <div className="hidden md:block absolute top-20 left-[60%] w-[80%] h-0.5 bg-gradient-to-r from-gray-300 to-gray-100" />
-                )}
-                
-                <div className="bg-gray-50 rounded-2xl p-6 lg:p-8 border border-gray-100 hover:shadow-lg transition-all relative z-10">
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="w-14 h-14 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl flex items-center justify-center text-white">
-                      <step.icon className="h-7 w-7" />
-                    </div>
-                    <span className="text-5xl font-bold text-gray-100">{step.step}</span>
-                  </div>
-                  <h3 className="text-xl font-bold text-gray-900 mb-3">{step.title}</h3>
-                  <p className="text-gray-600 mb-4">{step.description}</p>
-                  <div className="inline-flex items-center gap-2 text-sm text-blue-600 font-medium">
-                    <Clock className="h-4 w-4" />
-                    <span>{step.time}</span>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mt-12 text-center"
-          >
-            <div className="inline-flex items-center gap-4 bg-blue-50 border border-blue-200 rounded-2xl px-6 py-4">
-              <div className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
-                <Headphones className="h-6 w-6 text-blue-600" />
-              </div>
-              <div className="text-left">
-                <p className="font-semibold text-gray-900">Need help setting up?</p>
-                <p className="text-sm text-gray-600">Our team provides free onboarding calls for all new accounts</p>
-              </div>
-              <Button onClick={onLogin} variant="outline" className="ml-4 border-blue-300 text-blue-600 hover:bg-blue-50">
-                Book a Call
-              </Button>
-            </div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Pricing Section */}
+      {/* Pricing Section - Dynamic */}
       <section id="pricing" className="py-16 lg:py-24 bg-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <motion.div
@@ -1450,7 +1458,6 @@ export default function EnterpriseLanding({ onLogin }) {
             <Badge className="bg-indigo-100 text-indigo-700 mb-4">Pricing</Badge>
             <h2 className="text-3xl lg:text-5xl font-bold mb-4">
               Simple, Transparent
-              <br className="hidden lg:block" />
               <span className="bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent"> Pricing</span>
             </h2>
             <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
@@ -1481,14 +1488,15 @@ export default function EnterpriseLanding({ onLogin }) {
 
           {/* Pricing Cards */}
           <div className="grid md:grid-cols-3 gap-6 lg:gap-8 max-w-5xl mx-auto">
-            {pricingPlans.map((plan, i) => (
+            {plans.map((plan, i) => (
               <motion.div
-                key={i}
+                key={plan.id}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.1 }}
-                className={`relative rounded-2xl lg:rounded-3xl p-6 lg:p-8 ${
+                whileHover={{ y: -5 }}
+                className={`relative rounded-2xl lg:rounded-3xl p-6 lg:p-8 transition-all ${
                   plan.popular
                     ? 'bg-gradient-to-br from-indigo-600 to-purple-700 text-white shadow-2xl shadow-indigo-500/30 lg:scale-105 z-10'
                     : 'bg-white border-2 border-gray-100'
@@ -1509,7 +1517,7 @@ export default function EnterpriseLanding({ onLogin }) {
 
                 <div className="text-center mb-6">
                   <span className="text-4xl lg:text-5xl font-bold">
-                    ₹{calculatePrice(plan.monthlyPrice).toLocaleString()}
+                    ₹{calculatePrice(plan.price).toLocaleString()}
                   </span>
                   <span className={`text-sm ${plan.popular ? 'text-indigo-200' : 'text-gray-500'}`}>/month</span>
                   {isAnnual && (
@@ -1520,31 +1528,27 @@ export default function EnterpriseLanding({ onLogin }) {
                 </div>
 
                 <ul className="space-y-3 mb-8">
-                  {plan.features.map((feature, j) => (
+                  {(plan.features || []).slice(0, 8).map((feature, j) => (
                     <li key={j} className="flex items-start gap-3">
-                      {feature.included ? (
-                        <CheckCircle2 className={`h-5 w-5 flex-shrink-0 ${plan.popular ? 'text-indigo-300' : 'text-green-500'}`} />
-                      ) : (
-                        <X className={`h-5 w-5 flex-shrink-0 ${plan.popular ? 'text-indigo-400' : 'text-gray-300'}`} />
-                      )}
-                      <span className={`text-sm ${!feature.included && !plan.popular ? 'text-gray-400' : ''}`}>
-                        {feature.text}
-                      </span>
+                      <CheckCircle2 className={`h-5 w-5 flex-shrink-0 ${plan.popular ? 'text-indigo-300' : 'text-green-500'}`} />
+                      <span className="text-sm">{typeof feature === 'string' ? feature : feature.text}</span>
                     </li>
                   ))}
                 </ul>
 
-                <Button
-                  onClick={onLogin}
-                  className={`w-full h-12 text-base rounded-xl ${
-                    plan.popular
-                      ? 'bg-white text-indigo-600 hover:bg-gray-100'
-                      : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700'
-                  }`}
-                >
-                  {plan.cta}
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
+                  <Button
+                    onClick={onLogin}
+                    className={`w-full h-12 text-base rounded-xl font-semibold ${
+                      plan.popular
+                        ? 'bg-white text-indigo-600 hover:bg-gray-100'
+                        : 'bg-gradient-to-r from-indigo-600 to-purple-600 text-white hover:from-indigo-700 hover:to-purple-700'
+                    }`}
+                  >
+                    Start Free Trial
+                    <ArrowRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </motion.div>
               </motion.div>
             ))}
           </div>
@@ -1574,14 +1578,19 @@ export default function EnterpriseLanding({ onLogin }) {
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ delay: i * 0.05 }}
-                className="bg-white rounded-xl overflow-hidden"
+                className="bg-white rounded-xl overflow-hidden shadow-sm"
               >
                 <button
                   onClick={() => setActiveFaq(activeFaq === i ? null : i)}
-                  className="w-full flex items-center justify-between p-5 lg:p-6 text-left"
+                  className="w-full flex items-center justify-between p-5 lg:p-6 text-left hover:bg-gray-50 transition-colors"
                 >
                   <span className="font-semibold text-gray-900 pr-4">{faq.question}</span>
-                  <ChevronDown className={`h-5 w-5 text-gray-500 transition-transform ${activeFaq === i ? 'rotate-180' : ''}`} />
+                  <motion.div
+                    animate={{ rotate: activeFaq === i ? 180 : 0 }}
+                    transition={{ duration: 0.2 }}
+                  >
+                    <ChevronDown className="h-5 w-5 text-gray-500" />
+                  </motion.div>
                 </button>
                 <AnimatePresence>
                   {activeFaq === i && (
@@ -1620,22 +1629,26 @@ export default function EnterpriseLanding({ onLogin }) {
               Join 500+ construction and home improvement businesses already using BuildCRM to streamline their operations.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Button 
-                size="lg" 
-                onClick={onLogin}
-                className="h-14 px-8 text-lg bg-white text-indigo-600 hover:bg-gray-100 rounded-xl shadow-xl"
-              >
-                Start Free Trial
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
-              <Button 
-                size="lg" 
-                onClick={onLogin}
-                className="h-14 px-8 text-lg bg-white hover:bg-gray-100 text-indigo-700 font-semibold border-2 border-white rounded-xl shadow-lg"
-              >
-                <Phone className="mr-2 h-5 w-5" />
-                <span>Schedule Demo</span>
-              </Button>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button 
+                  size="lg" 
+                  onClick={onLogin}
+                  className="h-14 px-8 text-lg bg-white text-indigo-600 hover:bg-gray-100 rounded-xl shadow-xl font-semibold"
+                >
+                  Start Free Trial
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Button>
+              </motion.div>
+              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                <Button 
+                  size="lg" 
+                  onClick={onLogin}
+                  className="h-14 px-8 text-lg bg-white hover:bg-gray-100 text-indigo-700 font-semibold border-2 border-white rounded-xl shadow-lg"
+                >
+                  <Phone className="mr-2 h-5 w-5" />
+                  <span>Schedule Demo</span>
+                </Button>
+              </motion.div>
             </div>
             <p className="text-indigo-200 text-sm mt-6">
               No credit card required • 14-day free trial • Free data migration
@@ -1644,31 +1657,41 @@ export default function EnterpriseLanding({ onLogin }) {
         </div>
       </section>
 
-      {/* Footer */}
+      {/* Footer - Monday.com Style */}
       <footer className="bg-slate-900 text-white py-12 lg:py-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-8 mb-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 mb-12">
             {/* Brand */}
-            <div className="col-span-2 lg:col-span-2">
+            <div className="col-span-2">
               <div className="flex items-center gap-2 mb-4">
                 <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-xl flex items-center justify-center">
                   <Building2 className="h-5 w-5 text-white" />
                 </div>
                 <span className="text-xl font-bold">BuildCRM</span>
               </div>
-              <p className="text-gray-400 mb-4 max-w-sm text-sm">
+              <p className="text-gray-400 mb-6 max-w-sm text-sm">
                 The all-in-one platform for construction and home improvement businesses. Manage leads, projects, inventory, and teams in one place.
               </p>
               <div className="flex gap-3">
-                {[Globe, Mail, Phone].map((Icon, i) => (
-                  <a key={i} href="#" className="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors">
-                    <Icon className="h-4 w-4" />
-                  </a>
+                {[
+                  { icon: Twitter, href: '#' },
+                  { icon: Linkedin, href: '#' },
+                  { icon: Youtube, href: '#' },
+                  { icon: Instagram, href: '#' }
+                ].map((social, i) => (
+                  <motion.a 
+                    key={i}
+                    href={social.href}
+                    whileHover={{ scale: 1.1, y: -2 }}
+                    className="w-9 h-9 bg-white/10 rounded-lg flex items-center justify-center hover:bg-white/20 transition-colors"
+                  >
+                    <social.icon className="h-4 w-4" />
+                  </motion.a>
                 ))}
               </div>
             </div>
 
-            {/* Links */}
+            {/* Product */}
             <div>
               <h4 className="font-semibold mb-4">Product</h4>
               <ul className="space-y-2 text-sm text-gray-400">
@@ -1676,26 +1699,43 @@ export default function EnterpriseLanding({ onLogin }) {
                 <li><a href="#modules" className="hover:text-white transition-colors">Modules</a></li>
                 <li><a href="#pricing" className="hover:text-white transition-colors">Pricing</a></li>
                 <li><a href="#integrations" className="hover:text-white transition-colors">Integrations</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">API</a></li>
               </ul>
             </div>
 
+            {/* Company */}
             <div>
               <h4 className="font-semibold mb-4">Company</h4>
               <ul className="space-y-2 text-sm text-gray-400">
-                <li><a href="#" className="hover:text-white transition-colors">About Us</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Blog</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Careers</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Contact</a></li>
+                <li><a href="/about" className="hover:text-white transition-colors">About Us</a></li>
+                <li><a href="/blog" className="hover:text-white transition-colors">Blog</a></li>
+                <li><a href="/careers" className="hover:text-white transition-colors">Careers</a></li>
+                <li><a href="/contact" className="hover:text-white transition-colors">Contact</a></li>
+                <li><a href="/press" className="hover:text-white transition-colors">Press</a></li>
               </ul>
             </div>
 
+            {/* Resources */}
             <div>
-              <h4 className="font-semibold mb-4">Support</h4>
+              <h4 className="font-semibold mb-4">Resources</h4>
               <ul className="space-y-2 text-sm text-gray-400">
                 <li><a href="#" className="hover:text-white transition-colors">Help Center</a></li>
                 <li><a href="#" className="hover:text-white transition-colors">Documentation</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">API Reference</a></li>
-                <li><a href="#" className="hover:text-white transition-colors">Status</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Webinars</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Community</a></li>
+                <li><a href="#" className="hover:text-white transition-colors">Templates</a></li>
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <h4 className="font-semibold mb-4">Legal</h4>
+              <ul className="space-y-2 text-sm text-gray-400">
+                <li><a href="/privacy" className="hover:text-white transition-colors">Privacy Policy</a></li>
+                <li><a href="/terms" className="hover:text-white transition-colors">Terms of Service</a></li>
+                <li><a href="/security" className="hover:text-white transition-colors">Security</a></li>
+                <li><a href="/gdpr" className="hover:text-white transition-colors">GDPR</a></li>
+                <li><a href="/cookies" className="hover:text-white transition-colors">Cookie Policy</a></li>
               </ul>
             </div>
           </div>
@@ -1704,15 +1744,14 @@ export default function EnterpriseLanding({ onLogin }) {
             <p className="text-gray-500 text-sm">
               © 2025 BuildCRM. All rights reserved.
             </p>
-            <div className="flex flex-wrap justify-center gap-4 text-sm text-gray-400">
-              <a href="#" className="hover:text-white">Privacy Policy</a>
-              <a href="#" className="hover:text-white">Terms of Service</a>
-              <a href="#" className="hover:text-white">Security</a>
-            </div>
-            <div className="flex items-center gap-2 text-gray-500 text-sm">
-              <span>Made with</span>
-              <Heart className="h-4 w-4 text-red-500 fill-red-500" />
-              <span>in India</span>
+            <div className="flex items-center gap-4 text-sm text-gray-400">
+              <span className="flex items-center gap-2">
+                <Globe className="h-4 w-4" />
+                English
+              </span>
+              <span className="flex items-center gap-2">
+                Made with <Heart className="h-4 w-4 text-red-500 fill-red-500" /> in India
+              </span>
             </div>
           </div>
         </div>
