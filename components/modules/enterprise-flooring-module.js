@@ -5166,7 +5166,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   <p className="text-center py-4 text-slate-500">No products available</p>
                 )}
               </div>
-              {Object.values(selectedProducts).some(p => p.selected) && (
+              {Object.values(measurementProducts).some(p => p.selected) && (
                 <div className="mt-3 p-3 bg-cyan-50 rounded-lg flex items-center justify-between">
                   <span className="text-sm font-medium text-cyan-800">
                     {Object.values(selectedProducts).filter(p => p.selected).length} products selected
