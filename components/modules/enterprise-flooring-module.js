@@ -2993,10 +2993,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   const renderInventory = () => {
     const { inventory: items, summary = {}, byCategory = {} } = inventory
 
+    // Get projects with blocked inventory
+    const projectsWithBlockedInventory = projects.filter(p => p.materialRequisition?.inventoryBlocked)
+
     return (
       <div className="space-y-4">
         {/* Summary */}
-        <div className="grid grid-cols-5 gap-4">
+        <div className="grid grid-cols-6 gap-4">
           <Card className="p-4">
             <p className="text-sm text-slate-500">Total Products</p>
             <p className="text-2xl font-bold">{summary.totalProducts || 0}</p>
@@ -3005,9 +3008,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             <p className="text-sm text-slate-500">Total Quantity</p>
             <p className="text-2xl font-bold">{(summary.totalQuantity || 0).toLocaleString()} sqft</p>
           </Card>
-          <Card className="p-4">
-            <p className="text-sm text-slate-500">Total Value</p>
-            <p className="text-2xl font-bold">₹{(summary.totalValue || 0).toLocaleString()}</p>
+          <Card className="p-4 bg-amber-50 border-amber-200">
+            <p className="text-sm text-amber-700 flex items-center gap-1"><Lock className="h-3 w-3" /> Reserved/Blocked</p>
+            <p className="text-2xl font-bold text-amber-600">{(summary.reservedQuantity || 0).toLocaleString()} sqft</p>
+          </Card>
+          <Card className="p-4 bg-emerald-50 border-emerald-200">
+            <p className="text-sm text-emerald-700">Available</p>
+            <p className="text-2xl font-bold text-emerald-600">{(summary.availableQuantity || 0).toLocaleString()} sqft</p>
           </Card>
           <Card className="p-4">
             <p className="text-sm text-slate-500">Low Stock</p>
@@ -3018,6 +3025,52 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             <p className="text-2xl font-bold text-red-600">{summary.outOfStockCount || 0}</p>
           </Card>
         </div>
+
+        {/* Blocked Inventory by Project */}
+        {projectsWithBlockedInventory.length > 0 && (
+          <Card className="border-amber-200 bg-amber-50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2 text-amber-800">
+                <Lock className="h-4 w-4" /> Inventory Blocked for Projects
+              </CardTitle>
+              <CardDescription className="text-amber-700">
+                The following quantities are reserved and not available for new allocations
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {projectsWithBlockedInventory.map(project => (
+                  <div key={project.id} className="p-3 bg-white rounded-lg border border-amber-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <div className="flex items-center gap-2">
+                        <Badge className="bg-purple-100 text-purple-700">{project.projectNumber}</Badge>
+                        <span className="text-sm font-medium">{project.customerName}</span>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm">
+                        <span className="text-amber-700 font-medium">
+                          {project.materialRequisition?.totalQuantity || 0} units blocked
+                        </span>
+                        <span className="text-slate-500">
+                          Reserved: {new Date(project.materialRequisition?.reservedAt || project.materialRequisition?.createdAt).toLocaleDateString()}
+                        </span>
+                        <Badge className={ProjectStatusB2B[project.status]?.color || 'bg-slate-100'}>
+                          {ProjectStatusB2B[project.status]?.label || project.status}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {project.materialRequisition?.items?.map((item, idx) => (
+                        <Badge key={idx} variant="outline" className="bg-white text-xs">
+                          {item.productName}: {item.quantity} units
+                        </Badge>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Header */}
         <div className="flex items-center justify-between">
@@ -3052,9 +3105,9 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     <TableHeader>Product</TableHeader>
                     <TableHeader>SKU</TableHeader>
                     <TableHeader>Category</TableHeader>
-                    <TableHeader>In Stock</TableHeader>
-                    <TableHeader>Reserved</TableHeader>
-                    <TableHeader>Available</TableHeader>
+                    <TableHeader>Total Stock</TableHeader>
+                    <TableHeader className="text-amber-700"><Lock className="h-3 w-3 inline mr-1" />Reserved</TableHeader>
+                    <TableHeader className="text-emerald-700">Available</TableHeader>
                     <TableHeader>Avg Cost</TableHeader>
                     <TableHeader>Value</TableHeader>
                     <TableHeader>Status</TableHeader>
@@ -3064,6 +3117,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   {items.map(item => {
                     const isLow = item.availableQty <= (item.reorderLevel || 100)
                     const isOut = item.availableQty <= 0
+                    const hasReserved = (item.reservedQty || 0) > 0
                     return (
                       <tr key={item.id} className={`hover:bg-slate-50 ${isOut ? 'bg-red-50' : isLow ? 'bg-amber-50' : ''}`}>
                         <td className="px-4 py-3">
@@ -3081,7 +3135,10 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           <p className="font-medium">{(item.quantity || 0).toLocaleString()} sqft</p>
                         </td>
                         <td className="px-4 py-3">
-                          <p className="text-slate-500">{(item.reservedQty || 0).toLocaleString()} sqft</p>
+                          <p className={`font-medium ${hasReserved ? 'text-amber-600' : 'text-slate-400'}`}>
+                            {hasReserved && <Lock className="h-3 w-3 inline mr-1" />}
+                            {(item.reservedQty || 0).toLocaleString()} sqft
+                          </p>
                         </td>
                         <td className="px-4 py-3">
                           <p className={`font-medium ${isOut ? 'text-red-600' : isLow ? 'text-amber-600' : 'text-emerald-600'}`}>
