@@ -1750,14 +1750,9 @@ export default function EnterpriseLanding({ onLogin }) {
         
         {/* Animated Glow Rings */}
         <motion.div 
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full border border-blue-500/20"
-          animate={{ scale: [1, 1.1, 1], opacity: [0.3, 0.5, 0.3] }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] lg:w-[700px] lg:h-[700px] rounded-full border border-green-500/20"
+          animate={{ scale: [1, 1.05, 1], opacity: [0.3, 0.5, 0.3] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-        />
-        <motion.div 
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full border border-purple-500/10"
-          animate={{ scale: [1.1, 1, 1.1], opacity: [0.2, 0.4, 0.2] }}
-          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
         />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1765,7 +1760,7 @@ export default function EnterpriseLanding({ onLogin }) {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="text-center mb-16 lg:mb-20"
+            className="text-center mb-12 lg:mb-16"
           >
             <Badge className="bg-green-500/20 text-green-300 mb-4 border border-green-500/30 px-4 py-1.5">Integrations</Badge>
             <h2 className="text-3xl lg:text-5xl font-bold mb-4">
@@ -1777,97 +1772,174 @@ export default function EnterpriseLanding({ onLogin }) {
           </motion.div>
 
           {/* Orbital Integration Display */}
-          <div className="relative h-[500px] lg:h-[600px] flex items-center justify-center">
-            {/* Center Logo */}
+          <div className="relative h-[400px] sm:h-[500px] lg:h-[600px] flex items-center justify-center">
+            {/* Center BuildCRM Logo */}
             <motion.div
               initial={{ scale: 0 }}
               whileInView={{ scale: 1 }}
               viewport={{ once: true }}
-              className="absolute z-20 w-24 h-24 lg:w-32 lg:h-32 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-500/30"
+              className="absolute z-20 w-20 h-20 sm:w-24 sm:h-24 lg:w-32 lg:h-32 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-2xl lg:rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-500/40"
             >
-              <Building2 className="h-12 w-12 lg:h-16 lg:w-16 text-white" />
+              <Building2 className="h-10 w-10 sm:h-12 sm:w-12 lg:h-16 lg:w-16 text-white" />
             </motion.div>
 
-            {/* Orbital Rings */}
-            <div className="absolute w-[300px] h-[300px] lg:w-[400px] lg:h-[400px] rounded-full border border-dashed border-white/10" />
-            <div className="absolute w-[450px] h-[450px] lg:w-[550px] lg:h-[550px] rounded-full border border-dashed border-white/5" />
+            {/* Orbital Rings - Dashed */}
+            <div className="absolute w-[250px] h-[250px] sm:w-[320px] sm:h-[320px] lg:w-[420px] lg:h-[420px] rounded-full border border-dashed border-white/10" />
+            <div className="absolute w-[350px] h-[350px] sm:w-[450px] sm:h-[450px] lg:w-[560px] lg:h-[560px] rounded-full border border-dashed border-white/5" />
 
-            {/* Orbiting Integration Icons */}
-            {integrations.map((integration, i) => {
-              const angle = (i * (360 / integrations.length)) - 90
-              const radius = i % 2 === 0 ? 180 : 240
-              const lgRadius = i % 2 === 0 ? 220 : 290
-              
-              return (
-                <motion.div
-                  key={i}
-                  initial={{ opacity: 0, scale: 0 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.1 * i, duration: 0.5 }}
-                  animate={{
-                    rotate: [0, 360],
-                  }}
-                  style={{
-                    position: 'absolute',
-                    transform: `rotate(${angle}deg) translateX(${radius}px)`,
-                  }}
-                  className="lg:hidden"
-                >
+            {/* Rotating Container for Icons */}
+            <motion.div
+              className="absolute w-[250px] h-[250px] sm:w-[320px] sm:h-[320px] lg:w-[420px] lg:h-[420px]"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+            >
+              {integrations.slice(0, 4).map((integration, i) => {
+                const angle = i * 90
+                return (
                   <motion.div
-                    animate={{ rotate: [0, -360] }}
-                    transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
-                    style={{ transform: `rotate(-${angle}deg)` }}
-                    whileHover={{ scale: 1.2 }}
-                    className="group relative"
+                    key={i}
+                    className="absolute"
+                    style={{
+                      top: '50%',
+                      left: '50%',
+                      transform: `rotate(${angle}deg) translateY(-125px) sm:translateY(-160px) lg:translateY(-210px)`,
+                      marginTop: '-28px',
+                      marginLeft: '-28px',
+                    }}
                   >
-                    <div 
-                      className="w-14 h-14 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300 cursor-pointer"
-                      style={{ backgroundColor: integration.color }}
+                    <motion.div
+                      animate={{ rotate: -360 }}
+                      transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+                      whileHover={{ scale: 1.2 }}
+                      className="group relative"
                     >
                       <div 
-                        className="w-8 h-8 text-white" 
-                        dangerouslySetInnerHTML={{ __html: integration.icon }}
-                      />
-                    </div>
-                    {/* Tooltip */}
-                    <div className="absolute -bottom-12 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white text-gray-900 px-3 py-1.5 rounded-lg text-xs font-medium whitespace-nowrap shadow-xl z-30">
-                      {integration.name}
-                      <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-white rotate-45" />
-                    </div>
+                        className="w-14 h-14 lg:w-16 lg:h-16 rounded-2xl flex items-center justify-center shadow-xl cursor-pointer border-2 border-white/20"
+                        style={{ backgroundColor: integration.color }}
+                      >
+                        <div 
+                          className="w-8 h-8 lg:w-9 lg:h-9 text-white" 
+                          dangerouslySetInnerHTML={{ __html: integration.icon }}
+                        />
+                      </div>
+                      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white text-gray-900 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shadow-xl z-30">
+                        {integration.name}
+                      </div>
+                    </motion.div>
                   </motion.div>
-                </motion.div>
-              )
-            })}
+                )
+              })}
+            </motion.div>
 
-            {/* Desktop version with larger radius */}
-            {integrations.map((integration, i) => {
-              const angle = (i * (360 / integrations.length)) - 90
-              const radius = i % 2 === 0 ? 220 : 290
-              
-              return (
-                <motion.div
-                  key={`lg-${i}`}
-                  initial={{ opacity: 0, scale: 0 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: 0.1 * i, duration: 0.5 }}
-                  style={{
-                    position: 'absolute',
-                    transform: `rotate(${angle}deg) translateX(${radius}px)`,
-                  }}
-                  className="hidden lg:block"
-                >
+            {/* Outer Ring - Counter Rotating */}
+            <motion.div
+              className="absolute w-[350px] h-[350px] sm:w-[450px] sm:h-[450px] lg:w-[560px] lg:h-[560px]"
+              animate={{ rotate: -360 }}
+              transition={{ duration: 80, repeat: Infinity, ease: "linear" }}
+            >
+              {integrations.slice(4, 8).map((integration, i) => {
+                const angle = i * 90 + 45
+                return (
                   <motion.div
-                    style={{ transform: `rotate(-${angle}deg)` }}
-                    whileHover={{ scale: 1.15 }}
-                    className="group relative cursor-pointer"
+                    key={i}
+                    className="absolute"
+                    style={{
+                      top: '50%',
+                      left: '50%',
+                      transform: `rotate(${angle}deg) translateY(-175px) sm:translateY(-225px) lg:translateY(-280px)`,
+                      marginTop: '-28px',
+                      marginLeft: '-28px',
+                    }}
                   >
-                    {/* Glow effect */}
-                    <div 
-                      className="absolute inset-0 rounded-2xl blur-xl opacity-50 group-hover:opacity-80 transition-opacity"
-                      style={{ backgroundColor: integration.color }}
-                    />
+                    <motion.div
+                      animate={{ rotate: 360 }}
+                      transition={{ duration: 80, repeat: Infinity, ease: "linear" }}
+                      whileHover={{ scale: 1.2 }}
+                      className="group relative"
+                    >
+                      <div 
+                        className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl flex items-center justify-center shadow-xl cursor-pointer border-2 border-white/20"
+                        style={{ backgroundColor: integration.color }}
+                      >
+                        <div 
+                          className="w-6 h-6 lg:w-8 lg:h-8 text-white" 
+                          dangerouslySetInnerHTML={{ __html: integration.icon }}
+                        />
+                      </div>
+                      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white text-gray-900 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shadow-xl z-30">
+                        {integration.name}
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )
+              })}
+            </motion.div>
+
+            {/* Connection Lines Animation */}
+            <svg className="absolute w-full h-full pointer-events-none opacity-20">
+              <motion.line
+                x1="50%" y1="50%" x2="50%" y2="15%"
+                stroke="url(#lineGradient)" strokeWidth="1"
+                initial={{ pathLength: 0 }}
+                whileInView={{ pathLength: 1 }}
+                transition={{ duration: 1, delay: 0.5 }}
+              />
+              <motion.line
+                x1="50%" y1="50%" x2="85%" y2="50%"
+                stroke="url(#lineGradient)" strokeWidth="1"
+                initial={{ pathLength: 0 }}
+                whileInView={{ pathLength: 1 }}
+                transition={{ duration: 1, delay: 0.7 }}
+              />
+              <motion.line
+                x1="50%" y1="50%" x2="50%" y2="85%"
+                stroke="url(#lineGradient)" strokeWidth="1"
+                initial={{ pathLength: 0 }}
+                whileInView={{ pathLength: 1 }}
+                transition={{ duration: 1, delay: 0.9 }}
+              />
+              <motion.line
+                x1="50%" y1="50%" x2="15%" y2="50%"
+                stroke="url(#lineGradient)" strokeWidth="1"
+                initial={{ pathLength: 0 }}
+                whileInView={{ pathLength: 1 }}
+                transition={{ duration: 1, delay: 1.1 }}
+              />
+              <defs>
+                <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#22c55e" />
+                  <stop offset="100%" stopColor="#06b6d4" />
+                </linearGradient>
+              </defs>
+            </svg>
+          </div>
+
+          {/* Integration Stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mt-8 grid grid-cols-3 gap-4 lg:gap-8 max-w-3xl mx-auto"
+          >
+            {[
+              { value: '8+', label: 'Native Integrations' },
+              { value: '5000+', label: 'Apps via Zapier' },
+              { value: '99.9%', label: 'Uptime SLA' }
+            ].map((stat, i) => (
+              <motion.div
+                key={i}
+                whileHover={{ y: -5 }}
+                className="text-center p-4 lg:p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10"
+              >
+                <p className="text-2xl lg:text-4xl font-bold bg-gradient-to-r from-green-400 to-cyan-400 bg-clip-text text-transparent">
+                  {stat.value}
+                </p>
+                <p className="text-xs lg:text-sm text-gray-400 mt-1">{stat.label}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
                     <div 
                       className="relative w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300 border border-white/20"
                       style={{ backgroundColor: integration.color }}
