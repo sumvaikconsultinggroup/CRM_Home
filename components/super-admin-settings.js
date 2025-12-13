@@ -263,13 +263,11 @@ function PagesManagement() {
             </div>
             
             <div className="space-y-2">
-              <Label>Content (Markdown supported)</Label>
-              <Textarea 
-                value={formData.content}
-                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-                placeholder="## Your Page Title&#10;&#10;Your content here..."
-                rows={15}
-                className="font-mono text-sm"
+              <Label>Content</Label>
+              <RichTextEditor
+                content={formData.content}
+                onChange={(html) => setFormData({ ...formData, content: html })}
+                placeholder="Start writing your page content..."
               />
             </div>
           </div>
