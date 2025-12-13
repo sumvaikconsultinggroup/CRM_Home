@@ -426,6 +426,112 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }
 
+  const handleExportProducts = async () => {
+    try {
+      const params = new URLSearchParams()
+      if (searchTerm?.trim()) params.set('search', searchTerm.trim())
+      if (categoryFilter !== 'all') params.set('categoryId', categoryFilter)
+      if (statusFilter !== 'all') params.set('status', statusFilter)
+      if (productSortBy) params.set('sortBy', productSortBy)
+      if (productSortDir) params.set('sortDir', productSortDir)
+
+      const url = `/api/flooring/enhanced/products/export${params.toString() ? `?${params.toString()}` : ''}`
+
+      const res = await fetch(url, { headers })
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}))
+        toast.error(err?.error || 'Export failed')
+        return
+      }
+
+      const blob = await res.blob()
+      const blobUrl = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = blobUrl
+      a.download = `flooring-products-${new Date().toISOString().slice(0, 10)}.csv`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      window.URL.revokeObjectURL(blobUrl)
+
+      toast.success('Export downloaded')
+    } catch (error) {
+      console.error(error)
+      toast.error('Export failed')
+    }
+  }
+
+  const handleImportProducts = async (csvText) => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/flooring/enhanced/products/import', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ csv: csvText, upsertBySku: true })
+      })
+
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data?.error || 'Import failed')
+        return
+      }
+
+      const r = data?.results
+      toast.success(`Import complete: ${r?.created || 0} created, ${r?.updated || 0} updated, ${r?.failed || 0} failed`)
+      fetchProducts()
+      setDialogOpen({ type: null, data: null })
+    } catch (error) {
+      console.error(error)
+      toast.error('Import failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSaveCategory = async ({ id, name, parentId }) => {
+    try {
+      setLoading(true)
+      const method = id ? 'PUT' : 'POST'
+      const res = await fetch('/api/flooring/enhanced/categories', {
+        method,
+        headers,
+        body: JSON.stringify({ id, name, parentId })
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data?.error || 'Failed to save category')
+        return
+      }
+      toast.success(id ? 'Category updated' : 'Category created')
+      fetchProductCategories()
+    } catch (error) {
+      console.error(error)
+      toast.error('Failed to save category')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleDeleteCategory = async (id) => {
+    try {
+      setLoading(true)
+      const res = await fetch(`/api/flooring/enhanced/categories?id=${encodeURIComponent(id)}`, { method: 'DELETE', headers })
+      const data = await res.json()
+      if (!res.ok) {
+        toast.error(data?.error || 'Failed to delete category')
+        return
+      }
+      toast.success('Category deleted')
+      fetchProductCategories()
+    } catch (error) {
+      console.error(error)
+      toast.error('Failed to delete category')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+
   const handleSaveCustomer = async (customerData) => {
     try {
       setLoading(true)
