@@ -1940,61 +1940,6 @@ export default function EnterpriseLanding({ onLogin }) {
           </motion.div>
         </div>
       </section>
-                    <div 
-                      className="relative w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg transition-all duration-300 border border-white/20"
-                      style={{ backgroundColor: integration.color }}
-                    >
-                      <div 
-                        className="w-9 h-9 text-white" 
-                        dangerouslySetInnerHTML={{ __html: integration.icon }}
-                      />
-                    </div>
-                    {/* Tooltip */}
-                    <div className="absolute -bottom-16 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform group-hover:-translate-y-1 z-30">
-                      <div className="bg-white text-gray-900 px-4 py-2 rounded-xl text-sm font-medium whitespace-nowrap shadow-2xl">
-                        <p className="font-bold">{integration.name}</p>
-                        <p className="text-xs text-gray-500">{integration.description}</p>
-                      </div>
-                    </div>
-                    {/* Connection line */}
-                    <motion.div 
-                      className="absolute top-1/2 right-full w-8 h-[2px] bg-gradient-to-l from-white/30 to-transparent origin-right"
-                      initial={{ scaleX: 0 }}
-                      whileInView={{ scaleX: 1 }}
-                      transition={{ delay: 0.3 + i * 0.1 }}
-                    />
-                  </motion.div>
-                </motion.div>
-              )
-            })}
-          </div>
-
-          {/* Integration Stats */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            className="mt-8 lg:mt-0 grid grid-cols-3 gap-4 lg:gap-8 max-w-3xl mx-auto"
-          >
-            {[
-              { value: '8+', label: 'Native Integrations' },
-              { value: '5000+', label: 'Apps via Zapier' },
-              { value: '99.9%', label: 'Uptime SLA' }
-            ].map((stat, i) => (
-              <motion.div
-                key={i}
-                whileHover={{ y: -5 }}
-                className="text-center p-4 lg:p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10"
-              >
-                <p className="text-2xl lg:text-4xl font-bold bg-gradient-to-r from-green-400 to-cyan-400 bg-clip-text text-transparent">
-                  {stat.value}
-                </p>
-                <p className="text-xs lg:text-sm text-gray-400 mt-1">{stat.label}</p>
-              </motion.div>
-            ))}
-          </motion.div>
-        </div>
-      </section>
 
       {/* ==================== TESTIMONIALS ==================== */}
       <section className="py-16 lg:py-24 bg-gradient-to-b from-slate-50 to-white">
