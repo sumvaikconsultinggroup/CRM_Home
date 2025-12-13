@@ -1778,6 +1778,40 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       ['material_requisition', 'material_processing', 'material_ready', 'quote_pending', 'quote_sent'].includes(p.status)
     )
 
+    // Get inventory data for products - create a map for easy lookup
+    const inventoryMap = new Map()
+    if (inventory?.inventory) {
+      inventory.inventory.forEach(inv => {
+        inventoryMap.set(inv.productId, inv)
+      })
+    }
+
+    // Get inventory for a product
+    const getProductInventory = (productId) => {
+      const inv = inventoryMap.get(productId)
+      return {
+        totalQty: inv?.quantity || 0,
+        availableQty: inv?.availableQty || 0,
+        reservedQty: inv?.reservedQty || 0,
+        reorderLevel: inv?.reorderLevel || 100
+      }
+    }
+
+    // Check if quantity is available
+    const isQuantityAvailable = (productId, requiredQty) => {
+      const inv = getProductInventory(productId)
+      return inv.availableQty >= requiredQty
+    }
+
+    // Get inventory status class
+    const getInventoryStatus = (productId, requiredQty = 0) => {
+      const inv = getProductInventory(productId)
+      if (inv.availableQty <= 0) return { status: 'out_of_stock', color: 'text-red-600 bg-red-50', label: 'Out of Stock' }
+      if (requiredQty > 0 && inv.availableQty < requiredQty) return { status: 'insufficient', color: 'text-amber-600 bg-amber-50', label: 'Insufficient' }
+      if (inv.availableQty <= inv.reorderLevel) return { status: 'low_stock', color: 'text-amber-600 bg-amber-50', label: 'Low Stock' }
+      return { status: 'in_stock', color: 'text-emerald-600 bg-emerald-50', label: 'In Stock' }
+    }
+
     // Helper functions for material requisition
     const toggleProductSelection = (product) => {
       setMaterialRequisition(prev => {
@@ -1822,26 +1856,81 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       }, 0)
     }
 
-    // Load existing material requisition from project
-    const loadExistingRequisition = () => {
-      if (selectedProject?.materialRequisition?.items) {
-        const items = {}
-        selectedProject.materialRequisition.items.forEach(item => {
-          const product = products.find(p => p.id === item.productId)
-          if (product) {
-            items[item.productId] = {
-              product,
+    const getTotalQuantity = () => {
+      return getSelectedProducts().reduce((sum, item) => sum + item.quantity, 0)
+    }
+
+    // Check all selected products have sufficient inventory
+    const checkInventoryAvailability = () => {
+      const selectedItems = getSelectedProducts()
+      const insufficientItems = []
+      
+      selectedItems.forEach(item => {
+        const inv = getProductInventory(item.product.id)
+        if (inv.availableQty < item.quantity) {
+          insufficientItems.push({
+            product: item.product.name,
+            required: item.quantity,
+            available: inv.availableQty
+          })
+        }
+      })
+      
+      return { allAvailable: insufficientItems.length === 0, insufficientItems }
+    }
+
+    // Reserve inventory for all selected products
+    const reserveInventory = async (items, projectId) => {
+      try {
+        const reservations = []
+        for (const item of items) {
+          const res = await fetch('/api/flooring/enhanced/inventory', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              action: 'reserve',
+              productId: item.productId || item.product?.id,
               quantity: item.quantity,
-              selected: true
-            }
+              orderId: projectId,
+              notes: `Reserved for project ${selectedProject.projectNumber}`
+            })
+          })
+          if (res.ok) {
+            reservations.push({ productId: item.productId || item.product?.id, quantity: item.quantity })
           }
-        })
-        setMaterialRequisition(items)
+        }
+        return reservations
+      } catch (error) {
+        console.error('Reserve inventory error:', error)
+        return []
+      }
+    }
+
+    // Release inventory reservations
+    const releaseInventory = async (items, projectId) => {
+      try {
+        for (const item of items) {
+          await fetch('/api/flooring/enhanced/inventory', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              action: 'release',
+              productId: item.productId || item.product?.id,
+              quantity: item.quantity,
+              orderId: projectId,
+              notes: `Released from project ${selectedProject.projectNumber}`
+            })
+          })
+        }
+        return true
+      } catch (error) {
+        console.error('Release inventory error:', error)
+        return false
       }
     }
 
     // Save material requisition to project
-    const saveMaterialRequisition = async () => {
+    const saveMaterialRequisition = async (blockInventory = false) => {
       try {
         setLoading(true)
         const selectedItems = getSelectedProducts()
@@ -1851,6 +1940,15 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           return false
         }
 
+        // Check inventory availability if blocking
+        if (blockInventory) {
+          const { allAvailable, insufficientItems } = checkInventoryAvailability()
+          if (!allAvailable) {
+            toast.error(`Insufficient inventory for: ${insufficientItems.map(i => i.product).join(', ')}`)
+            return false
+          }
+        }
+
         const materialData = {
           items: selectedItems.map(item => ({
             productId: item.product.id,
@@ -1858,10 +1956,20 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             sku: item.product.sku,
             quantity: item.quantity,
             unitPrice: item.product.price || item.product.pricing?.sellingPrice || 0,
-            totalPrice: (item.product.price || item.product.pricing?.sellingPrice || 0) * item.quantity
+            totalPrice: (item.product.price || item.product.pricing?.sellingPrice || 0) * item.quantity,
+            inventoryReserved: blockInventory
           })),
           totalValue: getTotalValue(),
+          totalQuantity: getTotalQuantity(),
+          inventoryBlocked: blockInventory,
           createdAt: new Date().toISOString()
+        }
+
+        // Block inventory if requested
+        if (blockInventory) {
+          const reservations = await reserveInventory(materialData.items, selectedProject.id)
+          materialData.reservations = reservations
+          materialData.reservedAt = new Date().toISOString()
         }
 
         const res = await fetch('/api/flooring/enhanced/projects', {
@@ -1880,6 +1988,9 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             materialRequisition: materialData
           }))
           fetchProjects()
+          if (blockInventory) {
+            fetchInventory() // Refresh inventory after reservation
+          }
           return true
         } else {
           toast.error('Failed to save material requisition')
@@ -1894,19 +2005,63 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       }
     }
 
-    // Process order - save materials and update status
+    // Process order - save materials AND block inventory
     const handleProcessOrder = async () => {
-      const saved = await saveMaterialRequisition()
+      const saved = await saveMaterialRequisition(true) // true = block inventory
       if (saved) {
         await handleUpdateProjectStatus(selectedProject.id, 'material_processing')
-        toast.success('Material order is being processed')
+        toast.success('Material order processed. Inventory has been blocked/reserved.')
       }
     }
 
-    // Mark ready - ensure materials are saved
+    // Update materials - release old inventory, save new requisition
+    const handleUpdateMaterials = async () => {
+      try {
+        setLoading(true)
+        
+        // First release previously reserved inventory
+        if (selectedProject.materialRequisition?.inventoryBlocked) {
+          await releaseInventory(selectedProject.materialRequisition.items, selectedProject.id)
+          toast.info('Previous inventory reservation released')
+        }
+        
+        // Change status back to material_requisition to allow editing
+        await handleUpdateProjectStatus(selectedProject.id, 'material_requisition')
+        
+        // Clear inventory blocked flag
+        await fetch('/api/flooring/enhanced/projects', {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({
+            id: selectedProject.id,
+            'materialRequisition.inventoryBlocked': false
+          })
+        })
+        
+        fetchInventory()
+        toast.success('You can now edit the material requisition')
+      } catch (error) {
+        toast.error('Failed to update materials')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    // Mark ready - ensure materials are saved with inventory blocked
     const handleMarkReady = async () => {
+      // Verify inventory is still blocked
+      if (!selectedProject.materialRequisition?.inventoryBlocked) {
+        const { allAvailable, insufficientItems } = checkInventoryAvailability()
+        if (!allAvailable) {
+          toast.error(`Inventory changed! Insufficient: ${insufficientItems.map(i => i.product).join(', ')}`)
+          return
+        }
+        // Re-block inventory
+        await reserveInventory(selectedProject.materialRequisition.items, selectedProject.id)
+      }
+      
       await handleUpdateProjectStatus(selectedProject.id, 'material_ready')
-      toast.success('Materials are ready for dispatch')
+      toast.success('Materials are ready for dispatch. Inventory remains blocked.')
     }
 
     // Create quote from materials
@@ -1951,7 +2106,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             state: selectedProject.site?.state || selectedProject.siteState || ''
           },
           items: items.map(item => ({
-            itemType: 'material', // API expects this field
+            itemType: 'material',
             productId: item.product?.id || item.productId,
             name: item.product?.name || item.productName,
             sku: item.product?.sku || item.sku || '',
@@ -1959,8 +2114,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             quantity: item.quantity,
             unit: item.product?.unit || 'sqft',
             unitPrice: item.product?.price || item.product?.pricing?.sellingPrice || item.unitPrice || 0,
-            totalPrice: (item.product?.price || item.product?.pricing?.sellingPrice || item.unitPrice || 0) * item.quantity, // API expects totalPrice not total
-            area: item.quantity // For area calculation
+            totalPrice: (item.product?.price || item.product?.pricing?.sellingPrice || item.unitPrice || 0) * item.quantity,
+            area: item.quantity
           })),
           template: 'professional',
           discountType: 'fixed',
@@ -1989,9 +2144,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           // Refresh quotes and switch to quotes tab
           await fetchQuotes()
           setActiveTab('quotes')
-          toast.success('Quote created successfully!')
+          toast.success('Quote created successfully! Inventory remains blocked until delivery.')
           
-          // Open the quote for viewing/editing
           if (newQuote.data || newQuote.quote) {
             setDialogOpen({ type: 'view_quote', data: newQuote.data || newQuote.quote || newQuote })
           }
@@ -2009,18 +2163,48 @@ export function EnterpriseFlooringModule({ client, user, token }) {
 
     return (
       <div className="space-y-4">
-        {/* Header */}
+        {/* Header with Inventory Summary */}
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-lg font-semibold">Material Requisitions</h3>
             <p className="text-sm text-muted-foreground">Manage material orders for B2B dealer projects</p>
           </div>
-          {selectedProject && selectedProject.segment === 'b2b' && (
-            <Badge className="bg-blue-100 text-blue-700">
-              Working on: {selectedProject.projectNumber}
-            </Badge>
-          )}
+          <div className="flex items-center gap-3">
+            {/* Inventory Summary */}
+            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-lg text-sm">
+              <Warehouse className="h-4 w-4 text-slate-600" />
+              <span className="text-slate-600">Total Stock:</span>
+              <span className="font-semibold">{inventory?.summary?.totalQuantity?.toLocaleString() || 0}</span>
+              <span className="text-slate-400">|</span>
+              <span className="text-amber-600">Reserved: {inventory?.summary?.reservedQuantity?.toLocaleString() || 0}</span>
+            </div>
+            {selectedProject && selectedProject.segment === 'b2b' && (
+              <Badge className="bg-blue-100 text-blue-700">
+                Working on: {selectedProject.projectNumber}
+              </Badge>
+            )}
+          </div>
         </div>
+
+        {/* Projects with Blocked Inventory Overview */}
+        {projectsWithMaterialReq.filter(p => p.materialRequisition?.inventoryBlocked).length > 0 && (
+          <Card className="border-amber-200 bg-amber-50">
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm flex items-center gap-2 text-amber-800">
+                <Lock className="h-4 w-4" /> Inventory Blocked for Projects
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex flex-wrap gap-2">
+                {projectsWithMaterialReq.filter(p => p.materialRequisition?.inventoryBlocked).map(p => (
+                  <Badge key={p.id} variant="outline" className="bg-white text-amber-700 border-amber-300">
+                    {p.projectNumber}: {p.materialRequisition?.totalQuantity || 0} units blocked
+                  </Badge>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Project Selection for Material Requisition */}
         {!selectedProject || selectedProject.segment !== 'b2b' ? (
@@ -2041,8 +2225,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                       className={`p-4 border rounded-lg cursor-pointer transition-all hover:border-purple-500 hover:bg-purple-50 ${selectedProject?.id === project.id ? 'border-purple-500 bg-purple-50' : ''}`}
                       onClick={() => {
                         setSelectedProject(project)
-                        setMaterialRequisition({}) // Reset selection
-                        // Load existing requisition after setting project
+                        setMaterialRequisition({})
                         if (project.materialRequisition?.items) {
                           const items = {}
                           project.materialRequisition.items.forEach(item => {
@@ -2053,6 +2236,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           })
                           setTimeout(() => setMaterialRequisition(items), 0)
                         }
+                        fetchInventory() // Refresh inventory when selecting project
                       }}
                     >
                       <div className="flex items-center justify-between">
@@ -2060,10 +2244,17 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           <p className="font-medium">{project.projectNumber}</p>
                           <p className="text-sm text-muted-foreground">{project.customerName || project.name}</p>
                           {project.materialRequisition?.items?.length > 0 && (
-                            <p className="text-xs text-purple-600 mt-1">
-                              <Package className="h-3 w-3 inline mr-1" />
-                              {project.materialRequisition.items.length} items • ₹{(project.materialRequisition.totalValue || 0).toLocaleString()}
-                            </p>
+                            <div className="flex items-center gap-2 mt-1">
+                              <span className="text-xs text-purple-600">
+                                <Package className="h-3 w-3 inline mr-1" />
+                                {project.materialRequisition.items.length} items • ₹{(project.materialRequisition.totalValue || 0).toLocaleString()}
+                              </span>
+                              {project.materialRequisition.inventoryBlocked && (
+                                <Badge variant="outline" className="text-xs text-amber-600 border-amber-400">
+                                  <Lock className="h-3 w-3 mr-1" /> Inventory Blocked
+                                </Badge>
+                              )}
+                            </div>
                           )}
                         </div>
                         <div className="flex items-center gap-2">
@@ -2107,22 +2298,47 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                 </div>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-3 gap-4 mb-6">
+                {/* Summary Stats */}
+                <div className="grid grid-cols-4 gap-4 mb-6">
                   <div className="p-3 bg-slate-50 rounded-lg">
                     <p className="text-sm text-muted-foreground">Status</p>
                     <Badge className={ProjectStatusB2B[selectedProject.status]?.color || 'bg-slate-100'}>
                       {ProjectStatusB2B[selectedProject.status]?.label || selectedProject.status}
                     </Badge>
                   </div>
-                  <div className="p-3 bg-slate-50 rounded-lg">
+                  <div className="p-3 bg-emerald-50 rounded-lg">
                     <p className="text-sm text-muted-foreground">Selected Items Value</p>
                     <p className="font-semibold text-emerald-600">₹{getTotalValue().toLocaleString()}</p>
                   </div>
-                  <div className="p-3 bg-slate-50 rounded-lg">
-                    <p className="text-sm text-muted-foreground">Items Selected</p>
-                    <p className="font-medium">{getSelectedProducts().length} products</p>
+                  <div className="p-3 bg-blue-50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Total Quantity</p>
+                    <p className="font-medium text-blue-600">{getTotalQuantity().toLocaleString()} units</p>
+                  </div>
+                  <div className={`p-3 rounded-lg ${selectedProject.materialRequisition?.inventoryBlocked ? 'bg-amber-50' : 'bg-slate-50'}`}>
+                    <p className="text-sm text-muted-foreground">Inventory Status</p>
+                    <p className={`font-medium ${selectedProject.materialRequisition?.inventoryBlocked ? 'text-amber-600' : 'text-slate-600'}`}>
+                      {selectedProject.materialRequisition?.inventoryBlocked ? (
+                        <><Lock className="h-4 w-4 inline mr-1" /> Blocked</>
+                      ) : (
+                        <><Unlock className="h-4 w-4 inline mr-1" /> Not Blocked</>
+                      )}
+                    </p>
                   </div>
                 </div>
+
+                {/* Inventory Block Alert */}
+                {selectedProject.materialRequisition?.inventoryBlocked && (
+                  <div className="mb-6 p-4 border-2 border-amber-300 bg-amber-50 rounded-lg">
+                    <div className="flex items-center gap-2 text-amber-800">
+                      <AlertTriangle className="h-5 w-5" />
+                      <span className="font-medium">Inventory is blocked for this requisition</span>
+                    </div>
+                    <p className="text-sm text-amber-700 mt-1">
+                      {selectedProject.materialRequisition.totalQuantity} units are reserved and cannot be allocated to other projects.
+                      Reserved on: {new Date(selectedProject.materialRequisition.reservedAt || selectedProject.materialRequisition.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                )}
 
                 {/* Existing Material Requisition Display */}
                 {selectedProject.materialRequisition?.items?.length > 0 && (
@@ -2136,27 +2352,54 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                       </Badge>
                     </div>
                     <div className="space-y-2">
-                      {selectedProject.materialRequisition.items.map((item, idx) => (
-                        <div key={idx} className="flex items-center justify-between p-2 bg-white rounded border">
-                          <div>
-                            <p className="font-medium text-sm">{item.productName}</p>
-                            <p className="text-xs text-muted-foreground">{item.sku}</p>
+                      {selectedProject.materialRequisition.items.map((item, idx) => {
+                        const inv = getProductInventory(item.productId)
+                        const status = getInventoryStatus(item.productId, item.quantity)
+                        return (
+                          <div key={idx} className="flex items-center justify-between p-3 bg-white rounded border">
+                            <div className="flex-1">
+                              <p className="font-medium text-sm">{item.productName}</p>
+                              <p className="text-xs text-muted-foreground">{item.sku}</p>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              {/* Inventory Info */}
+                              <div className="text-center px-3 border-r">
+                                <p className="text-xs text-muted-foreground">Stock</p>
+                                <p className="font-medium text-sm">{inv.totalQty}</p>
+                              </div>
+                              <div className="text-center px-3 border-r">
+                                <p className="text-xs text-muted-foreground">Available</p>
+                                <p className={`font-medium text-sm ${inv.availableQty < item.quantity ? 'text-red-600' : 'text-emerald-600'}`}>
+                                  {inv.availableQty}
+                                </p>
+                              </div>
+                              <div className="text-center px-3 border-r">
+                                <p className="text-xs text-muted-foreground">Reserved</p>
+                                <p className="font-medium text-sm text-amber-600">{inv.reservedQty}</p>
+                              </div>
+                              {/* Order Info */}
+                              <div className="text-right min-w-24">
+                                <p className="font-medium">Qty: {item.quantity}</p>
+                                <p className="text-sm text-emerald-600">₹{item.totalPrice?.toLocaleString()}</p>
+                              </div>
+                              {/* Status Badge */}
+                              <Badge className={`text-xs ${status.color}`}>
+                                {item.inventoryReserved ? 'Blocked' : status.label}
+                              </Badge>
+                            </div>
                           </div>
-                          <div className="text-right">
-                            <p className="font-medium">Qty: {item.quantity}</p>
-                            <p className="text-sm text-emerald-600">₹{item.totalPrice?.toLocaleString()}</p>
-                          </div>
-                        </div>
-                      ))}
+                        )
+                      })}
                     </div>
                   </div>
                 )}
 
-                {/* Product Selection for Material - Only show for requisition/processing status */}
-                {['material_requisition', 'material_processing'].includes(selectedProject.status) && (
+                {/* Product Selection for Material - Only show for requisition status (before inventory blocked) */}
+                {selectedProject.status === 'material_requisition' && (
                   <div className="space-y-4">
                     <h4 className="font-medium flex items-center gap-2">
                       <Package className="h-4 w-4" /> Select Products for Requisition
+                      <span className="text-xs text-muted-foreground ml-2">(Inventory will be blocked on Process Order)</span>
                     </h4>
                     <div className="border rounded-lg p-4">
                       {products.length > 0 ? (
@@ -2165,36 +2408,60 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                             const isSelected = materialRequisition[product.id]?.selected
                             const quantity = materialRequisition[product.id]?.quantity || 1
                             const price = product.price || product.pricing?.sellingPrice || 0
+                            const inv = getProductInventory(product.id)
+                            const status = getInventoryStatus(product.id, isSelected ? quantity : 0)
                             
                             return (
                               <div 
                                 key={product.id} 
-                                className={`flex items-center justify-between p-3 border rounded transition-all ${isSelected ? 'border-purple-500 bg-purple-50' : 'hover:bg-slate-50'}`}
+                                className={`flex items-center justify-between p-3 border rounded transition-all ${isSelected ? 'border-purple-500 bg-purple-50' : 'hover:bg-slate-50'} ${status.status === 'out_of_stock' ? 'opacity-60' : ''}`}
                               >
                                 <div className="flex items-center gap-3">
                                   <Checkbox 
                                     id={`prod-${product.id}`}
                                     checked={isSelected}
                                     onCheckedChange={() => toggleProductSelection(product)}
+                                    disabled={status.status === 'out_of_stock'}
                                   />
                                   <div>
                                     <p className="font-medium text-sm">{product.name}</p>
                                     <p className="text-xs text-muted-foreground">{product.sku} • ₹{price}/{product.unit || 'unit'}</p>
                                   </div>
                                 </div>
-                                <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-4">
+                                  {/* Inventory Status */}
+                                  <div className="flex items-center gap-2 text-sm">
+                                    <div className="text-center px-2">
+                                      <p className="text-xs text-muted-foreground">Available</p>
+                                      <p className={`font-medium ${inv.availableQty <= inv.reorderLevel ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                        {inv.availableQty}
+                                      </p>
+                                    </div>
+                                    {inv.reservedQty > 0 && (
+                                      <div className="text-center px-2 border-l">
+                                        <p className="text-xs text-muted-foreground">Reserved</p>
+                                        <p className="font-medium text-amber-600">{inv.reservedQty}</p>
+                                      </div>
+                                    )}
+                                    <Badge className={`text-xs ${status.color}`}>{status.label}</Badge>
+                                  </div>
+                                  
                                   {isSelected && (
                                     <>
                                       <Input 
-                                        className="w-20 h-8" 
+                                        className={`w-20 h-8 ${quantity > inv.availableQty ? 'border-red-500' : ''}`}
                                         type="number" 
                                         min="1"
+                                        max={inv.availableQty}
                                         value={quantity}
                                         onChange={(e) => updateProductQuantity(product.id, e.target.value)}
                                       />
                                       <span className="text-sm font-medium text-emerald-600 w-24 text-right">
                                         ₹{(price * quantity).toLocaleString()}
                                       </span>
+                                      {quantity > inv.availableQty && (
+                                        <span className="text-xs text-red-600">Exceeds stock!</span>
+                                      )}
                                     </>
                                   )}
                                 </div>
@@ -2214,15 +2481,15 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   {selectedProject.status === 'material_requisition' && (
                     <Button 
                       className="bg-purple-600 hover:bg-purple-700"
-                      disabled={loading || getSelectedProducts().length === 0}
+                      disabled={loading || getSelectedProducts().length === 0 || !checkInventoryAvailability().allAvailable}
                       onClick={handleProcessOrder}
                     >
                       {loading ? (
                         <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
                       ) : (
-                        <ClipboardList className="h-4 w-4 mr-2" />
+                        <Lock className="h-4 w-4 mr-2" />
                       )}
-                      Process Order ({getSelectedProducts().length} items)
+                      Process Order & Block Inventory ({getSelectedProducts().length} items)
                     </Button>
                   )}
                   {selectedProject.status === 'material_processing' && (
@@ -2230,10 +2497,10 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                       <Button 
                         variant="outline"
                         disabled={loading}
-                        onClick={saveMaterialRequisition}
+                        onClick={handleUpdateMaterials}
                       >
-                        <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
-                        Update Materials
+                        <Edit className="h-4 w-4 mr-2" />
+                        Update Materials (Release & Edit)
                       </Button>
                       <Button 
                         className="bg-teal-600 hover:bg-teal-700"
@@ -2245,18 +2512,28 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     </>
                   )}
                   {selectedProject.status === 'material_ready' && (
-                    <Button 
-                      className="bg-emerald-600 hover:bg-emerald-700"
-                      disabled={loading}
-                      onClick={handleCreateQuoteFromMaterials}
-                    >
-                      {loading ? (
-                        <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                      ) : (
-                        <FileText className="h-4 w-4 mr-2" />
-                      )}
-                      Create Quote from Materials
-                    </Button>
+                    <>
+                      <Button 
+                        variant="outline"
+                        disabled={loading}
+                        onClick={handleUpdateMaterials}
+                      >
+                        <Edit className="h-4 w-4 mr-2" />
+                        Update Materials
+                      </Button>
+                      <Button 
+                        className="bg-emerald-600 hover:bg-emerald-700"
+                        disabled={loading}
+                        onClick={handleCreateQuoteFromMaterials}
+                      >
+                        {loading ? (
+                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                        ) : (
+                          <FileText className="h-4 w-4 mr-2" />
+                        )}
+                        Create Quote from Materials
+                      </Button>
+                    </>
                   )}
                   {['quote_pending', 'quote_sent'].includes(selectedProject.status) && (
                     <Button 
@@ -2267,6 +2544,20 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     </Button>
                   )}
                 </div>
+
+                {/* Inventory Availability Warning */}
+                {selectedProject.status === 'material_requisition' && getSelectedProducts().length > 0 && !checkInventoryAvailability().allAvailable && (
+                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-700 font-medium flex items-center gap-2">
+                      <AlertTriangle className="h-4 w-4" /> Insufficient Inventory
+                    </p>
+                    <ul className="mt-1 text-sm text-red-600 list-disc list-inside">
+                      {checkInventoryAvailability().insufficientItems.map((item, idx) => (
+                        <li key={idx}>{item.product}: Need {item.required}, Available {item.available}</li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
