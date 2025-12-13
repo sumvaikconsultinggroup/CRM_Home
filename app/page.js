@@ -2052,13 +2052,9 @@ export default function App() {
     <AnimatePresence mode="wait">
       {view === 'landing' && (
         <motion.div key="landing" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <PremiumLanding 
+          <EnterpriseLanding 
             onLogin={() => setView('login')} 
             onRegister={() => setView('register')}
-            onModuleClick={(module) => {
-              // Navigate to module detail page
-              window.location.href = `/modules/${module.id}`
-            }}
           />
         </motion.div>
       )}
