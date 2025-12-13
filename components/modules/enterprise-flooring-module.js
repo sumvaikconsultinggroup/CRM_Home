@@ -1370,8 +1370,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     <TableHeader>Segment</TableHeader>
                     <TableHeader>Type</TableHeader>
                     <TableHeader>Value</TableHeader>
-                    <TableHeader>Status</TableHeader>
                     <TableHeader>Actions</TableHeader>
+                    <TableHeader>Status</TableHeader>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
