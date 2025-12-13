@@ -727,6 +727,110 @@ export default function EnterpriseLanding({ onLogin }) {
         </div>
       </section>
 
+      {/* Pain Points Section - Why Construction Businesses Struggle */}
+      <section className="py-16 lg:py-20 bg-white border-y border-gray-100">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12"
+          >
+            <Badge className="bg-red-100 text-red-700 mb-4">The Problem</Badge>
+            <h2 className="text-3xl lg:text-4xl font-bold text-gray-900 mb-4">
+              Why 85% of Construction Businesses Struggle to Scale
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              Most businesses in the home improvement industry still run on WhatsApp messages, Excel sheets, and scattered notes. Sound familiar?
+            </p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
+            {[
+              {
+                icon: MessageSquare,
+                title: 'Leads Lost in WhatsApp',
+                description: 'Customer inquiries get buried in group chats. No one knows who followed up or what was promised.',
+                stat: '40%',
+                statLabel: 'leads lost to poor tracking'
+              },
+              {
+                icon: FileText,
+                title: 'Excel Chaos',
+                description: 'Multiple versions of the same file. Wrong prices quoted. Inventory counts that never match reality.',
+                stat: '6 hrs',
+                statLabel: 'wasted weekly on data entry'
+              },
+              {
+                icon: Clock,
+                title: 'Project Delays',
+                description: 'Materials arrive late. Workers show up at wrong sites. Clients complain about missed deadlines.',
+                stat: '30%',
+                statLabel: 'of projects run over time'
+              },
+              {
+                icon: Receipt,
+                title: 'Payment Leakages',
+                description: 'Invoices sent late or never. Advance payments not tracked. Margins eaten by unrecorded expenses.',
+                stat: '₹2-3L',
+                statLabel: 'lost yearly to poor billing'
+              },
+              {
+                icon: Users,
+                title: 'Team Confusion',
+                description: 'Installers don\'t know schedules. Office staff can\'t find documents. Everyone calls the owner for everything.',
+                stat: '50%',
+                statLabel: 'time spent on coordination'
+              },
+              {
+                icon: BarChart3,
+                title: 'No Visibility',
+                description: 'Which products sell best? Which salesperson performs? What\'s the profit margin? Nobody really knows.',
+                stat: '0',
+                statLabel: 'real-time business insights'
+              }
+            ].map((pain, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: i * 0.1 }}
+                className="bg-gray-50 rounded-2xl p-6 border border-gray-100 hover:shadow-lg transition-shadow"
+              >
+                <div className="w-12 h-12 bg-red-100 rounded-xl flex items-center justify-center mb-4">
+                  <pain.icon className="h-6 w-6 text-red-600" />
+                </div>
+                <h3 className="text-lg font-bold text-gray-900 mb-2">{pain.title}</h3>
+                <p className="text-gray-600 text-sm mb-4">{pain.description}</p>
+                <div className="flex items-baseline gap-2">
+                  <span className="text-2xl font-bold text-red-600">{pain.stat}</span>
+                  <span className="text-xs text-gray-500">{pain.statLabel}</span>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mt-12 text-center"
+          >
+            <p className="text-xl font-semibold text-gray-900 mb-4">
+              These problems cost the average construction business ₹15-20 Lakhs annually in lost revenue and wasted time.
+            </p>
+            <Button 
+              onClick={onLogin}
+              className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-lg px-8 h-12"
+            >
+              See How BuildCRM Solves This
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </motion.div>
+        </div>
+      </section>
+
       {/* Industry Stats Section */}
       <section className="py-12 lg:py-16 bg-slate-900 text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
