@@ -2493,29 +2493,139 @@ export function EnterpriseFlooringModule({ client, user, token }) {
 
             {/* Templates */}
             <TabsContent value="templates">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Quote & Invoice Templates</CardTitle>
-                  <CardDescription>Customize the appearance of your documents</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-3 gap-4">
-                    {[
-                      { id: 'professional', name: 'Professional', desc: 'Clean, modern design' },
-                      { id: 'premium', name: 'Premium', desc: 'Detailed with branding' },
-                      { id: 'luxury', name: 'Luxury', desc: 'High-end presentation' }
-                    ].map(template => (
-                      <div key={template.id} className="border rounded-lg p-4 cursor-pointer hover:border-blue-500 hover:bg-blue-50 transition-colors">
-                        <div className="aspect-[3/4] bg-slate-100 rounded-lg mb-3 flex items-center justify-center">
-                          <FileText className="h-12 w-12 text-slate-300" />
+              <div className="space-y-6">
+                {/* Quote Templates */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-blue-600" />
+                      Quote Templates
+                    </CardTitle>
+                    <CardDescription>Choose how your quotations look</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-4">
+                      {[
+                        { 
+                          id: 'professional', 
+                          name: 'Professional', 
+                          desc: 'Clean, modern design',
+                          preview: ['Company Logo', 'Quote #: Q-2025-001', 'Date: Dec 14, 2025', '---', 'Customer: ABC Corp', 'Project: Flooring Install', '---', 'Products Table', '---', 'Total: ₹1,25,000', 'Terms & Conditions']
+                        },
+                        { 
+                          id: 'detailed', 
+                          name: 'Detailed', 
+                          desc: 'Itemized with breakdown',
+                          preview: ['Company Logo + Details', 'Quote #: Q-2025-001', '---', 'Bill To:', 'Customer Details', 'GSTIN: 22AAAAA0000A1Z5', '---', 'Products with Images', 'Specifications', '---', 'Subtotal / Tax / Total', 'Payment Terms']
+                        },
+                        { 
+                          id: 'luxury', 
+                          name: 'Luxury', 
+                          desc: 'High-end presentation',
+                          preview: ['Premium Header', 'Gold Accents', '---', 'Elegant Typography', '---', 'Product Gallery', 'Detailed Specs', '---', 'Exclusive Pricing', 'VIP Terms']
+                        }
+                      ].map(template => (
+                        <div 
+                          key={template.id} 
+                          className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${moduleSettings?.quoteTemplate === template.id ? 'border-blue-500 bg-blue-50' : 'hover:border-blue-300 hover:bg-slate-50'}`}
+                          onClick={() => handleSaveModuleSettings({ quoteTemplate: template.id })}
+                        >
+                          <div className="aspect-[3/4] bg-white border rounded-lg mb-3 p-3 text-xs">
+                            {template.preview.map((line, i) => (
+                              <div key={i} className={line === '---' ? 'border-t my-1' : 'text-slate-500 truncate'}>{line !== '---' && line}</div>
+                            ))}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium">{template.name}</h4>
+                              <p className="text-sm text-slate-500">{template.desc}</p>
+                            </div>
+                            {moduleSettings?.quoteTemplate === template.id && (
+                              <Badge className="bg-blue-600">Active</Badge>
+                            )}
+                          </div>
                         </div>
-                        <h4 className="font-medium">{template.name}</h4>
-                        <p className="text-sm text-slate-500">{template.desc}</p>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Invoice Templates */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <Receipt className="h-5 w-5 text-green-600" />
+                      Invoice Templates
+                    </CardTitle>
+                    <CardDescription>Choose your invoice format (GST compliant)</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-4">
+                      {[
+                        { 
+                          id: 'standard', 
+                          name: 'Standard GST', 
+                          desc: 'GST compliant format',
+                          preview: ['TAX INVOICE', 'Company GSTIN', 'Invoice #: INV-001', '---', 'Customer Details', 'Billing Address', '---', 'HSN | Qty | Rate', 'CGST | SGST | IGST', '---', 'Total: ₹1,47,500', 'Bank Details']
+                        },
+                        { 
+                          id: 'detailed', 
+                          name: 'Detailed', 
+                          desc: 'Full product breakdown',
+                          preview: ['TAX INVOICE', 'Multiple Addresses', '---', 'Product Images', 'Specifications', 'Per-item Tax', '---', 'CGST @ 9%', 'SGST @ 9%', '---', 'Terms', 'QR Code']
+                        },
+                        { 
+                          id: 'premium', 
+                          name: 'Premium', 
+                          desc: 'Executive presentation',
+                          preview: ['PREMIUM INVOICE', 'Branded Header', '---', 'Customer Profile', '---', 'Gallery View', 'Detailed Specs', '---', 'Tax Breakdown', 'Digital Signature', 'Payment QR']
+                        }
+                      ].map(template => (
+                        <div 
+                          key={template.id} 
+                          className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${moduleSettings?.invoiceTemplate === template.id ? 'border-green-500 bg-green-50' : 'hover:border-green-300 hover:bg-slate-50'}`}
+                          onClick={() => handleSaveModuleSettings({ invoiceTemplate: template.id })}
+                        >
+                          <div className="aspect-[3/4] bg-white border rounded-lg mb-3 p-3 text-xs">
+                            {template.preview.map((line, i) => (
+                              <div key={i} className={line === '---' ? 'border-t my-1' : 'text-slate-500 truncate'}>{line !== '---' && line}</div>
+                            ))}
+                          </div>
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <h4 className="font-medium">{template.name}</h4>
+                              <p className="text-sm text-slate-500">{template.desc}</p>
+                            </div>
+                            {moduleSettings?.invoiceTemplate === template.id && (
+                              <Badge className="bg-green-600">Active</Badge>
+                            )}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Template Instructions */}
+                <Card className="border-amber-200 bg-amber-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <div className="p-2 bg-amber-100 rounded-full">
+                        <AlertTriangle className="h-5 w-5 text-amber-600" />
                       </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+                      <div>
+                        <p className="font-medium text-amber-900">How Templates Work</p>
+                        <ul className="text-sm text-amber-700 mt-1 space-y-1">
+                          <li>• Click on a template to set it as your default</li>
+                          <li>• Quote templates apply when creating new quotations</li>
+                          <li>• Invoice templates apply to all generated invoices</li>
+                          <li>• All templates are GST compliant with CGST/SGST/IGST support</li>
+                        </ul>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
 
             {/* CRM Sync */}
