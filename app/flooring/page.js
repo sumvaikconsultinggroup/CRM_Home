@@ -28,6 +28,7 @@ import {
   Building2, Phone, Mail, MapPin, Box, ArrowLeft, Settings, Send, MessageSquare
 } from 'lucide-react'
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu'
+import { FlooringMeeAgent } from '@/components/flooring-mee-agent'
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16']
 
