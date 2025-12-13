@@ -1113,8 +1113,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     </div>
                     <div className="flex items-center justify-between mt-3 pt-3 border-t">
                       <div>
-                        <p className="text-lg font-bold text-emerald-600">₹{product.pricing?.sellingPrice}/sqft</p>
-                        <p className="text-xs text-slate-400">{product.pricing?.sqftPerBox} sqft/box</p>
+                        <p className="text-lg font-bold text-emerald-600">₹{product.pricing?.sellingPrice || 0}/sqft</p>
+                        <p className="text-xs text-slate-400">{product.pack?.coverageSqftPerBox || product.pricing?.sqftPerBox || 0} sqft/box</p>
                       </div>
                       <div className="flex gap-1">
                         <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'view_product', data: product })}>
