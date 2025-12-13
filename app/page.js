@@ -31,7 +31,7 @@ import {
   Globe, Image, FileText, Star, Crown, ChevronDown, ExternalLink, Lock, Square,
   CalendarDays, Plug
 } from 'lucide-react'
-import FlooringModule from './flooring/page'
+import { FlooringModule } from '@/components/modules/flooring-module'
 import { LeadForm, ProjectForm, TaskForm, ExpenseForm, UserForm } from '@/components/client-forms'
 import { AdvancedReports } from '@/components/advanced-reports'
 import { EnterpriseLeads } from '@/components/enterprise-leads'
