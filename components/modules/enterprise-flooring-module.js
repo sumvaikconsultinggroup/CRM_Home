@@ -4754,7 +4754,7 @@ function RoomMeasurementDialog({ open, onClose, room, project, onSave, loading }
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
+      <DialogContent className="max-w-5xl max-h-[95vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
             <Ruler className="h-5 w-5 text-blue-600" />
@@ -4768,21 +4768,49 @@ function RoomMeasurementDialog({ open, onClose, room, project, onSave, loading }
         <div className="grid grid-cols-3 gap-6 py-4">
           {/* Left Column - Room Details */}
           <div className="col-span-2 space-y-4">
+            {/* Application Type Selection */}
+            <Card className="border-2 border-amber-200 bg-amber-50">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-amber-600" /> Application Type
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-5 gap-2">
+                  {applicationTypes.map(app => (
+                    <div
+                      key={app.value}
+                      className={`p-3 rounded-lg border-2 cursor-pointer text-center transition-all ${
+                        form.applicationType === app.value 
+                          ? 'border-amber-500 bg-amber-100 shadow-md' 
+                          : 'border-transparent bg-white hover:border-amber-300'
+                      }`}
+                      onClick={() => setForm({ ...form, applicationType: app.value, roomType: roomTypesByApplication[app.value]?.[0]?.value || 'other' })}
+                    >
+                      <span className="text-2xl">{app.icon}</span>
+                      <p className="text-xs font-medium mt-1">{app.label}</p>
+                      <p className="text-[10px] text-slate-500 hidden sm:block">{app.description}</p>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
             {/* Basic Info */}
             <Card>
               <CardHeader className="pb-3">
                 <CardTitle className="text-sm flex items-center gap-2">
-                  <Home className="h-4 w-4" /> Room Information
+                  <Home className="h-4 w-4" /> {form.applicationType === 'cladding' ? 'Wall' : form.applicationType === 'decking' ? 'Area' : 'Room'} Information
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Room Name *</Label>
+                    <Label>{form.applicationType === 'cladding' ? 'Wall' : form.applicationType === 'decking' ? 'Area' : 'Room'} Name *</Label>
                     <Input
                       value={form.roomName}
                       onChange={(e) => setForm({ ...form, roomName: e.target.value })}
-                      placeholder="e.g., Master Bedroom"
+                      placeholder={form.applicationType === 'cladding' ? 'e.g., Living Room Feature Wall' : form.applicationType === 'decking' ? 'e.g., Backyard Deck' : 'e.g., Master Bedroom'}
                     />
                   </div>
                   <div className="space-y-2">
@@ -4799,19 +4827,35 @@ function RoomMeasurementDialog({ open, onClose, room, project, onSave, loading }
                 </div>
 
                 <div className="space-y-2">
-                  <Label>Room Type *</Label>
-                  <div className="grid grid-cols-4 gap-2">
-                    {roomTypes.map(type => (
-                      <div
-                        key={type.value}
-                        className={`p-2 rounded-lg border cursor-pointer text-center transition-all ${form.roomType === type.value ? 'border-blue-500 bg-blue-50' : 'hover:border-blue-300'}`}
-                        onClick={() => setForm({ ...form, roomType: type.value })}
-                      >
-                        <span className="text-lg">{type.icon}</span>
-                        <p className="text-xs mt-1 truncate">{type.label}</p>
+                  <Label>{form.applicationType === 'cladding' ? 'Wall' : form.applicationType === 'decking' ? 'Area' : 'Room'} Type *</Label>
+                  <ScrollArea className="h-[140px] border rounded-lg p-2">
+                    <div className="grid grid-cols-4 gap-2">
+                      {roomTypes.slice(0, 16).map(type => (
+                        <div
+                          key={type.value}
+                          className={`p-2 rounded-lg border cursor-pointer text-center transition-all ${form.roomType === type.value ? 'border-blue-500 bg-blue-50' : 'hover:border-blue-300'}`}
+                          onClick={() => setForm({ ...form, roomType: type.value })}
+                        >
+                          <span className="text-lg">{type.icon}</span>
+                          <p className="text-xs mt-1 truncate">{type.label}</p>
+                        </div>
+                      ))}
+                    </div>
+                    {roomTypes.length > 16 && (
+                      <div className="grid grid-cols-4 gap-2 mt-2 pt-2 border-t">
+                        {roomTypes.slice(16).map(type => (
+                          <div
+                            key={type.value}
+                            className={`p-2 rounded-lg border cursor-pointer text-center transition-all ${form.roomType === type.value ? 'border-blue-500 bg-blue-50' : 'hover:border-blue-300'}`}
+                            onClick={() => setForm({ ...form, roomType: type.value })}
+                          >
+                            <span className="text-lg">{type.icon}</span>
+                            <p className="text-xs mt-1 truncate">{type.label}</p>
+                          </div>
+                        ))}
                       </div>
-                    ))}
-                  </div>
+                    )}
+                  </ScrollArea>
                 </div>
               </CardContent>
             </Card>
