@@ -2187,13 +2187,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                         <Eye className="h-4 w-4" />
                       </Button>
                       {inst.status === 'scheduled' && (
-                        <Button variant="ghost" size="sm" onClick={() => handleInstallationAction(inst.id, 'start')}>
-                          <Zap className="h-4 w-4 text-amber-500" />
+                        <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white" onClick={() => handleInstallationAction(inst.id, 'start')}>
+                          <Zap className="h-4 w-4 mr-1" /> Start
                         </Button>
                       )}
                       {inst.status === 'in_progress' && (
-                        <Button variant="ghost" size="sm" onClick={() => handleInstallationAction(inst.id, 'complete')}>
-                          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                        <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleInstallationComplete(inst)}>
+                          <CheckCircle2 className="h-4 w-4 mr-1" /> Complete
                         </Button>
                       )}
                     </div>
@@ -2206,7 +2206,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           <EmptyState
             icon={Wrench}
             title="No installations scheduled"
-            description="Schedule installations from approved quotes."
+            description="Installations are created when B2C invoices are paid."
           />
         )}
       </div>
