@@ -1,443 +1,436 @@
 import { NextResponse } from 'next/server'
-import { getCollection } from '@/lib/db/mongodb'
-import { generateId, InventoryMovementTypes, ValuationMethods } from '@/lib/db/flooring-enhanced-schema'
+import { v4 as uuidv4 } from 'uuid'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireClientAccess, getUserDatabaseName } from '@/lib/utils/auth'
+import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 
-// GET - Fetch inventory with advanced filters
+export async function OPTIONS() {
+  return optionsResponse()
+}
+
+// GET - Fetch inventory with stock levels
 export async function GET(request) {
   try {
+    const user = getAuthUser(request)
+    requireClientAccess(user)
+
     const { searchParams } = new URL(request.url)
-    const clientId = searchParams.get('clientId')
-    const warehouseId = searchParams.get('warehouseId')
     const productId = searchParams.get('productId')
-    const category = searchParams.get('category')
     const lowStock = searchParams.get('lowStock')
-    const outOfStock = searchParams.get('outOfStock')
-    const batchId = searchParams.get('batchId')
-    const view = searchParams.get('view') // 'summary', 'detailed', 'movements'
+    const category = searchParams.get('category')
 
-    const inventory = await getCollection('flooring_inventory_v2')
-    const products = await getCollection('flooring_products')
-    const warehouses = await getCollection('flooring_warehouses')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const inventory = db.collection('flooring_inventory_v2')
+    const products = db.collection('flooring_products')
 
-    const query = { clientId }
-    if (warehouseId) query.warehouseId = warehouseId
+    // Get all products first for lookup
+    const allProducts = await products.find({}).toArray()
+    const productMap = new Map(allProducts.map(p => [p.id, p]))
+
+    // Build query
+    const query = {}
     if (productId) query.productId = productId
-    if (category) query['product.category'] = category
 
-    // Get inventory records
-    let records = await inventory.find(query).toArray()
+    let inventoryItems = await inventory.find(query).sort({ updatedAt: -1 }).toArray()
 
-    // Enrich with product and warehouse details
-    const productIds = [...new Set(records.map(r => r.productId))]
-    const warehouseIds = [...new Set(records.map(r => r.warehouseId))]
-    
-    const [productList, warehouseList] = await Promise.all([
-      products.find({ id: { $in: productIds } }).toArray(),
-      warehouses.find({ id: { $in: warehouseIds } }).toArray()
-    ])
-    
-    const productMap = Object.fromEntries(productList.map(p => [p.id, p]))
-    const warehouseMap = Object.fromEntries(warehouseList.map(w => [w.id, w]))
-
-    records = records.map(record => ({
-      ...record,
-      product: productMap[record.productId],
-      warehouse: warehouseMap[record.warehouseId]
+    // Enrich with product data
+    inventoryItems = inventoryItems.map(item => ({
+      ...item,
+      product: productMap.get(item.productId) || null
     }))
 
     // Apply filters
     if (lowStock === 'true') {
-      records = records.filter(r => r.availableQty <= (r.reorderLevel || productMap[r.productId]?.stock?.reorderLevel || 100))
-    }
-    if (outOfStock === 'true') {
-      records = records.filter(r => r.availableQty <= 0)
+      inventoryItems = inventoryItems.filter(i => i.availableQty <= (i.reorderLevel || 100))
     }
 
-    // Calculate summary statistics
+    if (category) {
+      inventoryItems = inventoryItems.filter(i => i.product?.category === category)
+    }
+
+    // Calculate summary
     const summary = {
-      totalProducts: records.length,
-      totalQuantity: records.reduce((sum, r) => sum + (r.quantity || 0), 0),
-      totalValue: records.reduce((sum, r) => {
-        const product = productMap[r.productId]
-        return sum + ((r.quantity || 0) * (product?.pricing?.costPrice || 0))
-      }, 0),
-      lowStockCount: records.filter(r => r.availableQty <= (r.reorderLevel || 100)).length,
-      outOfStockCount: records.filter(r => r.availableQty <= 0).length,
-      warehouses: [...new Set(records.map(r => r.warehouseId))].length
+      totalProducts: inventoryItems.length,
+      totalQuantity: inventoryItems.reduce((sum, i) => sum + (i.quantity || 0), 0),
+      totalValue: inventoryItems.reduce((sum, i) => sum + ((i.quantity || 0) * (i.avgCostPrice || 0)), 0),
+      reservedQuantity: inventoryItems.reduce((sum, i) => sum + (i.reservedQty || 0), 0),
+      availableQuantity: inventoryItems.reduce((sum, i) => sum + (i.availableQty || 0), 0),
+      lowStockCount: inventoryItems.filter(i => i.availableQty <= (i.reorderLevel || 100) && i.availableQty > 0).length,
+      outOfStockCount: inventoryItems.filter(i => i.availableQty <= 0).length
     }
 
-    // Calculate by category
+    // Group by category
     const byCategory = {}
-    records.forEach(r => {
-      const category = productMap[r.productId]?.category || 'unknown'
-      if (!byCategory[category]) {
-        byCategory[category] = { count: 0, quantity: 0, value: 0 }
+    inventoryItems.forEach(i => {
+      const cat = i.product?.category || 'unknown'
+      if (!byCategory[cat]) {
+        byCategory[cat] = { count: 0, quantity: 0, value: 0 }
       }
-      byCategory[category].count++
-      byCategory[category].quantity += r.quantity || 0
-      byCategory[category].value += (r.quantity || 0) * (productMap[r.productId]?.pricing?.costPrice || 0)
+      byCategory[cat].count++
+      byCategory[cat].quantity += i.quantity || 0
+      byCategory[cat].value += (i.quantity || 0) * (i.avgCostPrice || 0)
     })
 
-    return NextResponse.json({
-      inventory: records,
+    return successResponse({
+      inventory: sanitizeDocuments(inventoryItems),
       summary,
-      byCategory,
-      warehouses: warehouseList
+      byCategory
     })
   } catch (error) {
-    console.error('Enhanced Inventory GET Error:', error)
-    return NextResponse.json({ error: 'Failed to fetch inventory' }, { status: 500 })
+    console.error('Inventory GET Error:', error)
+    return errorResponse('Failed to fetch inventory', 500, error.message)
   }
 }
 
-// POST - Add inventory / Record movement
+// POST - Inventory actions (goods receipt, adjustment, reservation, etc.)
 export async function POST(request) {
   try {
+    const user = getAuthUser(request)
+    requireClientAccess(user)
+
     const body = await request.json()
-    const { action } = body
-    const inventory = await getCollection('flooring_inventory_v2')
-    const movements = await getCollection('flooring_inventory_movements')
-    const products = await getCollection('flooring_products')
+    const { action, productId, warehouseId = 'main' } = body
+
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const inventory = db.collection('flooring_inventory_v2')
+    const products = db.collection('flooring_products')
+    const transactions = db.collection('flooring_inventory_transactions')
 
     const now = new Date().toISOString()
 
+    // Get or create inventory record
+    let inventoryRecord = await inventory.findOne({ productId, warehouseId })
+
     switch (action) {
       case 'goods_receipt': {
-        // Goods Receipt Note (GRN)
-        const { productId, warehouseId, clientId, quantity, batchNo, lotNo, 
-                manufacturingDate, expiryDate, purchaseOrderId, supplierId, 
-                costPrice, notes, createdBy } = body
+        // Receive new inventory
+        const quantity = parseFloat(body.quantity) || 0
+        const costPrice = parseFloat(body.costPrice) || 0
+        const batchNo = body.batchNo || `BATCH-${Date.now()}`
 
-        // Check if inventory record exists
-        const existing = await inventory.findOne({ productId, warehouseId, clientId })
-        
-        const movement = {
-          id: generateId('MOV'),
-          clientId,
-          productId,
-          warehouseId,
-          type: 'receipt',
-          quantity,
-          batchNo,
-          lotNo,
-          manufacturingDate,
-          expiryDate,
-          purchaseOrderId,
-          supplierId,
-          costPrice,
-          totalValue: quantity * (costPrice || 0),
-          reference: body.reference || `GRN-${Date.now()}`,
-          notes,
-          createdBy,
-          createdAt: now
+        if (!productId || quantity <= 0) {
+          return errorResponse('Product ID and quantity required', 400)
         }
 
-        await movements.insertOne(movement)
+        const batch = {
+          id: uuidv4(),
+          batchNo,
+          quantity,
+          costPrice,
+          receivedDate: now,
+          supplier: body.supplier || '',
+          invoiceNo: body.invoiceNo || '',
+          remainingQty: quantity,
+          createdBy: user.id
+        }
 
-        if (existing) {
-          // Update existing record
-          const newAvgCost = existing.quantity > 0
-            ? ((existing.quantity * existing.avgCostPrice) + (quantity * costPrice)) / (existing.quantity + quantity)
-            : costPrice
+        if (inventoryRecord) {
+          // Calculate new weighted average cost
+          const totalOldValue = (inventoryRecord.quantity || 0) * (inventoryRecord.avgCostPrice || 0)
+          const totalNewValue = quantity * costPrice
+          const totalQty = (inventoryRecord.quantity || 0) + quantity
+          const newAvgCost = totalQty > 0 ? (totalOldValue + totalNewValue) / totalQty : costPrice
 
           await inventory.updateOne(
-            { id: existing.id },
+            { id: inventoryRecord.id },
             {
-              $inc: { quantity, availableQty: quantity },
-              $set: { 
-                avgCostPrice: newAvgCost,
-                lastReceivedAt: now,
-                lastReceivedQty: quantity,
-                updatedAt: now
-              },
-              $push: {
-                batches: {
-                  batchNo,
-                  lotNo,
-                  quantity,
-                  remainingQty: quantity,
-                  costPrice,
-                  manufacturingDate,
-                  expiryDate,
-                  receivedAt: now
-                }
-              }
+              $inc: { quantity: quantity, availableQty: quantity },
+              $set: { avgCostPrice: newAvgCost, updatedAt: now },
+              $push: { batches: batch }
             }
           )
-          return NextResponse.json({ message: 'Stock updated', movement })
         } else {
           // Create new inventory record
-          const record = {
-            id: generateId('INV'),
+          const newRecord = {
+            id: uuidv4(),
             productId,
             warehouseId,
-            clientId,
             quantity,
             reservedQty: 0,
             availableQty: quantity,
             avgCostPrice: costPrice,
-            reorderLevel: body.reorderLevel || 100,
-            maxStockLevel: body.maxStockLevel || 1000,
-            valuationMethod: body.valuationMethod || 'weighted_avg',
-            batches: [{
-              batchNo,
-              lotNo,
-              quantity,
-              remainingQty: quantity,
-              costPrice,
-              manufacturingDate,
-              expiryDate,
-              receivedAt: now
-            }],
-            lastReceivedAt: now,
-            lastReceivedQty: quantity,
-            lastIssuedAt: null,
+            reorderLevel: parseFloat(body.reorderLevel) || 100,
+            batches: [batch],
+            createdBy: user.id,
             createdAt: now,
             updatedAt: now
           }
-          await inventory.insertOne(record)
-          return NextResponse.json({ message: 'Inventory created', record, movement }, { status: 201 })
-        }
-      }
-
-      case 'goods_issue': {
-        // Issue stock (for sales, projects, etc.)
-        const { productId, warehouseId, clientId, quantity, reference, 
-                reason, projectId, invoiceId, notes, createdBy } = body
-
-        const record = await inventory.findOne({ productId, warehouseId, clientId })
-        if (!record) {
-          return NextResponse.json({ error: 'Inventory record not found' }, { status: 404 })
-        }
-        if (record.availableQty < quantity) {
-          return NextResponse.json({ error: 'Insufficient stock', available: record.availableQty }, { status: 400 })
+          await inventory.insertOne(newRecord)
+          inventoryRecord = newRecord
         }
 
-        const movement = {
-          id: generateId('MOV'),
-          clientId,
+        // Record transaction
+        await transactions.insertOne({
+          id: uuidv4(),
           productId,
           warehouseId,
-          type: 'issue',
-          quantity: -quantity,
-          reference,
-          reason,
-          projectId,
-          invoiceId,
-          costPrice: record.avgCostPrice,
-          totalValue: quantity * record.avgCostPrice,
-          notes,
-          createdBy,
-          createdAt: now
-        }
-
-        await movements.insertOne(movement)
-
-        await inventory.updateOne(
-          { id: record.id },
-          {
-            $inc: { quantity: -quantity, availableQty: -quantity },
-            $set: { 
-              lastIssuedAt: now,
-              lastIssuedQty: quantity,
-              updatedAt: now
-            }
-          }
-        )
-
-        return NextResponse.json({ message: 'Stock issued', movement })
-      }
-
-      case 'transfer': {
-        // Stock transfer between warehouses
-        const { productId, fromWarehouseId, toWarehouseId, clientId, quantity, notes, createdBy } = body
-
-        // Deduct from source
-        const sourceRecord = await inventory.findOne({ productId, warehouseId: fromWarehouseId, clientId })
-        if (!sourceRecord || sourceRecord.availableQty < quantity) {
-          return NextResponse.json({ error: 'Insufficient stock in source warehouse' }, { status: 400 })
-        }
-
-        // Transfer movement
-        const transferId = generateId('TRF')
-        
-        // Deduct from source
-        await inventory.updateOne(
-          { id: sourceRecord.id },
-          { $inc: { quantity: -quantity, availableQty: -quantity }, $set: { updatedAt: now } }
-        )
-        await movements.insertOne({
-          id: generateId('MOV'),
-          clientId, productId,
-          warehouseId: fromWarehouseId,
-          type: 'transfer_out',
-          quantity: -quantity,
-          transferId,
-          toWarehouseId,
-          notes, createdBy, createdAt: now
-        })
-
-        // Add to destination
-        const destRecord = await inventory.findOne({ productId, warehouseId: toWarehouseId, clientId })
-        if (destRecord) {
-          await inventory.updateOne(
-            { id: destRecord.id },
-            { $inc: { quantity, availableQty: quantity }, $set: { updatedAt: now } }
-          )
-        } else {
-          await inventory.insertOne({
-            id: generateId('INV'),
-            productId, warehouseId: toWarehouseId, clientId,
-            quantity, reservedQty: 0, availableQty: quantity,
-            avgCostPrice: sourceRecord.avgCostPrice,
-            reorderLevel: 100,
-            batches: [],
-            createdAt: now, updatedAt: now
-          })
-        }
-        await movements.insertOne({
-          id: generateId('MOV'),
-          clientId, productId,
-          warehouseId: toWarehouseId,
-          type: 'transfer_in',
+          type: 'goods_receipt',
           quantity,
-          transferId,
-          fromWarehouseId,
-          notes, createdBy, createdAt: now
+          costPrice,
+          batchNo,
+          reference: body.invoiceNo || '',
+          notes: body.notes || '',
+          createdBy: user.id,
+          createdAt: now
         })
 
-        return NextResponse.json({ message: 'Stock transferred', transferId })
+        return successResponse({ message: 'Goods received', quantity, batchNo })
       }
 
       case 'adjustment': {
-        // Stock adjustment (physical count)
-        const { productId, warehouseId, clientId, newQuantity, reason, notes, createdBy } = body
+        // Inventory adjustment (positive or negative)
+        const adjustmentQty = parseFloat(body.quantity) || 0
+        const reason = body.reason || 'Manual adjustment'
 
-        const record = await inventory.findOne({ productId, warehouseId, clientId })
-        if (!record) {
-          return NextResponse.json({ error: 'Inventory record not found' }, { status: 404 })
+        if (!inventoryRecord) {
+          return errorResponse('Inventory record not found', 404)
         }
 
-        const difference = newQuantity - record.quantity
-        const adjustmentType = difference >= 0 ? 'adjustment_plus' : 'adjustment_minus'
-
-        await movements.insertOne({
-          id: generateId('MOV'),
-          clientId, productId, warehouseId,
-          type: adjustmentType,
-          quantity: difference,
-          previousQty: record.quantity,
-          newQty: newQuantity,
-          reason,
-          notes, createdBy, createdAt: now
-        })
+        const newQty = Math.max(0, (inventoryRecord.quantity || 0) + adjustmentQty)
+        const newAvailable = Math.max(0, (inventoryRecord.availableQty || 0) + adjustmentQty)
 
         await inventory.updateOne(
-          { id: record.id },
+          { id: inventoryRecord.id },
           {
-            $set: { 
-              quantity: newQuantity,
-              availableQty: newQuantity - record.reservedQty,
-              lastAdjustedAt: now,
+            $set: {
+              quantity: newQty,
+              availableQty: newAvailable,
               updatedAt: now
             }
           }
         )
 
-        return NextResponse.json({ message: 'Stock adjusted', difference })
+        await transactions.insertOne({
+          id: uuidv4(),
+          productId,
+          warehouseId,
+          type: 'adjustment',
+          quantity: adjustmentQty,
+          reason,
+          notes: body.notes || '',
+          createdBy: user.id,
+          createdAt: now
+        })
+
+        return successResponse({ message: 'Adjustment recorded', newQty })
       }
 
-      case 'import': {
-        // Bulk import inventory
-        const { items, clientId, warehouseId, createdBy } = body
-        const results = { success: 0, failed: 0, errors: [] }
+      case 'reserve': {
+        // Reserve inventory for a quote/order
+        const reserveQty = parseFloat(body.quantity) || 0
+        const orderId = body.orderId || body.quoteId
 
-        for (const item of items) {
-          try {
-            const product = await products.findOne({ 
-              $or: [{ sku: item.sku }, { id: item.productId }],
-              clientId 
-            })
-            
-            if (!product) {
-              results.failed++
-              results.errors.push({ sku: item.sku, error: 'Product not found' })
-              continue
-            }
-
-            const existing = await inventory.findOne({ 
-              productId: product.id, 
-              warehouseId: warehouseId || 'main', 
-              clientId 
-            })
-
-            if (existing) {
-              await inventory.updateOne(
-                { id: existing.id },
-                {
-                  $set: {
-                    quantity: item.quantity,
-                    availableQty: item.quantity - (existing.reservedQty || 0),
-                    avgCostPrice: item.costPrice || existing.avgCostPrice,
-                    reorderLevel: item.reorderLevel || existing.reorderLevel,
-                    updatedAt: now
-                  }
-                }
-              )
-            } else {
-              await inventory.insertOne({
-                id: generateId('INV'),
-                productId: product.id,
-                warehouseId: warehouseId || 'main',
-                clientId,
-                quantity: item.quantity,
-                reservedQty: 0,
-                availableQty: item.quantity,
-                avgCostPrice: item.costPrice || product.pricing?.costPrice || 0,
-                reorderLevel: item.reorderLevel || 100,
-                batches: [],
-                createdAt: now,
-                updatedAt: now
-              })
-            }
-            results.success++
-          } catch (err) {
-            results.failed++
-            results.errors.push({ sku: item.sku, error: err.message })
-          }
+        if (!inventoryRecord) {
+          return errorResponse('Inventory record not found', 404)
         }
 
-        return NextResponse.json({ message: 'Import completed', results })
+        if (reserveQty > inventoryRecord.availableQty) {
+          return errorResponse('Insufficient available quantity', 400)
+        }
+
+        await inventory.updateOne(
+          { id: inventoryRecord.id },
+          {
+            $inc: { reservedQty: reserveQty, availableQty: -reserveQty },
+            $set: { updatedAt: now }
+          }
+        )
+
+        await transactions.insertOne({
+          id: uuidv4(),
+          productId,
+          warehouseId,
+          type: 'reservation',
+          quantity: reserveQty,
+          orderId,
+          notes: body.notes || '',
+          createdBy: user.id,
+          createdAt: now
+        })
+
+        return successResponse({ message: 'Inventory reserved', quantity: reserveQty })
+      }
+
+      case 'release': {
+        // Release reserved inventory
+        const releaseQty = parseFloat(body.quantity) || 0
+
+        if (!inventoryRecord) {
+          return errorResponse('Inventory record not found', 404)
+        }
+
+        const actualRelease = Math.min(releaseQty, inventoryRecord.reservedQty || 0)
+
+        await inventory.updateOne(
+          { id: inventoryRecord.id },
+          {
+            $inc: { reservedQty: -actualRelease, availableQty: actualRelease },
+            $set: { updatedAt: now }
+          }
+        )
+
+        await transactions.insertOne({
+          id: uuidv4(),
+          productId,
+          warehouseId,
+          type: 'release',
+          quantity: actualRelease,
+          notes: body.notes || '',
+          createdBy: user.id,
+          createdAt: now
+        })
+
+        return successResponse({ message: 'Inventory released', quantity: actualRelease })
+      }
+
+      case 'consume': {
+        // Consume inventory (for installation)
+        const consumeQty = parseFloat(body.quantity) || 0
+        const installationId = body.installationId
+
+        if (!inventoryRecord) {
+          return errorResponse('Inventory record not found', 404)
+        }
+
+        // First check reserved qty (if consuming from reservation)
+        let fromReserved = Math.min(consumeQty, inventoryRecord.reservedQty || 0)
+        let fromAvailable = consumeQty - fromReserved
+
+        if (fromAvailable > (inventoryRecord.availableQty || 0)) {
+          return errorResponse('Insufficient inventory', 400)
+        }
+
+        await inventory.updateOne(
+          { id: inventoryRecord.id },
+          {
+            $inc: { 
+              quantity: -consumeQty, 
+              reservedQty: -fromReserved, 
+              availableQty: -fromAvailable 
+            },
+            $set: { updatedAt: now }
+          }
+        )
+
+        await transactions.insertOne({
+          id: uuidv4(),
+          productId,
+          warehouseId,
+          type: 'consumption',
+          quantity: -consumeQty,
+          installationId,
+          notes: body.notes || '',
+          createdBy: user.id,
+          createdAt: now
+        })
+
+        return successResponse({ message: 'Inventory consumed', quantity: consumeQty })
+      }
+
+      case 'transfer': {
+        // Transfer between warehouses
+        const transferQty = parseFloat(body.quantity) || 0
+        const toWarehouseId = body.toWarehouseId
+
+        if (!toWarehouseId) {
+          return errorResponse('Destination warehouse required', 400)
+        }
+
+        if (!inventoryRecord || transferQty > (inventoryRecord.availableQty || 0)) {
+          return errorResponse('Insufficient available quantity', 400)
+        }
+
+        // Reduce from source
+        await inventory.updateOne(
+          { id: inventoryRecord.id },
+          {
+            $inc: { quantity: -transferQty, availableQty: -transferQty },
+            $set: { updatedAt: now }
+          }
+        )
+
+        // Add to destination
+        let destRecord = await inventory.findOne({ productId, warehouseId: toWarehouseId })
+        if (destRecord) {
+          await inventory.updateOne(
+            { id: destRecord.id },
+            {
+              $inc: { quantity: transferQty, availableQty: transferQty },
+              $set: { updatedAt: now }
+            }
+          )
+        } else {
+          await inventory.insertOne({
+            id: uuidv4(),
+            productId,
+            warehouseId: toWarehouseId,
+            quantity: transferQty,
+            reservedQty: 0,
+            availableQty: transferQty,
+            avgCostPrice: inventoryRecord.avgCostPrice,
+            reorderLevel: 100,
+            batches: [],
+            createdBy: user.id,
+            createdAt: now,
+            updatedAt: now
+          })
+        }
+
+        // Record transaction
+        await transactions.insertOne({
+          id: uuidv4(),
+          productId,
+          warehouseId,
+          type: 'transfer_out',
+          quantity: -transferQty,
+          toWarehouseId,
+          notes: body.notes || '',
+          createdBy: user.id,
+          createdAt: now
+        })
+
+        return successResponse({ message: 'Transfer completed', quantity: transferQty })
       }
 
       default:
-        return NextResponse.json({ error: 'Invalid action' }, { status: 400 })
+        return errorResponse('Invalid action', 400)
     }
   } catch (error) {
-    console.error('Enhanced Inventory POST Error:', error)
-    return NextResponse.json({ error: 'Failed to process inventory' }, { status: 500 })
+    console.error('Inventory POST Error:', error)
+    return errorResponse('Failed to process inventory action', 500, error.message)
   }
 }
 
-// PUT - Update inventory settings
+// PUT - Update inventory settings (reorder level, etc.)
 export async function PUT(request) {
   try {
+    const user = getAuthUser(request)
+    requireClientAccess(user)
+
     const body = await request.json()
-    const { id, ...updateData } = body
+    const { id, productId, warehouseId = 'main', ...updateData } = body
 
-    if (!id) return NextResponse.json({ error: 'Record ID required' }, { status: 400 })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const inventory = db.collection('flooring_inventory_v2')
 
-    const inventory = await getCollection('flooring_inventory_v2')
+    const query = id ? { id } : { productId, warehouseId }
     
+    updateData.updatedAt = new Date().toISOString()
+    updateData.updatedBy = user.id
+
     const result = await inventory.findOneAndUpdate(
-      { id },
-      { $set: { ...updateData, updatedAt: new Date().toISOString() } },
+      query,
+      { $set: updateData },
       { returnDocument: 'after' }
     )
 
-    return NextResponse.json(result)
+    if (!result) return errorResponse('Inventory record not found', 404)
+    return successResponse(sanitizeDocument(result))
   } catch (error) {
-    console.error('Enhanced Inventory PUT Error:', error)
-    return NextResponse.json({ error: 'Failed to update inventory' }, { status: 500 })
+    console.error('Inventory PUT Error:', error)
+    return errorResponse('Failed to update inventory', 500, error.message)
   }
 }
