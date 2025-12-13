@@ -831,6 +831,82 @@ export function ContactsManager() {
     setShowDetail(true)
   }
 
+  // Handle Export
+  const handleExport = async () => {
+    try {
+      const token = localStorage.getItem('token')
+      const params = new URLSearchParams()
+      if (typeFilter) params.append('type', typeFilter)
+      params.append('format', 'csv')
+
+      const res = await fetch(`/api/contacts/export?${params}`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+
+      if (!res.ok) throw new Error('Export failed')
+
+      const blob = await res.blob()
+      const url = window.URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `contacts_${new Date().toISOString().split('T')[0]}.csv`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      window.URL.revokeObjectURL(url)
+      toast.success('Contacts exported successfully')
+    } catch (error) {
+      toast.error('Failed to export contacts')
+    }
+  }
+
+  // Handle Import
+  const handleImport = async (file, skipDuplicates) => {
+    try {
+      const token = localStorage.getItem('token')
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('skipDuplicates', skipDuplicates)
+
+      const res = await fetch('/api/contacts/import', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      })
+
+      const data = await res.json()
+      if (!res.ok) throw new Error(data.error || 'Import failed')
+
+      toast.success(data.message)
+      fetchContacts()
+      setShowImport(false)
+      return data.results
+    } catch (error) {
+      toast.error(error.message || 'Failed to import contacts')
+      throw error
+    }
+  }
+
+  // Download CSV Template
+  const handleDownloadTemplate = () => {
+    const headers = 'Name,Display Name,Type,Email,Phone,Alternate Phone,Company,GSTIN,PAN,Billing Address,Shipping Address,City,State,Pincode,Country,Payment Terms,Credit Limit,Tags,Notes,Source,Website'
+    const example = 'John Doe,John,customer,john@example.com,9876543210,,ABC Corp,22AAAAA0000A1Z5,AAAAA0000A,123 Main St,,Mumbai,Maharashtra,400001,India,net30,50000,"VIP; Premium",Preferred customer,referral,https://example.com'
+    const csv = `${headers}\n${example}`
+    
+    const blob = new Blob([csv], { type: 'text/csv' })
+    const url = window.URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = 'contacts_import_template.csv'
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    window.URL.revokeObjectURL(url)
+    toast.success('Template downloaded')
+  }
+
+  const [showImport, setShowImport] = useState(false)
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -840,6 +916,21 @@ export function ContactsManager() {
           <p className="text-muted-foreground">Manage your customers, leads, and vendors</p>
         </div>
         <div className="flex gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <Download className="h-4 w-4 mr-2" /> Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem onClick={handleExport}>
+                <Download className="h-4 w-4 mr-2" /> Export as CSV
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          <Button variant="outline" onClick={() => setShowImport(true)}>
+            <Upload className="h-4 w-4 mr-2" /> Import
+          </Button>
           <Button variant="outline" onClick={fetchContacts}>
             <RefreshCw className="h-4 w-4 mr-2" /> Refresh
           </Button>
@@ -848,6 +939,14 @@ export function ContactsManager() {
           </Button>
         </div>
       </div>
+
+      {/* Import Dialog */}
+      <ImportContactsDialog
+        open={showImport}
+        onOpenChange={setShowImport}
+        onImport={handleImport}
+        onDownloadTemplate={handleDownloadTemplate}
+      />
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
