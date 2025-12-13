@@ -791,6 +791,35 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }
 
+  // Handle Send For Quotation - Creates a new quote for approved project
+  const handleSendForQuotation = async (project) => {
+    try {
+      setLoading(true)
+      
+      // Navigate to quotes tab with the project pre-selected
+      setSelectedProject(project)
+      setDialogOpen({ 
+        type: 'quote', 
+        data: {
+          projectId: project.id,
+          projectNumber: project.projectNumber,
+          customerId: project.customerId,
+          customerName: project.customerName,
+          siteAddress: project.site?.address || project.siteAddress || '',
+          flooringType: project.flooringType,
+          totalArea: project.totalArea,
+          estimatedValue: project.estimatedValue
+        } 
+      })
+      
+      toast.success('Creating quotation for approved project...')
+    } catch (error) {
+      toast.error('Failed to initiate quotation')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // =============================================
   // RENDER TABS
   // =============================================
