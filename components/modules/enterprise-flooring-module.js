@@ -5655,6 +5655,31 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           onSave={handleSaveRoom}
           loading={loading}
         />
+
+        {/* View Quote Dialog */}
+        <ViewQuoteDialog
+          open={type === 'view_quote'}
+          onClose={() => setDialogOpen({ type: null, data: null })}
+          quote={data}
+          moduleSettings={moduleSettings}
+          onDownload={handleDownloadQuote}
+          onEdit={(quote) => setDialogOpen({ type: 'quote', data: quote })}
+          onApprove={(quoteId) => handleQuoteStatusChange(quoteId, 'approved')}
+          onReject={(quoteId) => handleQuoteStatusChange(quoteId, 'rejected')}
+          onCreateInvoice={handleCreateInvoiceFromQuote}
+        />
+
+        {/* Quote Edit Dialog */}
+        <QuoteEditDialog
+          open={type === 'quote'}
+          onClose={() => setDialogOpen({ type: null, data: null })}
+          quote={data}
+          projects={projects}
+          products={products}
+          moduleSettings={moduleSettings}
+          onSave={handleSaveQuote}
+          loading={loading}
+        />
       </>
     )
   }
