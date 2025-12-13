@@ -256,10 +256,14 @@ function SuperAdminDashboard({ user, onLogout }) {
   }
 
   const menuItems = [
-    { id: 'overview', icon: LayoutDashboard, label: 'Overview' },
+    { id: 'overview', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'clients', icon: Building, label: 'Clients' },
+    { id: 'analytics', icon: BarChart3, label: 'Analytics' },
+    { id: 'billing', icon: DollarSign, label: 'Billing & Revenue' },
     { id: 'modules', icon: Package, label: 'Modules' },
     { id: 'requests', icon: MessageSquare, label: 'Module Requests', badge: moduleRequests.filter(r => r.status === 'pending').length },
+    { id: 'communication', icon: Bell, label: 'Communication' },
+    { id: 'security', icon: Shield, label: 'Security' },
     { id: 'settings', icon: Settings, label: 'Settings' }
   ]
 
