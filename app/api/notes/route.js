@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection } from '@/lib/db/mongodb'
-import { getAuthUser, requireAuth } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireAuth, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -16,9 +16,11 @@ export async function GET(request) {
     const search = searchParams.get('search')
     const pinned = searchParams.get('pinned')
 
-    const notesCollection = await getCollection('notes')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const notesCollection = db.collection('notes')
     
-    let query = { clientId: user.clientId }
+    let query = {}
     
     if (search) {
       query.$or = [
@@ -58,7 +60,9 @@ export async function POST(request) {
       return errorResponse('Title is required', 400)
     }
 
-    const notesCollection = await getCollection('notes')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const notesCollection = db.collection('notes')
 
     const newNote = {
       id: uuidv4(),
@@ -66,7 +70,7 @@ export async function POST(request) {
       createdBy: user.id,
       title,
       content: content || '',
-      color: color || '#FEF3C7', // Default yellow
+      color: color || '#FEF3C7',
       tags: tags || [],
       pinned: false,
       createdAt: new Date(),
@@ -96,10 +100,12 @@ export async function PUT(request) {
       return errorResponse('Note ID is required', 400)
     }
 
-    const notesCollection = await getCollection('notes')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const notesCollection = db.collection('notes')
 
     const result = await notesCollection.findOneAndUpdate(
-      { id, clientId: user.clientId },
+      { id },
       { $set: { ...updates, updatedAt: new Date() } },
       { returnDocument: 'after' }
     )
@@ -130,8 +136,10 @@ export async function DELETE(request) {
       return errorResponse('Note ID is required', 400)
     }
 
-    const notesCollection = await getCollection('notes')
-    const result = await notesCollection.deleteOne({ id, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const notesCollection = db.collection('notes')
+    const result = await notesCollection.deleteOne({ id })
 
     if (result.deletedCount === 0) {
       return errorResponse('Note not found', 404)

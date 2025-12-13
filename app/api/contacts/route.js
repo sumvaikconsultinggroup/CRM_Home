@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection } from '@/lib/db/mongodb'
-import { getAuthUser, requireAuth } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireAuth, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -20,10 +20,12 @@ export async function GET(request) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '50')
 
-    const contactsCollection = await getCollection('contacts')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const contactsCollection = db.collection('contacts')
 
-    // Build query
-    const query = { clientId: user.clientId }
+    // Build query - no clientId filter needed, entire DB is for this client
+    const query = {}
     
     if (search) {
       query.$or = [
@@ -51,16 +53,16 @@ export async function GET(request) {
       .toArray()
 
     // Get unique tags for filtering
-    const allContacts = await contactsCollection.find({ clientId: user.clientId }).toArray()
+    const allContacts = await contactsCollection.find({}).toArray()
     const tags = [...new Set(allContacts.flatMap(c => c.tags || []))]
     
     // Get stats
     const stats = {
-      total: await contactsCollection.countDocuments({ clientId: user.clientId }),
-      customers: await contactsCollection.countDocuments({ clientId: user.clientId, type: 'customer' }),
-      leads: await contactsCollection.countDocuments({ clientId: user.clientId, type: 'lead' }),
-      vendors: await contactsCollection.countDocuments({ clientId: user.clientId, type: 'vendor' }),
-      others: await contactsCollection.countDocuments({ clientId: user.clientId, type: { $nin: ['customer', 'lead', 'vendor'] } })
+      total: await contactsCollection.countDocuments({}),
+      customers: await contactsCollection.countDocuments({ type: 'customer' }),
+      leads: await contactsCollection.countDocuments({ type: 'lead' }),
+      vendors: await contactsCollection.countDocuments({ type: 'vendor' }),
+      others: await contactsCollection.countDocuments({ type: { $nin: ['customer', 'lead', 'vendor'] } })
     }
 
     return successResponse({
@@ -96,12 +98,13 @@ export async function POST(request) {
       return errorResponse('Name is required', 400)
     }
 
-    const contactsCollection = await getCollection('contacts')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const contactsCollection = db.collection('contacts')
 
     // Check for duplicate email
     if (email) {
       const existing = await contactsCollection.findOne({ 
-        clientId: user.clientId, 
         email: email.toLowerCase() 
       })
       if (existing) {
@@ -117,10 +120,10 @@ export async function POST(request) {
       phone: phone || null,
       company: company || null,
       address: address || null,
-      type: type || 'customer', // customer, lead, vendor, other
+      type: type || 'customer',
       tags: tags || [],
       notes: notes || '',
-      source: source || 'manual', // manual, import, website, referral
+      source: source || 'manual',
       customFields: customFields || {},
       totalRevenue: 0,
       totalProjects: 0,
@@ -155,10 +158,12 @@ export async function PUT(request) {
       return errorResponse('Contact ID is required', 400)
     }
 
-    const contactsCollection = await getCollection('contacts')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const contactsCollection = db.collection('contacts')
 
     // Check if contact exists
-    const existing = await contactsCollection.findOne({ id, clientId: user.clientId })
+    const existing = await contactsCollection.findOne({ id })
     if (!existing) {
       return errorResponse('Contact not found', 404)
     }
@@ -166,7 +171,6 @@ export async function PUT(request) {
     // Check for duplicate email if email is being changed
     if (updateData.email && updateData.email !== existing.email) {
       const duplicate = await contactsCollection.findOne({ 
-        clientId: user.clientId, 
         email: updateData.email.toLowerCase(),
         id: { $ne: id }
       })
@@ -179,7 +183,7 @@ export async function PUT(request) {
     updateData.updatedAt = new Date()
 
     await contactsCollection.updateOne(
-      { id, clientId: user.clientId },
+      { id },
       { $set: updateData }
     )
 
@@ -207,9 +211,11 @@ export async function DELETE(request) {
       return errorResponse('Contact ID is required', 400)
     }
 
-    const contactsCollection = await getCollection('contacts')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const contactsCollection = db.collection('contacts')
 
-    const result = await contactsCollection.deleteOne({ id, clientId: user.clientId })
+    const result = await contactsCollection.deleteOne({ id })
     
     if (result.deletedCount === 0) {
       return errorResponse('Contact not found', 404)

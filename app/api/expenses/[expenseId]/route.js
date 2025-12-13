@@ -1,5 +1,5 @@
-import { getCollection, Collections } from '@/lib/db/mongodb'
-import { getAuthUser, requireClientAccess } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireClientAccess, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocument } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -11,10 +11,14 @@ export async function GET(request, { params }) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
-    const expenseId = params.expenseId
-    const expensesCollection = await getCollection(Collections.EXPENSES)
+    const { expenseId } = await params
 
-    const expense = await expensesCollection.findOne({ id: expenseId, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const expensesCollection = db.collection('expenses')
+
+    const expense = await expensesCollection.findOne({ id: expenseId })
+
     if (!expense) {
       return errorResponse('Expense not found', 404)
     }
@@ -34,26 +38,31 @@ export async function PUT(request, { params }) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
-    const expenseId = params.expenseId
+    const { expenseId } = await params
     const body = await request.json()
-    const expensesCollection = await getCollection(Collections.EXPENSES)
 
-    // If approving, add approver info
-    if (body.approved === true) {
-      body.approvedBy = user.id
-      body.approvedAt = new Date()
-    }
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const expensesCollection = db.collection('expenses')
 
-    const result = await expensesCollection.updateOne(
-      { id: expenseId, clientId: user.clientId },
-      { $set: { ...body, updatedAt: new Date() } }
-    )
-
-    if (result.matchedCount === 0) {
+    const existingExpense = await expensesCollection.findOne({ id: expenseId })
+    if (!existingExpense) {
       return errorResponse('Expense not found', 404)
     }
 
-    return successResponse({ message: 'Expense updated successfully' })
+    const updatedExpense = {
+      ...existingExpense,
+      ...body,
+      id: expenseId,
+      updatedAt: new Date()
+    }
+
+    await expensesCollection.updateOne(
+      { id: expenseId },
+      { $set: updatedExpense }
+    )
+
+    return successResponse(sanitizeDocument(updatedExpense))
   } catch (error) {
     console.error('Expense PUT API Error:', error)
     if (error.message === 'Unauthorized' || error.message.includes('Forbidden')) {
@@ -68,10 +77,13 @@ export async function DELETE(request, { params }) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
-    const expenseId = params.expenseId
-    const expensesCollection = await getCollection(Collections.EXPENSES)
+    const { expenseId } = await params
 
-    const result = await expensesCollection.deleteOne({ id: expenseId, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const expensesCollection = db.collection('expenses')
+
+    const result = await expensesCollection.deleteOne({ id: expenseId })
 
     if (result.deletedCount === 0) {
       return errorResponse('Expense not found', 404)

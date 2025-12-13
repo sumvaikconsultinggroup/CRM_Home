@@ -1,13 +1,13 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection, Collections } from '@/lib/db/mongodb'
-import { getAuthUser, requireAuth } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireAuth, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 
 export async function OPTIONS() {
   return optionsResponse()
 }
 
-// Get conversations for current user
+// Get chat messages/conversations
 export async function GET(request) {
   try {
     const user = getAuthUser(request)
@@ -15,155 +15,204 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url)
     const conversationId = searchParams.get('conversationId')
-    
-    const conversationsCollection = await getCollection('conversations')
-    const messagesCollection = await getCollection('messages')
-    const usersCollection = await getCollection(Collections.USERS)
+    const type = searchParams.get('type') // 'conversations' or 'messages'
 
-    // If conversationId provided, get messages for that conversation
-    if (conversationId) {
-      const messages = await messagesCollection
-        .find({ conversationId })
-        .sort({ createdAt: 1 })
-        .limit(100)
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+
+    if (type === 'conversations' || !conversationId) {
+      // Get all conversations
+      const conversationsCollection = db.collection('conversations')
+      const conversations = await conversationsCollection
+        .find({})
+        .sort({ updatedAt: -1 })
         .toArray()
-      
-      return successResponse(sanitizeDocuments(messages))
+      return successResponse(sanitizeDocuments(conversations))
     }
 
-    // Get all conversations for this user's client
-    const conversations = await conversationsCollection
-      .find({ 
-        clientId: user.clientId,
-        participants: user.id
-      })
-      .sort({ updatedAt: -1 })
+    // Get messages for a specific conversation
+    const messagesCollection = db.collection('chat_messages')
+    const messages = await messagesCollection
+      .find({ conversationId })
+      .sort({ createdAt: 1 })
       .toArray()
 
-    // Enrich with participant info and last message
-    const enrichedConversations = await Promise.all(
-      conversations.map(async (conv) => {
-        const participants = await usersCollection
-          .find({ id: { $in: conv.participants } })
-          .project({ id: 1, name: 1, email: 1, avatar: 1 })
-          .toArray()
-        
-        const lastMessage = await messagesCollection
-          .findOne({ conversationId: conv.id }, { sort: { createdAt: -1 } })
-        
-        const unreadCount = await messagesCollection.countDocuments({
-          conversationId: conv.id,
-          senderId: { $ne: user.id },
-          readBy: { $nin: [user.id] }
-        })
-
-        return {
-          ...sanitizeDocument(conv),
-          participants: sanitizeDocuments(participants),
-          lastMessage: lastMessage ? sanitizeDocument(lastMessage) : null,
-          unreadCount
-        }
-      })
-    )
-
-    return successResponse(enrichedConversations)
+    return successResponse(sanitizeDocuments(messages))
   } catch (error) {
     console.error('Chat GET Error:', error)
     if (error.message === 'Unauthorized') {
       return errorResponse('Unauthorized', 401)
     }
-    return errorResponse('Failed to fetch conversations', 500, error.message)
+    return errorResponse('Failed to fetch chat data', 500, error.message)
   }
 }
 
-// Create new conversation or send message
+// Create new message or conversation
 export async function POST(request) {
   try {
     const user = getAuthUser(request)
     requireAuth(user)
 
     const body = await request.json()
-    const { action, conversationId, participants, name, message, isGroup } = body
+    const { type, conversationId, content, attachments, participants, name } = body
 
-    const conversationsCollection = await getCollection('conversations')
-    const messagesCollection = await getCollection('messages')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
 
-    if (action === 'create-conversation') {
+    if (type === 'conversation') {
       // Create new conversation
-      const newConversation = {
+      const conversationsCollection = db.collection('conversations')
+      
+      const conversation = {
         id: uuidv4(),
         clientId: user.clientId,
-        name: name || null, // For group chats
-        isGroup: isGroup || false,
-        participants: [...new Set([user.id, ...(participants || [])])],
+        name: name || 'New Conversation',
+        participants: participants || [user.id],
+        lastMessage: null,
+        lastMessageAt: null,
         createdBy: user.id,
         createdAt: new Date(),
         updatedAt: new Date()
       }
 
-      await conversationsCollection.insertOne(newConversation)
-      return successResponse(sanitizeDocument(newConversation), 201)
+      await conversationsCollection.insertOne(conversation)
+      return successResponse(sanitizeDocument(conversation), 201)
     }
 
-    if (action === 'send-message') {
-      if (!conversationId || !message) {
-        return errorResponse('Conversation ID and message are required', 400)
-      }
-
-      // Verify user is participant
-      const conversation = await conversationsCollection.findOne({ 
-        id: conversationId,
-        participants: user.id
-      })
-
-      if (!conversation) {
-        return errorResponse('Conversation not found', 404)
-      }
-
-      const newMessage = {
-        id: uuidv4(),
-        conversationId,
-        senderId: user.id,
-        senderName: user.name,
-        content: message,
-        type: 'text',
-        readBy: [user.id],
-        createdAt: new Date()
-      }
-
-      await messagesCollection.insertOne(newMessage)
-      
-      // Update conversation's updatedAt
-      await conversationsCollection.updateOne(
-        { id: conversationId },
-        { $set: { updatedAt: new Date() } }
-      )
-
-      return successResponse(sanitizeDocument(newMessage), 201)
+    // Create new message
+    if (!conversationId) {
+      return errorResponse('Conversation ID is required', 400)
     }
 
-    if (action === 'mark-read') {
-      if (!conversationId) {
-        return errorResponse('Conversation ID is required', 400)
-      }
+    const messagesCollection = db.collection('chat_messages')
+    const conversationsCollection = db.collection('conversations')
 
-      await messagesCollection.updateMany(
-        { 
-          conversationId,
-          readBy: { $nin: [user.id] }
-        },
-        { $addToSet: { readBy: user.id } }
-      )
-
-      return successResponse({ message: 'Messages marked as read' })
+    const message = {
+      id: uuidv4(),
+      clientId: user.clientId,
+      conversationId,
+      senderId: user.id,
+      senderName: user.name || user.email,
+      content: content || '',
+      attachments: attachments || [],
+      readBy: [user.id],
+      createdAt: new Date()
     }
 
-    return errorResponse('Invalid action', 400)
+    await messagesCollection.insertOne(message)
+
+    // Update conversation's last message
+    await conversationsCollection.updateOne(
+      { id: conversationId },
+      {
+        $set: {
+          lastMessage: content,
+          lastMessageAt: new Date(),
+          updatedAt: new Date()
+        }
+      }
+    )
+
+    return successResponse(sanitizeDocument(message), 201)
   } catch (error) {
     console.error('Chat POST Error:', error)
     if (error.message === 'Unauthorized') {
       return errorResponse('Unauthorized', 401)
     }
-    return errorResponse('Failed to process chat action', 500, error.message)
+    return errorResponse('Failed to create chat message', 500, error.message)
+  }
+}
+
+// Update message (mark as read, edit, etc.)
+export async function PUT(request) {
+  try {
+    const user = getAuthUser(request)
+    requireAuth(user)
+
+    const body = await request.json()
+    const { messageId, conversationId, action, content } = body
+
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+
+    if (action === 'markRead' && conversationId) {
+      // Mark all messages in conversation as read
+      const messagesCollection = db.collection('chat_messages')
+      await messagesCollection.updateMany(
+        { conversationId },
+        { $addToSet: { readBy: user.id } }
+      )
+      return successResponse({ message: 'Messages marked as read' })
+    }
+
+    if (messageId && content) {
+      // Edit message
+      const messagesCollection = db.collection('chat_messages')
+      const result = await messagesCollection.findOneAndUpdate(
+        { id: messageId, senderId: user.id },
+        { $set: { content, editedAt: new Date() } },
+        { returnDocument: 'after' }
+      )
+
+      if (!result) {
+        return errorResponse('Message not found or you cannot edit this message', 404)
+      }
+
+      return successResponse(sanitizeDocument(result))
+    }
+
+    return errorResponse('Invalid request', 400)
+  } catch (error) {
+    console.error('Chat PUT Error:', error)
+    if (error.message === 'Unauthorized') {
+      return errorResponse('Unauthorized', 401)
+    }
+    return errorResponse('Failed to update chat', 500, error.message)
+  }
+}
+
+// Delete message or conversation
+export async function DELETE(request) {
+  try {
+    const user = getAuthUser(request)
+    requireAuth(user)
+
+    const { searchParams } = new URL(request.url)
+    const messageId = searchParams.get('messageId')
+    const conversationId = searchParams.get('conversationId')
+
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+
+    if (conversationId && !messageId) {
+      // Delete entire conversation and its messages
+      const conversationsCollection = db.collection('conversations')
+      const messagesCollection = db.collection('chat_messages')
+
+      await messagesCollection.deleteMany({ conversationId })
+      await conversationsCollection.deleteOne({ id: conversationId })
+
+      return successResponse({ message: 'Conversation deleted successfully' })
+    }
+
+    if (messageId) {
+      // Delete single message
+      const messagesCollection = db.collection('chat_messages')
+      const result = await messagesCollection.deleteOne({ id: messageId, senderId: user.id })
+
+      if (result.deletedCount === 0) {
+        return errorResponse('Message not found or you cannot delete this message', 404)
+      }
+
+      return successResponse({ message: 'Message deleted successfully' })
+    }
+
+    return errorResponse('Message ID or Conversation ID is required', 400)
+  } catch (error) {
+    console.error('Chat DELETE Error:', error)
+    if (error.message === 'Unauthorized') {
+      return errorResponse('Unauthorized', 401)
+    }
+    return errorResponse('Failed to delete chat', 500, error.message)
   }
 }

@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection, Collections } from '@/lib/db/mongodb'
-import { getAuthUser, requireClientAccess } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireClientAccess, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 import { validateExpenseData } from '@/lib/utils/validation'
 
@@ -17,9 +17,11 @@ export async function GET(request) {
     const category = searchParams.get('category')
     const approved = searchParams.get('approved')
 
-    const expensesCollection = await getCollection(Collections.EXPENSES)
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const expensesCollection = db.collection('expenses')
 
-    const filter = { clientId: user.clientId }
+    const filter = {}
     if (category) filter.category = category
     if (approved !== null) filter.approved = approved === 'true'
 
@@ -50,7 +52,9 @@ export async function POST(request) {
       return errorResponse(validation.message, 400)
     }
 
-    const expensesCollection = await getCollection(Collections.EXPENSES)
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const expensesCollection = db.collection('expenses')
 
     const expense = {
       id: uuidv4(),

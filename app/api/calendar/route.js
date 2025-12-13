@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection } from '@/lib/db/mongodb'
-import { getAuthUser, requireAuth } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireAuth, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -18,16 +18,18 @@ export async function GET(request) {
     const eventId = searchParams.get('id')
     const view = searchParams.get('view') // day, week, month
 
-    const collection = await getCollection('calendar_events')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('calendar_events')
 
     // Get single event by ID
     if (eventId) {
-      const event = await collection.findOne({ id: eventId, clientId: user.clientId })
+      const event = await collection.findOne({ id: eventId })
       if (!event) return errorResponse('Event not found', 404)
       return successResponse(sanitizeDocument(event))
     }
 
-    let query = { clientId: user.clientId }
+    let query = {}
     
     // Filter by month
     if (month) {
@@ -40,8 +42,8 @@ export async function GET(request) {
     const events = await collection.find(query).sort({ date: 1, startTime: 1 }).toArray()
 
     // Get tasks from tasks collection
-    const tasksCollection = await getCollection('tasks')
-    let tasksQuery = { clientId: user.clientId }
+    const tasksCollection = db.collection('tasks')
+    let tasksQuery = {}
     
     if (month) {
       const [year, monthNum] = month.split('-')
@@ -100,7 +102,10 @@ export async function POST(request) {
     requireAuth(user)
 
     const body = await request.json()
-    const collection = await getCollection('calendar_events')
+    
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('calendar_events')
 
     const event = {
       id: uuidv4(),
@@ -111,29 +116,21 @@ export async function POST(request) {
       startTime: body.startTime || '09:00',
       endTime: body.endTime || '10:00',
       allDay: body.allDay || false,
-      type: body.type || 'event', // event, meeting, reminder, deadline, task
+      type: body.type || 'event',
       location: body.location || '',
-      // Attendees
       attendees: body.attendees || [],
-      // Recurrence
       recurring: body.recurring || false,
-      recurrencePattern: body.recurrencePattern || null, // daily, weekly, monthly
+      recurrencePattern: body.recurrencePattern || null,
       recurrenceEnd: body.recurrenceEnd ? new Date(body.recurrenceEnd) : null,
-      // Reminder
-      reminder: body.reminder || 30, // minutes before
+      reminder: body.reminder || 30,
       reminderSent: false,
-      // Linking
       projectId: body.projectId || null,
       customerId: body.customerId || null,
       leadId: body.leadId || null,
-      // Status
-      status: body.status || 'scheduled', // scheduled, completed, cancelled
-      // Styling
+      status: body.status || 'scheduled',
       color: body.color || '#6366f1',
       priority: body.priority || 'medium',
-      // Notes
       notes: body.notes || '',
-      // Metadata
       createdBy: user.id,
       createdAt: new Date(),
       updatedAt: new Date()
@@ -159,8 +156,10 @@ export async function PUT(request) {
 
     if (!id) return errorResponse('Event ID is required', 400)
 
-    const collection = await getCollection('calendar_events')
-    const event = await collection.findOne({ id, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('calendar_events')
+    const event = await collection.findOne({ id })
     
     if (!event) return errorResponse('Event not found', 404)
 
@@ -187,7 +186,7 @@ export async function PUT(request) {
     }
 
     const result = await collection.findOneAndUpdate(
-      { id, clientId: user.clientId },
+      { id },
       { $set: { ...updates, updatedAt: new Date() } },
       { returnDocument: 'after' }
     )
@@ -211,8 +210,10 @@ export async function DELETE(request) {
 
     if (!id) return errorResponse('Event ID is required', 400)
 
-    const collection = await getCollection('calendar_events')
-    const result = await collection.deleteOne({ id, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('calendar_events')
+    const result = await collection.deleteOne({ id })
 
     if (result.deletedCount === 0) return errorResponse('Event not found', 404)
     return successResponse({ message: 'Event deleted successfully' })
