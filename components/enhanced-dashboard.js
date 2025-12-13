@@ -322,7 +322,8 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
       icon: CheckCircle2,
       color: 'from-orange-500 to-red-500',
       bgColor: 'bg-orange-50',
-      chartData: [60, 65, 55, 70, 75, 68, taskCompletionRate]
+      chartData: [60, 65, 55, 70, 75, 68, taskCompletionRate],
+      onClick: () => onNavigate?.('tasks')
     },
   ]
 
