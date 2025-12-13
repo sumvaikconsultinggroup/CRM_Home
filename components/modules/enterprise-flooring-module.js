@@ -4666,7 +4666,8 @@ function RoomMeasurementDialog({ open, onClose, room, project, onSave, loading }
       setForm({
         id: room.id,
         roomName: room.roomName || '',
-        roomType: room.roomType || 'bedroom',
+        roomType: room.roomType || 'living_room',
+        applicationType: room.applicationType || 'flooring',
         floor: room.floor || 'ground',
         length: room.dimensions?.length || room.length || '',
         width: room.dimensions?.width || room.width || '',
@@ -4678,12 +4679,14 @@ function RoomMeasurementDialog({ open, onClose, room, project, onSave, loading }
         obstacles: room.obstacles || [],
         specialInstructions: room.specialInstructions || '',
         photos: room.photos || [],
-        wastagePercentage: room.wastagePercentage || 10
+        wastagePercentage: room.wastagePercentage || 10,
+        roomSketch: room.roomSketch || null
       })
     } else {
       setForm({
         roomName: '',
-        roomType: 'bedroom',
+        roomType: 'living_room',
+        applicationType: 'flooring',
         floor: 'ground',
         length: '',
         width: '',
@@ -4695,7 +4698,8 @@ function RoomMeasurementDialog({ open, onClose, room, project, onSave, loading }
         obstacles: [],
         specialInstructions: '',
         photos: [],
-        wastagePercentage: 10
+        wastagePercentage: 10,
+        roomSketch: null
       })
     }
   }, [room, open])
