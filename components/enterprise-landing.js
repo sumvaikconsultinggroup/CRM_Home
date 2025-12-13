@@ -1040,6 +1040,158 @@ export default function EnterpriseLanding({ onLogin }) {
         </div>
       </section>
 
+      {/* ==================== THE SOLUTION ==================== */}
+      <section className="py-16 lg:py-24 bg-gradient-to-b from-white via-blue-50/30 to-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12 lg:mb-16"
+          >
+            <Badge className="bg-green-100 text-green-700 mb-4 px-4 py-1.5">The Solution</Badge>
+            <h2 className="text-3xl lg:text-5xl font-bold mb-4">
+              Meet <span className="bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">BuildCRM</span>
+            </h2>
+            <p className="text-lg text-gray-600 max-w-3xl mx-auto">
+              One platform that replaces your scattered tools. Built by construction industry experts, for construction businesses.
+            </p>
+          </motion.div>
+
+          {/* Solution Bento Grid */}
+          <div className="grid lg:grid-cols-3 gap-6">
+            {/* Main Solution Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="lg:col-span-2 lg:row-span-2 relative overflow-hidden rounded-3xl bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-700 p-8 lg:p-12 text-white shadow-2xl shadow-blue-500/20"
+            >
+              {/* Background Pattern */}
+              <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'radial-gradient(circle at 2px 2px, white 1px, transparent 0)', backgroundSize: '24px 24px' }} />
+              
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-6">
+                  <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center">
+                    <Building2 className="h-8 w-8" />
+                  </div>
+                  <span className="text-lg font-semibold text-blue-200">All-in-One Platform</span>
+                </div>
+                
+                <h3 className="text-3xl lg:text-4xl font-bold mb-4">
+                  Stop Juggling 6 Apps.
+                  <br />
+                  Use One.
+                </h3>
+                <p className="text-blue-100 text-lg mb-8 max-w-lg">
+                  BuildCRM combines CRM, project management, inventory, invoicing, and team collaboration into a single, integrated platform designed specifically for your industry.
+                </p>
+
+                <div className="grid grid-cols-2 gap-4 mb-8">
+                  {[
+                    { icon: Target, label: 'Lead Management' },
+                    { icon: Kanban, label: 'Project Tracking' },
+                    { icon: Package, label: 'Inventory Control' },
+                    { icon: Receipt, label: 'GST Invoicing' },
+                    { icon: Users, label: 'Team Collaboration' },
+                    { icon: BarChart3, label: 'Analytics & Reports' }
+                  ].map((item, i) => (
+                    <motion.div
+                      key={i}
+                      initial={{ opacity: 0, x: -10 }}
+                      whileInView={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.1 * i }}
+                      className="flex items-center gap-3"
+                    >
+                      <div className="w-10 h-10 bg-white/10 rounded-xl flex items-center justify-center">
+                        <item.icon className="h-5 w-5" />
+                      </div>
+                      <span className="text-sm font-medium">{item.label}</span>
+                    </motion.div>
+                  ))}
+                </div>
+
+                <Button 
+                  onClick={onLogin}
+                  className="bg-white text-indigo-600 hover:bg-gray-100 shadow-xl h-12 px-6 font-semibold"
+                >
+                  Start Free Trial
+                  <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              </div>
+            </motion.div>
+
+            {/* Industry Specific Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="rounded-3xl bg-white p-6 lg:p-8 shadow-xl border border-gray-100"
+            >
+              <div className="w-12 h-12 bg-gradient-to-br from-orange-500 to-red-600 rounded-2xl flex items-center justify-center mb-4 shadow-lg">
+                <Layers className="h-6 w-6 text-white" />
+              </div>
+              <h4 className="text-xl font-bold text-gray-900 mb-2">Industry-Specific</h4>
+              <p className="text-gray-600 text-sm mb-4">
+                Not a generic CRM. Purpose-built modules for flooring, doors & windows, kitchens, and 8+ more trades.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {['Flooring', 'D&W', 'Kitchens', 'Contractors'].map((tag, i) => (
+                  <span key={i} className="text-xs bg-orange-100 text-orange-700 px-2.5 py-1 rounded-full">
+                    {tag}
+                  </span>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* AI Powered Card */}
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="rounded-3xl bg-gradient-to-br from-violet-600 to-purple-700 p-6 lg:p-8 text-white shadow-xl"
+            >
+              <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center mb-4">
+                <Sparkles className="h-6 w-6" />
+              </div>
+              <h4 className="text-xl font-bold mb-2">AI-Powered Assistant</h4>
+              <p className="text-purple-100 text-sm mb-4">
+                Meet Mee - your AI assistant that understands your business data and provides real-time insights.
+              </p>
+              <a 
+                href="/mee" 
+                className="inline-flex items-center text-sm font-medium text-white hover:text-purple-200 transition-colors"
+              >
+                Learn about Mee AI
+                <ArrowRight className="ml-1 h-4 w-4" />
+              </a>
+            </motion.div>
+          </div>
+
+          {/* Quick Stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mt-12 grid grid-cols-2 lg:grid-cols-4 gap-4"
+          >
+            {[
+              { value: '2 min', label: 'Setup Time' },
+              { value: '3x', label: 'Faster Quotes' },
+              { value: '40%', label: 'More Conversions' },
+              { value: '6 hrs', label: 'Saved Weekly' }
+            ].map((stat, i) => (
+              <div key={i} className="text-center p-4 rounded-2xl bg-white shadow-sm border border-gray-100">
+                <p className="text-2xl lg:text-3xl font-bold text-gray-900">{stat.value}</p>
+                <p className="text-sm text-gray-500">{stat.label}</p>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
       {/* ==================== INDUSTRY STATS ==================== */}
       <section className="py-16 lg:py-20 bg-slate-900 text-white overflow-hidden relative">
         {/* Background Pattern */}
