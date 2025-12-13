@@ -636,6 +636,119 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }
 
+  // Handle Save Room Measurement
+  const handleSaveRoom = async (roomData) => {
+    try {
+      setLoading(true)
+      
+      // Calculate areas
+      const grossArea = (roomData.length || 0) * (roomData.width || 0)
+      const obstaclesArea = (roomData.obstacles || []).reduce((sum, obs) => {
+        return sum + ((obs.length || 0) * (obs.width || 0))
+      }, 0)
+      const netArea = grossArea - obstaclesArea
+      
+      // Prepare room data
+      const room = {
+        ...roomData,
+        projectId: selectedProject.id,
+        dimensions: {
+          length: roomData.length,
+          width: roomData.width,
+          height: roomData.height || 10
+        },
+        grossArea,
+        obstaclesArea,
+        netArea,
+        wastagePercentage: roomData.wastagePercentage || 10,
+        totalAreaWithWastage: netArea * (1 + (roomData.wastagePercentage || 10) / 100)
+      }
+      
+      // Update project with room data
+      const updatedRooms = [...(selectedProject.rooms || [])]
+      const existingIndex = updatedRooms.findIndex(r => r.id === roomData.id)
+      
+      if (existingIndex >= 0) {
+        updatedRooms[existingIndex] = { ...updatedRooms[existingIndex], ...room }
+      } else {
+        room.id = `room-${Date.now()}`
+        room.createdAt = new Date().toISOString()
+        updatedRooms.push(room)
+      }
+      
+      // Calculate total area
+      const totalArea = updatedRooms.reduce((sum, r) => sum + (r.netArea || 0), 0)
+      const roomCount = updatedRooms.length
+      
+      // Save to project
+      const res = await fetch('/api/flooring/enhanced/projects', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          id: selectedProject.id,
+          rooms: updatedRooms,
+          totalArea,
+          roomCount
+        })
+      })
+      
+      if (res.ok) {
+        toast.success(roomData.id ? 'Room updated' : 'Room added successfully')
+        
+        // Update selected project locally
+        setSelectedProject(prev => ({
+          ...prev,
+          rooms: updatedRooms,
+          totalArea,
+          roomCount
+        }))
+        
+        fetchProjects()
+        setDialogOpen({ type: null, data: null })
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to save room')
+      }
+    } catch (error) {
+      console.error('Save room error:', error)
+      toast.error('An error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Handle Delete Room
+  const handleDeleteRoom = async (roomId) => {
+    try {
+      setLoading(true)
+      
+      const updatedRooms = (selectedProject.rooms || []).filter(r => r.id !== roomId)
+      const totalArea = updatedRooms.reduce((sum, r) => sum + (r.netArea || 0), 0)
+      const roomCount = updatedRooms.length
+      
+      const res = await fetch('/api/flooring/enhanced/projects', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          id: selectedProject.id,
+          rooms: updatedRooms,
+          totalArea,
+          roomCount
+        })
+      })
+      
+      if (res.ok) {
+        toast.success('Room deleted')
+        setSelectedProject(prev => ({ ...prev, rooms: updatedRooms, totalArea, roomCount }))
+        fetchProjects()
+      }
+    } catch (error) {
+      toast.error('Failed to delete room')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Handle Project Status Update
   const handleUpdateProjectStatus = async (projectId, newStatus) => {
     try {
