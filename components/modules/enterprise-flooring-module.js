@@ -559,6 +559,84 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }
 
+  // MEE AI Chat Handler
+  const handleMeeAiChat = async () => {
+    if (!meeAiInput.trim()) return
+
+    const userMessage = meeAiInput.trim()
+    setMeeAiInput('')
+    setMeeAiMessages(prev => [...prev, { role: 'user', content: userMessage }])
+    setMeeAiLoading(true)
+
+    try {
+      // Build context from current module data
+      const context = {
+        module: 'flooring',
+        stats: dashboardData?.overview || {},
+        recentQuotes: dashboardData?.recentQuotes?.slice(0, 3) || [],
+        lowStockAlerts: dashboardData?.lowStockAlerts?.length || 0,
+        activeInstallations: dashboardData?.overview?.activeInstallations || 0,
+        products: products.length,
+        projects: projects.length
+      }
+
+      const res = await fetch('/api/mee', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          message: userMessage,
+          context: {
+            ...context,
+            moduleType: 'flooring',
+            userQuery: `User is in the Flooring Module and asks: ${userMessage}. 
+              Current stats: ${context.products} products, ${context.projects} projects, 
+              ${context.stats.totalQuotes || 0} quotes worth ₹${(context.stats.totalQuoteValue || 0).toLocaleString()}, 
+              ${context.lowStockAlerts} low stock alerts.
+              Help the user with flooring-related queries, inventory management, quotes, or any questions about their business.`
+          }
+        })
+      })
+
+      const data = await res.json()
+      
+      if (data.response) {
+        setMeeAiMessages(prev => [...prev, { role: 'assistant', content: data.response }])
+      } else if (data.error) {
+        setMeeAiMessages(prev => [...prev, { role: 'assistant', content: `Sorry, I encountered an error: ${data.error}` }])
+      }
+    } catch (error) {
+      setMeeAiMessages(prev => [...prev, { role: 'assistant', content: 'Sorry, I could not process your request. Please try again.' }])
+    } finally {
+      setMeeAiLoading(false)
+    }
+  }
+
+  // Project Sync Handler
+  const handleProjectSync = async (action) => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/flooring/enhanced/sync', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ action })
+      })
+      
+      if (res.ok) {
+        const result = await res.json()
+        toast.success(`Sync completed: ${result.results?.synced || 0} projects synced`)
+        fetchProjects()
+        fetchCrmProjects()
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Sync failed')
+      }
+    } catch (error) {
+      toast.error('Sync failed')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // =============================================
   // RENDER TABS
   // =============================================
