@@ -4241,10 +4241,213 @@ function GoodsReceiptDialog({ open, onClose, products, onSave, loading }) {
 }
 
 // Advanced Room Measurement Dialog
+// Simple Canvas Drawing Component for Room Sketches
+function RoomDrawingCanvas({ width, height, obstacles, onDrawingComplete }) {
+  const canvasRef = React.useRef(null)
+  const [isDrawing, setIsDrawing] = useState(false)
+  const [tool, setTool] = useState('pen') // pen, eraser, rect
+  const [color, setColor] = useState('#3b82f6')
+  const [brushSize, setBrushSize] = useState(3)
+  const [history, setHistory] = useState([])
+
+  useEffect(() => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    
+    // Draw grid
+    ctx.strokeStyle = '#e5e7eb'
+    ctx.lineWidth = 0.5
+    const gridSize = 20
+    for (let x = 0; x <= canvas.width; x += gridSize) {
+      ctx.beginPath()
+      ctx.moveTo(x, 0)
+      ctx.lineTo(x, canvas.height)
+      ctx.stroke()
+    }
+    for (let y = 0; y <= canvas.height; y += gridSize) {
+      ctx.beginPath()
+      ctx.moveTo(0, y)
+      ctx.lineTo(canvas.width, y)
+      ctx.stroke()
+    }
+    
+    // Draw room border
+    ctx.strokeStyle = '#3b82f6'
+    ctx.lineWidth = 3
+    ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20)
+  }, [])
+
+  const startDrawing = (e) => {
+    const canvas = canvasRef.current
+    const rect = canvas.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    
+    const ctx = canvas.getContext('2d')
+    ctx.beginPath()
+    ctx.moveTo(x, y)
+    setIsDrawing(true)
+  }
+
+  const draw = (e) => {
+    if (!isDrawing) return
+    const canvas = canvasRef.current
+    const rect = canvas.getBoundingClientRect()
+    const x = e.clientX - rect.left
+    const y = e.clientY - rect.top
+    
+    const ctx = canvas.getContext('2d')
+    ctx.lineWidth = brushSize
+    ctx.lineCap = 'round'
+    ctx.strokeStyle = tool === 'eraser' ? '#ffffff' : color
+    ctx.lineTo(x, y)
+    ctx.stroke()
+  }
+
+  const stopDrawing = () => {
+    setIsDrawing(false)
+    // Save canvas state
+    const canvas = canvasRef.current
+    if (canvas) {
+      setHistory(prev => [...prev, canvas.toDataURL()])
+      if (onDrawingComplete) {
+        onDrawingComplete(canvas.toDataURL())
+      }
+    }
+  }
+
+  const clearCanvas = () => {
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    ctx.fillStyle = '#ffffff'
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+    
+    // Redraw grid
+    ctx.strokeStyle = '#e5e7eb'
+    ctx.lineWidth = 0.5
+    const gridSize = 20
+    for (let x = 0; x <= canvas.width; x += gridSize) {
+      ctx.beginPath()
+      ctx.moveTo(x, 0)
+      ctx.lineTo(x, canvas.height)
+      ctx.stroke()
+    }
+    for (let y = 0; y <= canvas.height; y += gridSize) {
+      ctx.beginPath()
+      ctx.moveTo(0, y)
+      ctx.lineTo(canvas.width, y)
+      ctx.stroke()
+    }
+    
+    // Redraw room border
+    ctx.strokeStyle = '#3b82f6'
+    ctx.lineWidth = 3
+    ctx.strokeRect(10, 10, canvas.width - 20, canvas.height - 20)
+  }
+
+  const undo = () => {
+    if (history.length > 0) {
+      const canvas = canvasRef.current
+      const ctx = canvas.getContext('2d')
+      const img = new Image()
+      img.onload = () => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height)
+        ctx.drawImage(img, 0, 0)
+      }
+      const newHistory = [...history]
+      newHistory.pop()
+      setHistory(newHistory)
+      if (newHistory.length > 0) {
+        img.src = newHistory[newHistory.length - 1]
+      } else {
+        clearCanvas()
+      }
+    }
+  }
+
+  return (
+    <div className="space-y-3">
+      {/* Toolbar */}
+      <div className="flex items-center gap-2 p-2 bg-slate-100 rounded-lg flex-wrap">
+        <div className="flex items-center gap-1 border-r pr-2">
+          <Button 
+            variant={tool === 'pen' ? 'default' : 'ghost'} 
+            size="sm"
+            onClick={() => setTool('pen')}
+            title="Pen"
+          >
+            ✏️
+          </Button>
+          <Button 
+            variant={tool === 'eraser' ? 'default' : 'ghost'} 
+            size="sm"
+            onClick={() => setTool('eraser')}
+            title="Eraser"
+          >
+            🧽
+          </Button>
+        </div>
+        <div className="flex items-center gap-1 border-r pr-2">
+          {['#3b82f6', '#ef4444', '#22c55e', '#f59e0b', '#000000'].map(c => (
+            <button
+              key={c}
+              className={`w-6 h-6 rounded-full border-2 ${color === c ? 'border-slate-800' : 'border-transparent'}`}
+              style={{ backgroundColor: c }}
+              onClick={() => setColor(c)}
+            />
+          ))}
+        </div>
+        <div className="flex items-center gap-2 border-r pr-2">
+          <span className="text-xs text-slate-500">Size:</span>
+          <input
+            type="range"
+            min="1"
+            max="10"
+            value={brushSize}
+            onChange={(e) => setBrushSize(parseInt(e.target.value))}
+            className="w-16"
+          />
+        </div>
+        <div className="flex items-center gap-1">
+          <Button variant="outline" size="sm" onClick={undo} title="Undo">
+            ↩️
+          </Button>
+          <Button variant="outline" size="sm" onClick={clearCanvas} title="Clear">
+            🗑️
+          </Button>
+        </div>
+      </div>
+      
+      {/* Canvas */}
+      <div className="border-2 border-slate-300 rounded-lg overflow-hidden bg-white">
+        <canvas
+          ref={canvasRef}
+          width={400}
+          height={300}
+          className="cursor-crosshair"
+          onMouseDown={startDrawing}
+          onMouseMove={draw}
+          onMouseUp={stopDrawing}
+          onMouseLeave={stopDrawing}
+        />
+      </div>
+      
+      <p className="text-xs text-slate-500 text-center">
+        Draw room layout, mark obstacles, doorways, and special areas
+      </p>
+    </div>
+  )
+}
+
 function RoomMeasurementDialog({ open, onClose, room, project, onSave, loading }) {
   const [form, setForm] = useState({
     roomName: '',
     roomType: 'bedroom',
+    applicationType: 'flooring', // flooring, cladding, decking
     floor: 'ground',
     length: '',
     width: '',
@@ -4256,30 +4459,126 @@ function RoomMeasurementDialog({ open, onClose, room, project, onSave, loading }
     obstacles: [],
     specialInstructions: '',
     photos: [],
-    wastagePercentage: 10
+    wastagePercentage: 10,
+    roomSketch: null
   })
   
   const [showDrawing, setShowDrawing] = useState(false)
   const [activeObstacle, setActiveObstacle] = useState(null)
 
-  const roomTypes = [
-    { value: 'bedroom', label: 'Bedroom', icon: '🛏️' },
-    { value: 'living_room', label: 'Living Room', icon: '🛋️' },
-    { value: 'dining_room', label: 'Dining Room', icon: '🍽️' },
-    { value: 'kitchen', label: 'Kitchen', icon: '🍳' },
-    { value: 'bathroom', label: 'Bathroom', icon: '🚿' },
-    { value: 'office', label: 'Office/Study', icon: '💼' },
-    { value: 'cabin', label: 'Cabin/Work Room', icon: '🏢' },
-    { value: 'conference', label: 'Conference Room', icon: '📊' },
-    { value: 'reception', label: 'Reception Area', icon: '🏛️' },
-    { value: 'hallway', label: 'Hallway/Corridor', icon: '🚪' },
-    { value: 'staircase', label: 'Staircase Area', icon: '📶' },
-    { value: 'balcony', label: 'Balcony', icon: '🌅' },
-    { value: 'basement', label: 'Basement', icon: '⬇️' },
-    { value: 'garage', label: 'Garage', icon: '🚗' },
-    { value: 'store', label: 'Store Room', icon: '📦' },
-    { value: 'other', label: 'Other', icon: '📐' }
+  // Application types for wooden flooring industry
+  const applicationTypes = [
+    { value: 'flooring', label: 'Flooring', icon: '🪵', description: 'Indoor floor installation' },
+    { value: 'cladding', label: 'Wall Cladding', icon: '🧱', description: 'Wall covering/paneling' },
+    { value: 'decking', label: 'Decking', icon: '🏡', description: 'Outdoor deck/patio' },
+    { value: 'ceiling', label: 'Ceiling Panel', icon: '⬆️', description: 'Ceiling installation' },
+    { value: 'staircase', label: 'Staircase', icon: '🪜', description: 'Steps & risers' }
   ]
+
+  // Room types organized by application - for Wooden Flooring/Cladding/Decking worldwide
+  const roomTypesByApplication = {
+    flooring: [
+      { value: 'living_room', label: 'Living Room', icon: '🛋️' },
+      { value: 'bedroom', label: 'Bedroom', icon: '🛏️' },
+      { value: 'master_bedroom', label: 'Master Bedroom', icon: '🛏️' },
+      { value: 'dining_room', label: 'Dining Room', icon: '🍽️' },
+      { value: 'kitchen', label: 'Kitchen', icon: '🍳' },
+      { value: 'hallway', label: 'Hallway/Corridor', icon: '🚪' },
+      { value: 'foyer', label: 'Foyer/Entrance', icon: '🚪' },
+      { value: 'office', label: 'Office/Study', icon: '💼' },
+      { value: 'home_office', label: 'Home Office', icon: '🖥️' },
+      { value: 'library', label: 'Library', icon: '📚' },
+      { value: 'guest_room', label: 'Guest Room', icon: '🛏️' },
+      { value: 'kids_room', label: 'Kids Room', icon: '🧸' },
+      { value: 'playroom', label: 'Playroom', icon: '🎮' },
+      { value: 'media_room', label: 'Media/Theater Room', icon: '📺' },
+      { value: 'gym', label: 'Home Gym', icon: '🏋️' },
+      { value: 'basement', label: 'Basement', icon: '⬇️' },
+      { value: 'attic', label: 'Attic', icon: '⬆️' },
+      { value: 'sunroom', label: 'Sunroom', icon: '☀️' },
+      // Commercial
+      { value: 'showroom', label: 'Showroom', icon: '🏪' },
+      { value: 'retail_floor', label: 'Retail Floor', icon: '🛒' },
+      { value: 'conference', label: 'Conference Room', icon: '📊' },
+      { value: 'board_room', label: 'Board Room', icon: '📋' },
+      { value: 'reception', label: 'Reception Area', icon: '🏛️' },
+      { value: 'lobby', label: 'Lobby', icon: '🏢' },
+      { value: 'cabin', label: 'Cabin/Office', icon: '🏢' },
+      { value: 'open_office', label: 'Open Office', icon: '🖥️' },
+      { value: 'restaurant', label: 'Restaurant', icon: '🍽️' },
+      { value: 'cafe', label: 'Cafe/Lounge', icon: '☕' },
+      { value: 'hotel_room', label: 'Hotel Room', icon: '🏨' },
+      { value: 'hotel_corridor', label: 'Hotel Corridor', icon: '🚶' },
+      { value: 'banquet_hall', label: 'Banquet Hall', icon: '🎉' },
+      { value: 'auditorium', label: 'Auditorium', icon: '🎭' },
+      { value: 'gym_studio', label: 'Gym/Studio', icon: '🏋️' },
+      { value: 'spa', label: 'Spa/Wellness', icon: '💆' },
+      { value: 'other', label: 'Other', icon: '📐' }
+    ],
+    cladding: [
+      { value: 'exterior_wall', label: 'Exterior Wall', icon: '🏠' },
+      { value: 'facade', label: 'Building Facade', icon: '🏢' },
+      { value: 'feature_wall', label: 'Feature Wall', icon: '🎨' },
+      { value: 'accent_wall', label: 'Accent Wall', icon: '✨' },
+      { value: 'living_wall', label: 'Living Room Wall', icon: '🛋️' },
+      { value: 'bedroom_wall', label: 'Bedroom Wall', icon: '🛏️' },
+      { value: 'headboard_wall', label: 'Headboard Wall', icon: '🛏️' },
+      { value: 'tv_wall', label: 'TV/Media Wall', icon: '📺' },
+      { value: 'fireplace_surround', label: 'Fireplace Surround', icon: '🔥' },
+      { value: 'reception_wall', label: 'Reception Wall', icon: '🏛️' },
+      { value: 'office_wall', label: 'Office Wall', icon: '🏢' },
+      { value: 'partition', label: 'Partition Wall', icon: '🚧' },
+      { value: 'bathroom_wall', label: 'Bathroom Wall', icon: '🚿' },
+      { value: 'kitchen_backsplash', label: 'Kitchen Backsplash', icon: '🍳' },
+      { value: 'staircase_wall', label: 'Staircase Wall', icon: '🪜' },
+      { value: 'corridor_wall', label: 'Corridor Wall', icon: '🚪' },
+      { value: 'other', label: 'Other', icon: '📐' }
+    ],
+    decking: [
+      { value: 'backyard_deck', label: 'Backyard Deck', icon: '🏡' },
+      { value: 'front_porch', label: 'Front Porch', icon: '🏠' },
+      { value: 'patio', label: 'Patio', icon: '☀️' },
+      { value: 'balcony', label: 'Balcony', icon: '🌅' },
+      { value: 'terrace', label: 'Terrace', icon: '🏙️' },
+      { value: 'rooftop', label: 'Rooftop Deck', icon: '🏗️' },
+      { value: 'pool_deck', label: 'Pool Deck', icon: '🏊' },
+      { value: 'spa_deck', label: 'Spa/Hot Tub Deck', icon: '🛁' },
+      { value: 'gazebo', label: 'Gazebo Floor', icon: '⛱️' },
+      { value: 'pergola', label: 'Pergola Floor', icon: '🏛️' },
+      { value: 'walkway', label: 'Walkway/Path', icon: '🚶' },
+      { value: 'dock', label: 'Dock/Marina', icon: '⚓' },
+      { value: 'boardwalk', label: 'Boardwalk', icon: '🌊' },
+      { value: 'restaurant_outdoor', label: 'Restaurant Outdoor', icon: '🍽️' },
+      { value: 'cafe_outdoor', label: 'Cafe Outdoor', icon: '☕' },
+      { value: 'hotel_pool', label: 'Hotel Pool Area', icon: '🏨' },
+      { value: 'clubhouse', label: 'Clubhouse', icon: '🏌️' },
+      { value: 'other', label: 'Other', icon: '📐' }
+    ],
+    ceiling: [
+      { value: 'living_ceiling', label: 'Living Room Ceiling', icon: '🛋️' },
+      { value: 'bedroom_ceiling', label: 'Bedroom Ceiling', icon: '🛏️' },
+      { value: 'office_ceiling', label: 'Office Ceiling', icon: '🏢' },
+      { value: 'lobby_ceiling', label: 'Lobby Ceiling', icon: '🏛️' },
+      { value: 'restaurant_ceiling', label: 'Restaurant Ceiling', icon: '🍽️' },
+      { value: 'conference_ceiling', label: 'Conference Ceiling', icon: '📊' },
+      { value: 'retail_ceiling', label: 'Retail Ceiling', icon: '🛒' },
+      { value: 'pergola_ceiling', label: 'Pergola Ceiling', icon: '🏛️' },
+      { value: 'canopy', label: 'Canopy/Overhang', icon: '⛱️' },
+      { value: 'other', label: 'Other', icon: '📐' }
+    ],
+    staircase: [
+      { value: 'main_staircase', label: 'Main Staircase', icon: '🪜' },
+      { value: 'spiral_staircase', label: 'Spiral Staircase', icon: '🔄' },
+      { value: 'floating_stairs', label: 'Floating Stairs', icon: '✨' },
+      { value: 'deck_stairs', label: 'Deck Stairs', icon: '🏡' },
+      { value: 'porch_steps', label: 'Porch Steps', icon: '🏠' },
+      { value: 'landing', label: 'Landing Area', icon: '📦' },
+      { value: 'commercial_stairs', label: 'Commercial Stairs', icon: '🏢' },
+      { value: 'other', label: 'Other', icon: '📐' }
+    ]
+  }
+
+  const roomTypes = roomTypesByApplication[form.applicationType] || roomTypesByApplication.flooring
 
   const floorOptions = [
     { value: 'basement', label: 'Basement' },
@@ -4287,18 +4586,63 @@ function RoomMeasurementDialog({ open, onClose, room, project, onSave, loading }
     { value: '1st', label: '1st Floor' },
     { value: '2nd', label: '2nd Floor' },
     { value: '3rd', label: '3rd Floor' },
-    { value: 'terrace', label: 'Terrace' }
+    { value: '4th+', label: '4th Floor+' },
+    { value: 'terrace', label: 'Terrace/Roof' },
+    { value: 'outdoor', label: 'Outdoor/Exterior' }
   ]
 
-  const subfloorTypes = [
-    { value: 'concrete', label: 'Concrete' },
-    { value: 'plywood', label: 'Plywood' },
-    { value: 'osb', label: 'OSB' },
-    { value: 'existing_tile', label: 'Existing Tile' },
-    { value: 'existing_wood', label: 'Existing Wood' },
-    { value: 'cement_screed', label: 'Cement Screed' },
-    { value: 'other', label: 'Other' }
-  ]
+  // Subfloor types vary by application
+  const subfloorTypesByApplication = {
+    flooring: [
+      { value: 'concrete', label: 'Concrete Slab' },
+      { value: 'cement_screed', label: 'Cement Screed' },
+      { value: 'plywood', label: 'Plywood' },
+      { value: 'osb', label: 'OSB' },
+      { value: 'existing_tile', label: 'Existing Tile' },
+      { value: 'existing_wood', label: 'Existing Wood' },
+      { value: 'existing_vinyl', label: 'Existing Vinyl' },
+      { value: 'heated_floor', label: 'Heated Floor System' },
+      { value: 'other', label: 'Other' }
+    ],
+    cladding: [
+      { value: 'brick', label: 'Brick Wall' },
+      { value: 'concrete_wall', label: 'Concrete Wall' },
+      { value: 'drywall', label: 'Drywall/Plasterboard' },
+      { value: 'plaster', label: 'Plaster' },
+      { value: 'wood_frame', label: 'Wood Frame' },
+      { value: 'metal_frame', label: 'Metal Frame' },
+      { value: 'existing_cladding', label: 'Existing Cladding' },
+      { value: 'other', label: 'Other' }
+    ],
+    decking: [
+      { value: 'concrete_pad', label: 'Concrete Pad' },
+      { value: 'wood_joists', label: 'Wood Joists' },
+      { value: 'metal_frame', label: 'Metal Frame' },
+      { value: 'existing_deck', label: 'Existing Deck' },
+      { value: 'gravel_base', label: 'Gravel/Crushed Stone' },
+      { value: 'paver_base', label: 'Paver Base' },
+      { value: 'soil', label: 'Compacted Soil' },
+      { value: 'rooftop_membrane', label: 'Rooftop Membrane' },
+      { value: 'other', label: 'Other' }
+    ],
+    ceiling: [
+      { value: 'concrete_ceiling', label: 'Concrete Ceiling' },
+      { value: 'wood_joists', label: 'Wood Joists' },
+      { value: 'metal_frame', label: 'Metal Frame' },
+      { value: 'existing_ceiling', label: 'Existing Ceiling' },
+      { value: 'drop_ceiling_grid', label: 'Drop Ceiling Grid' },
+      { value: 'other', label: 'Other' }
+    ],
+    staircase: [
+      { value: 'concrete_stairs', label: 'Concrete Stairs' },
+      { value: 'wood_stairs', label: 'Wood Stairs' },
+      { value: 'metal_stairs', label: 'Metal Stairs' },
+      { value: 'existing_stairs', label: 'Existing Stairs' },
+      { value: 'other', label: 'Other' }
+    ]
+  }
+
+  const subfloorTypes = subfloorTypesByApplication[form.applicationType] || subfloorTypesByApplication.flooring
 
   const obstacleTypes = [
     { value: 'pillar', label: 'Pillar/Column' },
@@ -4307,7 +4651,13 @@ function RoomMeasurementDialog({ open, onClose, room, project, onSave, loading }
     { value: 'island', label: 'Kitchen Island' },
     { value: 'alcove', label: 'Alcove/Niche' },
     { value: 'stairs', label: 'Staircase Opening' },
-    { value: 'duct', label: 'AC/Duct' },
+    { value: 'duct', label: 'AC Duct/Vent' },
+    { value: 'window', label: 'Window Cutout' },
+    { value: 'door', label: 'Door Cutout' },
+    { value: 'drain', label: 'Drain/Plumbing' },
+    { value: 'electrical', label: 'Electrical Panel' },
+    { value: 'tree', label: 'Tree/Planter' },
+    { value: 'pool', label: 'Pool Cutout' },
     { value: 'other', label: 'Other' }
   ]
 
