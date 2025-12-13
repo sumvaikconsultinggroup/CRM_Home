@@ -1163,8 +1163,51 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       return matchesSearch && matchesStatus
     })
 
+    // Count unsynced CRM projects (projects in CRM that don't have a flooring project linked)
+    const unsyncedCrmCount = crmProjects.filter(p => !p.flooringProjectId).length
+
     return (
       <div className="space-y-4">
+        {/* Sync Status Banner */}
+        {unsyncedCrmCount > 0 && (
+          <Card className="border-blue-200 bg-blue-50">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-full bg-blue-100">
+                    <RefreshCw className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-blue-900">
+                      {unsyncedCrmCount} new project{unsyncedCrmCount > 1 ? 's' : ''} available from CRM
+                    </p>
+                    <p className="text-sm text-blue-700">
+                      Click "Sync Now" to import projects added in CRM
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  onClick={() => handleProjectSync('sync_from_crm')}
+                  disabled={loading}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  {loading ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Syncing...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Sync Now
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -1189,9 +1232,19 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               </SelectContent>
             </Select>
           </div>
-          <Button onClick={() => setDialogOpen({ type: 'project', data: null })}>
-            <Plus className="h-4 w-4 mr-2" /> New Project
-          </Button>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => handleProjectSync('sync_from_crm')}
+              disabled={loading}
+            >
+              <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
+              Sync Now
+            </Button>
+            <Button onClick={() => setDialogOpen({ type: 'project', data: null })}>
+              <Plus className="h-4 w-4 mr-2" /> New Project
+            </Button>
+          </div>
         </div>
 
         {/* Projects Table */}
@@ -1217,6 +1270,11 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                         <div>
                           <p className="font-medium text-slate-900">{project.projectNumber}</p>
                           <p className="text-sm text-slate-500 line-clamp-1">{project.name}</p>
+                          {project.crmProjectId && (
+                            <span className="inline-flex items-center gap-1 text-xs text-blue-600 mt-0.5">
+                              <CheckCircle2 className="h-3 w-3" /> CRM Synced
+                            </span>
+                          )}
                         </div>
                       </td>
                       <td className="px-4 py-3">
@@ -1239,6 +1297,17 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
+                          {/* Show "Send for Quotation" button only when project is Approved */}
+                          {project.status === 'approved' && (
+                            <Button 
+                              size="sm" 
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                              onClick={() => handleSendForQuotation(project)}
+                            >
+                              <FileText className="h-4 w-4 mr-1" />
+                              Create Quote
+                            </Button>
+                          )}
                           <Button variant="ghost" size="sm" onClick={() => {
                             setSelectedProject(project)
                             setActiveTab('measurements')
@@ -1247,6 +1316,9 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           </Button>
                           <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'project', data: project })}>
                             <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'view_project', data: project })}>
+                            <Eye className="h-4 w-4" />
                           </Button>
                         </div>
                       </td>
@@ -1260,11 +1332,39 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           <EmptyState
             icon={Building2}
             title="No projects found"
-            description="Create a project to start managing flooring installations."
+            description="Create a project or sync from CRM to start managing flooring installations."
             action={() => setDialogOpen({ type: 'project', data: null })}
             actionLabel="Create Project"
           />
         )}
+
+        {/* CRM Projects Info Card */}
+        <Card className="border-slate-200">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-sm font-medium flex items-center gap-2">
+              <Building2 className="h-4 w-4 text-slate-500" />
+              CRM Integration Status
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="pt-0">
+            <div className="grid grid-cols-3 gap-4 text-sm">
+              <div className="p-3 rounded-lg bg-slate-50">
+                <p className="text-slate-500">Module Projects</p>
+                <p className="text-2xl font-bold">{projects.length}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-blue-50">
+                <p className="text-blue-600">CRM Projects</p>
+                <p className="text-2xl font-bold text-blue-700">{crmProjects.length}</p>
+              </div>
+              <div className="p-3 rounded-lg bg-emerald-50">
+                <p className="text-emerald-600">Synced</p>
+                <p className="text-2xl font-bold text-emerald-700">
+                  {projects.filter(p => p.crmProjectId).length}
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     )
   }
