@@ -1403,43 +1403,29 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                       <td className="px-4 py-3">
                         <p className="font-semibold text-emerald-600">₹{(project.estimatedValue || 0).toLocaleString()}</p>
                       </td>
-                      <td className="px-4 py-3">
-                        <Select 
-                          value={project.status} 
-                          onValueChange={(v) => handleUpdateProjectStatus(project.id, v)}
-                        >
-                          <SelectTrigger className="w-[150px] h-8">
-                            <Badge className={ProjectStatus[project.status]?.color}>
-                              {ProjectStatus[project.status]?.label}
-                            </Badge>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.entries(ProjectStatus).map(([key, { label, color }]) => (
-                              <SelectItem key={key} value={key}>
-                                <span className={`px-2 py-0.5 rounded text-xs ${color}`}>{label}</span>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </td>
+                      {/* Actions Column - FIRST before Status */}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
-                          {/* Send to Quote button - available for ALL projects */}
-                          <Button 
-                            size="sm" 
-                            className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                            onClick={() => handleSendForQuotation(project)}
-                          >
-                            <FileText className="h-4 w-4 mr-1" />
-                            Quote
-                          </Button>
-                          {/* Measurements button - only for B2C */}
-                          {project.segment !== 'b2b' && (
-                            <Button variant="ghost" size="sm" onClick={() => {
-                              setSelectedProject(project)
-                              setActiveTab('measurements')
-                            }} title="Measurements">
-                              <Ruler className="h-4 w-4" />
+                          {/* B2C: Send for Measurement */}
+                          {project.segment !== 'b2b' && !['measurement_done', 'quote_pending', 'quote_sent', 'quote_approved', 'invoice_sent', 'payment_received', 'installation_scheduled', 'installation_in_progress', 'completed'].includes(project.status) && (
+                            <Button 
+                              size="sm" 
+                              className="bg-blue-600 hover:bg-blue-700 text-white"
+                              onClick={() => handleSendForMeasurement(project)}
+                            >
+                              <Ruler className="h-4 w-4 mr-1" />
+                              Measurement
+                            </Button>
+                          )}
+                          {/* B2B: Send for Material Requisition */}
+                          {project.segment === 'b2b' && !['material_processing', 'material_ready', 'quote_pending', 'quote_sent', 'quote_approved', 'invoice_sent', 'in_transit', 'delivered', 'completed'].includes(project.status) && (
+                            <Button 
+                              size="sm" 
+                              className="bg-purple-600 hover:bg-purple-700 text-white"
+                              onClick={() => handleSendForMaterialRequisition(project)}
+                            >
+                              <Package className="h-4 w-4 mr-1" />
+                              Material Req
                             </Button>
                           )}
                           <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'project', data: project })} title="Edit">
@@ -1448,6 +1434,28 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'view_project', data: project })} title="View">
                             <Eye className="h-4 w-4" />
                           </Button>
+                        </div>
+                      </td>
+                      {/* Status Column - After Actions */}
+                      <td className="px-4 py-3">
+                        <Select 
+                          value={project.status} 
+                          onValueChange={(v) => handleUpdateProjectStatus(project.id, v)}
+                        >
+                          <SelectTrigger className="w-[160px] h-8">
+                            <Badge className={ProjectStatus[project.status]?.color || 'bg-slate-100 text-slate-700'}>
+                              {ProjectStatus[project.status]?.label || project.status}
+                            </Badge>
+                          </SelectTrigger>
+                          <SelectContent>
+                            {Object.entries(getProjectStatusBySegment(project.segment)).map(([key, { label, color }]) => (
+                              <SelectItem key={key} value={key}>
+                                <span className={`px-2 py-0.5 rounded text-xs ${color}`}>{label}</span>
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </td>
                         </div>
                       </td>
                     </tr>
