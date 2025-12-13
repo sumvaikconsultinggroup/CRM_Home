@@ -374,11 +374,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   // Load data on mount and when tab changes
   useEffect(() => {
     fetchDashboard()
+    fetchProductSchema()
+    fetchProductCategories()
     fetchProducts()
     fetchProjects()
     fetchCustomers()
     fetchCrmProjects()
-  }, [fetchDashboard, fetchProducts, fetchProjects, fetchCustomers, fetchCrmProjects, refreshKey])
+  }, [fetchDashboard, fetchProductSchema, fetchProductCategories, fetchProducts, fetchProjects, fetchCustomers, fetchCrmProjects, refreshKey])
 
   useEffect(() => {
     if (activeTab === 'quotes') fetchQuotes()
