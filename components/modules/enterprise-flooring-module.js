@@ -1082,6 +1082,9 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             <Button onClick={() => setDialogOpen({ type: 'product', data: null })}>
               <Plus className="h-4 w-4 mr-2" /> Add Product
             </Button>
+            <Button variant="secondary" onClick={() => setDialogOpen({ type: 'manage_categories', data: null })}>
+              <Tags className="h-4 w-4 mr-2" /> Categories
+            </Button>
           </div>
         </div>
 
