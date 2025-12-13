@@ -196,38 +196,62 @@ export function LeadForm({ lead, onSubmit, onCancel }) {
 }
 
 // Project Form Component
-export function ProjectForm({ project, onSubmit, onCancel }) {
+export function ProjectForm({ project, onSubmit, onCancel, contacts = [], onAddContact }) {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
-    clientName: '',
+    customerId: '',
     status: 'planning',
     startDate: '',
     endDate: '',
     budget: '',
-    progress: 0
+    progress: 0,
+    address: '',
+    city: '',
+    state: '',
+    pincode: ''
   })
+  const [showAddContact, setShowAddContact] = useState(false)
+
+  // Get customers from contacts
+  const customers = contacts.filter(c => c.type === 'customer')
 
   useEffect(() => {
     if (project) {
       setFormData({
         name: project.name || '',
         description: project.description || '',
-        clientName: project.clientName || '',
+        customerId: project.customerId || '',
         status: project.status || 'planning',
         startDate: project.startDate ? new Date(project.startDate).toISOString().split('T')[0] : '',
         endDate: project.endDate ? new Date(project.endDate).toISOString().split('T')[0] : '',
         budget: project.budget || '',
-        progress: project.progress || 0
+        progress: project.progress || 0,
+        address: project.address || '',
+        city: project.city || '',
+        state: project.state || '',
+        pincode: project.pincode || ''
       })
     }
   }, [project])
 
   const handleSubmit = (e) => {
     e.preventDefault()
+    
+    if (!formData.customerId) {
+      alert('Please select a customer')
+      return
+    }
+
+    // Get customer details
+    const selectedCustomer = customers.find(c => c.id === formData.customerId)
+    
     // Convert number fields to actual numbers
     const submitData = {
       ...formData,
+      clientName: selectedCustomer?.displayName || selectedCustomer?.name || '',
+      clientEmail: selectedCustomer?.email || '',
+      clientPhone: selectedCustomer?.phone || '',
       budget: formData.budget ? parseFloat(formData.budget) : undefined,
       progress: formData.progress ? parseInt(formData.progress) : 0
     }
@@ -242,6 +266,63 @@ export function ProjectForm({ project, onSubmit, onCancel }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
+      {/* Customer Selection - MANDATORY */}
+      <div className="space-y-2 p-4 bg-blue-50 rounded-lg border border-blue-200">
+        <div className="flex items-center justify-between">
+          <Label className="text-blue-800 font-semibold">Customer *</Label>
+          {onAddContact && (
+            <Button 
+              type="button" 
+              variant="outline" 
+              size="sm"
+              className="h-7 text-xs border-blue-300 text-blue-700 hover:bg-blue-100"
+              onClick={() => onAddContact()}
+            >
+              <svg className="h-3 w-3 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+              </svg>
+              Add New Contact
+            </Button>
+          )}
+        </div>
+        <Select 
+          value={formData.customerId} 
+          onValueChange={(value) => setFormData({ ...formData, customerId: value })}
+        >
+          <SelectTrigger className="bg-white">
+            <SelectValue placeholder="Select a customer (required)" />
+          </SelectTrigger>
+          <SelectContent>
+            {customers.length === 0 ? (
+              <div className="p-4 text-center text-sm text-muted-foreground">
+                No customers found. Add a contact first.
+              </div>
+            ) : (
+              customers.map(customer => (
+                <SelectItem key={customer.id} value={customer.id}>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium">{customer.displayName || customer.name}</span>
+                    {customer.company && (
+                      <span className="text-muted-foreground text-xs">({customer.company})</span>
+                    )}
+                  </div>
+                </SelectItem>
+              ))
+            )}
+          </SelectContent>
+        </Select>
+        {formData.customerId && (() => {
+          const c = customers.find(c => c.id === formData.customerId)
+          return c ? (
+            <div className="text-xs text-blue-600 mt-1 space-y-0.5">
+              {c.email && <p>📧 {c.email}</p>}
+              {c.phone && <p>📱 {c.phone}</p>}
+              {c.gstin && <p>🏢 GSTIN: {c.gstin}</p>}
+            </div>
+          ) : null
+        })()}
+      </div>
+
       <div className="space-y-2">
         <Label>Project Name *</Label>
         <Input
@@ -262,13 +343,6 @@ export function ProjectForm({ project, onSubmit, onCancel }) {
 
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <Label>Client Name</Label>
-          <Input
-            value={formData.clientName}
-            onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-          />
-        </div>
-        <div className="space-y-2">
           <Label>Status</Label>
           <Select value={formData.status} onValueChange={(value) => setFormData({ ...formData, status: value })}>
             <SelectTrigger>
@@ -281,6 +355,14 @@ export function ProjectForm({ project, onSubmit, onCancel }) {
               <SelectItem value="completed">Completed</SelectItem>
             </SelectContent>
           </Select>
+        </div>
+        <div className="space-y-2">
+          <Label>Budget (₹)</Label>
+          <Input
+            type="number"
+            value={formData.budget}
+            onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+          />
         </div>
       </div>
 
@@ -303,32 +385,49 @@ export function ProjectForm({ project, onSubmit, onCancel }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div className="space-y-2">
-          <Label>Budget (₹)</Label>
+      {/* Site Address */}
+      <div className="space-y-3 pt-2">
+        <Label className="font-semibold">Site Address</Label>
+        <Input
+          value={formData.address}
+          onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+          placeholder="Street address"
+        />
+        <div className="grid grid-cols-3 gap-2">
           <Input
-            type="number"
-            value={formData.budget}
-            onChange={(e) => setFormData({ ...formData, budget: e.target.value })}
+            value={formData.city}
+            onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+            placeholder="City"
+          />
+          <Input
+            value={formData.state}
+            onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+            placeholder="State"
+          />
+          <Input
+            value={formData.pincode}
+            onChange={(e) => setFormData({ ...formData, pincode: e.target.value })}
+            placeholder="Pincode"
           />
         </div>
-        <div className="space-y-2">
-          <Label>Progress (%)</Label>
-          <Input
-            type="number"
-            min="0"
-            max="100"
-            value={formData.progress}
-            onChange={(e) => setFormData({ ...formData, progress: e.target.value })}
-          />
-        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>Progress (%)</Label>
+        <Input
+          type="number"
+          min="0"
+          max="100"
+          value={formData.progress}
+          onChange={(e) => setFormData({ ...formData, progress: e.target.value })}
+        />
       </div>
 
       <div className="flex gap-2 justify-end pt-4">
         <Button type="button" variant="outline" onClick={onCancel}>
           Cancel
         </Button>
-        <Button type="submit">
+        <Button type="submit" disabled={!formData.customerId}>
           {project ? 'Update Project' : 'Create Project'}
         </Button>
       </div>
