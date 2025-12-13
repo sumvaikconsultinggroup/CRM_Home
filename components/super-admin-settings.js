@@ -175,8 +175,17 @@ function PagesManagement() {
               <CardContent className="py-4">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
-                      <Globe className="h-5 w-5 text-blue-600" />
+                    <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                      page.type === 'blog' ? 'bg-purple-100' : 
+                      page.type === 'legal' ? 'bg-amber-100' : 'bg-blue-100'
+                    }`}>
+                      {page.type === 'blog' ? (
+                        <BookOpen className={`h-5 w-5 text-purple-600`} />
+                      ) : page.type === 'legal' ? (
+                        <FileEdit className={`h-5 w-5 text-amber-600`} />
+                      ) : (
+                        <Globe className={`h-5 w-5 text-blue-600`} />
+                      )}
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
@@ -184,7 +193,7 @@ function PagesManagement() {
                         <Badge variant={page.published ? 'default' : 'secondary'}>
                           {page.published ? 'Published' : 'Draft'}
                         </Badge>
-                        <Badge variant="outline">{page.type}</Badge>
+                        <Badge variant="outline" className="capitalize">{page.type}</Badge>
                       </div>
                       <p className="text-sm text-muted-foreground">/{page.slug}</p>
                     </div>
