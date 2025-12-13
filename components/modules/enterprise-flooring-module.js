@@ -2510,6 +2510,25 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         {/* Customer Dialog */}
         <CustomerDialog
           open={type === 'customer'}
+
+        {/* Import Products Dialog */}
+        <ImportProductsDialog
+          open={type === 'import_products'}
+          onClose={() => setDialogOpen({ type: null, data: null })}
+          onImport={handleImportProducts}
+          loading={loading}
+          categories={productCategories}
+        />
+
+        {/* Category Manager Dialog */}
+        <CategoryManagerDialog
+          open={type === 'manage_categories'}
+          onClose={() => setDialogOpen({ type: null, data: null })}
+          categories={productCategories}
+          onSave={handleSaveCategory}
+          onDelete={handleDeleteCategory}
+          loading={loading}
+        />
           onClose={() => setDialogOpen({ type: null, data: null })}
           customer={data}
           onSave={handleSaveCustomer}
