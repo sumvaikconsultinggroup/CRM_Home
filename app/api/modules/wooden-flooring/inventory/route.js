@@ -1,13 +1,12 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection } from '@/lib/db/mongodb'
-import { getAuthUser, requireAuth } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireAuth, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 
 export async function OPTIONS() {
   return optionsResponse()
 }
 
-// Get all inventory items
 export async function GET(request) {
   try {
     const user = getAuthUser(request)
@@ -17,9 +16,11 @@ export async function GET(request) {
     const category = searchParams.get('category')
     const lowStock = searchParams.get('lowStock')
 
-    const collection = await getCollection('wf_inventory')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_inventory')
     
-    let query = { clientId: user.clientId }
+    let query = {}
     if (category) query.category = category
     if (lowStock === 'true') {
       query.$expr = { $lte: ['$quantity', '$reorderLevel'] }
@@ -27,7 +28,6 @@ export async function GET(request) {
 
     const items = await collection.find(query).sort({ name: 1 }).toArray()
     
-    // Calculate stats
     const stats = {
       totalItems: items.length,
       totalValue: items.reduce((sum, i) => sum + (i.quantity * i.costPrice), 0),
@@ -43,14 +43,15 @@ export async function GET(request) {
   }
 }
 
-// Create inventory item
 export async function POST(request) {
   try {
     const user = getAuthUser(request)
     requireAuth(user)
 
     const body = await request.json()
-    const collection = await getCollection('wf_inventory')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_inventory')
 
     const item = {
       id: uuidv4(),
@@ -90,7 +91,6 @@ export async function POST(request) {
   }
 }
 
-// Update inventory item
 export async function PUT(request) {
   try {
     const user = getAuthUser(request)
@@ -101,10 +101,12 @@ export async function PUT(request) {
 
     if (!id) return errorResponse('Item ID is required', 400)
 
-    const collection = await getCollection('wf_inventory')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_inventory')
     
     const result = await collection.findOneAndUpdate(
-      { id, clientId: user.clientId },
+      { id },
       { $set: { ...updates, updatedAt: new Date() } },
       { returnDocument: 'after' }
     )
@@ -118,7 +120,6 @@ export async function PUT(request) {
   }
 }
 
-// Delete inventory item
 export async function DELETE(request) {
   try {
     const user = getAuthUser(request)
@@ -129,8 +130,10 @@ export async function DELETE(request) {
 
     if (!id) return errorResponse('Item ID is required', 400)
 
-    const collection = await getCollection('wf_inventory')
-    const result = await collection.deleteOne({ id, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_inventory')
+    const result = await collection.deleteOne({ id })
 
     if (result.deletedCount === 0) return errorResponse('Item not found', 404)
     return successResponse({ message: 'Item deleted successfully' })

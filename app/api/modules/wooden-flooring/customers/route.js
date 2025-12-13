@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection } from '@/lib/db/mongodb'
-import { getAuthUser, requireAuth } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireAuth, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -16,15 +16,17 @@ export async function GET(request) {
     const search = searchParams.get('search')
     const customerId = searchParams.get('id')
 
-    const collection = await getCollection('wf_customers')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_customers')
 
     if (customerId) {
-      const customer = await collection.findOne({ id: customerId, clientId: user.clientId })
+      const customer = await collection.findOne({ id: customerId })
       if (!customer) return errorResponse('Customer not found', 404)
       return successResponse(sanitizeDocument(customer))
     }
 
-    let query = { clientId: user.clientId }
+    let query = {}
     if (search) {
       query.$or = [
         { name: { $regex: search, $options: 'i' } },
@@ -55,7 +57,9 @@ export async function POST(request) {
     requireAuth(user)
 
     const body = await request.json()
-    const collection = await getCollection('wf_customers')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_customers')
 
     const customer = {
       id: uuidv4(),
@@ -67,28 +71,22 @@ export async function POST(request) {
       alternatePhone: body.alternatePhone || '',
       company: body.company || '',
       gstNumber: body.gstNumber || '',
-      // Address
       address: body.address || '',
       city: body.city || '',
       state: body.state || '',
       pincode: body.pincode || '',
-      // Site Details
       siteAddress: body.siteAddress || '',
       siteCity: body.siteCity || '',
       propertyType: body.propertyType || 'Residential',
-      // Preferences
       preferredWoodType: body.preferredWoodType || '',
       budgetRange: body.budgetRange || '',
-      // Stats
       totalSpent: 0,
       totalOrders: 0,
       activeProjects: 0,
-      // Communication
       whatsappOptIn: body.whatsappOptIn !== false,
       source: body.source || 'Direct',
       notes: body.notes || '',
       tags: body.tags || [],
-      // Timeline
       communications: [],
       createdAt: new Date(),
       updatedAt: new Date()
@@ -113,10 +111,12 @@ export async function PUT(request) {
 
     if (!id) return errorResponse('Customer ID is required', 400)
 
-    const collection = await getCollection('wf_customers')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_customers')
     
     const result = await collection.findOneAndUpdate(
-      { id, clientId: user.clientId },
+      { id },
       { $set: { ...updates, updatedAt: new Date() } },
       { returnDocument: 'after' }
     )
@@ -140,8 +140,10 @@ export async function DELETE(request) {
 
     if (!id) return errorResponse('Customer ID is required', 400)
 
-    const collection = await getCollection('wf_customers')
-    const result = await collection.deleteOne({ id, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_customers')
+    const result = await collection.deleteOne({ id })
 
     if (result.deletedCount === 0) return errorResponse('Customer not found', 404)
     return successResponse({ message: 'Customer deleted successfully' })

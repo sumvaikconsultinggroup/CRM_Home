@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection } from '@/lib/db/mongodb'
-import { getAuthUser, requireAuth } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireAuth, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -16,15 +16,17 @@ export async function GET(request) {
     const vendorId = searchParams.get('id')
     const category = searchParams.get('category')
 
-    const collection = await getCollection('wf_vendors')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_vendors')
 
     if (vendorId) {
-      const vendor = await collection.findOne({ id: vendorId, clientId: user.clientId })
+      const vendor = await collection.findOne({ id: vendorId })
       if (!vendor) return errorResponse('Vendor not found', 404)
       return successResponse(sanitizeDocument(vendor))
     }
 
-    let query = { clientId: user.clientId }
+    let query = {}
     if (category) query.category = category
 
     const vendors = await collection.find(query).sort({ name: 1 }).toArray()
@@ -50,7 +52,9 @@ export async function POST(request) {
     requireAuth(user)
 
     const body = await request.json()
-    const collection = await getCollection('wf_vendors')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_vendors')
 
     const vendor = {
       id: uuidv4(),
@@ -61,34 +65,25 @@ export async function POST(request) {
       email: body.email || '',
       phone: body.phone || '',
       alternatePhone: body.alternatePhone || '',
-      // Address
       address: body.address || '',
       city: body.city || '',
       state: body.state || '',
       pincode: body.pincode || '',
-      // Business Details
       gstNumber: body.gstNumber || '',
       panNumber: body.panNumber || '',
       category: body.category || 'Flooring Materials',
-      // Products/Services
       productsSupplied: body.productsSupplied || [],
       brands: body.brands || [],
-      // Payment Terms
       paymentTerms: body.paymentTerms || 'Net 30',
       creditLimit: parseFloat(body.creditLimit) || 0,
-      // Bank Details
       bankName: body.bankName || '',
       accountNumber: body.accountNumber || '',
       ifscCode: body.ifscCode || '',
-      // Rating
       rating: body.rating || 0,
-      // Rate Card
       rateCard: body.rateCard || [],
-      // Stats
       totalPurchases: 0,
       totalOrders: 0,
       lastOrderDate: null,
-      // Status
       active: true,
       verified: body.verified || false,
       notes: body.notes || '',
@@ -115,10 +110,12 @@ export async function PUT(request) {
 
     if (!id) return errorResponse('Vendor ID is required', 400)
 
-    const collection = await getCollection('wf_vendors')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_vendors')
     
     const result = await collection.findOneAndUpdate(
-      { id, clientId: user.clientId },
+      { id },
       { $set: { ...updates, updatedAt: new Date() } },
       { returnDocument: 'after' }
     )
@@ -142,8 +139,10 @@ export async function DELETE(request) {
 
     if (!id) return errorResponse('Vendor ID is required', 400)
 
-    const collection = await getCollection('wf_vendors')
-    const result = await collection.deleteOne({ id, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_vendors')
+    const result = await collection.deleteOne({ id })
 
     if (result.deletedCount === 0) return errorResponse('Vendor not found', 404)
     return successResponse({ message: 'Vendor deleted successfully' })

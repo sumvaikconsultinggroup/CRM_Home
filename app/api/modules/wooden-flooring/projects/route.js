@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection } from '@/lib/db/mongodb'
-import { getAuthUser, requireAuth } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireAuth, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -16,15 +16,17 @@ export async function GET(request) {
     const status = searchParams.get('status')
     const projectId = searchParams.get('id')
 
-    const collection = await getCollection('wf_projects')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_projects')
 
     if (projectId) {
-      const project = await collection.findOne({ id: projectId, clientId: user.clientId })
+      const project = await collection.findOne({ id: projectId })
       if (!project) return errorResponse('Project not found', 404)
       return successResponse(sanitizeDocument(project))
     }
 
-    let query = { clientId: user.clientId }
+    let query = {}
     if (status) query.status = status
 
     const projects = await collection.find(query).sort({ createdAt: -1 }).toArray()
@@ -54,7 +56,9 @@ export async function POST(request) {
     requireAuth(user)
 
     const body = await request.json()
-    const collection = await getCollection('wf_projects')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_projects')
 
     const project = {
       id: uuidv4(),
@@ -65,39 +69,31 @@ export async function POST(request) {
       customerPhone: body.customerPhone || '',
       title: body.title || 'New Flooring Project',
       description: body.description || '',
-      // Site Details
       siteAddress: body.siteAddress || '',
       siteCity: body.siteCity || '',
       propertyType: body.propertyType || 'Residential',
-      // Measurements
       totalArea: parseFloat(body.totalArea) || 0,
       rooms: body.rooms || [],
-      // Products
       selectedProducts: body.selectedProducts || [],
       flooringType: body.flooringType || '',
       woodType: body.woodType || '',
       finish: body.finish || '',
-      // Financials
       estimatedValue: parseFloat(body.estimatedValue) || 0,
       quotationId: null,
       orderId: null,
       totalValue: 0,
       paidAmount: 0,
-      // Status & Timeline
       status: body.status || 'inquiry',
       priority: body.priority || 'medium',
       source: body.source || 'Direct',
-      // Dates
       inquiryDate: new Date(),
       siteVisitDate: body.siteVisitDate ? new Date(body.siteVisitDate) : null,
       expectedStartDate: body.expectedStartDate ? new Date(body.expectedStartDate) : null,
       expectedEndDate: body.expectedEndDate ? new Date(body.expectedEndDate) : null,
       actualStartDate: null,
       actualEndDate: null,
-      // Team
       assignedTo: body.assignedTo || null,
       assignedTeam: body.assignedTeam || [],
-      // Milestones
       milestones: [
         { id: uuidv4(), name: 'Inquiry Received', status: 'completed', date: new Date() },
         { id: uuidv4(), name: 'Site Visit', status: 'pending', date: null },
@@ -110,9 +106,7 @@ export async function POST(request) {
         { id: uuidv4(), name: 'Final Inspection', status: 'pending', date: null },
         { id: uuidv4(), name: 'Payment Complete', status: 'pending', date: null }
       ],
-      // Progress photos
       photos: [],
-      // Notes & Activity
       notes: body.notes || '',
       activityLog: [{
         id: uuidv4(),
@@ -144,12 +138,13 @@ export async function PUT(request) {
 
     if (!id) return errorResponse('Project ID is required', 400)
 
-    const collection = await getCollection('wf_projects')
-    const project = await collection.findOne({ id, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_projects')
+    const project = await collection.findOne({ id })
     
     if (!project) return errorResponse('Project not found', 404)
 
-    // Handle special actions
     if (action === 'update_milestone') {
       const { milestoneId, status } = updates
       const milestones = project.milestones.map(m => 
@@ -193,7 +188,7 @@ export async function PUT(request) {
     }
 
     const result = await collection.findOneAndUpdate(
-      { id, clientId: user.clientId },
+      { id },
       { $set: { ...updates, updatedAt: new Date() } },
       { returnDocument: 'after' }
     )
@@ -216,8 +211,10 @@ export async function DELETE(request) {
 
     if (!id) return errorResponse('Project ID is required', 400)
 
-    const collection = await getCollection('wf_projects')
-    const result = await collection.deleteOne({ id, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_projects')
+    const result = await collection.deleteOne({ id })
 
     if (result.deletedCount === 0) return errorResponse('Project not found', 404)
     return successResponse({ message: 'Project deleted successfully' })
