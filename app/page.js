@@ -502,6 +502,50 @@ function SuperAdminDashboard({ user, onLogout }) {
               </motion.div>
             )}
 
+            {activeTab === 'analytics' && (
+              <motion.div
+                key="analytics"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                <AnalyticsDashboard />
+              </motion.div>
+            )}
+
+            {activeTab === 'billing' && (
+              <motion.div
+                key="billing"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                <BillingCenter />
+              </motion.div>
+            )}
+
+            {activeTab === 'communication' && (
+              <motion.div
+                key="communication"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                <CommunicationHub />
+              </motion.div>
+            )}
+
+            {activeTab === 'security' && (
+              <motion.div
+                key="security"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                <SecurityCenter />
+              </motion.div>
+            )}
+
             {activeTab === 'settings' && (
               <motion.div
                 key="settings"
