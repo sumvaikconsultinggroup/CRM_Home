@@ -18,28 +18,30 @@ export default function FlooringPage() {
 
   useEffect(() => {
     // Check authentication
-    const token = localStorage.getItem('auth_token')
+    const token = localStorage.getItem('token')
     const storedUser = localStorage.getItem('user')
     const storedClient = localStorage.getItem('client')
 
-    if (!token || !storedUser) {
+    console.log('FlooringPage auth check:', { token: !!token, storedUser: !!storedUser, storedClient: !!storedClient })
+
+    if (!token) {
       toast.error('Please login to access this module')
-      router.push('/')
+      setTimeout(() => router.push('/'), 1000)
       return
     }
 
     try {
-      setUser(JSON.parse(storedUser))
+      if (storedUser) {
+        setUser(JSON.parse(storedUser))
+      }
       if (storedClient) {
         setClient(JSON.parse(storedClient))
       }
+      setLoading(false)
     } catch (error) {
       console.error('Error parsing stored data:', error)
-      router.push('/')
-      return
+      setLoading(false)
     }
-
-    setLoading(false)
   }, [router])
 
   if (loading) {
