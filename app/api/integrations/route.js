@@ -39,15 +39,16 @@ export async function POST(request) {
     const integrationsCollection = await getCollection('integrations')
 
     if (action === 'generate-webhook') {
-      // Generate a unique webhook URL for the client
+      // Generate a unique webhook URL for the client with specific integration type
       const webhookId = uuidv4()
-      const webhookUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/webhooks/incoming/${webhookId}`
+      const integrationTypeSlug = integrationType?.toLowerCase().replace(/\s+/g, '-') || 'custom'
+      const webhookUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/webhooks/${integrationTypeSlug}?id=${webhookId}`
       
       const webhook = {
         id: webhookId,
         clientId: user.clientId,
         createdBy: user.id,
-        type: 'webhook',
+        type: integrationTypeSlug,
         name: integrationType || 'Custom Webhook',
         webhookUrl,
         secret: uuidv4().replace(/-/g, ''),
