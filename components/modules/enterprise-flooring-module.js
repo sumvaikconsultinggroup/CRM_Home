@@ -5676,18 +5676,53 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   )
                 }
 
-                if (['quote_pending', 'quote_sent'].includes(status)) {
+                if (['quote_pending', 'quote_sent', 'quote_approved'].includes(status)) {
+                  // Check if quote already exists for this project
+                  const projectQuotes = quotes.filter(q => q.projectId === selectedProject.id)
+                  const hasExistingQuote = projectQuotes.length > 0
+                  
                   return (
-                    <div className="flex gap-3">
-                      <Button variant="outline" onClick={async () => {
-                        await handleUpdateProjectStatus(selectedProject.id, 'measurement_done')
-                        setSelectedProject(prev => ({ ...prev, status: 'measurement_done' }))
-                      }}>
-                        <ArrowLeft className="h-4 w-4 mr-2" /> Back to Measurements
-                      </Button>
-                      <Button onClick={() => setActiveTab('quotes')}>
-                        <FileText className="h-4 w-4 mr-2" /> View Quotes
-                      </Button>
+                    <div className="space-y-3">
+                      <div className="flex gap-3 flex-wrap">
+                        <Button variant="outline" onClick={async () => {
+                          await handleUpdateProjectStatus(selectedProject.id, 'measurement_done')
+                          setSelectedProject(prev => ({ ...prev, status: 'measurement_done' }))
+                        }}>
+                          <ArrowLeft className="h-4 w-4 mr-2" /> Back to Measurements
+                        </Button>
+                        
+                        {!hasExistingQuote ? (
+                          <Button 
+                            className="bg-emerald-600 hover:bg-emerald-700"
+                            disabled={loading || (!hasProducts && !materialDecideLater)}
+                            onClick={createQuoteFromMeasurement}
+                          >
+                            {loading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
+                            Create Quote
+                          </Button>
+                        ) : (
+                          <Button className="bg-blue-600 hover:bg-blue-700" onClick={() => setActiveTab('quotes')}>
+                            <FileText className="h-4 w-4 mr-2" /> View Quotes ({projectQuotes.length})
+                          </Button>
+                        )}
+                        
+                        {status === 'quote_approved' && hasExistingQuote && (
+                          <Button className="bg-purple-600 hover:bg-purple-700" onClick={() => {
+                            const approvedQuote = projectQuotes.find(q => q.status === 'approved')
+                            if (approvedQuote) {
+                              handleCreateInvoiceFromQuote(approvedQuote)
+                            } else {
+                              toast.error('No approved quote found')
+                            }
+                          }}>
+                            <Receipt className="h-4 w-4 mr-2" /> Proceed to Invoice
+                          </Button>
+                        )}
+                      </div>
+                      
+                      {!hasExistingQuote && !hasProducts && !materialDecideLater && (
+                        <p className="text-sm text-amber-600">Select products above or check "Material to be decided later" to create a quote.</p>
+                      )}
                     </div>
                   )
                 }
