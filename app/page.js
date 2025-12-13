@@ -2040,11 +2040,13 @@ export default function App() {
   const [user, setUser] = useState(null)
   const [client, setClient] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [authToken, setAuthToken] = useState(null)
 
   useEffect(() => {
     const checkAuth = async () => {
       const token = localStorage.getItem('token')
       if (token) {
+        setAuthToken(token)
         try {
           const data = await api.getMe()
           setUser(data.user)
@@ -2057,6 +2059,7 @@ export default function App() {
           setView(data.user.role === 'super_admin' ? 'admin' : 'client')
         } catch (error) {
           api.logout()
+          setAuthToken(null)
         }
       }
       setLoading(false)
