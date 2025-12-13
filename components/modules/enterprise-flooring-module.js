@@ -5365,90 +5365,126 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         {rooms.length > 0 && (
           <Card className="border-2 border-cyan-200">
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm flex items-center gap-2 text-cyan-800">
-                <Package className="h-4 w-4" /> Select Products for Quote (with Real-time Inventory)
-              </CardTitle>
-              <CardDescription>Select flooring products. Inventory will be blocked when measurement is marked done.</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-sm flex items-center gap-2 text-cyan-800">
+                    <Package className="h-4 w-4" /> Select Products for Quote (with Real-time Inventory)
+                  </CardTitle>
+                  <CardDescription>Select flooring products. Inventory will be blocked when measurement is marked done.</CardDescription>
+                </div>
+                {/* Material to be decided later toggle */}
+                <div className="flex items-center gap-2 bg-amber-50 px-3 py-2 rounded-lg">
+                  <Checkbox
+                    id="materialDecideLater"
+                    checked={materialDecideLater}
+                    onCheckedChange={(checked) => {
+                      setMaterialDecideLater(checked)
+                      if (checked) {
+                        // Clear any selected products
+                        setMeasurementProducts({})
+                      }
+                    }}
+                  />
+                  <Label htmlFor="materialDecideLater" className="text-sm font-medium text-amber-700 cursor-pointer">
+                    Material to be decided later
+                  </Label>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="border rounded-lg p-3 max-h-64 overflow-y-auto">
-                {products.length > 0 ? (
-                  <div className="space-y-2">
-                    {products.map(product => {
-                      const isSelected = measurementProducts[product.id]?.selected
-                      const quantity = measurementProducts[product.id]?.quantity || totalArea
-                      const price = product.price || product.pricing?.sellingPrice || 0
-                      const inv = getProductInventory(product.id)
-                      const status = getInventoryStatus(product.id, isSelected ? quantity : 0)
-                      
-                      return (
-                        <div 
-                          key={product.id} 
-                          className={`flex items-center justify-between p-3 border rounded transition-all ${isSelected ? 'border-cyan-500 bg-cyan-50' : 'hover:bg-slate-50'} ${status.status === 'out_of_stock' ? 'opacity-60' : ''}`}
-                        >
-                          <div className="flex items-center gap-3">
-                            <Checkbox 
-                              checked={isSelected}
-                              onCheckedChange={(checked) => {
-                                setMeasurementProducts(prev => ({
-                                  ...prev,
-                                  [product.id]: {
-                                    product,
-                                    quantity: totalArea,
-                                    selected: checked
-                                  }
-                                }))
-                              }}
-                              disabled={status.status === 'out_of_stock'}
-                            />
-                            <div>
-                              <p className="font-medium text-sm">{product.name}</p>
-                              <p className="text-xs text-slate-500">{product.sku} • ₹{price}/sqft</p>
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-4">
-                            {/* Inventory Info */}
-                            <div className="flex items-center gap-2 text-sm">
-                              <div className="text-center px-2">
-                                <p className="text-xs text-slate-500">Available</p>
-                                <p className={`font-medium ${inv.availableQty <= inv.reorderLevel ? 'text-amber-600' : 'text-emerald-600'}`}>
-                                  {inv.availableQty.toLocaleString()}
-                                </p>
+              {materialDecideLater ? (
+                <div className="bg-amber-50 border border-amber-200 rounded-lg p-6 text-center">
+                  <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-amber-100 mb-3">
+                    <Clock className="h-6 w-6 text-amber-600" />
+                  </div>
+                  <h4 className="text-lg font-semibold text-amber-800 mb-2">Material Selection Deferred</h4>
+                  <p className="text-sm text-amber-700 max-w-md mx-auto">
+                    No products will be selected at this time. You can add materials later and create a quote when the customer decides on the flooring material.
+                  </p>
+                  <p className="text-xs text-amber-600 mt-3">
+                    <Info className="h-3 w-3 inline mr-1" />
+                    Inventory will NOT be blocked for this project
+                  </p>
+                </div>
+              ) : (
+                <div className="border rounded-lg p-3 max-h-64 overflow-y-auto">
+                  {products.length > 0 ? (
+                    <div className="space-y-2">
+                      {products.map(product => {
+                        const isSelected = measurementProducts[product.id]?.selected
+                        const quantity = measurementProducts[product.id]?.quantity || totalArea
+                        const price = product.price || product.pricing?.sellingPrice || 0
+                        const inv = getProductInventory(product.id)
+                        const status = getInventoryStatus(product.id, isSelected ? quantity : 0)
+                        
+                        return (
+                          <div 
+                            key={product.id} 
+                            className={`flex items-center justify-between p-3 border rounded transition-all ${isSelected ? 'border-cyan-500 bg-cyan-50' : 'hover:bg-slate-50'} ${status.status === 'out_of_stock' ? 'opacity-60' : ''}`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Checkbox 
+                                checked={isSelected}
+                                onCheckedChange={(checked) => {
+                                  setMeasurementProducts(prev => ({
+                                    ...prev,
+                                    [product.id]: {
+                                      product,
+                                      quantity: totalArea,
+                                      selected: checked
+                                    }
+                                  }))
+                                }}
+                                disabled={status.status === 'out_of_stock'}
+                              />
+                              <div>
+                                <p className="font-medium text-sm">{product.name}</p>
+                                <p className="text-xs text-slate-500">{product.sku} • ₹{price}/sqft</p>
                               </div>
-                              {inv.reservedQty > 0 && (
-                                <div className="text-center px-2 border-l">
-                                  <p className="text-xs text-slate-500">Reserved</p>
-                                  <p className="font-medium text-amber-600">{inv.reservedQty.toLocaleString()}</p>
-                                </div>
-                              )}
-                              <Badge className={`text-xs ${status.color}`}>{status.label}</Badge>
                             </div>
-                            
-                            {isSelected && (
-                              <>
-                                <Input 
-                                  className={`w-24 h-8 ${quantity > inv.availableQty ? 'border-red-500' : ''}`}
-                                  type="number" 
-                                  min="1"
-                                  value={quantity}
-                                  onChange={(e) => {
-                                    setMeasurementProducts(prev => ({
-                                      ...prev,
-                                      [product.id]: {
-                                        ...prev[product.id],
-                                        quantity: parseInt(e.target.value) || totalArea
-                                      }
-                                    }))
-                                  }}
-                                />
-                                <span className="text-sm font-medium text-emerald-600 w-28 text-right">
-                                  ₹{(price * quantity).toLocaleString()}
-                                </span>
-                              </>
-                            )}
+                            <div className="flex items-center gap-4">
+                              {/* Inventory Info */}
+                              <div className="flex items-center gap-2 text-sm">
+                                <div className="text-center px-2">
+                                  <p className="text-xs text-slate-500">Available</p>
+                                  <p className={`font-medium ${inv.availableQty <= inv.reorderLevel ? 'text-amber-600' : 'text-emerald-600'}`}>
+                                    {inv.availableQty.toLocaleString()}
+                                  </p>
+                                </div>
+                                {inv.reservedQty > 0 && (
+                                  <div className="text-center px-2 border-l">
+                                    <p className="text-xs text-slate-500">Reserved</p>
+                                    <p className="font-medium text-amber-600">{inv.reservedQty.toLocaleString()}</p>
+                                  </div>
+                                )}
+                                <Badge className={`text-xs ${status.color}`}>{status.label}</Badge>
+                              </div>
+                              
+                              {isSelected && (
+                                <>
+                                  <Input 
+                                    className={`w-24 h-8 ${quantity > inv.availableQty ? 'border-red-500' : ''}`}
+                                    type="number" 
+                                    min="1"
+                                    value={quantity}
+                                    onChange={(e) => {
+                                      setMeasurementProducts(prev => ({
+                                        ...prev,
+                                        [product.id]: {
+                                          ...prev[product.id],
+                                          quantity: parseInt(e.target.value) || totalArea
+                                        }
+                                      }))
+                                    }}
+                                  />
+                                  <span className="text-sm font-medium text-emerald-600 w-28 text-right">
+                                    ₹{(price * quantity).toLocaleString()}
+                                  </span>
+                                </>
+                              )}
+                            </div>
                           </div>
-                        </div>
-                      )
+                        )
                     })}
                   </div>
                 ) : (
