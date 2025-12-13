@@ -20,13 +20,6 @@ import {
   FileEdit, BookOpen
 } from 'lucide-react'
 import { toast } from 'sonner'
-import dynamic from 'next/dynamic'
-
-// Dynamically import rich text editor to avoid SSR issues
-const RichTextEditor = dynamic(() => import('@/components/ui/rich-text-editor'), {
-  ssr: false,
-  loading: () => <div className="h-[300px] bg-slate-100 rounded-lg animate-pulse flex items-center justify-center">Loading editor...</div>
-})
 
 // Payment Gateway Logos/Icons
 const GatewayIcon = ({ gateway }) => {
