@@ -42,6 +42,242 @@ const GatewayIcon = ({ gateway }) => {
   return icons[gateway] || <CreditCard className="h-10 w-10" />
 }
 
+// Pages Management Component
+function PagesManagement() {
+  const [pages, setPages] = useState([])
+  const [loading, setLoading] = useState(true)
+  const [editingPage, setEditingPage] = useState(null)
+  const [isDialogOpen, setIsDialogOpen] = useState(false)
+  const [formData, setFormData] = useState({
+    title: '',
+    slug: '',
+    content: '',
+    type: 'page',
+    published: false
+  })
+
+  const fetchPages = async () => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/pages')
+      const data = await res.json()
+      if (data.success) {
+        setPages(data.data || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch pages:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchPages()
+  }, [])
+
+  const handleSave = async () => {
+    try {
+      const method = editingPage ? 'PUT' : 'POST'
+      const body = editingPage 
+        ? { ...formData, id: editingPage.id }
+        : formData
+      
+      const res = await fetch('/api/pages', {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body)
+      })
+      
+      const data = await res.json()
+      if (data.success) {
+        toast.success(editingPage ? 'Page updated!' : 'Page created!')
+        setIsDialogOpen(false)
+        fetchPages()
+        resetForm()
+      } else {
+        toast.error(data.error || 'Failed to save page')
+      }
+    } catch (error) {
+      toast.error('Failed to save page')
+    }
+  }
+
+  const handleDelete = async (id) => {
+    if (!confirm('Are you sure you want to delete this page?')) return
+    
+    try {
+      const res = await fetch(`/api/pages?id=${id}`, { method: 'DELETE' })
+      const data = await res.json()
+      if (data.success) {
+        toast.success('Page deleted!')
+        fetchPages()
+      }
+    } catch (error) {
+      toast.error('Failed to delete page')
+    }
+  }
+
+  const resetForm = () => {
+    setFormData({ title: '', slug: '', content: '', type: 'page', published: false })
+    setEditingPage(null)
+  }
+
+  const openEditDialog = (page) => {
+    setEditingPage(page)
+    setFormData({
+      title: page.title,
+      slug: page.slug,
+      content: page.content,
+      type: page.type || 'page',
+      published: page.published
+    })
+    setIsDialogOpen(true)
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex justify-between items-center">
+        <div>
+          <h3 className="text-lg font-semibold">Pages Management</h3>
+          <p className="text-sm text-muted-foreground">Manage Privacy Policy, Terms, Blog posts and other pages</p>
+        </div>
+        <Button onClick={() => { resetForm(); setIsDialogOpen(true); }}>
+          <Plus className="h-4 w-4 mr-2" /> Add New Page
+        </Button>
+      </div>
+
+      {loading ? (
+        <div className="flex justify-center py-8">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
+      ) : pages.length === 0 ? (
+        <Card>
+          <CardContent className="py-8 text-center">
+            <Globe className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <p className="text-muted-foreground">No pages created yet</p>
+            <Button className="mt-4" onClick={() => setIsDialogOpen(true)}>
+              Create Your First Page
+            </Button>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-4">
+          {pages.map((page) => (
+            <Card key={page.id}>
+              <CardContent className="py-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-lg bg-blue-100 flex items-center justify-center">
+                      <Globe className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold">{page.title}</h4>
+                        <Badge variant={page.published ? 'default' : 'secondary'}>
+                          {page.published ? 'Published' : 'Draft'}
+                        </Badge>
+                        <Badge variant="outline">{page.type}</Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">/{page.slug}</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button variant="outline" size="sm" onClick={() => window.open(`/${page.slug}`, '_blank')}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => openEditDialog(page)}>
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => handleDelete(page.id)}>
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      )}
+
+      {/* Page Edit Dialog */}
+      <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{editingPage ? 'Edit Page' : 'Create New Page'}</DialogTitle>
+            <DialogDescription>
+              {editingPage ? 'Update the page content' : 'Add a new page to your website'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Title</Label>
+                <Input 
+                  value={formData.title}
+                  onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                  placeholder="Privacy Policy"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Slug (URL)</Label>
+                <Input 
+                  value={formData.slug}
+                  onChange={(e) => setFormData({ ...formData, slug: e.target.value.toLowerCase().replace(/\s+/g, '-') })}
+                  placeholder="privacy-policy"
+                />
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <select 
+                  className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                >
+                  <option value="page">Page</option>
+                  <option value="legal">Legal</option>
+                  <option value="blog">Blog Post</option>
+                </select>
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <div className="flex items-center gap-2 h-10">
+                  <Switch 
+                    checked={formData.published}
+                    onCheckedChange={(checked) => setFormData({ ...formData, published: checked })}
+                  />
+                  <span className="text-sm">{formData.published ? 'Published' : 'Draft'}</span>
+                </div>
+              </div>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Content (Markdown supported)</Label>
+              <Textarea 
+                value={formData.content}
+                onChange={(e) => setFormData({ ...formData, content: e.target.value })}
+                placeholder="## Your Page Title&#10;&#10;Your content here..."
+                rows={15}
+                className="font-mono text-sm"
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
+            <Button onClick={handleSave}>
+              {editingPage ? 'Update Page' : 'Create Page'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
 export function SuperAdminSettings({ user }) {
   const [loading, setLoading] = useState(false)
   const [plans, setPlans] = useState([])
