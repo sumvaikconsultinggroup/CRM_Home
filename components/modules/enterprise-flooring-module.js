@@ -28,7 +28,7 @@ import {
   PieChart, Target, Award, Zap, Star, X, FileSpreadsheet, Receipt,
   CreditCard, Banknote, ChevronDown, ArrowLeft, ArrowRight, Sparkles,
   MessageSquare, Bot, ClipboardList, Hammer, ShieldCheck, History, ExternalLink, Tags,
-  Lock, Unlock
+  Lock, Unlock, Info
 } from 'lucide-react'
 import { toast } from 'sonner'
 
