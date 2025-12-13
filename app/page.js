@@ -869,6 +869,18 @@ function ClientDashboard({ user, client, onLogout }) {
               </motion.div>
             )}
 
+            {/* Contacts Tab */}
+            {activeTab === 'contacts' && (
+              <motion.div
+                key="contacts"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                <ContactsManager />
+              </motion.div>
+            )}
+
             {/* Projects Tab */}
             {activeTab === 'projects' && (
               <motion.div
