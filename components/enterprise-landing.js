@@ -1169,6 +1169,126 @@ export default function EnterpriseLanding({ onLogin }) {
         </div>
       </section>
 
+      {/* Before vs After Section */}
+      <section className="py-16 lg:py-24 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="text-center mb-12 lg:mb-16"
+          >
+            <Badge className="bg-green-100 text-green-700 mb-4">Transformation</Badge>
+            <h2 className="text-3xl lg:text-5xl font-bold mb-4">
+              From Chaos to Control
+            </h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              See how businesses transform their operations with BuildCRM
+            </p>
+          </motion.div>
+
+          <div className="grid lg:grid-cols-2 gap-8 lg:gap-12">
+            {/* Before */}
+            <motion.div
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
+              <div className="absolute -top-4 left-4 bg-red-500 text-white px-4 py-1 rounded-full text-sm font-bold z-10">
+                BEFORE
+              </div>
+              <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-6 lg:p-8">
+                <h3 className="text-xl font-bold text-red-700 mb-6">Without BuildCRM</h3>
+                <div className="space-y-4">
+                  {[
+                    { text: 'Leads tracked in WhatsApp groups', icon: X },
+                    { text: 'Quotes made in Word/Excel - no standardization', icon: X },
+                    { text: 'No idea which salesperson performs best', icon: X },
+                    { text: 'Inventory counts done manually weekly', icon: X },
+                    { text: 'Project updates via phone calls', icon: X },
+                    { text: 'Invoices created at month-end in bulk', icon: X },
+                    { text: 'Customer history lost when staff leaves', icon: X },
+                    { text: '6+ apps for communication', icon: X }
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-3 text-gray-700">
+                      <div className="w-6 h-6 bg-red-200 rounded-full flex items-center justify-center flex-shrink-0">
+                        <item.icon className="h-4 w-4 text-red-600" />
+                      </div>
+                      <span className="text-sm lg:text-base">{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-6 p-4 bg-red-100 rounded-xl">
+                  <p className="text-red-800 font-semibold text-center">
+                    Average time spent on admin: 4+ hours/day
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* After */}
+            <motion.div
+              initial={{ opacity: 0, x: 30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true }}
+              className="relative"
+            >
+              <div className="absolute -top-4 left-4 bg-green-500 text-white px-4 py-1 rounded-full text-sm font-bold z-10">
+                AFTER
+              </div>
+              <div className="bg-green-50 border-2 border-green-200 rounded-2xl p-6 lg:p-8">
+                <h3 className="text-xl font-bold text-green-700 mb-6">With BuildCRM</h3>
+                <div className="space-y-4">
+                  {[
+                    { text: 'All leads in one dashboard with full history', icon: Check },
+                    { text: 'Professional quotes generated in 2 minutes', icon: Check },
+                    { text: 'Real-time sales leaderboard and analytics', icon: Check },
+                    { text: 'Live inventory with automatic low-stock alerts', icon: Check },
+                    { text: 'Automatic client updates via WhatsApp', icon: Check },
+                    { text: 'One-click GST invoices with payment tracking', icon: Check },
+                    { text: 'Complete customer history in CRM forever', icon: Check },
+                    { text: 'Everything in one integrated platform', icon: Check }
+                  ].map((item, i) => (
+                    <div key={i} className="flex items-center gap-3 text-gray-700">
+                      <div className="w-6 h-6 bg-green-200 rounded-full flex items-center justify-center flex-shrink-0">
+                        <item.icon className="h-4 w-4 text-green-600" />
+                      </div>
+                      <span className="text-sm lg:text-base">{item.text}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-6 p-4 bg-green-100 rounded-xl">
+                  <p className="text-green-800 font-semibold text-center">
+                    Average time spent on admin: Under 1 hour/day
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Result Stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mt-12 grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6"
+          >
+            {[
+              { value: '3x', label: 'Faster Quote Generation' },
+              { value: '40%', label: 'More Leads Converted' },
+              { value: '6 hrs', label: 'Saved Weekly on Admin' },
+              { value: '₹5L+', label: 'Recovered Revenue/Year' }
+            ].map((stat, i) => (
+              <div key={i} className="bg-gradient-to-br from-blue-600 to-indigo-600 rounded-2xl p-4 lg:p-6 text-center text-white">
+                <p className="text-2xl lg:text-4xl font-bold mb-1">{stat.value}</p>
+                <p className="text-sm text-blue-100">{stat.label}</p>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
+
       {/* Testimonials Section */}
       <section className="py-16 lg:py-24 bg-gradient-to-br from-slate-50 to-blue-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
