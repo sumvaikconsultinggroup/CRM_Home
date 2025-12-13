@@ -189,6 +189,12 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   const [invoices, setInvoices] = useState([])
   const [installations, setInstallations] = useState([])
   const [inventory, setInventory] = useState({ inventory: [], summary: {} })
+  const [crmProjects, setCrmProjects] = useState([]) // CRM Projects for sync
+  const [moduleSettings, setModuleSettings] = useState(null) // Module settings
+  const [reports, setReports] = useState({}) // Reports data
+  const [meeAiMessages, setMeeAiMessages] = useState([]) // MEE AI chat
+  const [meeAiInput, setMeeAiInput] = useState('')
+  const [meeAiLoading, setMeeAiLoading] = useState(false)
   
   // Selection States
   const [selectedProject, setSelectedProject] = useState(null)
