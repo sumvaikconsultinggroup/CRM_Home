@@ -1855,13 +1855,18 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           <Eye className="h-4 w-4" />
                         </Button>
                         {quote.status === 'draft' && (
-                          <Button variant="ghost" size="sm" onClick={() => handleQuoteAction(quote.id, 'send')}>
-                            <Send className="h-4 w-4" />
+                          <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => handleQuoteAction(quote.id, 'send')}>
+                            <Send className="h-4 w-4 mr-1" /> Send
+                          </Button>
+                        )}
+                        {quote.status === 'sent' && (
+                          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleQuoteAction(quote.id, 'approve')}>
+                            <CheckCircle2 className="h-4 w-4 mr-1" /> Approve
                           </Button>
                         )}
                         {quote.status === 'approved' && (
-                          <Button variant="ghost" size="sm" onClick={() => handleQuoteAction(quote.id, 'create_invoice')}>
-                            <Receipt className="h-4 w-4" />
+                          <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white" onClick={() => handleQuoteAction(quote.id, 'create_invoice')}>
+                            <Receipt className="h-4 w-4 mr-1" /> Invoice
                           </Button>
                         )}
                         <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'quote', data: quote })}>
