@@ -7,116 +7,200 @@ export async function OPTIONS() {
   return optionsResponse()
 }
 
+// Get calendar events
 export async function GET(request) {
   try {
     const user = getAuthUser(request)
     requireAuth(user)
 
     const { searchParams } = new URL(request.url)
-    const month = searchParams.get('month') // format: YYYY-MM
-    const year = searchParams.get('year')
+    const month = searchParams.get('month') // Format: YYYY-MM
+    const eventId = searchParams.get('id')
+    const view = searchParams.get('view') // day, week, month
 
-    const eventsCollection = await getCollection('calendar_events')
-    
+    const collection = await getCollection('calendar_events')
+
+    // Get single event by ID
+    if (eventId) {
+      const event = await collection.findOne({ id: eventId, clientId: user.clientId })
+      if (!event) return errorResponse('Event not found', 404)
+      return successResponse(sanitizeDocument(event))
+    }
+
     let query = { clientId: user.clientId }
     
+    // Filter by month
     if (month) {
-      const startDate = new Date(`${month}-01`)
-      const endDate = new Date(startDate)
-      endDate.setMonth(endDate.getMonth() + 1)
-      query.date = { $gte: startDate, $lt: endDate }
+      const [year, monthNum] = month.split('-')
+      const startDate = new Date(year, parseInt(monthNum) - 1, 1)
+      const endDate = new Date(year, parseInt(monthNum), 0, 23, 59, 59)
+      query.date = { $gte: startDate, $lte: endDate }
     }
 
-    const events = await eventsCollection
-      .find(query)
-      .sort({ date: 1 })
-      .toArray()
+    const events = await collection.find(query).sort({ date: 1, startTime: 1 }).toArray()
 
-    return successResponse(sanitizeDocuments(events))
+    // Get tasks from tasks collection
+    const tasksCollection = await getCollection('tasks')
+    let tasksQuery = { clientId: user.clientId }
+    
+    if (month) {
+      const [year, monthNum] = month.split('-')
+      const startDate = new Date(year, parseInt(monthNum) - 1, 1)
+      const endDate = new Date(year, parseInt(monthNum), 0, 23, 59, 59)
+      tasksQuery.dueDate = { $gte: startDate, $lte: endDate }
+    }
+
+    const tasks = await tasksCollection.find(tasksQuery).toArray()
+
+    // Convert tasks to calendar events format
+    const taskEvents = tasks.map(task => ({
+      id: task.id,
+      clientId: task.clientId,
+      title: task.title,
+      description: task.description || '',
+      date: task.dueDate,
+      startTime: '09:00',
+      endTime: '10:00',
+      type: 'task',
+      status: task.status,
+      priority: task.priority,
+      assignedTo: task.assignedTo,
+      color: task.priority === 'high' ? '#ef4444' : task.priority === 'medium' ? '#f59e0b' : '#22c55e',
+      isTask: true,
+      originalTask: task
+    }))
+
+    // Combine events and task events
+    const allEvents = [...sanitizeDocuments(events), ...taskEvents]
+    
+    // Sort by date
+    allEvents.sort((a, b) => new Date(a.date) - new Date(b.date))
+
+    // Calculate stats
+    const stats = {
+      totalEvents: allEvents.length,
+      tasks: taskEvents.length,
+      meetings: events.filter(e => e.type === 'meeting').length,
+      reminders: events.filter(e => e.type === 'reminder').length,
+      deadlines: events.filter(e => e.type === 'deadline').length
+    }
+
+    return successResponse({ events: allEvents, stats })
   } catch (error) {
     console.error('Calendar GET Error:', error)
-    if (error.message === 'Unauthorized') {
-      return errorResponse('Unauthorized', 401)
-    }
-    return errorResponse('Failed to fetch events', 500, error.message)
+    if (error.message === 'Unauthorized') return errorResponse('Unauthorized', 401)
+    return errorResponse('Failed to fetch calendar events', 500, error.message)
   }
 }
 
+// Create calendar event
 export async function POST(request) {
   try {
     const user = getAuthUser(request)
     requireAuth(user)
 
     const body = await request.json()
-    const { title, description, date, time, type, color, reminder } = body
+    const collection = await getCollection('calendar_events')
 
-    if (!title || !date) {
-      return errorResponse('Title and date are required', 400)
-    }
-
-    const eventsCollection = await getCollection('calendar_events')
-
-    const newEvent = {
+    const event = {
       id: uuidv4(),
       clientId: user.clientId,
+      title: body.title,
+      description: body.description || '',
+      date: body.date ? new Date(body.date) : new Date(),
+      startTime: body.startTime || '09:00',
+      endTime: body.endTime || '10:00',
+      allDay: body.allDay || false,
+      type: body.type || 'event', // event, meeting, reminder, deadline, task
+      location: body.location || '',
+      // Attendees
+      attendees: body.attendees || [],
+      // Recurrence
+      recurring: body.recurring || false,
+      recurrencePattern: body.recurrencePattern || null, // daily, weekly, monthly
+      recurrenceEnd: body.recurrenceEnd ? new Date(body.recurrenceEnd) : null,
+      // Reminder
+      reminder: body.reminder || 30, // minutes before
+      reminderSent: false,
+      // Linking
+      projectId: body.projectId || null,
+      customerId: body.customerId || null,
+      leadId: body.leadId || null,
+      // Status
+      status: body.status || 'scheduled', // scheduled, completed, cancelled
+      // Styling
+      color: body.color || '#6366f1',
+      priority: body.priority || 'medium',
+      // Notes
+      notes: body.notes || '',
+      // Metadata
       createdBy: user.id,
-      title,
-      description: description || '',
-      date: new Date(date),
-      time: time || null,
-      type: type || 'event', // event, task, meeting, reminder
-      color: color || '#3B82F6',
-      reminder: reminder || false,
-      completed: false,
       createdAt: new Date(),
       updatedAt: new Date()
     }
 
-    await eventsCollection.insertOne(newEvent)
-    return successResponse(sanitizeDocument(newEvent), 201)
+    await collection.insertOne(event)
+    return successResponse(sanitizeDocument(event), 201)
   } catch (error) {
     console.error('Calendar POST Error:', error)
-    if (error.message === 'Unauthorized') {
-      return errorResponse('Unauthorized', 401)
-    }
-    return errorResponse('Failed to create event', 500, error.message)
+    if (error.message === 'Unauthorized') return errorResponse('Unauthorized', 401)
+    return errorResponse('Failed to create calendar event', 500, error.message)
   }
 }
 
+// Update calendar event
 export async function PUT(request) {
   try {
     const user = getAuthUser(request)
     requireAuth(user)
 
     const body = await request.json()
-    const { id, ...updates } = body
+    const { id, action, ...updates } = body
 
-    if (!id) {
-      return errorResponse('Event ID is required', 400)
+    if (!id) return errorResponse('Event ID is required', 400)
+
+    const collection = await getCollection('calendar_events')
+    const event = await collection.findOne({ id, clientId: user.clientId })
+    
+    if (!event) return errorResponse('Event not found', 404)
+
+    // Handle special actions
+    if (action === 'complete') {
+      updates.status = 'completed'
+      updates.completedAt = new Date()
     }
 
-    const eventsCollection = await getCollection('calendar_events')
+    if (action === 'cancel') {
+      updates.status = 'cancelled'
+      updates.cancelledAt = new Date()
+    }
 
-    const result = await eventsCollection.findOneAndUpdate(
+    if (action === 'reschedule') {
+      updates.date = new Date(body.newDate)
+      if (body.newStartTime) updates.startTime = body.newStartTime
+      if (body.newEndTime) updates.endTime = body.newEndTime
+    }
+
+    // Convert date if provided
+    if (updates.date) {
+      updates.date = new Date(updates.date)
+    }
+
+    const result = await collection.findOneAndUpdate(
       { id, clientId: user.clientId },
       { $set: { ...updates, updatedAt: new Date() } },
       { returnDocument: 'after' }
     )
 
-    if (!result) {
-      return errorResponse('Event not found', 404)
-    }
-
     return successResponse(sanitizeDocument(result))
   } catch (error) {
     console.error('Calendar PUT Error:', error)
-    if (error.message === 'Unauthorized') {
-      return errorResponse('Unauthorized', 401)
-    }
-    return errorResponse('Failed to update event', 500, error.message)
+    if (error.message === 'Unauthorized') return errorResponse('Unauthorized', 401)
+    return errorResponse('Failed to update calendar event', 500, error.message)
   }
 }
 
+// Delete calendar event
 export async function DELETE(request) {
   try {
     const user = getAuthUser(request)
@@ -125,23 +209,16 @@ export async function DELETE(request) {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
-    if (!id) {
-      return errorResponse('Event ID is required', 400)
-    }
+    if (!id) return errorResponse('Event ID is required', 400)
 
-    const eventsCollection = await getCollection('calendar_events')
-    const result = await eventsCollection.deleteOne({ id, clientId: user.clientId })
+    const collection = await getCollection('calendar_events')
+    const result = await collection.deleteOne({ id, clientId: user.clientId })
 
-    if (result.deletedCount === 0) {
-      return errorResponse('Event not found', 404)
-    }
-
+    if (result.deletedCount === 0) return errorResponse('Event not found', 404)
     return successResponse({ message: 'Event deleted successfully' })
   } catch (error) {
     console.error('Calendar DELETE Error:', error)
-    if (error.message === 'Unauthorized') {
-      return errorResponse('Unauthorized', 401)
-    }
-    return errorResponse('Failed to delete event', 500, error.message)
+    if (error.message === 'Unauthorized') return errorResponse('Unauthorized', 401)
+    return errorResponse('Failed to delete calendar event', 500, error.message)
   }
 }
