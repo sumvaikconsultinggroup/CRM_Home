@@ -2,6 +2,11 @@
 # START - Testing Protocol - DO NOT EDIT OR REMOVE THIS SECTION
 #====================================================================================================
 
+## Update (2025-12-13)
+- Products Tab enhancement work started: added backend-driven Product Schema, Categories (parent/child), and CSV Import/Export endpoints.
+- Frontend Products tab updated to use dynamic categories, server-side sorting, and schema-driven Product dialog via new component `/components/modules/flooring-products-ui.js`.
+- Note: Testing protocol section below must not be edited.
+
 # THIS SECTION CONTAINS CRITICAL TESTING INSTRUCTIONS FOR BOTH AGENTS
 # BOTH MAIN_AGENT AND TESTING_AGENT MUST PRESERVE THIS ENTIRE BLOCK
 
