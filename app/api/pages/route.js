@@ -7,18 +7,23 @@ export async function GET(request) {
   try {
     const { searchParams } = new URL(request.url)
     const slug = searchParams.get('slug')
+    const admin = searchParams.get('admin') // Admin mode - get all including drafts
     
     const pagesCollection = await getCollection('pages')
     
     if (slug) {
-      const page = await pagesCollection.findOne({ slug, published: true })
+      // For specific page, show published or in admin mode
+      const query = admin === 'true' ? { slug } : { slug, published: true }
+      const page = await pagesCollection.findOne(query)
       if (!page) {
         return errorResponse('Page not found', 404)
       }
       return successResponse(page)
     }
     
-    const pages = await pagesCollection.find({ published: true }).sort({ createdAt: -1 }).toArray()
+    // For listing, show all in admin mode, only published otherwise
+    const query = admin === 'true' ? {} : { published: true }
+    const pages = await pagesCollection.find(query).sort({ createdAt: -1 }).toArray()
     return successResponse(sanitizeDocuments(pages))
   } catch (error) {
     console.error('Pages API Error:', error)
