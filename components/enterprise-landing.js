@@ -1176,7 +1176,7 @@ export default function EnterpriseLanding({ onLogin }) {
                   Ask questions in plain English. Get instant answers about your business data.
                 </p>
                 <div className="mt-auto p-3 bg-gray-100 rounded-xl text-sm text-gray-600">
-                  "Show me all leads from last week that haven't been contacted"
+                  &ldquo;Show me all leads from last week that haven&apos;t been contacted&rdquo;
                 </div>
               </div>
             </BentoCard>
