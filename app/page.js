@@ -24,7 +24,7 @@ import {
 import { 
   Building2, Users, TrendingUp, DollarSign, CheckCircle2, Clock, AlertCircle, 
   LayoutDashboard, Briefcase, ClipboardList, Receipt, Settings, LogOut, Menu, X,
-  Plus, MoreVertical, Edit, Trash2, Eye, ChevronRight, Building, Shield, Layers,
+  Plus, MoreVertical, Edit, Trash2, Eye, ChevronRight, ChevronLeft, Building, Shield, Layers,
   ChefHat, Grid3X3, Sofa, HardHat, Paintbrush, Wrench, Zap, Phone, Mail, Target,
   BarChart3, PieChart as PieChartIcon, ArrowUpRight, ArrowDownRight, Calendar, UserPlus, Package,
   Sparkles, Bell, Search, Filter, Download, RefreshCw, Send, MessageSquare, Palette,
