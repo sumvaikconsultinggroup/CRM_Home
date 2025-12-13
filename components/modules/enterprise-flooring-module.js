@@ -1650,7 +1650,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           <Button variant="outline" size="sm" onClick={refreshData}>
             <RefreshCw className="h-4 w-4 mr-2" /> Refresh
           </Button>
-          <Button variant="outline" size="sm">
+          <Button variant="outline" size="sm" onClick={() => setActiveTab('settings')}>
             <Settings className="h-4 w-4 mr-2" /> Settings
           </Button>
         </div>
