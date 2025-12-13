@@ -984,7 +984,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       <body>
         <div class="header">
           <div>
-            <div class="logo">🪵 ${moduleSettings?.companyName || 'FloorCraft Pro'}</div>
+            <div class="logo">🪵 ${moduleSettings?.companyName || client?.name || 'FloorCraft Pro'}</div>
             <p style="color: #666; font-size: 12px;">Professional Flooring Solutions</p>
             ${moduleSettings?.gstin ? `<p style="color: #666; font-size: 11px;">GSTIN: ${moduleSettings.gstin}</p>` : ''}
           </div>
