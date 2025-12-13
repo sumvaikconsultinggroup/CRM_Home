@@ -1,4 +1,4 @@
-import { getCollection } from '@/lib/db/mongodb'
+import { getMainDb } from '@/lib/db/multitenancy'
 import { getAuthUser, requireAuth, requireSuperAdmin } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments } from '@/lib/utils/response'
 
@@ -18,7 +18,8 @@ export async function GET(request) {
     const page = parseInt(searchParams.get('page') || '1')
     const action = searchParams.get('action')
 
-    const logsCollection = await getCollection('admin_logs')
+    const mainDb = await getMainDb()
+    const logsCollection = mainDb.collection('admin_logs')
     
     let query = {}
     if (action) {

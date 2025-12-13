@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection, Collections } from '@/lib/db/mongodb'
+import { getMainDb } from '@/lib/db/multitenancy'
 import { getAuthUser, requireSuperAdmin } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 
@@ -12,7 +12,8 @@ export async function GET(request) {
     const user = getAuthUser(request)
     requireSuperAdmin(user)
 
-    const plansCollection = await getCollection(Collections.PLANS)
+    const mainDb = await getMainDb()
+    const plansCollection = mainDb.collection('plans')
     const plans = await plansCollection.find({}).toArray()
 
     return successResponse(sanitizeDocuments(plans))
@@ -37,7 +38,8 @@ export async function POST(request) {
       return errorResponse('Name and price are required', 400)
     }
 
-    const plansCollection = await getCollection(Collections.PLANS)
+    const mainDb = await getMainDb()
+    const plansCollection = mainDb.collection('plans')
 
     const newPlan = {
       id: body.id || name.toLowerCase().replace(/\s+/g, '-'),
@@ -79,7 +81,8 @@ export async function PUT(request) {
       return errorResponse('Plan ID is required', 400)
     }
 
-    const plansCollection = await getCollection(Collections.PLANS)
+    const mainDb = await getMainDb()
+    const plansCollection = mainDb.collection('plans')
 
     // Ensure price is a number if provided
     if (updateData.price) {
@@ -113,11 +116,12 @@ export async function DELETE(request) {
       return errorResponse('Plan ID is required', 400)
     }
 
-    const plansCollection = await getCollection(Collections.PLANS)
+    const mainDb = await getMainDb()
+    const plansCollection = mainDb.collection('plans')
+    const clientsCollection = mainDb.collection('clients')
     
     // Check if any clients are using this plan before deleting
-    const clientsCollection = await getCollection(Collections.CLIENTS)
-    const clientsUsingPlan = await clientsCollection.countDocuments({ 'plan.id': id })
+    const clientsUsingPlan = await clientsCollection.countDocuments({ planId: id })
 
     if (clientsUsingPlan > 0) {
       return errorResponse(`Cannot delete plan. ${clientsUsingPlan} client(s) are currently using this plan.`, 400)

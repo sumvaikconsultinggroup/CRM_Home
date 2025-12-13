@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection, Collections } from '@/lib/db/mongodb'
+import { getMainDb } from '@/lib/db/multitenancy'
 import { getAuthUser, requireSuperAdmin } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 
@@ -12,8 +12,9 @@ export async function GET(request) {
     const user = getAuthUser(request)
     requireSuperAdmin(user)
 
-    const modulesCollection = await getCollection(Collections.MODULES)
-    const clientsCollection = await getCollection(Collections.CLIENTS)
+    const mainDb = await getMainDb()
+    const modulesCollection = mainDb.collection('modules')
+    const clientsCollection = mainDb.collection('clients')
 
     const modules = await modulesCollection.find({}).toArray()
     
@@ -48,7 +49,8 @@ export async function POST(request) {
       return errorResponse('Module name is required', 400)
     }
 
-    const modulesCollection = await getCollection(Collections.MODULES)
+    const mainDb = await getMainDb()
+    const modulesCollection = mainDb.collection('modules')
 
     const newModule = {
       id: uuidv4(),
@@ -87,7 +89,8 @@ export async function PUT(request) {
       return errorResponse('Module ID is required', 400)
     }
 
-    const modulesCollection = await getCollection(Collections.MODULES)
+    const mainDb = await getMainDb()
+    const modulesCollection = mainDb.collection('modules')
 
     await modulesCollection.updateOne(
       { id },
