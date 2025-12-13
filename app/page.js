@@ -659,7 +659,14 @@ function ClientDashboard({ user, client, onLogout }) {
 
   // Render Flooring Module if active
   if (activeModule === 'flooring') {
-    return <FlooringModule onBack={() => setActiveModule(null)} />
+    return (
+      <FlooringModule 
+        onBack={() => setActiveModule(null)} 
+        client={client}
+        user={user}
+        onUpgrade={() => setShowUpgradeFlow(true)}
+      />
+    )
   }
 
   // Render Upgrade Flow if active
