@@ -14,7 +14,8 @@ export async function GET(request) {
     requireAuth(user)
     requireSuperAdmin(user)
 
-    const settingsCollection = await getCollection('platform_settings')
+    const mainDb = await getMainDb()
+    const settingsCollection = mainDb.collection('platform_settings')
     
     // Get all settings
     const settings = await settingsCollection.findOne({ type: 'global' })
@@ -95,7 +96,8 @@ export async function PUT(request) {
       return errorResponse('Section and data are required', 400)
     }
 
-    const settingsCollection = await getCollection('platform_settings')
+    const mainDb = await getMainDb()
+    const settingsCollection = mainDb.collection('platform_settings')
     const logsCollection = await getCollection('admin_logs')
 
     // Get existing settings
