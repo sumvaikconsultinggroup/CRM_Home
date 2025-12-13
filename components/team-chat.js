@@ -424,6 +424,19 @@ export function TeamChat({ user, users = [], onClose }) {
                   const isMe = msg.senderId === user.id
                   const FileIcon = getFileIcon(msg.fileType)
                   
+                  // Parse attachment info from message content
+                  const hasAttachment = msg.content?.includes('📎 Attachments:')
+                  let messageText = msg.content
+                  let attachmentNames = []
+                  
+                  if (hasAttachment) {
+                    const parts = msg.content.split('📎 Attachments:')
+                    messageText = parts[0].trim()
+                    if (parts[1]) {
+                      attachmentNames = parts[1].trim().split(', ').filter(n => n.length > 0)
+                    }
+                  }
+                  
                   return (
                     <motion.div
                       key={msg.id}
@@ -442,7 +455,7 @@ export function TeamChat({ user, users = [], onClose }) {
                               : 'bg-slate-100 text-slate-900 rounded-bl-md'
                           }`}
                         >
-                          {/* File attachment preview */}
+                          {/* File attachment preview from stored fileUrl */}
                           {msg.fileUrl && (
                             <div className={`mb-2 p-2 rounded-lg ${isMe ? 'bg-white/20' : 'bg-slate-200'}`}>
                               {msg.fileType?.startsWith('image/') ? (
@@ -465,7 +478,39 @@ export function TeamChat({ user, users = [], onClose }) {
                               )}
                             </div>
                           )}
-                          <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                          
+                          {/* Render parsed attachments as clickable elements */}
+                          {attachmentNames.length > 0 && (
+                            <div className={`mb-2 p-2 rounded-lg ${isMe ? 'bg-white/20' : 'bg-slate-200'}`}>
+                              <div className="flex items-center gap-2 mb-1">
+                                <Paperclip className="h-4 w-4" />
+                                <span className="text-xs font-medium">Attachments</span>
+                              </div>
+                              <div className="flex flex-wrap gap-1">
+                                {attachmentNames.map((name, idx) => {
+                                  const extension = name.split('.').pop()?.toLowerCase()
+                                  const isImage = ['jpg', 'jpeg', 'png', 'gif', 'webp'].includes(extension)
+                                  const AttachIcon = isImage ? Image : FileText
+                                  return (
+                                    <div 
+                                      key={idx} 
+                                      className={`flex items-center gap-1 px-2 py-1 rounded text-xs ${
+                                        isMe ? 'bg-white/30' : 'bg-slate-300'
+                                      }`}
+                                    >
+                                      <AttachIcon className="h-3 w-3" />
+                                      <span className="truncate max-w-[100px]">{name}</span>
+                                    </div>
+                                  )
+                                })}
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Message text */}
+                          {messageText && (
+                            <p className="text-sm whitespace-pre-wrap">{messageText}</p>
+                          )}
                         </div>
                         <div className={`flex items-center gap-1 mt-1 ${isMe ? 'justify-end' : 'justify-start'}`}>
                           <span className="text-xs text-muted-foreground">
