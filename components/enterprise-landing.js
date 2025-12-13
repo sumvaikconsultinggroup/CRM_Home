@@ -17,7 +17,7 @@ import {
   ShoppingCart, FileSpreadsheet, Quote, Briefcase, Heart, ExternalLink,
   MousePointer, Cpu, BookOpen, GraduationCap, Twitter, Linkedin, Youtube, 
   Instagram, AlertTriangle, XCircle, Minus, Plus, Eye, Palette,
-  Smartphone, Monitor, Tablet, CircleDot, Activity, Banknote
+  Smartphone, Monitor, Tablet, CircleDot, Activity, Banknote, Lightbulb
 } from 'lucide-react'
 
 // ============================================
