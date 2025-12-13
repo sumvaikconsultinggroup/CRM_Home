@@ -574,6 +574,7 @@ function ClientDashboard({ user, client, onLogout }) {
   const [expenses, setExpenses] = useState([])
   const [users, setUsers] = useState([])
   const [modules, setModules] = useState([])
+  const [contacts, setContacts] = useState([])
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [loading, setLoading] = useState(true)
   const [showDialog, setShowDialog] = useState(false)
@@ -587,7 +588,7 @@ function ClientDashboard({ user, client, onLogout }) {
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
-      const [statsData, leadsData, projectsData, tasksData, expensesData, usersData, modulesData] = await Promise.all([
+      const [statsData, leadsData, projectsData, tasksData, expensesData, usersData, modulesData, contactsData] = await Promise.all([
         api.getClientStats(),
         api.getLeads(),
         api.getProjects(),
