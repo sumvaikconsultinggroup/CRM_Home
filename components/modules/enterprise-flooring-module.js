@@ -2228,6 +2228,11 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           
           // Update project status
           await handleUpdateProjectStatus(selectedProject.id, 'quote_pending')
+          // Update local state immediately
+          setSelectedProject(prev => ({
+            ...prev,
+            status: 'quote_pending'
+          }))
           
           // Refresh quotes and switch to quotes tab
           await fetchQuotes()
