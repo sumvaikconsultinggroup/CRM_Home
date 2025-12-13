@@ -7,6 +7,15 @@ export async function OPTIONS() {
   return optionsResponse()
 }
 
+
+function normalizeSlug(input) {
+  return String(input || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '')
+}
+
 function parseCsv(csvText) {
   // Minimal CSV parser that supports quoted values and commas/newlines inside quotes.
   const rows = []
