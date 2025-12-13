@@ -4233,4 +4233,564 @@ function GoodsReceiptDialog({ open, onClose, products, onSave, loading }) {
   )
 }
 
+// Advanced Room Measurement Dialog
+function RoomMeasurementDialog({ open, onClose, room, project, onSave, loading }) {
+  const [form, setForm] = useState({
+    roomName: '',
+    roomType: 'bedroom',
+    floor: 'ground',
+    length: '',
+    width: '',
+    height: '10',
+    subfloorType: 'concrete',
+    subfloorCondition: 'good',
+    doorways: 1,
+    windows: 0,
+    obstacles: [],
+    specialInstructions: '',
+    photos: [],
+    wastagePercentage: 10
+  })
+  
+  const [showDrawing, setShowDrawing] = useState(false)
+  const [activeObstacle, setActiveObstacle] = useState(null)
+
+  const roomTypes = [
+    { value: 'bedroom', label: 'Bedroom', icon: '🛏️' },
+    { value: 'living_room', label: 'Living Room', icon: '🛋️' },
+    { value: 'dining_room', label: 'Dining Room', icon: '🍽️' },
+    { value: 'kitchen', label: 'Kitchen', icon: '🍳' },
+    { value: 'bathroom', label: 'Bathroom', icon: '🚿' },
+    { value: 'office', label: 'Office/Study', icon: '💼' },
+    { value: 'cabin', label: 'Cabin/Work Room', icon: '🏢' },
+    { value: 'conference', label: 'Conference Room', icon: '📊' },
+    { value: 'reception', label: 'Reception Area', icon: '🏛️' },
+    { value: 'hallway', label: 'Hallway/Corridor', icon: '🚪' },
+    { value: 'staircase', label: 'Staircase Area', icon: '📶' },
+    { value: 'balcony', label: 'Balcony', icon: '🌅' },
+    { value: 'basement', label: 'Basement', icon: '⬇️' },
+    { value: 'garage', label: 'Garage', icon: '🚗' },
+    { value: 'store', label: 'Store Room', icon: '📦' },
+    { value: 'other', label: 'Other', icon: '📐' }
+  ]
+
+  const floorOptions = [
+    { value: 'basement', label: 'Basement' },
+    { value: 'ground', label: 'Ground Floor' },
+    { value: '1st', label: '1st Floor' },
+    { value: '2nd', label: '2nd Floor' },
+    { value: '3rd', label: '3rd Floor' },
+    { value: 'terrace', label: 'Terrace' }
+  ]
+
+  const subfloorTypes = [
+    { value: 'concrete', label: 'Concrete' },
+    { value: 'plywood', label: 'Plywood' },
+    { value: 'osb', label: 'OSB' },
+    { value: 'existing_tile', label: 'Existing Tile' },
+    { value: 'existing_wood', label: 'Existing Wood' },
+    { value: 'cement_screed', label: 'Cement Screed' },
+    { value: 'other', label: 'Other' }
+  ]
+
+  const obstacleTypes = [
+    { value: 'pillar', label: 'Pillar/Column' },
+    { value: 'closet', label: 'Built-in Closet' },
+    { value: 'fireplace', label: 'Fireplace' },
+    { value: 'island', label: 'Kitchen Island' },
+    { value: 'alcove', label: 'Alcove/Niche' },
+    { value: 'stairs', label: 'Staircase Opening' },
+    { value: 'duct', label: 'AC/Duct' },
+    { value: 'other', label: 'Other' }
+  ]
+
+  useEffect(() => {
+    if (room && room.id) {
+      setForm({
+        id: room.id,
+        roomName: room.roomName || '',
+        roomType: room.roomType || 'bedroom',
+        floor: room.floor || 'ground',
+        length: room.dimensions?.length || room.length || '',
+        width: room.dimensions?.width || room.width || '',
+        height: room.dimensions?.height || room.height || '10',
+        subfloorType: room.subfloorType || 'concrete',
+        subfloorCondition: room.subfloorCondition || 'good',
+        doorways: room.doorways || 1,
+        windows: room.windows || 0,
+        obstacles: room.obstacles || [],
+        specialInstructions: room.specialInstructions || '',
+        photos: room.photos || [],
+        wastagePercentage: room.wastagePercentage || 10
+      })
+    } else {
+      setForm({
+        roomName: '',
+        roomType: 'bedroom',
+        floor: 'ground',
+        length: '',
+        width: '',
+        height: '10',
+        subfloorType: 'concrete',
+        subfloorCondition: 'good',
+        doorways: 1,
+        windows: 0,
+        obstacles: [],
+        specialInstructions: '',
+        photos: [],
+        wastagePercentage: 10
+      })
+    }
+  }, [room, open])
+
+  // Calculate areas
+  const grossArea = (parseFloat(form.length) || 0) * (parseFloat(form.width) || 0)
+  const obstaclesArea = form.obstacles.reduce((sum, obs) => 
+    sum + ((parseFloat(obs.length) || 0) * (parseFloat(obs.width) || 0)), 0
+  )
+  const netArea = grossArea - obstaclesArea
+  const wastageArea = netArea * (form.wastagePercentage / 100)
+  const totalRequired = netArea + wastageArea
+
+  const addObstacle = () => {
+    setForm(f => ({
+      ...f,
+      obstacles: [...f.obstacles, { 
+        id: `obs-${Date.now()}`,
+        type: 'pillar',
+        name: '',
+        length: '',
+        width: '',
+        posX: 0,
+        posY: 0
+      }]
+    }))
+  }
+
+  const updateObstacle = (id, field, value) => {
+    setForm(f => ({
+      ...f,
+      obstacles: f.obstacles.map(obs => 
+        obs.id === id ? { ...obs, [field]: value } : obs
+      )
+    }))
+  }
+
+  const removeObstacle = (id) => {
+    setForm(f => ({
+      ...f,
+      obstacles: f.obstacles.filter(obs => obs.id !== id)
+    }))
+  }
+
+  const handleSubmit = () => {
+    if (!form.roomName || !form.length || !form.width) {
+      toast.error('Please fill in room name, length and width')
+      return
+    }
+    onSave(form)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-4xl max-h-[95vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <Ruler className="h-5 w-5 text-blue-600" />
+            {room?.id ? 'Edit Room Measurement' : 'Add Room Measurement'}
+          </DialogTitle>
+          <DialogDescription>
+            {project?.projectNumber} - {project?.customerName}
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="grid grid-cols-3 gap-6 py-4">
+          {/* Left Column - Room Details */}
+          <div className="col-span-2 space-y-4">
+            {/* Basic Info */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Home className="h-4 w-4" /> Room Information
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Room Name *</Label>
+                    <Input
+                      value={form.roomName}
+                      onChange={(e) => setForm({ ...form, roomName: e.target.value })}
+                      placeholder="e.g., Master Bedroom"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Floor Level</Label>
+                    <Select value={form.floor} onValueChange={(v) => setForm({ ...form, floor: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {floorOptions.map(f => (
+                          <SelectItem key={f.value} value={f.value}>{f.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label>Room Type *</Label>
+                  <div className="grid grid-cols-4 gap-2">
+                    {roomTypes.map(type => (
+                      <div
+                        key={type.value}
+                        className={`p-2 rounded-lg border cursor-pointer text-center transition-all ${form.roomType === type.value ? 'border-blue-500 bg-blue-50' : 'hover:border-blue-300'}`}
+                        onClick={() => setForm({ ...form, roomType: type.value })}
+                      >
+                        <span className="text-lg">{type.icon}</span>
+                        <p className="text-xs mt-1 truncate">{type.label}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Dimensions */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Calculator className="h-4 w-4" /> Dimensions (in feet)
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <Label>Length (ft) *</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={form.length}
+                      onChange={(e) => setForm({ ...form, length: e.target.value })}
+                      placeholder="e.g., 15"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Width (ft) *</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={form.width}
+                      onChange={(e) => setForm({ ...form, width: e.target.value })}
+                      placeholder="e.g., 12"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Ceiling Height (ft)</Label>
+                    <Input
+                      type="number"
+                      step="0.1"
+                      value={form.height}
+                      onChange={(e) => setForm({ ...form, height: e.target.value })}
+                      placeholder="e.g., 10"
+                    />
+                  </div>
+                </div>
+
+                {/* Visual Room Drawing */}
+                <div className="border rounded-lg p-4 bg-slate-50">
+                  <div className="flex items-center justify-between mb-3">
+                    <p className="text-sm font-medium">Room Floor Plan Preview</p>
+                    <Button variant="outline" size="sm" onClick={() => setShowDrawing(!showDrawing)}>
+                      {showDrawing ? 'Hide' : 'Show'} Drawing
+                    </Button>
+                  </div>
+                  {showDrawing && form.length && form.width && (
+                    <div className="relative bg-white border-2 border-blue-300 rounded" 
+                         style={{ 
+                           width: '100%', 
+                           height: `${Math.min(300, (parseFloat(form.width) / parseFloat(form.length)) * 400)}px`,
+                           maxHeight: '300px'
+                         }}>
+                      {/* Room border */}
+                      <div className="absolute inset-2 border-2 border-dashed border-blue-400 flex items-center justify-center">
+                        <div className="text-center">
+                          <p className="text-lg font-bold text-blue-600">{form.length}' × {form.width}'</p>
+                          <p className="text-sm text-slate-500">{grossArea.toFixed(1)} sq.ft</p>
+                        </div>
+                      </div>
+                      {/* Obstacles */}
+                      {form.obstacles.map((obs, idx) => (
+                        <div
+                          key={obs.id}
+                          className="absolute bg-red-100 border border-red-400 rounded flex items-center justify-center text-xs"
+                          style={{
+                            width: `${Math.max(30, (parseFloat(obs.width) / parseFloat(form.width)) * 100)}%`,
+                            height: `${Math.max(20, (parseFloat(obs.length) / parseFloat(form.length)) * 100)}%`,
+                            left: `${10 + (idx * 15) % 70}%`,
+                            top: `${10 + (idx * 20) % 60}%`
+                          }}
+                        >
+                          <span className="text-red-600">{obs.type}</span>
+                        </div>
+                      ))}
+                      {/* Doorway indicator */}
+                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-2 bg-amber-400 rounded-t" title="Doorway" />
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Obstacles */}
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <AlertTriangle className="h-4 w-4" /> Obstacles & Deductions
+                  </CardTitle>
+                  <Button size="sm" variant="outline" onClick={addObstacle}>
+                    <Plus className="h-4 w-4 mr-1" /> Add Obstacle
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {form.obstacles.length > 0 ? (
+                  <div className="space-y-3">
+                    {form.obstacles.map((obs, idx) => (
+                      <div key={obs.id} className="p-3 border rounded-lg bg-red-50">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="text-sm font-medium text-red-700">Obstacle {idx + 1}</span>
+                          <Button variant="ghost" size="sm" onClick={() => removeObstacle(obs.id)}>
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                          <Select value={obs.type} onValueChange={(v) => updateObstacle(obs.id, 'type', v)}>
+                            <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                              {obstacleTypes.map(t => (
+                                <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <Input
+                            type="number"
+                            step="0.1"
+                            placeholder="Length"
+                            value={obs.length}
+                            onChange={(e) => updateObstacle(obs.id, 'length', e.target.value)}
+                            className="h-9"
+                          />
+                          <Input
+                            type="number"
+                            step="0.1"
+                            placeholder="Width"
+                            value={obs.width}
+                            onChange={(e) => updateObstacle(obs.id, 'width', e.target.value)}
+                            className="h-9"
+                          />
+                          <div className="text-right text-sm text-red-600 pt-2">
+                            -{((parseFloat(obs.length) || 0) * (parseFloat(obs.width) || 0)).toFixed(1)} sqft
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-center text-sm text-muted-foreground py-4">
+                    No obstacles. Add pillars, closets, or other areas to deduct from total.
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Subfloor & Additional Details */}
+            <Card>
+              <CardHeader className="pb-3">
+                <CardTitle className="text-sm flex items-center gap-2">
+                  <Layers className="h-4 w-4" /> Subfloor & Details
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>Subfloor Type</Label>
+                    <Select value={form.subfloorType} onValueChange={(v) => setForm({ ...form, subfloorType: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {subfloorTypes.map(t => (
+                          <SelectItem key={t.value} value={t.value}>{t.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Subfloor Condition</Label>
+                    <Select value={form.subfloorCondition} onValueChange={(v) => setForm({ ...form, subfloorCondition: v })}>
+                      <SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="excellent">Excellent</SelectItem>
+                        <SelectItem value="good">Good</SelectItem>
+                        <SelectItem value="fair">Fair - Minor prep needed</SelectItem>
+                        <SelectItem value="poor">Poor - Major prep needed</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-3 gap-4 mt-4">
+                  <div className="space-y-2">
+                    <Label>Doorways</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={form.doorways}
+                      onChange={(e) => setForm({ ...form, doorways: parseInt(e.target.value) || 0 })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Windows</Label>
+                    <Input
+                      type="number"
+                      min="0"
+                      value={form.windows}
+                      onChange={(e) => setForm({ ...form, windows: parseInt(e.target.value) || 0 })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>Wastage %</Label>
+                    <Input
+                      type="number"
+                      min="5"
+                      max="20"
+                      value={form.wastagePercentage}
+                      onChange={(e) => setForm({ ...form, wastagePercentage: parseInt(e.target.value) || 10 })}
+                    />
+                  </div>
+                </div>
+                <div className="space-y-2 mt-4">
+                  <Label>Special Instructions / Notes</Label>
+                  <Textarea
+                    value={form.specialInstructions}
+                    onChange={(e) => setForm({ ...form, specialInstructions: e.target.value })}
+                    placeholder="Any special considerations, leveling needs, transitions, etc."
+                    rows={2}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Right Column - Summary */}
+          <div className="space-y-4">
+            {/* Area Summary */}
+            <Card className="sticky top-4">
+              <CardHeader className="pb-2 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-t-lg">
+                <CardTitle className="text-sm">Area Calculation</CardTitle>
+              </CardHeader>
+              <CardContent className="pt-4 space-y-3">
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-muted-foreground">Gross Area</span>
+                  <span className="font-semibold">{grossArea.toFixed(1)} sqft</span>
+                </div>
+                {obstaclesArea > 0 && (
+                  <div className="flex justify-between items-center text-red-600">
+                    <span className="text-sm">Deductions ({form.obstacles.length})</span>
+                    <span className="font-semibold">-{obstaclesArea.toFixed(1)} sqft</span>
+                  </div>
+                )}
+                <Separator />
+                <div className="flex justify-between items-center">
+                  <span className="text-sm font-medium">Net Area</span>
+                  <span className="font-bold text-lg text-blue-600">{netArea.toFixed(1)} sqft</span>
+                </div>
+                <div className="flex justify-between items-center text-amber-600">
+                  <span className="text-sm">Wastage ({form.wastagePercentage}%)</span>
+                  <span className="font-semibold">+{wastageArea.toFixed(1)} sqft</span>
+                </div>
+                <Separator />
+                <div className="p-3 bg-emerald-50 rounded-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-emerald-700">Material Required</span>
+                    <span className="font-bold text-xl text-emerald-600">{totalRequired.toFixed(1)} sqft</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Room Type Info */}
+            <Card>
+              <CardContent className="pt-4">
+                <div className="flex items-center gap-3 mb-3">
+                  <span className="text-3xl">{roomTypes.find(r => r.value === form.roomType)?.icon || '📐'}</span>
+                  <div>
+                    <p className="font-medium">{roomTypes.find(r => r.value === form.roomType)?.label || 'Room'}</p>
+                    <p className="text-xs text-muted-foreground">{form.floor} floor</p>
+                  </div>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Subfloor</span>
+                    <span className="capitalize">{form.subfloorType}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Condition</span>
+                    <Badge variant="outline" className={
+                      form.subfloorCondition === 'excellent' ? 'bg-green-50 text-green-700' :
+                      form.subfloorCondition === 'good' ? 'bg-blue-50 text-blue-700' :
+                      form.subfloorCondition === 'fair' ? 'bg-amber-50 text-amber-700' :
+                      'bg-red-50 text-red-700'
+                    }>{form.subfloorCondition}</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Doorways</span>
+                    <span>{form.doorways}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Windows</span>
+                    <span>{form.windows}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Tips */}
+            <Card className="bg-amber-50 border-amber-200">
+              <CardContent className="pt-4">
+                <p className="text-sm font-medium text-amber-800 mb-2">💡 Measurement Tips</p>
+                <ul className="text-xs text-amber-700 space-y-1">
+                  <li>• Measure at longest and widest points</li>
+                  <li>• Include closet areas if flooring extends</li>
+                  <li>• Note doorway directions for transitions</li>
+                  <li>• Standard wastage: 10% (complex rooms: 15%)</li>
+                </ul>
+              </CardContent>
+            </Card>
+          </div>
+        </div>
+
+        <DialogFooter className="flex justify-between">
+          <div className="flex gap-2">
+            {room?.id && (
+              <Button variant="destructive" onClick={() => {
+                if (confirm('Delete this room measurement?')) {
+                  // Handle delete in parent component
+                  onClose()
+                }
+              }}>
+                <Trash2 className="h-4 w-4 mr-2" /> Delete Room
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            <Button variant="outline" onClick={onClose}>Cancel</Button>
+            <Button onClick={handleSubmit} disabled={loading || !form.roomName || !form.length || !form.width}>
+              {loading ? 'Saving...' : room?.id ? 'Update Room' : 'Add Room'}
+            </Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export default EnterpriseFlooringModule
