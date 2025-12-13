@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection, Collections } from '@/lib/db/mongodb'
-import { getAuthUser, requireClientAccess } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireClientAccess, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -12,11 +12,13 @@ export async function GET(request) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
-    const sourcesCollection = await getCollection('lead_sources')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const sourcesCollection = db.collection('lead_sources')
     
     // Get client's custom sources
     const customSources = await sourcesCollection
-      .find({ clientId: user.clientId })
+      .find({})
       .toArray()
 
     // Default sources
@@ -54,7 +56,9 @@ export async function POST(request) {
       return errorResponse('Source name is required', 400)
     }
 
-    const sourcesCollection = await getCollection('lead_sources')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const sourcesCollection = db.collection('lead_sources')
 
     const source = {
       id: uuidv4(),
@@ -89,12 +93,11 @@ export async function DELETE(request) {
       return errorResponse('Source ID is required', 400)
     }
 
-    const sourcesCollection = await getCollection('lead_sources')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const sourcesCollection = db.collection('lead_sources')
 
-    await sourcesCollection.deleteOne({
-      id: sourceId,
-      clientId: user.clientId
-    })
+    await sourcesCollection.deleteOne({ id: sourceId })
 
     return successResponse({ message: 'Lead source deleted' })
   } catch (error) {

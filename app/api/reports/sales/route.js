@@ -1,5 +1,5 @@
-import { getCollection, Collections } from '@/lib/db/mongodb'
-import { getAuthUser, requireClientAccess } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireClientAccess, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -11,18 +11,17 @@ export async function GET(request) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
-    const clientId = user.clientId
-    const leadsCollection = await getCollection(Collections.LEADS)
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const leadsCollection = db.collection('leads')
 
-    // Group by status
+    // No clientId filter needed - entire DB is for this client
     const byStatus = await leadsCollection.aggregate([
-      { $match: { clientId } },
       { $group: { _id: '$status', count: { $sum: 1 }, value: { $sum: '$value' } } }
     ]).toArray()
 
     // Group by source
     const bySource = await leadsCollection.aggregate([
-      { $match: { clientId } },
       { $group: { _id: '$source', count: { $sum: 1 }, value: { $sum: '$value' } } }
     ]).toArray()
 
@@ -31,7 +30,7 @@ export async function GET(request) {
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
 
     const monthlyData = await leadsCollection.aggregate([
-      { $match: { clientId, createdAt: { $gte: sixMonthsAgo } } },
+      { $match: { createdAt: { $gte: sixMonthsAgo } } },
       { $group: {
         _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
         leads: { $sum: 1 },
@@ -43,7 +42,6 @@ export async function GET(request) {
 
     // Conversion funnel
     const funnel = await leadsCollection.aggregate([
-      { $match: { clientId } },
       { $group: {
         _id: null,
         total: { $sum: 1 },
@@ -54,9 +52,9 @@ export async function GET(request) {
       }}
     ]).toArray()
 
-    // Top performers (mock for now)
+    // Top performers
     const topLeads = await leadsCollection
-      .find({ clientId, status: 'won' })
+      .find({ status: 'won' })
       .sort({ value: -1 })
       .limit(5)
       .toArray()

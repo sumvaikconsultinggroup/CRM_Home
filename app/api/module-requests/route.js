@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection, Collections } from '@/lib/db/mongodb'
+import { getMainDb } from '@/lib/db/multitenancy'
 import { getAuthUser, requireClientAccess, requireSuperAdmin } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 
@@ -15,9 +15,11 @@ export async function GET(request) {
       return errorResponse('Unauthorized', 401)
     }
 
-    const moduleRequestsCollection = await getCollection(Collections.MODULE_REQUESTS)
-    const clientsCollection = await getCollection(Collections.CLIENTS)
-    const modulesCollection = await getCollection(Collections.MODULES)
+    // Module requests are in main database (platform-level)
+    const mainDb = await getMainDb()
+    const moduleRequestsCollection = mainDb.collection('module_requests')
+    const clientsCollection = mainDb.collection('clients')
+    const modulesCollection = mainDb.collection('modules')
 
     let filter = {}
     if (user.role !== 'super_admin') {
@@ -28,7 +30,11 @@ export async function GET(request) {
 
     // Enrich with client and module details
     const enrichedRequests = await Promise.all(requests.map(async (req) => {
-      const client = await clientsCollection.findOne({ id: req.clientId })
+      // Find client by new clientId or old id
+      let client = await clientsCollection.findOne({ clientId: req.clientId })
+      if (!client) {
+        client = await clientsCollection.findOne({ id: req.clientId })
+      }
       const module = await modulesCollection.findOne({ id: req.moduleId })
       return {
         ...sanitizeDocument(req),
@@ -58,9 +64,10 @@ export async function POST(request) {
       return errorResponse('Module ID is required', 400)
     }
 
-    const moduleRequestsCollection = await getCollection(Collections.MODULE_REQUESTS)
-    const modulesCollection = await getCollection(Collections.MODULES)
-    const clientsCollection = await getCollection(Collections.CLIENTS)
+    const mainDb = await getMainDb()
+    const moduleRequestsCollection = mainDb.collection('module_requests')
+    const modulesCollection = mainDb.collection('modules')
+    const clientsCollection = mainDb.collection('clients')
 
     // Check if module exists
     const module = await modulesCollection.findOne({ id: moduleId })
@@ -68,9 +75,13 @@ export async function POST(request) {
       return errorResponse('Module not found', 404)
     }
 
-    // Check if client already has this module
-    const client = await clientsCollection.findOne({ id: user.clientId })
-    if (client.modules?.includes(moduleId)) {
+    // Find client by new clientId or old id
+    let client = await clientsCollection.findOne({ clientId: user.clientId })
+    if (!client) {
+      client = await clientsCollection.findOne({ id: user.clientId })
+    }
+    
+    if (client?.modules?.includes(moduleId)) {
       return errorResponse('Module already active', 400)
     }
 
@@ -127,8 +138,9 @@ export async function PUT(request) {
       return errorResponse('Invalid action. Use approve or reject', 400)
     }
 
-    const moduleRequestsCollection = await getCollection(Collections.MODULE_REQUESTS)
-    const clientsCollection = await getCollection(Collections.CLIENTS)
+    const mainDb = await getMainDb()
+    const moduleRequestsCollection = mainDb.collection('module_requests')
+    const clientsCollection = mainDb.collection('clients')
 
     const requestDoc = await moduleRequestsCollection.findOne({ id: requestId })
     if (!requestDoc) {
@@ -152,13 +164,25 @@ export async function PUT(request) {
 
     // If approved, add module to client
     if (action === 'approve') {
-      await clientsCollection.updateOne(
-        { id: requestDoc.clientId },
+      // Try to find by new clientId first, then by old id
+      const updateResult = await clientsCollection.updateOne(
+        { clientId: requestDoc.clientId },
         { 
           $addToSet: { modules: requestDoc.moduleId },
           $set: { updatedAt: new Date() }
         }
       )
+      
+      // If no match, try by old id field
+      if (updateResult.matchedCount === 0) {
+        await clientsCollection.updateOne(
+          { id: requestDoc.clientId },
+          { 
+            $addToSet: { modules: requestDoc.moduleId },
+            $set: { updatedAt: new Date() }
+          }
+        )
+      }
     }
 
     return successResponse({ 

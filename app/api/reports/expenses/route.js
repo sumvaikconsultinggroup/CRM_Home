@@ -1,5 +1,5 @@
-import { getCollection, Collections } from '@/lib/db/mongodb'
-import { getAuthUser, requireClientAccess } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireClientAccess, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -11,12 +11,12 @@ export async function GET(request) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
-    const clientId = user.clientId
-    const expensesCollection = await getCollection(Collections.EXPENSES)
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const expensesCollection = db.collection('expenses')
 
-    // Group by category
+    // No clientId filter needed - entire DB is for this client
     const byCategory = await expensesCollection.aggregate([
-      { $match: { clientId } },
       { $group: { _id: '$category', total: { $sum: '$amount' }, count: { $sum: 1 } } },
       { $sort: { total: -1 } }
     ]).toArray()
@@ -26,7 +26,7 @@ export async function GET(request) {
     sixMonthsAgo.setMonth(sixMonthsAgo.getMonth() - 6)
 
     const monthlyData = await expensesCollection.aggregate([
-      { $match: { clientId, date: { $gte: sixMonthsAgo } } },
+      { $match: { date: { $gte: sixMonthsAgo } } },
       { $group: {
         _id: { $dateToString: { format: '%Y-%m', date: '$date' } },
         total: { $sum: '$amount' },
@@ -37,7 +37,6 @@ export async function GET(request) {
 
     // Approval stats
     const approvalStats = await expensesCollection.aggregate([
-      { $match: { clientId } },
       { $group: {
         _id: '$approved',
         total: { $sum: '$amount' },
@@ -47,7 +46,7 @@ export async function GET(request) {
 
     // Budget vs Actual (by project if available)
     const projectExpenses = await expensesCollection.aggregate([
-      { $match: { clientId, projectId: { $ne: null } } },
+      { $match: { projectId: { $ne: null } } },
       { $group: {
         _id: '$projectId',
         total: { $sum: '$amount' }
@@ -56,7 +55,7 @@ export async function GET(request) {
 
     // Recent expenses
     const recentExpenses = await expensesCollection
-      .find({ clientId })
+      .find({})
       .sort({ date: -1 })
       .limit(10)
       .toArray()
