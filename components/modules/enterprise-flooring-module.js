@@ -234,16 +234,50 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }, [token])
 
+  const fetchProductSchema = useCallback(async () => {
+    try {
+      const res = await fetch('/api/flooring/enhanced/products/schema', { headers })
+      const data = await res.json()
+      if (data?.schema) setProductSchema(data.schema)
+    } catch (error) {
+      console.error('Product schema fetch error:', error)
+    }
+  }, [token])
+
+  const fetchProductCategories = useCallback(async () => {
+    try {
+      const res = await fetch('/api/flooring/enhanced/categories?tree=true', { headers })
+      const data = await res.json()
+      if (data?.categories) setProductCategories(data.categories)
+    } catch (error) {
+      console.error('Categories fetch error:', error)
+    }
+  }, [token])
+
   const fetchProducts = useCallback(async () => {
     try {
-      const res = await fetch('/api/flooring/enhanced/products', { headers })
+      const params = new URLSearchParams()
+      if (searchTerm?.trim()) params.set('search', searchTerm.trim())
+      if (categoryFilter !== 'all') params.set('categoryId', categoryFilter)
+      if (statusFilter !== 'all') params.set('status', statusFilter)
+      if (productSortBy) params.set('sortBy', productSortBy)
+      if (productSortDir) params.set('sortDir', productSortDir)
+
+      const url = `/api/flooring/enhanced/products${params.toString() ? `?${params.toString()}` : ''}`
+      const res = await fetch(url, { headers })
       const data = await res.json()
-      if (data.products) setProducts(data.products)
-      else if (Array.isArray(data)) setProducts(data)
+
+      if (data?.products) {
+        setProducts(data.products)
+        setProductsMeta({ total: data.total || data.products.length })
+      } else if (Array.isArray(data)) {
+        setProducts(data)
+        setProductsMeta({ total: data.length })
+      }
     } catch (error) {
       console.error('Products fetch error:', error)
     }
-  }, [token])
+  }, [token, searchTerm, categoryFilter, statusFilter, productSortBy, productSortDir])
 
   const fetchCustomers = useCallback(async () => {
     try {
