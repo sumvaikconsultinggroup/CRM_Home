@@ -152,7 +152,7 @@ export async function POST(request) {
           sku: sku || undefined,
           brand: raw.brand || raw.Brand || '',
           collection: raw.collection || raw.Collection || '',
-          categoryId: raw.categoryId || raw.category || raw.Category || '',
+          categoryId: raw.categoryId || '',
           description: raw.description || raw.Description || '',
           status: (raw.status || raw.Status || 'active').toLowerCase(),
           images: []
