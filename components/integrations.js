@@ -132,6 +132,7 @@ const INTEGRATIONS = [
     popular: true,
     color: 'from-red-500 to-red-600',
     hasDirectConnect: true,
+    webhookEndpoint: '/api/webhooks/tally',
     requiredFields: ['tallyHost', 'tallyPort', 'companyName'],
     features: ['Invoice sync', 'Payment tracking', 'Ledger updates', 'GST compliance', 'Auto vouchers']
   },
