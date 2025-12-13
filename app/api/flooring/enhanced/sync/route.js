@@ -94,13 +94,12 @@ export async function POST(request) {
         }
       }
     } else if (action === 'sync_from_crm') {
-      // Import ALL CRM projects that don't have a flooring project linked yet
-      // This allows syncing any CRM project to the flooring module
-      const allCrmProjects = await crmProjects.find({ 
+      // STEP 1: Import NEW CRM projects that don't have a flooring project linked yet
+      const newCrmProjects = await crmProjects.find({ 
         flooringProjectId: { $exists: false }
       }).toArray()
 
-      for (const crm of allCrmProjects) {
+      for (const crm of newCrmProjects) {
         try {
           // Check if already exists by CRM project ID
           const existing = await flooringProjects.findOne({ crmProjectId: crm.id })
@@ -111,18 +110,25 @@ export async function POST(request) {
           const projectNumber = `FLP-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`
           const flooringProjectId = uuidv4()
 
-          // Get customer name from lead if available
+          // Get customer name from lead or contact
           let customerName = ''
-          if (crm.leadId) {
+          if (crm.customerId) {
+            const contact = await db.collection('contacts').findOne({ id: crm.customerId })
+            customerName = contact?.displayName || contact?.name || ''
+          } else if (crm.leadId) {
             const lead = await leads.findOne({ id: crm.leadId })
             customerName = lead?.name || ''
+          }
+          // Also check clientName field
+          if (!customerName && crm.clientName) {
+            customerName = crm.clientName
           }
 
           const flooringProject = {
             id: flooringProjectId,
             projectNumber,
             name: crm.name || `Project ${projectNumber}`,
-            customerId: null,
+            customerId: crm.customerId || null,
             customerName: customerName,
             crmProjectId: crm.id,
             crmLeadId: crm.leadId || null,
@@ -163,6 +169,53 @@ export async function POST(request) {
 
           results.created++
           results.synced++
+        } catch (err) {
+          results.errors.push({ crmProjectId: crm.id, error: err.message })
+        }
+      }
+
+      // STEP 2: Update EXISTING linked flooring projects with changes from CRM
+      const linkedCrmProjects = await crmProjects.find({ 
+        flooringProjectId: { $exists: true, $ne: null }
+      }).toArray()
+
+      for (const crm of linkedCrmProjects) {
+        try {
+          const existingFlooring = await flooringProjects.findOne({ id: crm.flooringProjectId })
+          if (!existingFlooring) continue
+
+          // Get customer name
+          let customerName = existingFlooring.customerName
+          if (crm.customerId) {
+            const contact = await db.collection('contacts').findOne({ id: crm.customerId })
+            customerName = contact?.displayName || contact?.name || customerName
+          } else if (crm.clientName) {
+            customerName = crm.clientName
+          }
+
+          // Update flooring project with latest CRM data
+          const updateData = {
+            name: crm.name || existingFlooring.name,
+            customerName: customerName,
+            customerId: crm.customerId || existingFlooring.customerId,
+            site: {
+              address: crm.address || existingFlooring.site?.address || '',
+              city: crm.city || existingFlooring.site?.city || '',
+              state: crm.state || existingFlooring.site?.state || '',
+              pincode: crm.pincode || existingFlooring.site?.pincode || ''
+            },
+            estimatedValue: crm.budget || existingFlooring.estimatedValue,
+            notes: crm.description || crm.notes || existingFlooring.notes,
+            updatedAt: now,
+            lastSyncedAt: now
+          }
+
+          await flooringProjects.updateOne(
+            { id: crm.flooringProjectId },
+            { $set: updateData }
+          )
+
+          results.updated = (results.updated || 0) + 1
         } catch (err) {
           results.errors.push({ crmProjectId: crm.id, error: err.message })
         }
