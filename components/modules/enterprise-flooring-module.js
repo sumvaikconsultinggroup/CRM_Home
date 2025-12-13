@@ -2682,36 +2682,6 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     return null
                   })()}
                 </div>
-                        ) : (
-                          <FileText className="h-4 w-4 mr-2" />
-                        )}
-                        Create Quote from Materials
-                      </Button>
-                    </>
-                  )}
-                  {['quote_pending', 'quote_sent'].includes(selectedProject.status) && (
-                    <Button 
-                      variant="outline"
-                      onClick={() => setActiveTab('quotes')}
-                    >
-                      <FileText className="h-4 w-4 mr-2" /> View Quotes
-                    </Button>
-                  )}
-                </div>
-
-                {/* Inventory Availability Warning */}
-                {selectedProject.status === 'material_requisition' && getSelectedProducts().length > 0 && !checkInventoryAvailability().allAvailable && (
-                  <div className="mt-4 p-3 bg-red-50 border border-red-200 rounded-lg">
-                    <p className="text-sm text-red-700 font-medium flex items-center gap-2">
-                      <AlertTriangle className="h-4 w-4" /> Insufficient Inventory
-                    </p>
-                    <ul className="mt-1 text-sm text-red-600 list-disc list-inside">
-                      {checkInventoryAvailability().insufficientItems.map((item, idx) => (
-                        <li key={idx}>{item.product}: Need {item.required}, Available {item.available}</li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
               </CardContent>
             </Card>
 
