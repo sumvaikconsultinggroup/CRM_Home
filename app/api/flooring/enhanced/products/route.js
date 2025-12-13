@@ -51,8 +51,10 @@ export async function GET(request) {
       ]
     }
 
+    const sort = sortBy ? { [sortBy]: sortDir } : { createdAt: -1 }
+
     const [result, total] = await Promise.all([
-      products.find(query).sort({ createdAt: -1 }).skip(skip).limit(limit).toArray(),
+      products.find(query).sort(sort).skip(skip).limit(limit).toArray(),
       products.countDocuments(query)
     ])
 
