@@ -4658,17 +4658,6 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     const totalArea = rooms.reduce((sum, r) => sum + (r.netArea || 0), 0)
     const measurementDetails = selectedProject.measurementDetails || {}
 
-    // Use component-level state for products and technician details
-    // Initialize state when project changes
-    useEffect(() => {
-      if (selectedProject && selectedProject.segment !== 'b2b') {
-        setMeasurementProducts(measurementDetails.selectedProducts || {})
-        setTechnicianName(measurementDetails.technicianName || '')
-        setMeasurementDate(measurementDetails.measurementDate || new Date().toISOString().split('T')[0])
-        setMeasurementNotes(measurementDetails.notes || '')
-      }
-    }, [selectedProject?.id])
-
     // Calculate totals for selected products
     const getSelectedProductsTotal = () => {
       return Object.values(measurementProducts).reduce((sum, item) => {
