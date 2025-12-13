@@ -373,6 +373,17 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }, [token])
 
+  // Fetch CRM Contacts for customer selection
+  const fetchCrmContacts = useCallback(async () => {
+    try {
+      const res = await fetch('/api/contacts', { headers })
+      const data = await res.json()
+      if (data.contacts) setCrmContacts(data.contacts)
+    } catch (error) {
+      console.error('CRM Contacts fetch error:', error)
+    }
+  }, [token])
+
   // Load data on mount and when tab changes
   useEffect(() => {
     fetchDashboard()
@@ -382,7 +393,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     fetchProjects()
     fetchCustomers()
     fetchCrmProjects()
-  }, [fetchDashboard, fetchProductSchema, fetchProductCategories, fetchProducts, fetchProjects, fetchCustomers, fetchCrmProjects, refreshKey])
+    fetchCrmContacts()
+  }, [fetchDashboard, fetchProductSchema, fetchProductCategories, fetchProducts, fetchProjects, fetchCustomers, fetchCrmProjects, fetchCrmContacts, refreshKey])
 
   useEffect(() => {
     if (activeTab === 'quotes') fetchQuotes()
@@ -392,6 +404,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     if (activeTab === 'settings') fetchModuleSettings()
     if (activeTab === 'reports') fetchReports('summary')
   }, [activeTab, fetchQuotes, fetchInvoices, fetchInstallations, fetchInventory, fetchModuleSettings, fetchReports])
+
 
   // Refresh data
   const refreshData = () => {
