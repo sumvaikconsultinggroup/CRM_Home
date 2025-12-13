@@ -4335,51 +4335,221 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                       <FileText className="h-5 w-5 text-blue-600" />
                       Quote Templates
                     </CardTitle>
-                    <CardDescription>Choose how your quotations look</CardDescription>
+                    <CardDescription>Choose how your quotations look - Professional templates for wooden flooring industry</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-3 gap-4">
-                      {[
-                        { 
-                          id: 'professional', 
-                          name: 'Professional', 
-                          desc: 'Clean, modern design',
-                          preview: ['Company Logo', 'Quote #: Q-2025-001', 'Date: Dec 14, 2025', '---', 'Customer: ABC Corp', 'Project: Flooring Install', '---', 'Products Table', '---', 'Total: ₹1,25,000', 'Terms & Conditions']
-                        },
-                        { 
-                          id: 'detailed', 
-                          name: 'Detailed', 
-                          desc: 'Itemized with breakdown',
-                          preview: ['Company Logo + Details', 'Quote #: Q-2025-001', '---', 'Bill To:', 'Customer Details', 'GSTIN: 22AAAAA0000A1Z5', '---', 'Products with Images', 'Specifications', '---', 'Subtotal / Tax / Total', 'Payment Terms']
-                        },
-                        { 
-                          id: 'luxury', 
-                          name: 'Luxury', 
-                          desc: 'High-end presentation',
-                          preview: ['Premium Header', 'Gold Accents', '---', 'Elegant Typography', '---', 'Product Gallery', 'Detailed Specs', '---', 'Exclusive Pricing', 'VIP Terms']
-                        }
-                      ].map(template => (
-                        <div 
-                          key={template.id} 
-                          className={`border-2 rounded-lg p-4 cursor-pointer transition-all ${moduleSettings?.quoteTemplate === template.id ? 'border-blue-500 bg-blue-50' : 'hover:border-blue-300 hover:bg-slate-50'}`}
-                          onClick={() => handleSaveModuleSettings({ quoteTemplate: template.id })}
-                        >
-                          <div className="aspect-[3/4] bg-white border rounded-lg mb-3 p-3 text-xs">
-                            {template.preview.map((line, i) => (
-                              <div key={i} className={line === '---' ? 'border-t my-1' : 'text-slate-500 truncate'}>{line !== '---' && line}</div>
-                            ))}
-                          </div>
-                          <div className="flex items-center justify-between">
+                      {/* Professional Template */}
+                      <div 
+                        className={`border-2 rounded-lg overflow-hidden cursor-pointer transition-all ${moduleSettings?.quoteTemplate === 'professional' ? 'border-blue-500 ring-2 ring-blue-200' : 'hover:border-blue-300'}`}
+                        onClick={() => handleSaveModuleSettings({ quoteTemplate: 'professional' })}
+                      >
+                        <div className="aspect-[3/4] bg-white p-3 text-[8px] leading-tight">
+                          {/* Header */}
+                          <div className="flex justify-between items-start border-b-2 border-blue-600 pb-2 mb-2">
                             <div>
-                              <h4 className="font-medium">{template.name}</h4>
-                              <p className="text-sm text-slate-500">{template.desc}</p>
+                              <div className="text-blue-600 font-bold text-sm">🪵 FloorCraft Pro</div>
+                              <div className="text-gray-500">Premium Flooring Solutions</div>
                             </div>
-                            {moduleSettings?.quoteTemplate === template.id && (
-                              <Badge className="bg-blue-600">Active</Badge>
-                            )}
+                            <div className="text-right">
+                              <div className="text-blue-800 font-bold text-xs">QUOTATION</div>
+                              <div className="text-gray-500">#QT-2025-001</div>
+                            </div>
+                          </div>
+                          {/* Customer */}
+                          <div className="grid grid-cols-2 gap-2 mb-2">
+                            <div className="bg-gray-50 p-1.5 rounded">
+                              <div className="text-gray-400 text-[6px]">BILL TO</div>
+                              <div className="font-medium">ABC Interiors</div>
+                              <div className="text-gray-500">Mumbai, MH</div>
+                            </div>
+                            <div className="bg-gray-50 p-1.5 rounded">
+                              <div className="text-gray-400 text-[6px]">PROJECT</div>
+                              <div className="font-medium">FLP-2025-001</div>
+                              <div className="text-gray-500">3 Rooms, 450 sqft</div>
+                            </div>
+                          </div>
+                          {/* Table */}
+                          <table className="w-full mb-2">
+                            <thead>
+                              <tr className="bg-blue-600 text-white">
+                                <th className="p-1 text-left">Item</th>
+                                <th className="p-1 text-right">Qty</th>
+                                <th className="p-1 text-right">Rate</th>
+                                <th className="p-1 text-right">Total</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr className="border-b"><td className="p-1">Oak Wood</td><td className="p-1 text-right">450</td><td className="p-1 text-right">₹90</td><td className="p-1 text-right">₹40,500</td></tr>
+                              <tr className="border-b"><td className="p-1">Installation</td><td className="p-1 text-right">450</td><td className="p-1 text-right">₹25</td><td className="p-1 text-right">₹11,250</td></tr>
+                            </tbody>
+                          </table>
+                          {/* Totals */}
+                          <div className="text-right space-y-0.5">
+                            <div>Subtotal: ₹51,750</div>
+                            <div>GST 18%: ₹9,315</div>
+                            <div className="font-bold text-blue-600 text-sm bg-blue-50 p-1 rounded">Total: ₹61,065</div>
                           </div>
                         </div>
-                      ))}
+                        <div className="p-3 bg-gray-50 flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium">Professional</h4>
+                            <p className="text-xs text-slate-500">Clean, modern design</p>
+                          </div>
+                          {moduleSettings?.quoteTemplate === 'professional' && <Badge className="bg-blue-600">Active</Badge>}
+                        </div>
+                      </div>
+
+                      {/* Detailed Template */}
+                      <div 
+                        className={`border-2 rounded-lg overflow-hidden cursor-pointer transition-all ${moduleSettings?.quoteTemplate === 'detailed' ? 'border-blue-500 ring-2 ring-blue-200' : 'hover:border-blue-300'}`}
+                        onClick={() => handleSaveModuleSettings({ quoteTemplate: 'detailed' })}
+                      >
+                        <div className="aspect-[3/4] bg-white p-3 text-[8px] leading-tight">
+                          {/* Header with full details */}
+                          <div className="bg-gradient-to-r from-slate-800 to-slate-700 text-white p-2 rounded-t -mx-3 -mt-3 mb-2">
+                            <div className="flex justify-between">
+                              <div>
+                                <div className="font-bold text-xs">🪵 FloorCraft Pro</div>
+                                <div className="text-[6px] text-slate-300">GSTIN: 22AAAAA0000A1Z5</div>
+                              </div>
+                              <div className="text-right">
+                                <div className="font-bold">DETAILED QUOTE</div>
+                                <div className="text-[6px]">#QT-2025-001 | Dec 14, 2025</div>
+                              </div>
+                            </div>
+                          </div>
+                          {/* Customer with GSTIN */}
+                          <div className="grid grid-cols-2 gap-2 mb-2">
+                            <div className="border rounded p-1.5">
+                              <div className="text-[6px] text-gray-400 font-bold">BILL TO</div>
+                              <div className="font-medium">ABC Interiors Pvt Ltd</div>
+                              <div className="text-gray-500">Plot 45, Andheri East</div>
+                              <div className="text-gray-500">Mumbai - 400069</div>
+                              <div className="text-[6px] text-gray-400 mt-1">GSTIN: 27BBBBB0000B2Y6</div>
+                            </div>
+                            <div className="border rounded p-1.5">
+                              <div className="text-[6px] text-gray-400 font-bold">SITE ADDRESS</div>
+                              <div className="font-medium">Oberoi Gardens</div>
+                              <div className="text-gray-500">Tower A, Flat 1204</div>
+                              <div className="text-gray-500">Powai, Mumbai</div>
+                            </div>
+                          </div>
+                          {/* Product with specs */}
+                          <div className="border rounded p-1.5 mb-2">
+                            <div className="flex gap-2">
+                              <div className="w-8 h-8 bg-amber-100 rounded flex items-center justify-center text-lg">🪵</div>
+                              <div className="flex-1">
+                                <div className="font-medium">Premium Oak Wood Flooring</div>
+                                <div className="text-gray-500">SKU: OAK-123 | 12mm | Matte</div>
+                                <div className="flex justify-between mt-1 font-medium">
+                                  <span>450 sqft × ₹90</span>
+                                  <span>₹40,500</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          {/* Tax breakdown */}
+                          <div className="text-right text-[7px] space-y-0.5">
+                            <div className="flex justify-between"><span>Subtotal</span><span>₹51,750</span></div>
+                            <div className="flex justify-between text-gray-500"><span>CGST @9%</span><span>₹4,658</span></div>
+                            <div className="flex justify-between text-gray-500"><span>SGST @9%</span><span>₹4,658</span></div>
+                            <div className="flex justify-between font-bold text-sm bg-slate-800 text-white p-1 rounded"><span>Grand Total</span><span>₹61,066</span></div>
+                          </div>
+                        </div>
+                        <div className="p-3 bg-gray-50 flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium">Detailed</h4>
+                            <p className="text-xs text-slate-500">Full breakdown with GSTIN</p>
+                          </div>
+                          {moduleSettings?.quoteTemplate === 'detailed' && <Badge className="bg-blue-600">Active</Badge>}
+                        </div>
+                      </div>
+
+                      {/* Luxury Template */}
+                      <div 
+                        className={`border-2 rounded-lg overflow-hidden cursor-pointer transition-all ${moduleSettings?.quoteTemplate === 'luxury' ? 'border-blue-500 ring-2 ring-blue-200' : 'hover:border-blue-300'}`}
+                        onClick={() => handleSaveModuleSettings({ quoteTemplate: 'luxury' })}
+                      >
+                        <div className="aspect-[3/4] bg-gradient-to-b from-amber-50 to-white p-3 text-[8px] leading-tight">
+                          {/* Luxury header */}
+                          <div className="text-center border-b-2 border-amber-400 pb-2 mb-3">
+                            <div className="text-amber-600 font-bold text-sm tracking-widest">✦ FLOORCRAFT LUXURY ✦</div>
+                            <div className="text-amber-800 text-[6px] tracking-wider">PREMIUM WOODEN FLOORING</div>
+                          </div>
+                          {/* Quote badge */}
+                          <div className="flex justify-center mb-2">
+                            <div className="bg-amber-600 text-white px-3 py-1 rounded-full text-xs font-bold">
+                              QUOTATION #QT-2025-001
+                            </div>
+                          </div>
+                          {/* Elegant customer section */}
+                          <div className="border border-amber-200 rounded-lg p-2 mb-2 bg-white/50">
+                            <div className="text-center">
+                              <div className="text-[6px] text-amber-600 tracking-wider">VALUED CLIENT</div>
+                              <div className="font-bold text-amber-900">Mr. Rajesh Sharma</div>
+                              <div className="text-gray-500">Luxury Villa, Juhu</div>
+                            </div>
+                          </div>
+                          {/* Product showcase */}
+                          <div className="bg-white rounded-lg p-2 mb-2 shadow-sm border border-amber-100">
+                            <div className="text-center mb-1">
+                              <span className="text-2xl">🪵</span>
+                            </div>
+                            <div className="text-center">
+                              <div className="font-bold text-amber-900">Italian Walnut Premium</div>
+                              <div className="text-amber-600 text-[6px]">Hand-Selected • Imported • 15mm</div>
+                            </div>
+                          </div>
+                          {/* Elegant total */}
+                          <div className="text-center border-t border-amber-200 pt-2">
+                            <div className="text-[6px] text-amber-600">EXCLUSIVE PRICING</div>
+                            <div className="text-amber-900 font-bold text-lg">₹2,45,000</div>
+                            <div className="text-[6px] text-gray-500">*Including premium installation</div>
+                          </div>
+                        </div>
+                        <div className="p-3 bg-amber-50 flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium text-amber-900">Luxury</h4>
+                            <p className="text-xs text-amber-700">High-end presentation</p>
+                          </div>
+                          {moduleSettings?.quoteTemplate === 'luxury' && <Badge className="bg-amber-600">Active</Badge>}
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Template Features Info */}
+                    <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
+                      <div className="p-3 bg-blue-50 rounded-lg">
+                        <h5 className="font-medium text-blue-800 mb-2">Professional Features</h5>
+                        <ul className="text-xs text-blue-600 space-y-1">
+                          <li>✓ Company branding</li>
+                          <li>✓ Customer details</li>
+                          <li>✓ Item-wise pricing</li>
+                          <li>✓ GST calculation</li>
+                          <li>✓ Terms & conditions</li>
+                        </ul>
+                      </div>
+                      <div className="p-3 bg-slate-50 rounded-lg">
+                        <h5 className="font-medium text-slate-800 mb-2">Detailed Features</h5>
+                        <ul className="text-xs text-slate-600 space-y-1">
+                          <li>✓ Full GSTIN details</li>
+                          <li>✓ Product images</li>
+                          <li>✓ Specifications</li>
+                          <li>✓ CGST/SGST breakdown</li>
+                          <li>✓ Site address</li>
+                        </ul>
+                      </div>
+                      <div className="p-3 bg-amber-50 rounded-lg">
+                        <h5 className="font-medium text-amber-800 mb-2">Luxury Features</h5>
+                        <ul className="text-xs text-amber-600 space-y-1">
+                          <li>✓ Premium design</li>
+                          <li>✓ Gold accents</li>
+                          <li>✓ Product showcase</li>
+                          <li>✓ VIP presentation</li>
+                          <li>✓ Exclusive branding</li>
+                        </ul>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>
