@@ -1079,11 +1079,11 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             <Button variant="outline" onClick={() => setDialogOpen({ type: 'import_products', data: null })}>
               <Upload className="h-4 w-4 mr-2" /> Import
             </Button>
-            <Button onClick={() => setDialogOpen({ type: 'product', data: null })}>
-              <Plus className="h-4 w-4 mr-2" /> Add Product
-            </Button>
             <Button variant="secondary" onClick={() => setDialogOpen({ type: 'manage_categories', data: null })}>
               <Tags className="h-4 w-4 mr-2" /> Categories
+            </Button>
+            <Button onClick={() => setDialogOpen({ type: 'product', data: null })}>
+              <Plus className="h-4 w-4 mr-2" /> Add Product
             </Button>
           </div>
         </div>
