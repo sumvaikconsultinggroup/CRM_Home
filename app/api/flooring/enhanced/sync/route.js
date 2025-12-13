@@ -94,39 +94,47 @@ export async function POST(request) {
         }
       }
     } else if (action === 'sync_from_crm') {
-      // Import CRM projects that have flooring module but no flooring project
-      const crmFlooringProjects = await crmProjects.find({ 
-        modules: 'flooring',
+      // Import ALL CRM projects that don't have a flooring project linked yet
+      // This allows syncing any CRM project to the flooring module
+      const allCrmProjects = await crmProjects.find({ 
         flooringProjectId: { $exists: false }
       }).toArray()
 
-      for (const crm of crmFlooringProjects) {
+      for (const crm of allCrmProjects) {
         try {
-          // Check if already exists
+          // Check if already exists by CRM project ID
           const existing = await flooringProjects.findOne({ crmProjectId: crm.id })
           if (existing) continue
 
           // Create flooring project from CRM project
-          const projectNumber = `FLP-${new Date().getFullYear()}-${String((await flooringProjects.countDocuments()) + 1).padStart(4, '0')}`
+          const count = await flooringProjects.countDocuments()
+          const projectNumber = `FLP-${new Date().getFullYear()}-${String(count + 1).padStart(4, '0')}`
           const flooringProjectId = uuidv4()
+
+          // Get customer name from lead if available
+          let customerName = ''
+          if (crm.leadId) {
+            const lead = await leads.findOne({ id: crm.leadId })
+            customerName = lead?.name || ''
+          }
 
           const flooringProject = {
             id: flooringProjectId,
             projectNumber,
-            name: crm.name,
+            name: crm.name || `Project ${projectNumber}`,
             customerId: null,
-            customerName: crm.leadId ? (await leads.findOne({ id: crm.leadId }))?.name : '',
+            customerName: customerName,
             crmProjectId: crm.id,
-            crmLeadId: crm.leadId,
+            crmLeadId: crm.leadId || null,
             site: {
-              address: '',
-              city: '',
-              state: '',
-              pincode: ''
+              address: crm.address || '',
+              city: crm.city || '',
+              state: crm.state || '',
+              pincode: crm.pincode || ''
             },
             type: crm.type || 'residential',
             flooringType: 'hardwood',
-            totalArea: 0,
+            totalArea: crm.area || 0,
             estimatedValue: crm.budget || 0,
             status: 'site_visit_pending',
             statusHistory: [{
@@ -135,7 +143,7 @@ export async function POST(request) {
               by: user.id,
               notes: 'Imported from CRM'
             }],
-            notes: crm.description || '',
+            notes: crm.description || crm.notes || '',
             assignedTo: crm.assignedTo || user.id,
             createdBy: user.id,
             createdAt: now,
@@ -144,10 +152,13 @@ export async function POST(request) {
 
           await flooringProjects.insertOne(flooringProject)
 
-          // Update CRM project with flooring reference
+          // Update CRM project with flooring reference and add flooring module tag
           await crmProjects.updateOne(
             { id: crm.id },
-            { $set: { flooringProjectId, updatedAt: now } }
+            { 
+              $set: { flooringProjectId, updatedAt: now },
+              $addToSet: { modules: 'flooring' }
+            }
           )
 
           results.created++
