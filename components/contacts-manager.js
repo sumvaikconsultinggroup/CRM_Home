@@ -180,42 +180,79 @@ const ContactCard = ({ contact, onEdit, onDelete, onView }) => {
 const ContactFormDialog = ({ open, onOpenChange, contact, onSave }) => {
   const [formData, setFormData] = useState({
     name: '',
+    displayName: '',
     email: '',
     phone: '',
+    alternatePhone: '',
     company: '',
-    address: '',
+    gstin: '',
+    pan: '',
+    billingAddress: '',
+    shippingAddress: '',
+    city: '',
+    state: '',
+    pincode: '',
+    country: 'India',
     type: 'customer',
     tags: '',
     notes: '',
-    source: 'manual'
+    source: 'manual',
+    website: '',
+    creditLimit: '',
+    paymentTerms: 'net30'
   })
   const [saving, setSaving] = useState(false)
+  const [sameAsShipping, setSameAsShipping] = useState(false)
 
   useEffect(() => {
     if (contact) {
       setFormData({
         id: contact.id,
         name: contact.name || '',
+        displayName: contact.displayName || contact.name || '',
         email: contact.email || '',
         phone: contact.phone || '',
+        alternatePhone: contact.alternatePhone || '',
         company: contact.company || '',
-        address: contact.address || '',
+        gstin: contact.gstin || '',
+        pan: contact.pan || '',
+        billingAddress: contact.billingAddress || contact.address || '',
+        shippingAddress: contact.shippingAddress || '',
+        city: contact.city || '',
+        state: contact.state || '',
+        pincode: contact.pincode || '',
+        country: contact.country || 'India',
         type: contact.type || 'customer',
         tags: contact.tags?.join(', ') || '',
         notes: contact.notes || '',
-        source: contact.source || 'manual'
+        source: contact.source || 'manual',
+        website: contact.website || '',
+        creditLimit: contact.creditLimit || '',
+        paymentTerms: contact.paymentTerms || 'net30'
       })
     } else {
       setFormData({
         name: '',
+        displayName: '',
         email: '',
         phone: '',
+        alternatePhone: '',
         company: '',
-        address: '',
+        gstin: '',
+        pan: '',
+        billingAddress: '',
+        shippingAddress: '',
+        city: '',
+        state: '',
+        pincode: '',
+        country: 'India',
         type: 'customer',
         tags: '',
         notes: '',
-        source: 'manual'
+        source: 'manual',
+        website: '',
+        creditLimit: '',
+        paymentTerms: 'net30'
       })
     }
   }, [contact, open])
