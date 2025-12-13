@@ -4648,15 +4648,20 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     const totalArea = rooms.reduce((sum, r) => sum + (r.netArea || 0), 0)
     const measurementDetails = selectedProject.measurementDetails || {}
 
-    // Product selection state for this measurement
-    const [selectedProducts, setSelectedProducts] = React.useState(measurementDetails.selectedProducts || {})
-    const [technicianName, setTechnicianName] = React.useState(measurementDetails.technicianName || '')
-    const [measurementDate, setMeasurementDate] = React.useState(measurementDetails.measurementDate || new Date().toISOString().split('T')[0])
-    const [measurementNotes, setMeasurementNotes] = React.useState(measurementDetails.notes || '')
+    // Use component-level state for products and technician details
+    // Initialize state when project changes
+    useEffect(() => {
+      if (selectedProject && selectedProject.segment !== 'b2b') {
+        setMeasurementProducts(measurementDetails.selectedProducts || {})
+        setTechnicianName(measurementDetails.technicianName || '')
+        setMeasurementDate(measurementDetails.measurementDate || new Date().toISOString().split('T')[0])
+        setMeasurementNotes(measurementDetails.notes || '')
+      }
+    }, [selectedProject?.id])
 
     // Calculate totals for selected products
     const getSelectedProductsTotal = () => {
-      return Object.values(selectedProducts).reduce((sum, item) => {
+      return Object.values(measurementProducts).reduce((sum, item) => {
         if (item.selected) {
           const price = item.product?.price || item.product?.pricing?.sellingPrice || 0
           return sum + (price * (item.quantity || totalArea))
@@ -4666,9 +4671,9 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
 
     // Check inventory availability
-    const checkInventoryAvailability = () => {
+    const checkMeasurementInventory = () => {
       const insufficientItems = []
-      Object.values(selectedProducts).forEach(item => {
+      Object.values(measurementProducts).forEach(item => {
         if (item.selected) {
           const inv = getProductInventory(item.product.id)
           const requiredQty = item.quantity || totalArea
