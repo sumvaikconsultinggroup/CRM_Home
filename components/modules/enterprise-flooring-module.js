@@ -478,7 +478,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       }
 
       const r = data?.results
-      toast.success(`Import complete: ${r?.created || 0} created, ${r?.updated || 0} updated, ${r?.failed || 0} failed`)
+      const details = r?.errors?.length ? ` (skipped: ${r.skipped || 0})` : ''
+      toast.success(`Import complete: ${r?.created || 0} created, ${r?.updated || 0} updated, ${r?.failed || 0} failed${details}`)
+
+      if (r?.errors?.length) {
+        console.warn('Import errors:', r.errors)
+      }
+
       fetchProducts()
       setDialogOpen({ type: null, data: null })
     } catch (error) {
