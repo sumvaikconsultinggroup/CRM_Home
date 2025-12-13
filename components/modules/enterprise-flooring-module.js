@@ -1998,13 +1998,23 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                               <Eye className="h-4 w-4" />
                             </Button>
                             {invoice.status === 'draft' && (
-                              <Button variant="ghost" size="sm" onClick={() => handleInvoiceAction(invoice.id, 'send')}>
-                                <Send className="h-4 w-4" />
+                              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => handleInvoiceAction(invoice.id, 'send')}>
+                                <Send className="h-4 w-4 mr-1" /> Send
                               </Button>
                             )}
                             {invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
-                              <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'record_payment', data: invoice })}>
-                                <CreditCard className="h-4 w-4" />
+                              <Button size="sm" variant="outline" onClick={() => setDialogOpen({ type: 'record_payment', data: invoice })}>
+                                <CreditCard className="h-4 w-4 mr-1" /> Payment
+                              </Button>
+                            )}
+                            {/* Send for Installation - Only for B2C and when paid */}
+                            {invoice.status === 'paid' && invoice.projectSegment !== 'b2b' && !invoice.installationCreated && (
+                              <Button 
+                                size="sm" 
+                                className="bg-teal-600 hover:bg-teal-700 text-white"
+                                onClick={() => handleSendForInstallation(invoice)}
+                              >
+                                <Wrench className="h-4 w-4 mr-1" /> Install
                               </Button>
                             )}
                           </div>
