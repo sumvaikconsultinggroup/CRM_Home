@@ -806,7 +806,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       
       if (res.ok) {
         const result = await res.json()
-        toast.success(`Sync completed: ${result.results?.synced || 0} projects synced`)
+        const created = result.results?.created || 0
+        const updated = result.results?.updated || 0
+        if (created > 0 || updated > 0) {
+          toast.success(`Sync completed: ${created} new, ${updated} updated`)
+        } else {
+          toast.info('All projects are already up to date')
+        }
         fetchProjects()
         fetchCrmProjects()
       } else {
