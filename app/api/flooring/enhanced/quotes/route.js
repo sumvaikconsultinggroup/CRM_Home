@@ -1,11 +1,17 @@
 import { NextResponse } from 'next/server'
-import { getCollection } from '@/lib/db/mongodb'
-import { generateId, FlooringLeadStatus, QuoteTemplates } from '@/lib/db/flooring-enhanced-schema'
+import { v4 as uuidv4 } from 'uuid'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireClientAccess, getUserDatabaseName } from '@/lib/utils/auth'
+import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
+
+export async function OPTIONS() {
+  return optionsResponse()
+}
 
 // Generate quote number
-const generateQuoteNumber = async (clientId) => {
-  const quotes = await getCollection('flooring_quotes_v2')
-  const count = await quotes.countDocuments({ clientId })
+const generateQuoteNumber = async (db) => {
+  const quotes = db.collection('flooring_quotes_v2')
+  const count = await quotes.countDocuments()
   const year = new Date().getFullYear()
   const month = String(new Date().getMonth() + 1).padStart(2, '0')
   return `FLQ-${year}${month}-${String(count + 1).padStart(4, '0')}`
@@ -14,438 +20,465 @@ const generateQuoteNumber = async (clientId) => {
 // GET - Fetch quotes with filters
 export async function GET(request) {
   try {
+    const user = getAuthUser(request)
+    requireClientAccess(user)
+
     const { searchParams } = new URL(request.url)
-    const clientId = searchParams.get('clientId')
-    const quoteId = searchParams.get('id')
+    const id = searchParams.get('id')
     const leadId = searchParams.get('leadId')
     const projectId = searchParams.get('projectId')
     const status = searchParams.get('status')
-    const template = searchParams.get('template')
+    const customerId = searchParams.get('customerId')
+    const limit = parseInt(searchParams.get('limit')) || 100
 
-    const quotes = await getCollection('flooring_quotes_v2')
-    const quoteItems = await getCollection('flooring_quote_items_v2')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const quotes = db.collection('flooring_quotes_v2')
+    const rooms = db.collection('flooring_rooms')
 
-    // Single quote with items
-    if (quoteId) {
-      const quote = await quotes.findOne({ id: quoteId })
-      if (!quote) return NextResponse.json({ error: 'Quote not found' }, { status: 404 })
-      
-      const items = await quoteItems.find({ quoteId }).toArray()
-      const revisions = await quotes.find({ 
-        originalQuoteId: quote.originalQuoteId || quote.id 
+    // Single quote with details
+    if (id) {
+      const quote = await quotes.findOne({ id })
+      if (!quote) return errorResponse('Quote not found', 404)
+
+      // Get rooms if project linked
+      let quoteRooms = []
+      if (quote.projectId) {
+        quoteRooms = await rooms.find({ projectId: quote.projectId }).toArray()
+      }
+
+      // Get revisions
+      const revisions = await quotes.find({
+        originalQuoteId: quote.originalQuoteId || quote.id
       }).sort({ version: -1 }).toArray()
-      
-      return NextResponse.json({ ...quote, items, revisions })
+
+      return successResponse(sanitizeDocument({ ...quote, rooms: quoteRooms, revisions }))
     }
 
-    // Query with filters
-    const query = { clientId }
+    // Build query
+    const query = {}
     if (leadId) query.leadId = leadId
     if (projectId) query.projectId = projectId
     if (status) query.status = status
-    if (template) query.template = template
+    if (customerId) query['customer.id'] = customerId
 
-    const result = await quotes.find(query).sort({ createdAt: -1 }).toArray()
-    return NextResponse.json(result)
+    const allQuotes = await quotes.find(query).sort({ createdAt: -1 }).limit(limit).toArray()
+
+    // Calculate summary
+    const summary = {
+      total: allQuotes.length,
+      totalValue: allQuotes.reduce((sum, q) => sum + (q.grandTotal || 0), 0),
+      byStatus: {}
+    }
+    allQuotes.forEach(q => {
+      summary.byStatus[q.status] = (summary.byStatus[q.status] || 0) + 1
+    })
+
+    return successResponse(sanitizeDocuments(allQuotes))
   } catch (error) {
-    console.error('Enhanced Quotes GET Error:', error)
-    return NextResponse.json({ error: 'Failed to fetch quotes' }, { status: 500 })
+    console.error('Quotes GET Error:', error)
+    return errorResponse('Failed to fetch quotes', 500, error.message)
   }
 }
 
-// POST - Create new quote
+// POST - Create quote
 export async function POST(request) {
   try {
+    const user = getAuthUser(request)
+    requireClientAccess(user)
+
     const body = await request.json()
-    const quotes = await getCollection('flooring_quotes_v2')
-    const quoteItems = await getCollection('flooring_quote_items_v2')
-    const leads = await getCollection('leads')
 
-    const quoteNumber = await generateQuoteNumber(body.clientId)
-    const quoteId = generateId('FLQ')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const quotes = db.collection('flooring_quotes_v2')
+    const rooms = db.collection('flooring_rooms')
+    const projects = db.collection('flooring_projects')
+    const leads = db.collection('leads')
+    const inventory = db.collection('flooring_inventory_v2')
 
-    // Calculate totals
+    const quoteNumber = await generateQuoteNumber(db)
+    const quoteId = uuidv4()
+    const now = new Date().toISOString()
+
+    // Get rooms for project
+    let projectRooms = []
+    if (body.projectId) {
+      projectRooms = await rooms.find({ projectId: body.projectId }).toArray()
+    }
+
+    // Calculate totals from items
     const items = body.items || []
     const materialTotal = items.filter(i => i.itemType === 'material').reduce((sum, i) => sum + (i.totalPrice || 0), 0)
     const laborTotal = items.filter(i => i.itemType === 'labor').reduce((sum, i) => sum + (i.totalPrice || 0), 0)
     const accessoryTotal = items.filter(i => i.itemType === 'accessory').reduce((sum, i) => sum + (i.totalPrice || 0), 0)
     const subtotal = materialTotal + laborTotal + accessoryTotal
-    
-    const discountAmount = body.discountType === 'percent' 
-      ? subtotal * ((body.discount || 0) / 100)
-      : (body.discount || 0)
-    
+
+    // Calculate discount
+    const discountType = body.discountType || 'fixed'
+    const discountValue = body.discountValue || 0
+    const discountAmount = discountType === 'percent'
+      ? subtotal * (discountValue / 100)
+      : discountValue
+
+    // Calculate tax
     const taxableAmount = subtotal - discountAmount
-    const cgst = taxableAmount * ((body.cgstRate || 9) / 100)
-    const sgst = taxableAmount * ((body.sgstRate || 9) / 100)
-    const igst = body.isInterstate ? taxableAmount * ((body.igstRate || 18) / 100) : 0
-    const totalTax = body.isInterstate ? igst : (cgst + sgst)
+    const isInterstate = body.isInterstate || false
+    const cgstRate = body.cgstRate || 9
+    const sgstRate = body.sgstRate || 9
+    const igstRate = body.igstRate || 18
+    const cgst = isInterstate ? 0 : taxableAmount * (cgstRate / 100)
+    const sgst = isInterstate ? 0 : taxableAmount * (sgstRate / 100)
+    const igst = isInterstate ? taxableAmount * (igstRate / 100) : 0
+    const totalTax = cgst + sgst + igst
     const grandTotal = taxableAmount + totalTax
+
+    // Total area from items
+    const totalArea = items.reduce((sum, i) => sum + (i.area || 0), 0)
 
     const quote = {
       id: quoteId,
       quoteNumber,
-      originalQuoteId: quoteId, // For tracking revisions
-      version: 1,
-      leadId: body.leadId,
       projectId: body.projectId,
-      clientId: body.clientId,
-      
-      // Customer Info
-      customer: {
-        name: body.customer?.name,
-        email: body.customer?.email,
-        phone: body.customer?.phone,
-        address: body.customer?.address,
-        gstin: body.customer?.gstin
-      },
-      
-      // Site Info
-      site: {
-        address: body.site?.address,
-        contactPerson: body.site?.contactPerson,
-        contactPhone: body.site?.contactPhone
-      },
-      
-      // Room Summary
-      rooms: body.rooms || [],
-      totalArea: body.totalArea || 0,
-      
-      // Template
+      leadId: body.leadId,
+      customer: body.customer || {},
+      site: body.site || {},
+      rooms: projectRooms.map(r => ({
+        id: r.id,
+        roomName: r.roomName,
+        netArea: r.netArea,
+        productId: r.selectedProductId
+      })),
+      items,
       template: body.template || 'professional',
-      
-      // Pricing
+      totalArea,
       materialTotal,
       laborTotal,
       accessoryTotal,
       subtotal,
-      discountType: body.discountType || 'fixed',
-      discountValue: body.discount || 0,
+      discountType,
+      discountValue,
       discountAmount,
       taxableAmount,
-      cgstRate: body.cgstRate || 9,
+      cgstRate,
       cgst,
-      sgstRate: body.sgstRate || 9,
+      sgstRate,
       sgst,
-      igstRate: body.igstRate || 18,
+      igstRate,
       igst,
-      isInterstate: body.isInterstate || false,
+      isInterstate,
       totalTax,
       grandTotal,
       currency: 'INR',
-      
-      // Validity
-      validUntil: body.validUntil || new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-      
-      // Status
+      validUntil: body.validUntil || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
       status: 'draft',
+      version: 1,
+      originalQuoteId: null,
+      paymentTerms: body.paymentTerms || 'Net 30',
+      notes: body.notes || '',
+      terms: body.terms || '',
       statusHistory: [{
         status: 'draft',
-        timestamp: new Date().toISOString(),
-        by: body.createdBy
+        timestamp: now,
+        by: user.id,
+        notes: 'Quote created'
       }],
-      
-      // Terms & Conditions
-      terms: body.terms || getDefaultTerms(),
-      paymentTerms: body.paymentTerms || getDefaultPaymentTerms(),
-      warranty: body.warranty || getDefaultWarranty(),
-      
-      // Notes
-      notes: body.notes || '',
-      internalNotes: body.internalNotes || '',
-      
-      // Tracking
       sentAt: null,
       viewedAt: null,
-      viewCount: 0,
       approvedAt: null,
       rejectedAt: null,
-      rejectionReason: null,
-      convertedToProposalAt: null,
-      proposalId: null,
-      
-      // Audit
-      createdBy: body.createdBy,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
+      invoiceId: null,
+      createdBy: user.id,
+      createdAt: now,
+      updatedAt: now
     }
 
     await quotes.insertOne(quote)
 
-    // Save quote items
-    if (items.length > 0) {
-      const itemsToInsert = items.map((item, index) => ({
-        id: generateId('FLI'),
-        quoteId: quote.id,
-        lineNumber: index + 1,
-        roomId: item.roomId,
-        roomName: item.roomName,
-        itemType: item.itemType, // material, labor, accessory, service
-        productId: item.productId,
-        productSku: item.productSku,
-        category: item.category,
-        name: item.name,
-        description: item.description,
-        specifications: item.specifications,
-        hsnCode: item.hsnCode,
-        quantity: item.quantity,
-        unit: item.unit,
-        unitPrice: item.unitPrice,
-        wastagePercent: item.wastagePercent || 0,
-        wastageQty: item.wastageQty || 0,
-        grossQuantity: item.grossQuantity || item.quantity,
-        totalPrice: item.totalPrice,
-        notes: item.notes,
-        createdAt: new Date().toISOString()
-      }))
-      await quoteItems.insertMany(itemsToInsert)
-    }
-
-    // Update lead status
-    if (body.leadId) {
-      await leads.updateOne(
-        { id: body.leadId },
-        { $set: { flooringStatus: 'quote_draft', updatedAt: new Date().toISOString() } }
+    // Update project status
+    if (body.projectId) {
+      await projects.updateOne(
+        { id: body.projectId },
+        {
+          $set: { status: 'quote_created', latestQuoteId: quoteId, updatedAt: now },
+          $push: { statusHistory: { status: 'quote_created', timestamp: now, by: user.id } }
+        }
       )
     }
 
-    return NextResponse.json(quote, { status: 201 })
+    // Update lead status if linked
+    if (body.leadId) {
+      await leads.updateOne(
+        { id: body.leadId },
+        { $set: { flooringStatus: 'quote_created', updatedAt: now } }
+      )
+    }
+
+    return successResponse(sanitizeDocument(quote), 201)
   } catch (error) {
-    console.error('Enhanced Quotes POST Error:', error)
-    return NextResponse.json({ error: 'Failed to create quote' }, { status: 500 })
+    console.error('Quotes POST Error:', error)
+    return errorResponse('Failed to create quote', 500, error.message)
   }
 }
 
-// PUT - Update quote or change status
+// PUT - Update quote or perform actions
 export async function PUT(request) {
   try {
+    const user = getAuthUser(request)
+    requireClientAccess(user)
+
     const body = await request.json()
     const { id, action, ...updateData } = body
 
-    if (!id) return NextResponse.json({ error: 'Quote ID required' }, { status: 400 })
+    if (!id) return errorResponse('Quote ID required', 400)
 
-    const quotes = await getCollection('flooring_quotes_v2')
-    const quoteItems = await getCollection('flooring_quote_items_v2')
-    const leads = await getCollection('leads')
-    const invoices = await getCollection('flooring_invoices')
-    const inventory = await getCollection('flooring_inventory')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const quotes = db.collection('flooring_quotes_v2')
+    const invoices = db.collection('flooring_invoices')
+    const leads = db.collection('leads')
+    const projects = db.collection('flooring_projects')
 
     const quote = await quotes.findOne({ id })
-    if (!quote) return NextResponse.json({ error: 'Quote not found' }, { status: 404 })
+    if (!quote) return errorResponse('Quote not found', 404)
 
     const now = new Date().toISOString()
 
-    // Handle specific actions
     switch (action) {
       case 'send':
-        // Send quote to customer
         await quotes.updateOne({ id }, {
           $set: { status: 'sent', sentAt: now, updatedAt: now },
-          $push: { statusHistory: { status: 'sent', timestamp: now, by: body.by } }
+          $push: { statusHistory: { status: 'sent', timestamp: now, by: user.id } }
         })
+        if (quote.projectId) {
+          await projects.updateOne({ id: quote.projectId }, { $set: { status: 'quote_sent' } })
+        }
         if (quote.leadId) {
           await leads.updateOne({ id: quote.leadId }, { $set: { flooringStatus: 'quote_sent' } })
         }
-        return NextResponse.json({ message: 'Quote sent successfully' })
+        return successResponse({ message: 'Quote sent' })
 
       case 'mark_viewed':
         await quotes.updateOne({ id }, {
-          $set: { viewedAt: quote.viewedAt || now, updatedAt: now },
+          $set: { status: quote.status === 'sent' ? 'viewed' : quote.status, viewedAt: quote.viewedAt || now, updatedAt: now },
           $inc: { viewCount: 1 }
         })
-        return NextResponse.json({ message: 'Quote marked as viewed' })
+        return successResponse({ message: 'Quote marked as viewed' })
 
       case 'approve':
         await quotes.updateOne({ id }, {
           $set: { status: 'approved', approvedAt: now, updatedAt: now },
-          $push: { statusHistory: { status: 'approved', timestamp: now, by: body.by, notes: body.notes } }
+          $push: { statusHistory: { status: 'approved', timestamp: now, by: body.approvedBy || user.id, notes: body.approvalNotes || '' } }
         })
+        if (quote.projectId) {
+          await projects.updateOne({ id: quote.projectId }, { $set: { status: 'approved', updatedAt: now } })
+        }
         if (quote.leadId) {
           await leads.updateOne({ id: quote.leadId }, { $set: { flooringStatus: 'quote_approved' } })
         }
-        return NextResponse.json({ message: 'Quote approved' })
+        return successResponse({ message: 'Quote approved' })
 
       case 'reject':
         await quotes.updateOne({ id }, {
           $set: { status: 'rejected', rejectedAt: now, rejectionReason: body.reason, updatedAt: now },
-          $push: { statusHistory: { status: 'rejected', timestamp: now, by: body.by, reason: body.reason } }
+          $push: { statusHistory: { status: 'rejected', timestamp: now, by: body.rejectedBy || user.id, reason: body.reason } }
         })
-        return NextResponse.json({ message: 'Quote rejected' })
+        if (quote.leadId) {
+          await leads.updateOne({ id: quote.leadId }, { $set: { flooringStatus: 'quote_rejected' } })
+        }
+        return successResponse({ message: 'Quote rejected' })
 
       case 'revise':
-        // Create a new version of the quote
-        const newQuoteNumber = `${quote.quoteNumber}-R${quote.version}`
-        const newQuote = {
+        // Create new revision
+        const newQuoteId = uuidv4()
+        const newVersion = (quote.version || 1) + 1
+        const revisedQuote = {
           ...quote,
-          id: generateId('FLQ'),
-          quoteNumber: newQuoteNumber,
+          id: newQuoteId,
+          quoteNumber: `${quote.quoteNumber}-R${newVersion}`,
+          version: newVersion,
           originalQuoteId: quote.originalQuoteId || quote.id,
-          version: quote.version + 1,
           status: 'draft',
-          statusHistory: [{ status: 'draft', timestamp: now, by: body.by, notes: 'Revision created' }],
+          notes: body.revisionNotes || '',
+          statusHistory: [{
+            status: 'draft',
+            timestamp: now,
+            by: user.id,
+            notes: `Revision ${newVersion} created`
+          }],
           sentAt: null,
           viewedAt: null,
           approvedAt: null,
+          rejectedAt: null,
           createdAt: now,
           updatedAt: now
         }
-        delete newQuote._id
-        await quotes.insertOne(newQuote)
-        
-        // Copy items
-        const oldItems = await quoteItems.find({ quoteId: quote.id }).toArray()
-        if (oldItems.length > 0) {
-          const newItems = oldItems.map(item => ({
-            ...item,
-            id: generateId('FLI'),
-            quoteId: newQuote.id,
-            createdAt: now
-          }))
-          newItems.forEach(i => delete i._id)
-          await quoteItems.insertMany(newItems)
-        }
-        
+        delete revisedQuote._id
+
+        // Apply any updates to the revision
+        if (body.items) revisedQuote.items = body.items
+        if (body.discountValue !== undefined) revisedQuote.discountValue = body.discountValue
+
+        await quotes.insertOne(revisedQuote)
+
         // Mark old quote as revised
         await quotes.updateOne({ id }, {
           $set: { status: 'revised', updatedAt: now },
-          $push: { statusHistory: { status: 'revised', timestamp: now, by: body.by } }
+          $push: { statusHistory: { status: 'revised', timestamp: now, by: user.id, notes: `Revised to version ${newVersion}` } }
         })
-        
-        return NextResponse.json({ message: 'Revision created', newQuoteId: newQuote.id })
 
-      case 'convert_to_proposal':
-        // Convert approved quote to proposal
-        if (quote.status !== 'approved') {
-          return NextResponse.json({ error: 'Only approved quotes can be converted' }, { status: 400 })
-        }
-        
-        const proposalId = generateId('FLP')
-        await quotes.updateOne({ id }, {
-          $set: { 
-            convertedToProposalAt: now, 
-            proposalId,
-            status: 'converted_to_proposal',
-            updatedAt: now 
-          },
-          $push: { statusHistory: { status: 'converted_to_proposal', timestamp: now, by: body.by } }
-        })
-        
-        if (quote.leadId) {
-          await leads.updateOne({ id: quote.leadId }, { $set: { flooringStatus: 'proposal_sent' } })
-        }
-        
-        return NextResponse.json({ message: 'Converted to proposal', proposalId })
+        return successResponse({ message: 'Revision created', newQuoteId, newVersion })
 
       case 'create_invoice':
-        // Create invoice from approved quote/proposal
-        const invoiceId = generateId('FLV')
-        const invoiceNumber = `INV-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(await invoices.countDocuments({ clientId: quote.clientId }) + 1).padStart(4, '0')}`
-        
+        if (quote.status !== 'approved') {
+          return errorResponse('Only approved quotes can be converted to invoices', 400)
+        }
+
+        // Generate invoice number
+        const invoiceCount = await invoices.countDocuments()
+        const invoiceNumber = `INV-${new Date().getFullYear()}${String(new Date().getMonth() + 1).padStart(2, '0')}-${String(invoiceCount + 1).padStart(4, '0')}`
+        const invoiceId = uuidv4()
+
         const invoice = {
           id: invoiceId,
           invoiceNumber,
           quoteId: quote.id,
-          leadId: quote.leadId,
+          quoteNumber: quote.quoteNumber,
           projectId: quote.projectId,
-          clientId: quote.clientId,
+          leadId: quote.leadId,
           customer: quote.customer,
           site: quote.site,
           rooms: quote.rooms,
+          items: quote.items,
           template: body.invoiceTemplate || 'standard',
-          ...quote, // Copy all amounts
+          materialTotal: quote.materialTotal,
+          laborTotal: quote.laborTotal,
+          accessoryTotal: quote.accessoryTotal,
+          subtotal: quote.subtotal,
+          discountType: quote.discountType,
+          discountValue: quote.discountValue,
+          discountAmount: quote.discountAmount,
+          taxableAmount: quote.taxableAmount,
+          cgstRate: quote.cgstRate,
+          cgst: quote.cgst,
+          sgstRate: quote.sgstRate,
+          sgst: quote.sgst,
+          igstRate: quote.igstRate,
+          igst: quote.igst,
+          isInterstate: quote.isInterstate,
+          totalTax: quote.totalTax,
+          grandTotal: quote.grandTotal,
+          currency: 'INR',
           dueDate: body.dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
           status: 'draft',
-          payments: [],
           paidAmount: 0,
           balanceAmount: quote.grandTotal,
+          paymentTerms: quote.paymentTerms,
+          bankDetails: body.bankDetails || {},
+          notes: body.invoiceNotes || '',
+          terms: quote.terms,
+          statusHistory: [{
+            status: 'draft',
+            timestamp: now,
+            by: user.id,
+            notes: 'Invoice created from quote'
+          }],
+          createdBy: user.id,
           createdAt: now,
           updatedAt: now
         }
-        delete invoice._id
-        delete invoice.id
-        invoice.id = invoiceId
-        
+
         await invoices.insertOne(invoice)
-        
-        // Update quote
+
+        // Update quote with invoice reference
         await quotes.updateOne({ id }, {
-          $set: { invoiceId, updatedAt: now },
-          $push: { statusHistory: { status: 'invoice_created', timestamp: now, by: body.by } }
+          $set: { status: 'converted', invoiceId, invoiceCreatedAt: now, updatedAt: now },
+          $push: { statusHistory: { status: 'converted', timestamp: now, by: user.id } }
         })
-        
+
         if (quote.leadId) {
-          await leads.updateOne({ id: quote.leadId }, { $set: { flooringStatus: 'invoice_sent' } })
+          await leads.updateOne({ id: quote.leadId }, { $set: { flooringStatus: 'invoice_created' } })
         }
-        
-        // Reduce inventory
-        const items = await quoteItems.find({ quoteId: quote.id, itemType: 'material' }).toArray()
-        for (const item of items) {
-          if (item.productId) {
-            await inventory.updateOne(
-              { productId: item.productId, clientId: quote.clientId },
-              {
-                $inc: { quantity: -item.grossQuantity, availableQty: -item.grossQuantity },
-                $push: {
-                  movements: {
-                    id: generateId('MOV'),
-                    type: 'sale',
-                    quantity: item.grossQuantity,
-                    reference: invoiceNumber,
-                    quoteId: quote.id,
-                    invoiceId,
-                    createdAt: now
-                  }
-                }
-              }
-            )
-          }
-        }
-        
-        return NextResponse.json({ message: 'Invoice created', invoiceId })
+
+        return successResponse({ message: 'Invoice created', invoiceId, invoiceNumber })
 
       default:
         // Regular update
+        updateData.updatedAt = now
+        updateData.updatedBy = user.id
+
+        // Recalculate totals if items changed
+        if (updateData.items) {
+          const items = updateData.items
+          updateData.materialTotal = items.filter(i => i.itemType === 'material').reduce((sum, i) => sum + (i.totalPrice || 0), 0)
+          updateData.laborTotal = items.filter(i => i.itemType === 'labor').reduce((sum, i) => sum + (i.totalPrice || 0), 0)
+          updateData.accessoryTotal = items.filter(i => i.itemType === 'accessory').reduce((sum, i) => sum + (i.totalPrice || 0), 0)
+          updateData.subtotal = updateData.materialTotal + updateData.laborTotal + updateData.accessoryTotal
+          updateData.totalArea = items.reduce((sum, i) => sum + (i.area || 0), 0)
+
+          const discountAmount = (updateData.discountType || quote.discountType) === 'percent'
+            ? updateData.subtotal * ((updateData.discountValue || quote.discountValue || 0) / 100)
+            : (updateData.discountValue || quote.discountValue || 0)
+          updateData.discountAmount = discountAmount
+          updateData.taxableAmount = updateData.subtotal - discountAmount
+
+          const isInterstate = updateData.isInterstate !== undefined ? updateData.isInterstate : quote.isInterstate
+          const cgstRate = updateData.cgstRate || quote.cgstRate
+          const sgstRate = updateData.sgstRate || quote.sgstRate
+          const igstRate = updateData.igstRate || quote.igstRate
+
+          updateData.cgst = isInterstate ? 0 : updateData.taxableAmount * (cgstRate / 100)
+          updateData.sgst = isInterstate ? 0 : updateData.taxableAmount * (sgstRate / 100)
+          updateData.igst = isInterstate ? updateData.taxableAmount * (igstRate / 100) : 0
+          updateData.totalTax = updateData.cgst + updateData.sgst + updateData.igst
+          updateData.grandTotal = updateData.taxableAmount + updateData.totalTax
+        }
+
         const result = await quotes.findOneAndUpdate(
           { id },
-          { $set: { ...updateData, updatedAt: now } },
+          { $set: updateData },
           { returnDocument: 'after' }
         )
-        return NextResponse.json(result)
+
+        return successResponse(sanitizeDocument(result))
     }
   } catch (error) {
-    console.error('Enhanced Quotes PUT Error:', error)
-    return NextResponse.json({ error: 'Failed to update quote' }, { status: 500 })
+    console.error('Quotes PUT Error:', error)
+    return errorResponse('Failed to update quote', 500, error.message)
   }
 }
 
-// Default content helpers
-function getDefaultTerms() {
-  return `1. This quotation is valid for 15 days from the date of issue.
-2. Prices are subject to change without prior notice.
-3. 50% advance payment required to confirm the order.
-4. Balance payment due before material delivery.
-5. Delivery within 7-10 working days after order confirmation.
-6. Installation timeline will be confirmed after site inspection.
-7. Any additional work not mentioned in this quote will be charged extra.
-8. Warranty terms as per manufacturer's policy.`
-}
+// DELETE - Delete quote (soft delete)
+export async function DELETE(request) {
+  try {
+    const user = getAuthUser(request)
+    requireClientAccess(user)
 
-function getDefaultPaymentTerms() {
-  return `Payment Schedule:
-- 50% Advance with order confirmation
-- 40% Before material delivery
-- 10% After installation completion
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
 
-Payment Methods:
-- Bank Transfer (NEFT/RTGS/IMPS)
-- UPI Payment
-- Cheque (Subject to realization)`
-}
+    if (!id) return errorResponse('Quote ID required', 400)
 
-function getDefaultWarranty() {
-  return `Warranty Coverage:
-- Material: As per manufacturer warranty (typically 10-25 years)
-- Installation: 1 year from completion date
-- Covers manufacturing defects and installation issues
-- Does not cover damage from misuse, water, or improper maintenance`
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const quotes = db.collection('flooring_quotes_v2')
+
+    const quote = await quotes.findOne({ id })
+    if (!quote) return errorResponse('Quote not found', 404)
+
+    // Only allow deleting draft quotes
+    if (quote.status !== 'draft') {
+      return errorResponse('Only draft quotes can be deleted', 400)
+    }
+
+    await quotes.updateOne(
+      { id },
+      { $set: { status: 'deleted', deletedAt: new Date().toISOString(), deletedBy: user.id } }
+    )
+
+    return successResponse({ message: 'Quote deleted' })
+  } catch (error) {
+    console.error('Quotes DELETE Error:', error)
+    return errorResponse('Failed to delete quote', 500, error.message)
+  }
 }
