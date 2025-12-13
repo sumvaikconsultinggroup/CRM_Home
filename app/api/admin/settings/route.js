@@ -98,7 +98,8 @@ export async function PUT(request) {
 
     const mainDb = await getMainDb()
     const settingsCollection = mainDb.collection('platform_settings')
-    const logsCollection = await getCollection('admin_logs')
+    const mainDb2 = await getMainDb()
+    const logsCollection = mainDb2.collection('admin_logs')
 
     // Get existing settings
     let settings = await settingsCollection.findOne({ type: 'global' })
