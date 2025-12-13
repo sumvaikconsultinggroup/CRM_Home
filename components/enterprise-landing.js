@@ -1750,9 +1750,14 @@ export default function EnterpriseLanding({ onLogin }) {
         
         {/* Animated Glow Rings */}
         <motion.div 
-          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] lg:w-[700px] lg:h-[700px] rounded-full border border-green-500/20"
-          animate={{ scale: [1, 1.05, 1], opacity: [0.3, 0.5, 0.3] }}
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[400px] h-[400px] lg:w-[600px] lg:h-[600px] rounded-full border border-green-500/20"
+          animate={{ scale: [1, 1.1, 1], opacity: [0.2, 0.4, 0.2] }}
           transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div 
+          className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] lg:w-[750px] lg:h-[750px] rounded-full border border-cyan-500/10"
+          animate={{ scale: [1.1, 1, 1.1], opacity: [0.1, 0.3, 0.1] }}
+          transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
         />
 
         <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1772,57 +1777,80 @@ export default function EnterpriseLanding({ onLogin }) {
           </motion.div>
 
           {/* Orbital Integration Display */}
-          <div className="relative h-[400px] sm:h-[500px] lg:h-[600px] flex items-center justify-center">
+          <div className="relative h-[450px] lg:h-[550px] flex items-center justify-center">
             {/* Center BuildCRM Logo */}
             <motion.div
-              initial={{ scale: 0 }}
-              whileInView={{ scale: 1 }}
+              initial={{ scale: 0, rotate: -180 }}
+              whileInView={{ scale: 1, rotate: 0 }}
               viewport={{ once: true }}
-              className="absolute z-20 w-20 h-20 sm:w-24 sm:h-24 lg:w-32 lg:h-32 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-2xl lg:rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-500/40"
+              transition={{ duration: 0.8, ease: "easeOut" }}
+              className="absolute z-20 w-20 h-20 lg:w-28 lg:h-28 bg-gradient-to-br from-blue-600 via-indigo-600 to-purple-600 rounded-2xl lg:rounded-3xl flex items-center justify-center shadow-2xl shadow-blue-500/50"
             >
-              <Building2 className="h-10 w-10 sm:h-12 sm:w-12 lg:h-16 lg:w-16 text-white" />
+              <Building2 className="h-10 w-10 lg:h-14 lg:w-14 text-white" />
+              {/* Pulse effect */}
+              <motion.div 
+                className="absolute inset-0 rounded-2xl lg:rounded-3xl bg-blue-400"
+                animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0, 0.3] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              />
             </motion.div>
 
-            {/* Orbital Rings - Dashed */}
-            <div className="absolute w-[250px] h-[250px] sm:w-[320px] sm:h-[320px] lg:w-[420px] lg:h-[420px] rounded-full border border-dashed border-white/10" />
-            <div className="absolute w-[350px] h-[350px] sm:w-[450px] sm:h-[450px] lg:w-[560px] lg:h-[560px] rounded-full border border-dashed border-white/5" />
-
-            {/* Rotating Container for Icons */}
-            <motion.div
-              className="absolute w-[250px] h-[250px] sm:w-[320px] sm:h-[320px] lg:w-[420px] lg:h-[420px]"
+            {/* Orbital Ring 1 - Inner */}
+            <motion.div 
+              className="absolute w-[200px] h-[200px] lg:w-[300px] lg:h-[300px] rounded-full border border-dashed border-white/20"
               animate={{ rotate: 360 }}
-              transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
+              transition={{ duration: 30, repeat: Infinity, ease: "linear" }}
+            />
+            
+            {/* Orbital Ring 2 - Outer */}
+            <motion.div 
+              className="absolute w-[320px] h-[320px] lg:w-[450px] lg:h-[450px] rounded-full border border-dashed border-white/10"
+              animate={{ rotate: -360 }}
+              transition={{ duration: 40, repeat: Infinity, ease: "linear" }}
+            />
+
+            {/* Inner Ring Icons - Rotating Clockwise */}
+            <motion.div
+              className="absolute w-[200px] h-[200px] lg:w-[300px] lg:h-[300px]"
+              animate={{ rotate: 360 }}
+              transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
             >
               {integrations.slice(0, 4).map((integration, i) => {
-                const angle = i * 90
+                // Position icons at 0, 90, 180, 270 degrees
+                const positions = [
+                  { top: '0%', left: '50%', transform: 'translate(-50%, -50%)' },
+                  { top: '50%', left: '100%', transform: 'translate(-50%, -50%)' },
+                  { top: '100%', left: '50%', transform: 'translate(-50%, -50%)' },
+                  { top: '50%', left: '0%', transform: 'translate(-50%, -50%)' },
+                ]
                 return (
                   <motion.div
-                    key={i}
+                    key={`inner-${i}`}
                     className="absolute"
-                    style={{
-                      top: '50%',
-                      left: '50%',
-                      transform: `rotate(${angle}deg) translateY(-125px) sm:translateY(-160px) lg:translateY(-210px)`,
-                      marginTop: '-28px',
-                      marginLeft: '-28px',
-                    }}
+                    style={positions[i]}
                   >
                     <motion.div
                       animate={{ rotate: -360 }}
-                      transition={{ duration: 60, repeat: Infinity, ease: "linear" }}
-                      whileHover={{ scale: 1.2 }}
-                      className="group relative"
+                      transition={{ duration: 25, repeat: Infinity, ease: "linear" }}
+                      whileHover={{ scale: 1.3 }}
+                      className="group relative cursor-pointer"
                     >
+                      {/* Glow */}
                       <div 
-                        className="w-14 h-14 lg:w-16 lg:h-16 rounded-2xl flex items-center justify-center shadow-xl cursor-pointer border-2 border-white/20"
+                        className="absolute inset-0 rounded-xl blur-lg opacity-60"
+                        style={{ backgroundColor: integration.color }}
+                      />
+                      <div 
+                        className="relative w-12 h-12 lg:w-14 lg:h-14 rounded-xl flex items-center justify-center shadow-xl border-2 border-white/30"
                         style={{ backgroundColor: integration.color }}
                       >
                         <div 
-                          className="w-8 h-8 lg:w-9 lg:h-9 text-white" 
+                          className="w-6 h-6 lg:w-8 lg:h-8 text-white" 
                           dangerouslySetInnerHTML={{ __html: integration.icon }}
                         />
                       </div>
-                      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white text-gray-900 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shadow-xl z-30">
+                      {/* Tooltip */}
+                      <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-white text-gray-900 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shadow-xl z-30 pointer-events-none">
                         {integration.name}
                       </div>
                     </motion.div>
@@ -1831,43 +1859,106 @@ export default function EnterpriseLanding({ onLogin }) {
               })}
             </motion.div>
 
-            {/* Outer Ring - Counter Rotating */}
+            {/* Outer Ring Icons - Rotating Counter-Clockwise */}
             <motion.div
-              className="absolute w-[350px] h-[350px] sm:w-[450px] sm:h-[450px] lg:w-[560px] lg:h-[560px]"
+              className="absolute w-[320px] h-[320px] lg:w-[450px] lg:h-[450px]"
               animate={{ rotate: -360 }}
-              transition={{ duration: 80, repeat: Infinity, ease: "linear" }}
+              transition={{ duration: 35, repeat: Infinity, ease: "linear" }}
             >
               {integrations.slice(4, 8).map((integration, i) => {
-                const angle = i * 90 + 45
+                // Position icons at 45, 135, 225, 315 degrees
+                const positions = [
+                  { top: '14.6%', left: '85.4%', transform: 'translate(-50%, -50%)' },
+                  { top: '85.4%', left: '85.4%', transform: 'translate(-50%, -50%)' },
+                  { top: '85.4%', left: '14.6%', transform: 'translate(-50%, -50%)' },
+                  { top: '14.6%', left: '14.6%', transform: 'translate(-50%, -50%)' },
+                ]
                 return (
                   <motion.div
-                    key={i}
+                    key={`outer-${i}`}
                     className="absolute"
-                    style={{
-                      top: '50%',
-                      left: '50%',
-                      transform: `rotate(${angle}deg) translateY(-175px) sm:translateY(-225px) lg:translateY(-280px)`,
-                      marginTop: '-28px',
-                      marginLeft: '-28px',
-                    }}
+                    style={positions[i]}
                   >
                     <motion.div
                       animate={{ rotate: 360 }}
-                      transition={{ duration: 80, repeat: Infinity, ease: "linear" }}
-                      whileHover={{ scale: 1.2 }}
-                      className="group relative"
+                      transition={{ duration: 35, repeat: Infinity, ease: "linear" }}
+                      whileHover={{ scale: 1.3 }}
+                      className="group relative cursor-pointer"
                     >
+                      {/* Glow */}
                       <div 
-                        className="w-12 h-12 lg:w-14 lg:h-14 rounded-xl flex items-center justify-center shadow-xl cursor-pointer border-2 border-white/20"
+                        className="absolute inset-0 rounded-xl blur-lg opacity-50"
+                        style={{ backgroundColor: integration.color }}
+                      />
+                      <div 
+                        className="relative w-11 h-11 lg:w-13 lg:h-13 rounded-xl flex items-center justify-center shadow-xl border-2 border-white/20"
                         style={{ backgroundColor: integration.color }}
                       >
                         <div 
-                          className="w-6 h-6 lg:w-8 lg:h-8 text-white" 
+                          className="w-5 h-5 lg:w-7 lg:h-7 text-white" 
                           dangerouslySetInnerHTML={{ __html: integration.icon }}
                         />
                       </div>
-                      <div className="absolute -bottom-10 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-white text-gray-900 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shadow-xl z-30">
+                      {/* Tooltip */}
+                      <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-200 bg-white text-gray-900 px-3 py-1.5 rounded-lg text-xs font-bold whitespace-nowrap shadow-xl z-30 pointer-events-none">
                         {integration.name}
+                      </div>
+                    </motion.div>
+                  </motion.div>
+                )
+              })}
+            </motion.div>
+
+            {/* Floating Particles */}
+            {[...Array(6)].map((_, i) => (
+              <motion.div
+                key={`particle-${i}`}
+                className="absolute w-2 h-2 bg-green-400/50 rounded-full"
+                style={{
+                  top: `${20 + Math.random() * 60}%`,
+                  left: `${20 + Math.random() * 60}%`,
+                }}
+                animate={{
+                  y: [0, -20, 0],
+                  x: [0, Math.random() > 0.5 ? 10 : -10, 0],
+                  opacity: [0.3, 0.8, 0.3],
+                  scale: [1, 1.5, 1],
+                }}
+                transition={{
+                  duration: 3 + Math.random() * 2,
+                  repeat: Infinity,
+                  delay: Math.random() * 2,
+                }}
+              />
+            ))}
+          </div>
+
+          {/* Integration Stats */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mt-8 grid grid-cols-3 gap-4 lg:gap-8 max-w-3xl mx-auto"
+          >
+            {[
+              { value: '8+', label: 'Native Integrations' },
+              { value: '5000+', label: 'Apps via Zapier' },
+              { value: '99.9%', label: 'Uptime SLA' }
+            ].map((stat, i) => (
+              <motion.div
+                key={i}
+                whileHover={{ y: -5, scale: 1.02 }}
+                className="text-center p-4 lg:p-6 rounded-2xl bg-white/5 backdrop-blur-sm border border-white/10 hover:border-green-500/30 transition-colors"
+              >
+                <p className="text-2xl lg:text-4xl font-bold bg-gradient-to-r from-green-400 to-cyan-400 bg-clip-text text-transparent">
+                  {stat.value}
+                </p>
+                <p className="text-xs lg:text-sm text-gray-400 mt-1">{stat.label}</p>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
+      </section>
                       </div>
                     </motion.div>
                   </motion.div>
