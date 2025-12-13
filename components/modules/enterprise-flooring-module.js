@@ -3031,16 +3031,20 @@ function CustomerDialog({ open, onClose, customer, onSave, loading }) {
   )
 }
 
-function ProjectDialog({ open, onClose, project, customers, onSave, loading }) {
+function ProjectDialog({ open, onClose, project, customers, crmContacts, onSave, loading, onAddContact }) {
   const [form, setForm] = useState({
-    name: '', customerId: '', customerName: '', type: 'residential', flooringType: 'hardwood',
+    name: '', customerId: '', customerName: '', type: 'residential', segment: 'b2c', flooringType: 'hardwood',
     siteAddress: '', siteCity: '', siteState: '', sitePincode: '', estimatedValue: 0, notes: ''
   })
+
+  // Filter to show only customer-type contacts from CRM
+  const customerContacts = (crmContacts || []).filter(c => c.type === 'customer')
 
   useEffect(() => {
     if (project) {
       setForm({
         ...project,
+        segment: project.segment || 'b2c',
         siteAddress: project.site?.address || '',
         siteCity: project.site?.city || '',
         siteState: project.site?.state || '',
@@ -3048,7 +3052,7 @@ function ProjectDialog({ open, onClose, project, customers, onSave, loading }) {
       })
     } else {
       setForm({
-        name: '', customerId: '', customerName: '', type: 'residential', flooringType: 'hardwood',
+        name: '', customerId: '', customerName: '', type: 'residential', segment: 'b2c', flooringType: 'hardwood',
         siteAddress: '', siteCity: '', siteState: '', sitePincode: '', estimatedValue: 0, notes: ''
       })
     }
@@ -3056,28 +3060,91 @@ function ProjectDialog({ open, onClose, project, customers, onSave, loading }) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-xl">
+      <DialogContent className="max-w-xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{project ? 'Edit Project' : 'Create New Project'}</DialogTitle>
           <DialogDescription>Project will be synced to CRM automatically</DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
+          {/* Customer Selection - Uses CRM Contacts */}
+          <div className="space-y-2 p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <div className="flex items-center justify-between">
+              <Label className="text-blue-800 font-semibold">Customer * (from CRM Contacts)</Label>
+              {onAddContact && (
+                <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={onAddContact}>
+                  <Plus className="h-3 w-3 mr-1" /> Add Contact
+                </Button>
+              )}
+            </div>
+            <Select value={form.customerId} onValueChange={(v) => {
+              const cust = customerContacts.find(c => c.id === v)
+              setForm({ 
+                ...form, 
+                customerId: v, 
+                customerName: cust?.displayName || cust?.name || '',
+                // Auto-fill address from contact if available
+                siteAddress: cust?.billingAddress || cust?.address || form.siteAddress,
+                siteCity: cust?.city || form.siteCity,
+                siteState: cust?.state || form.siteState,
+                sitePincode: cust?.pincode || form.sitePincode
+              })
+            }}>
+              <SelectTrigger className="bg-white"><SelectValue placeholder="Select from CRM Contacts" /></SelectTrigger>
+              <SelectContent>
+                {customerContacts.length === 0 ? (
+                  <div className="p-3 text-center text-sm text-muted-foreground">
+                    No customers found. Add a contact in CRM first.
+                  </div>
+                ) : (
+                  customerContacts.map(c => (
+                    <SelectItem key={c.id} value={c.id}>
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium">{c.displayName || c.name}</span>
+                        {c.company && <span className="text-xs text-muted-foreground">({c.company})</span>}
+                      </div>
+                    </SelectItem>
+                  ))
+                )}
+              </SelectContent>
+            </Select>
+            {form.customerId && (() => {
+              const c = customerContacts.find(c => c.id === form.customerId)
+              return c ? (
+                <div className="text-xs text-blue-600 mt-1 space-y-0.5">
+                  {c.email && <p>📧 {c.email}</p>}
+                  {c.phone && <p>📱 {c.phone}</p>}
+                  {c.gstin && <p>🏢 GSTIN: {c.gstin}</p>}
+                </div>
+              ) : null
+            })()}
+          </div>
+
           <div className="space-y-2">
             <Label>Project Name</Label>
             <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Auto-generated if empty" />
           </div>
+
+          {/* B2B / B2C Segment */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label>Customer *</Label>
-              <Select value={form.customerId} onValueChange={(v) => {
-                const cust = customers.find(c => c.id === v)
-                setForm({ ...form, customerId: v, customerName: cust?.name || '' })
-              }}>
-                <SelectTrigger><SelectValue placeholder="Select customer" /></SelectTrigger>
+              <Label>Business Segment *</Label>
+              <Select value={form.segment} onValueChange={(v) => setForm({ ...form, segment: v })}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
-                  {customers.map(c => (
-                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                  ))}
+                  <SelectItem value="b2c">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-green-500" />
+                      B2C (Consumer) - Measurement + Installation
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="b2b">
+                    <div className="flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-blue-500" />
+                      B2B (Dealer) - Direct Quote
+                    </div>
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -3093,6 +3160,7 @@ function ProjectDialog({ open, onClose, project, customers, onSave, loading }) {
               </Select>
             </div>
           </div>
+
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Flooring Type</Label>
@@ -3119,6 +3187,10 @@ function ProjectDialog({ open, onClose, project, customers, onSave, loading }) {
             <Input value={form.siteCity} onChange={(e) => setForm({ ...form, siteCity: e.target.value })} placeholder="City" />
             <Input value={form.siteState} onChange={(e) => setForm({ ...form, siteState: e.target.value })} placeholder="State" />
             <Input value={form.sitePincode} onChange={(e) => setForm({ ...form, sitePincode: e.target.value })} placeholder="Pincode" />
+          </div>
+          <div className="space-y-2">
+            <Label>Notes</Label>
+            <Textarea value={form.notes} onChange={(e) => setForm({ ...form, notes: e.target.value })} placeholder="Additional notes..." rows={2} />
           </div>
         </div>
         <DialogFooter>
