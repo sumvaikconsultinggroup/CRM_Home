@@ -1,4 +1,4 @@
-import { getCollection, Collections } from '@/lib/db/mongodb'
+import { getMainDb } from '@/lib/db/multitenancy'
 import { getAuthUser, requireClientAccess } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocument } from '@/lib/utils/response'
 
@@ -13,11 +13,18 @@ export async function GET(request) {
 
     const clientId = user.clientId
 
-    const clientsCollection = await getCollection(Collections.CLIENTS)
-    const modulesCollection = await getCollection(Collections.MODULES)
-    const moduleRequestsCollection = await getCollection(Collections.MODULE_REQUESTS)
+    // Use main database for clients and modules (platform-level data)
+    const mainDb = await getMainDb()
+    const clientsCollection = mainDb.collection('clients')
+    const modulesCollection = mainDb.collection('modules')
+    const moduleRequestsCollection = mainDb.collection('module_requests')
 
-    const clientDoc = await clientsCollection.findOne({ id: clientId })
+    // Find client by new clientId format (CL-XXXXXX) or old id format
+    let clientDoc = await clientsCollection.findOne({ clientId: clientId })
+    if (!clientDoc) {
+      clientDoc = await clientsCollection.findOne({ id: clientId })
+    }
+
     // Get all modules where active is true OR active is not set (for backward compatibility)
     const allModules = await modulesCollection.find({ active: { $ne: false } }).toArray()
     const pendingRequests = await moduleRequestsCollection.find({ 
@@ -27,7 +34,7 @@ export async function GET(request) {
 
     const modulesWithStatus = allModules.map(m => ({
       ...sanitizeDocument(m),
-      enabled: clientDoc.modules?.includes(m.id) || false,
+      enabled: clientDoc?.modules?.includes(m.id) || false,
       requestPending: pendingRequests.some(r => r.moduleId === m.id)
     }))
 

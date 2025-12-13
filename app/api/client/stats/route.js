@@ -1,5 +1,5 @@
-import { getCollection, Collections } from '@/lib/db/mongodb'
-import { getAuthUser, requireClientAccess } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireClientAccess, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -11,55 +11,54 @@ export async function GET(request) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
-    const clientId = user.clientId
+    // Get client-specific database
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
 
-    const leadsCollection = await getCollection(Collections.LEADS)
-    const projectsCollection = await getCollection(Collections.PROJECTS)
-    const tasksCollection = await getCollection(Collections.TASKS)
-    const expensesCollection = await getCollection(Collections.EXPENSES)
+    const leadsCollection = db.collection('leads')
+    const projectsCollection = db.collection('projects')
+    const tasksCollection = db.collection('tasks')
+    const expensesCollection = db.collection('expenses')
 
-    // Aggregate stats
-    const totalLeads = await leadsCollection.countDocuments({ clientId })
-    const wonLeads = await leadsCollection.countDocuments({ clientId, status: 'won' })
-    const lostLeads = await leadsCollection.countDocuments({ clientId, status: 'lost' })
-    const newLeads = await leadsCollection.countDocuments({ clientId, status: 'new' })
+    // No clientId filter needed - entire database is for this client
+    const totalLeads = await leadsCollection.countDocuments({})
+    const wonLeads = await leadsCollection.countDocuments({ status: 'won' })
+    const lostLeads = await leadsCollection.countDocuments({ status: 'lost' })
+    const newLeads = await leadsCollection.countDocuments({ status: 'new' })
 
-    const totalProjects = await projectsCollection.countDocuments({ clientId })
-    const activeProjects = await projectsCollection.countDocuments({ clientId, status: 'in_progress' })
-    const completedProjects = await projectsCollection.countDocuments({ clientId, status: 'completed' })
+    const totalProjects = await projectsCollection.countDocuments({})
+    const activeProjects = await projectsCollection.countDocuments({ status: 'in_progress' })
+    const completedProjects = await projectsCollection.countDocuments({ status: 'completed' })
 
-    const totalTasks = await tasksCollection.countDocuments({ clientId })
-    const completedTasks = await tasksCollection.countDocuments({ clientId, status: 'completed' })
+    const totalTasks = await tasksCollection.countDocuments({})
+    const completedTasks = await tasksCollection.countDocuments({ status: 'completed' })
     const overdueTasks = await tasksCollection.countDocuments({ 
-      clientId, 
       status: { $ne: 'completed' },
       dueDate: { $lt: new Date() }
     })
 
     // Pipeline value
     const pipelineAgg = await leadsCollection.aggregate([
-      { $match: { clientId, status: { $nin: ['won', 'lost'] } } },
+      { $match: { status: { $nin: ['won', 'lost'] } } },
       { $group: { _id: null, total: { $sum: '$value' } } }
     ]).toArray()
     const pipelineValue = pipelineAgg[0]?.total || 0
 
     // Won value
     const wonValueAgg = await leadsCollection.aggregate([
-      { $match: { clientId, status: 'won' } },
+      { $match: { status: 'won' } },
       { $group: { _id: null, total: { $sum: '$value' } } }
     ]).toArray()
     const wonValue = wonValueAgg[0]?.total || 0
 
     // Total expenses
     const expenseAgg = await expensesCollection.aggregate([
-      { $match: { clientId } },
       { $group: { _id: null, total: { $sum: '$amount' } } }
     ]).toArray()
     const totalExpenses = expenseAgg[0]?.total || 0
 
     // Monthly data for charts
     const monthlyLeads = await leadsCollection.aggregate([
-      { $match: { clientId } },
       { $group: {
         _id: { $dateToString: { format: '%Y-%m', date: '$createdAt' } },
         count: { $sum: 1 },
@@ -70,7 +69,6 @@ export async function GET(request) {
     ]).toArray()
 
     const monthlyExpenses = await expensesCollection.aggregate([
-      { $match: { clientId } },
       { $group: {
         _id: { $dateToString: { format: '%Y-%m', date: '$date' } },
         total: { $sum: '$amount' }
@@ -81,19 +79,16 @@ export async function GET(request) {
 
     // Lead sources distribution
     const leadSources = await leadsCollection.aggregate([
-      { $match: { clientId } },
       { $group: { _id: '$source', count: { $sum: 1 } } }
     ]).toArray()
 
     // Lead status distribution
     const leadStatuses = await leadsCollection.aggregate([
-      { $match: { clientId } },
       { $group: { _id: '$status', count: { $sum: 1 }, value: { $sum: '$value' } } }
     ]).toArray()
 
     // Expense categories
     const expenseCategories = await expensesCollection.aggregate([
-      { $match: { clientId } },
       { $group: { _id: '$category', total: { $sum: '$amount' } } }
     ]).toArray()
 

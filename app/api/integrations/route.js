@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection } from '@/lib/db/mongodb'
-import { getAuthUser, requireAuth } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireAuth, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -12,10 +12,12 @@ export async function GET(request) {
     const user = getAuthUser(request)
     requireAuth(user)
 
-    const integrationsCollection = await getCollection('integrations')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const integrationsCollection = db.collection('integrations')
     
     const integrations = await integrationsCollection
-      .find({ clientId: user.clientId })
+      .find({})
       .toArray()
 
     return successResponse(sanitizeDocuments(integrations))
@@ -36,7 +38,9 @@ export async function POST(request) {
     const body = await request.json()
     const { action, integrationType, config } = body
 
-    const integrationsCollection = await getCollection('integrations')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const integrationsCollection = db.collection('integrations')
 
     if (action === 'generate-webhook') {
       // Generate a unique webhook URL for the client with specific integration type
@@ -124,8 +128,10 @@ export async function DELETE(request) {
       return errorResponse('Integration ID is required', 400)
     }
 
-    const integrationsCollection = await getCollection('integrations')
-    const result = await integrationsCollection.deleteOne({ id, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const integrationsCollection = db.collection('integrations')
+    const result = await integrationsCollection.deleteOne({ id })
 
     if (result.deletedCount === 0) {
       return errorResponse('Integration not found', 404)
