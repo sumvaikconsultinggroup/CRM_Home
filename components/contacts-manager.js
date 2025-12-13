@@ -702,23 +702,24 @@ const ContactDetailDialog = ({ contact, open, onOpenChange, onEdit }) => {
             </div>
           </div>
 
-        {contact.tags && contact.tags.length > 0 && (
-          <div className="py-2">
-            <Label className="text-xs text-muted-foreground">Tags</Label>
-            <div className="flex flex-wrap gap-2 mt-1">
-              {contact.tags.map(tag => (
-                <Badge key={tag} variant="secondary">{tag}</Badge>
-              ))}
+          {contact.tags && contact.tags.length > 0 && (
+            <div className="py-2">
+              <Label className="text-xs text-muted-foreground">Tags</Label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {contact.tags.map(tag => (
+                  <Badge key={tag} variant="secondary">{tag}</Badge>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {contact.notes && (
-          <div className="py-2">
-            <Label className="text-xs text-muted-foreground">Notes</Label>
-            <p className="mt-1 text-sm bg-slate-50 p-3 rounded-lg">{contact.notes}</p>
-          </div>
-        )}
+          {contact.notes && (
+            <div className="py-2">
+              <Label className="text-xs text-muted-foreground">Notes</Label>
+              <p className="mt-1 text-sm bg-slate-50 p-3 rounded-lg">{contact.notes}</p>
+            </div>
+          )}
+        </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => onOpenChange(false)}>Close</Button>
