@@ -280,6 +280,7 @@ export function Integrations({ client }) {
   const openSetup = (integration) => {
     setSelectedIntegration(integration)
     setWebhookUrl('')
+    setWebhookSecret('')
     setApiKey('')
     setShowSetupDialog(true)
   }
