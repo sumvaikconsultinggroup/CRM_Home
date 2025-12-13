@@ -211,6 +211,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [productSortBy, setProductSortBy] = useState('createdAt')
+  const [productSortDir, setProductSortDir] = useState('desc')
 
   // API Headers
   const headers = {
