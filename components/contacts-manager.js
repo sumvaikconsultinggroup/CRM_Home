@@ -640,7 +640,7 @@ export function ContactsManager() {
               className="pl-10"
             />
           </div>
-          <Select value={tagFilter} onValueChange={setTagFilter}>
+          <Select value={tagFilter || 'all'} onValueChange={(v) => setTagFilter(v === 'all' ? '' : v)}>
             <SelectTrigger className="w-40">
               <SelectValue placeholder="All Tags" />
             </SelectTrigger>
