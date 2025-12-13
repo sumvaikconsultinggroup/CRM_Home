@@ -2070,6 +2070,9 @@ export default function App() {
   const handleLoginSuccess = (user, client) => {
     setUser(user)
     setClient(client)
+    // Store auth token state
+    const token = localStorage.getItem('token')
+    if (token) setAuthToken(token)
     // Store in localStorage for sub-pages
     if (user) localStorage.setItem('user', JSON.stringify(user))
     if (client) localStorage.setItem('client', JSON.stringify(client))
