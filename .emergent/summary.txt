@@ -1,0 +1,201 @@
+<analysis>
+
+**original_problem_statement:**
+The user initially requested to fix modules that were not appearing in the client and super admin dashboards, and to upgrade the basic integrations system to an advanced one with separate webhooks for each service (Zapier, Pabbly, Whatsapp, Tally, Google sheet).
+
+This was followed by a major feature request to build a completely dynamic, ERP-like Wooden Flooring module with features like inventory, projects, quotations, and more, to be better than SAP or ZOHO.
+
+Further feedback included adding backend-driven sample data, fixing navigation bugs, and overhauling the Calendar to include multiple views and a dedicated backend API.
+
+Most recently, the user mandated a critical architectural change to implement a multi-tenant system where each client's data is completely isolated in its own separate MongoDB database to prevent data overlapping. This includes generating a new unique 6-digit random  prefixed Client ID for each client.
+
+**User's preferred language**: English
+
+**what currently exists?**
+The application is a full-stack Next.js app that has just undergone the beginning of a major architectural shift to a multi-tenant (database-per-client) model.
+- **Multi-Tenancy Migration:** A migration script has been run. A main  database now only stores  and . Each client now has their own dedicated database (e.g., ) and a new unique  format (). The authentication utility () has been updated to embed the client's  into the JWT upon login. **However, the API endpoints have not yet been updated to use this new system, meaning most of the application's data-access functionality is currently broken.**
+- **Wooden Flooring Module:** A comprehensive, ERP-like module has been built with a rich frontend () and over 10 dedicated backend APIs for features like a data-driven dashboard, inventory, customers, projects (Kanban view), quotations, orders, invoices, vendors, and reports. It has been seeded with sample data.
+- **Integrations:** An advanced integration system is in place with dedicated, functional webhook endpoints under  for Zapier, Pabbly, WhatsApp, Tally, and Google Sheets. The frontend UI allows generating and viewing unique webhook URLs and secrets for each.
+- **Calendar:** The calendar feature has been completely overhauled with a new dedicated backend API (). The frontend component () now supports Month, Week, and List views, shows event details in a dialog, and is populated with sample data.
+- **Bug Fixes:** The original issue of modules not appearing has been fixed. The team chat UI has been improved to parse and display attachment file names (though file upload is not implemented).
+
+**Last working item**:
+    - Last item agent was working: Implementing a multi-tenant architecture with database-per-client data isolation. The agent created the core multitenancy utility () and a migration script (), successfully ran the migration to create separate databases for existing clients, and updated the authentication logic () to include the client's database name in the JWT. The agent was just about to start the critical task of refactoring all API endpoints to use this new tenant-specific database connection.
+    - Status: IN PROGRESS
+    - Agent Testing Done: Y (The migration script execution was verified.)
+    - Which testing method agent to use? backend testing agent (This is a critical backend-only change. After all APIs are refactored, the backend testing agent must be used to perform a full regression test. Following that, a full manual or frontend testing agent check will be needed to confirm the UI is functional.)
+    - User Testing Done: N
+
+**All Pending/In progress Issue list**:
+  - Issue 1: Complete the multi-tenancy migration by refactoring all API endpoints (P0 - HIGHEST, BLOCKER)
+  - Issue 2: Mee AI integration is non-functional and uses a mocked fallback response (P1)
+  - Issue 3: The Notes tab functionality requires user verification after the Calendar component was completely overwritten (P2)
+  - Issue 4: A comprehensive navigation check across the entire CRM is pending (P3)
+  
+  Issues Detail:
+  - Issue 1: 
+     - **Description**: The application's data layer has been restructured for multi-tenancy, but the API routes still point to the old, single-database model. This leaves the application in a non-functional state. Every API route that accesses data (leads, projects, inventory, calendar, etc.) must be updated.
+     - **Attempted fixes**: The foundational work is done (migration, auth token update). The next step is the implementation across all APIs.
+     - **Next debug checklist**: 
+        1.  Open every file in .
+        2.  At the beginning of each request handler (e.g., , ), import and call the  function from  to get the client-specific database connection.
+        3.  Replace all instances of  with  where  is the object returned from .
+        4.  Start with  and proceed methodically through all other routes.
+     - **Why fix this issue and what will be achieved with the fix?**: This is a critical blocker. Fixing it will make the application functional again and fulfill the user's core requirement for strict data isolation between clients.
+     - **Status**:  IN PROGRESS
+     - **Is recurring issue?** N
+     - **Should Test frontend/backend/both after fix?** backend
+     - **Blocked on other issue**: None.
+  - Issue 2: 
+     - **Description**: The Mee AI assistant API at  is still using a hardcoded fallback response because the connection to the live LLM provider is broken. This issue has carried over from a previous session.
+     - **Attempted fixes**: In a previous session, different base URLs were tried. The current implementation uses a  block to return a mocked response.
+     - **Next debug checklist**: 
+        1. Call the  agent to get a **verified** playbook for using  with the .
+        2. Update  with the correct API call logic.
+        3. Remove the fallback mocking.
+     - **Why fix this issue and what will be achieved with the fix?**: This is a core enterprise feature. Fixing it will enable the AI assistant as intended.
+     - **Status**:  NOT STARTED
+     - **Is recurring issue?** Y
+     - **Should Test frontend/backend/both after fix?** backend
+     - **Blocked on other issue**: Issue 1 (The  API will also need to be updated for multi-tenancy if it stores chat history).
+  - Issue 3: 
+     - **Description**: The user previously reported the Notes tab was not clickable. The agent has since completely overwritten the  component with a new design that includes a Calendar / Notes toggle. The functionality of this new toggle has not been explicitly tested.
+     - **Attempted fixes**: The entire component was replaced.
+     - **Next debug checklist**: After Issue 1 is resolved, log in as a client, navigate to the Calendar, and verify that clicking the Notes part of the toggle correctly switches the view to the notes interface.
+     - **Why fix this issue and what will be achieved with the fix?**: This will confirm that the overhauled component meets the user's original requirement.
+     - **Status**:  USER VERIFICATION PENDING
+     - **Is recurring issue?** Y
+     - **Should Test frontend/backend/both after fix?** frontend
+     - **Blocked on other issue**: Issue 1.
+  - Issue 4: 
+     - **Description**: The user requested a check of all navigation paths in the CRM for both super admin and client portals. The agent fixed one specific Back to Dashboard button, but a full audit is still needed.
+     - **Attempted fixes**: One button was fixed in .
+     - **Next debug checklist**: Once the app is functional (after Issue 1), systematically click through all sidebar links, buttons, and navigation elements in both the client and super admin portals to ensure they lead to the correct pages.
+     - **Why fix this issue and what will be achieved with the fix?**: Ensures a smooth and bug-free user experience.
+     - **Status**:  NOT STARTED
+     - **Is recurring issue?** N
+     - **Should Test frontend/backend/both after fix?** frontend
+     - **Blocked on other issue**: Issue 1.
+
+**In progress Task List**:
+- There are no other tasks in progress besides the main blocking issue of completing the multi-tenancy migration.
+
+**Upcoming and Future Tasks**
+    Upcoming Tasks:
+    - **P1:** Implement real WhatsApp integration for customer updates using the new webhook infrastructure.
+    - **P2:** Build out the remaining modules (Kitchens, Tiles, etc.) with the same dynamic, ERP-like functionality as the Wooden Flooring module, following the new multi-tenant architecture.
+    - **P3:** Enhance the Expenses module to be Advanced as per the user's request.
+
+    Future Tasks:
+    - **P2:** Enhance Team Chat to use webhooks for real-time messaging, avoiding local DB storage.
+    - **P3:** Integrate a real payment gateway (Stripe or Razorpay).
+
+**Completed work in this session**
+- **Architecture: Multi-Tenancy Foundation:** Initiated a major migration to a database-per-client architecture. Created utilities, a migration script, executed the migration, and updated JWT authentication.
+- **Feature: Wooden Flooring ERP Module:** Built a complete, dynamic module from scratch with 10+ backend APIs and a rich frontend for a dashboard, inventory, projects (Kanban), customers, and more.
+- **Feature: Advanced Integrations:** Architected and implemented a new system with dedicated webhook endpoints for Zapier, Pabbly, WhatsApp, Tally, and Google Sheets.
+- **Feature: Enhanced Calendar:** Overhauled the calendar with a new backend API, multiple views (Month, Week, List), and a detailed event-view dialog.
+- **Data: Backend-driven Sample Data:** Seeded the Wooden Flooring module and the Calendar with sample data loaded from the backend to demonstrate functionality.
+- **Bug Fix: Module Visibility:** Resolved the issue where 4 new modules were not appearing in client or admin dashboards by fixing the underlying data.
+- **UI Fix: Team Chat Attachments:** Improved the UI to correctly parse and display attachment filenames within chat messages.
+- **Bug Fix: Navigation:** Fixed the Back to Dashboard button in the Wooden Flooring module.
+
+**Earlier issues found/mentioned but not fixed**
+   - None, all known issues are captured in the pending list.
+
+**Known issue recurrence from previous fork**
+  - Mee AI integration being non-functional and the Notes tab issue were both carried over from the previous fork.
+
+**Code Architecture**
+
+
+**Key Technical Concepts**
+- **Frontend Framework:** Next.js (App Router), React
+- **UI:** Tailwind CSS, shadcn/ui, Recharts, dnd-kit
+- **Backend:** Next.js API Routes
+- **Database:** MongoDB
+- **Architecture:**
+    - **Multi-Tenancy (Database-per-Tenant):** The application is in the process of moving to a model where each client has a dedicated MongoDB database for complete data isolation.
+    - **Monolithic Frontend:** The main dashboard is still controlled by a large  file, but new complex features (like the flooring module) are being built as self-contained components.
+- **Authentication:** JWT-based. The token has been modified to include the  for the logged-in client, which is essential for the new multi-tenant architecture.
+
+**key DB schema**
+  - ** (Main DB):**
+    - : Stores client metadata. Now includes the new  (e.g., ) and a  (e.g., ) field for each client.
+    - : Stores login credentials.
+  - ** (Tenant DBs):**
+    - Each client now has their own database containing all their operational data, including , , , , and all new collections for the Wooden Flooring module (, , , etc.).
+
+**changes in tech stack**
+  - No new libraries were added, but the fundamental database architecture has been completely changed.
+
+**All files of reference**
+- : **CRITICAL.** Contains the core logic for connecting to a client's specific database. All API routes must use this.
+- : **CRITICAL.** Manages JWT creation and verification. Now embeds the  in the token, which is used by the multi-tenancy utility.
+- **All files in **: **CRITICAL.** Every API route file needs to be refactored to use the new multi-tenant database connection logic.
+- : The large, self-contained ERP module component.
+- : The page that renders the new flooring module.
+- : The completely overhauled calendar component.
+- : The heavily modified frontend for managing integrations.
+
+**Areas that need refactoring**:
+- **All API routes** are the immediate and mandatory subject for refactoring to complete the multi-tenancy migration.
+
+**key api endpoints**
+- : Now returns a JWT containing the client's specific .
+- : A new set of 5 endpoints for incoming webhooks.
+- : A suite of over 10 new endpoints for the ERP module.
+- : A new, more advanced API for calendar events.
+- **(Needs Update):** All existing endpoints (, , etc.) must be updated for multi-tenancy.
+
+**Critical Info for New Agent**
+- **IMMEDIATE PRIORITY: THE APPLICATION IS IN A BROKEN, MID-MIGRATION STATE.** Your first and only task is to complete the multi-tenancy migration. The database structure has changed, but the API endpoints that read/write data have not been updated.
+- **HOW TO FIX:** You must refactor **every single API route** in  to use the new tenant-specific database connection. Use the  function from  at the start of each API handler to get the correct database object, and then use that object to access collections (e.g., ).
+- **AUTHENTICATION CONTEXT:** The authentication middleware now decodes the JWT and attaches a  object to the  object, which includes the vital  property. The  function relies on this.
+- **Start with ** and methodically update all other data-accessing API routes before doing anything else.
+- After the refactor, perform extensive testing using the  to ensure all APIs work correctly with the new isolated data model.
+
+**documents created in this job**
+  - None.
+
+**Last 10 User Messages and any pending user messages**
+- **User (Msg 206):** Provided a 4-point feedback list: 1. Add sample data (DONE). 2. Fix Back to dashboard button (DONE). 3. Check all CRM navigation (PENDING). 4. Fix/Enhance Calendar (DONE).
+- **User (Msg 207):** Agent confirms it will work on the 4 points.
+- **User (Msg 208-242):** Agent implements all 4 points and shows successful results via screenshots.
+- **User (Msg 243):** **CRITICAL REQUEST.** User requests a major architectural change to a multi-tenant system with a separate database for each client and a new Client ID format to ensure strict data isolation.
+- **User (Msg 244):** Agent proposes a plan for multi-tenancy.
+- **User (Msg 245):** Agent asks for user confirmation.
+- **User (Msg 246):** User confirms the multi-tenancy migration plan: Yes Migrate, Yes [generate new IDs], make sure no client can access other clients database.
+- **User (Msg 247):** Agent begins implementation of the multi-tenancy architecture.
+- **(No more user messages, agent is in the middle of implementation)**
+
+**Project Health Check:**
+- **Broken:**
+    - **All data-related functionality.** The application is in a non-functional state due to the incomplete multi-tenancy migration. API routes have not been updated to connect to the new per-client databases.
+    - Live LLM connection for the Mee AI assistant.
+- **Mocked:**
+    - API responses from  are hardcoded fallbacks.
+
+**3rd Party Integrations**
+- **Clerk (Authentication)**
+- **@dnd-kit (Drag and Drop)**
+- **papaparse (CSV Parsing)**
+- **Framer Motion (Animation)**
+- **Recharts (Charting Library)**
+- **@emergentmethods/emergent-js (AI/LLM Integration)** - uses Emergent LLM Key.
+- **(Webhook Support Added):** Zapier, Pabbly Connect, WhatsApp Business API, Tally, Google Sheets.
+
+**Testing status**
+  - Testing agent used after significant changes: NO (Not yet, but required after the current refactor).
+  - Troubleshoot agent used after agent stuck in loop: NO
+  - Test files created: []
+  - Known regressions: [The entire data layer is currently non-functional due to the in-progress migration.]
+
+**Credentials to test flow:**
+- **Super Admin:**  / 
+- **Enterprise Client:**  /  (The client ID for this user has been changed during migration, e.g., to . The login email remains the same).
+
+**What agent forgot to execute**
+- The agent is in the middle of a critical task, so nothing has been forgotten yet, but the work is dangerously incomplete. The highest priority is to finish the API refactoring for multi-tenancy.
+
+</analysis>
