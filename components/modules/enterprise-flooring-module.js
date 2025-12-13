@@ -5407,6 +5407,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   </p>
                 </div>
               ) : (
+              <>
                 <div className="border rounded-lg p-3 max-h-64 overflow-y-auto">
                   {products.length > 0 ? (
                     <div className="space-y-2">
