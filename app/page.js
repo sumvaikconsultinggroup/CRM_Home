@@ -1159,7 +1159,7 @@ function ClientDashboard({ user, client, onLogout }) {
                                   >
                                     <ExternalLink className="h-4 w-4 mr-1" /> Open Module
                                   </Button>
-                                ) : module.id === 'doors-windows' ? (
+                                ) : (module.id === 'doors-windows' || module.id === 'doors-and-windows') ? (
                                   <Button 
                                     size="sm" 
                                     className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
