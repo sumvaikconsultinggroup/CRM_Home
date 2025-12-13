@@ -1041,13 +1041,33 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               />
             </div>
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="w-[160px]">
+              <SelectTrigger className="w-[220px]">
                 <SelectValue placeholder="Category" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All Categories</SelectItem>
-                {Object.entries(FlooringCategories).map(([key, { label }]) => (
-                  <SelectItem key={key} value={key}>{label}</SelectItem>
+                {flatCategories.map(c => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {`${'— '.repeat(c.depth)}${c.name}`}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            <Select value={`${productSortBy}__${productSortDir}`} onValueChange={(v) => {
+              const [by, dir] = v.split('__')
+              setProductSortBy(by)
+              setProductSortDir(dir)
+            }}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue placeholder="Sort" />
+              </SelectTrigger>
+              <SelectContent>
+                {sortOptions.map(opt => (
+                  <SelectItem key={`${opt.value}__desc`} value={`${opt.value}__desc`}>{opt.label} (desc)</SelectItem>
+                ))}
+                {sortOptions.map(opt => (
+                  <SelectItem key={`${opt.value}__asc`} value={`${opt.value}__asc`}>{opt.label} (asc)</SelectItem>
                 ))}
               </SelectContent>
             </Select>
