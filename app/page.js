@@ -724,7 +724,7 @@ function ClientDashboard({ user, client, onLogout }) {
           <EnterpriseFlooringModule 
             client={client}
             user={user}
-            token={token}
+            token={authToken}
           />
         </div>
       </div>
