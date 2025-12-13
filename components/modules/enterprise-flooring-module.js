@@ -838,6 +838,32 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }
 
+  // Delete quote
+  const handleDeleteQuote = async (quoteId) => {
+    if (!confirm('Are you sure you want to delete this quote?')) return
+    
+    try {
+      setLoading(true)
+      const res = await fetch('/api/flooring/enhanced/quotes', {
+        method: 'DELETE',
+        headers,
+        body: JSON.stringify({ id: quoteId })
+      })
+      
+      if (res.ok) {
+        toast.success('Quote deleted')
+        fetchQuotes()
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to delete quote')
+      }
+    } catch (error) {
+      toast.error('An error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleInvoiceAction = async (invoiceId, action, data = {}) => {
     try {
       setLoading(true)
