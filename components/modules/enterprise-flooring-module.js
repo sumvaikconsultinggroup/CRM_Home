@@ -1126,7 +1126,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                         <p className="text-xs text-slate-400">{product.pack?.coverageSqftPerBox || product.pricing?.sqftPerBox || 0} sqft/box</p>
                       </div>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'view_product', data: product })}>
+                        <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'product', data: product })}>
                           <Eye className="h-4 w-4" />
                         </Button>
                         <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'product', data: product })}>
