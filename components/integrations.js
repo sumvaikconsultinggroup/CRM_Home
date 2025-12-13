@@ -202,6 +202,7 @@ export function Integrations({ client }) {
   const [selectedIntegration, setSelectedIntegration] = useState(null)
   const [showSetupDialog, setShowSetupDialog] = useState(false)
   const [webhookUrl, setWebhookUrl] = useState('')
+  const [webhookSecret, setWebhookSecret] = useState('')
   const [apiKey, setApiKey] = useState('')
   const [copied, setCopied] = useState(false)
   const [connectionConfig, setConnectionConfig] = useState({})
