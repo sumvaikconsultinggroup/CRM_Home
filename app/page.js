@@ -49,6 +49,12 @@ import { EnhancedSuperAdminOverview } from '@/components/enhanced-super-admin-ov
 import { EnterpriseClientManagement } from '@/components/enterprise-client-management'
 import { MeeAgent, MeePreviewCard } from '@/components/mee-agent'
 import { ContactsManager } from '@/components/contacts-manager'
+import { SuperAdminDashboard } from '@/components/super-admin/dashboard'
+import { ClientsManagement } from '@/components/super-admin/clients-management'
+import { AnalyticsDashboard } from '@/components/super-admin/analytics'
+import { CommunicationHub } from '@/components/super-admin/communication-hub'
+import { SecurityCenter } from '@/components/super-admin/security-center'
+import { BillingCenter } from '@/components/super-admin/billing-center'
 
 // Animation variants
 const fadeIn = {
