@@ -108,8 +108,9 @@ const INTEGRATIONS = [
     popular: true,
     color: 'from-green-500 to-green-600',
     hasDirectConnect: true,
-    requiredFields: ['phoneNumberId', 'accessToken', 'businessAccountId'],
-    features: ['Lead notifications', 'Follow-up messages', 'Template messages', 'Quick replies', 'Media sharing']
+    webhookEndpoint: '/api/webhooks/whatsapp',
+    requiredFields: ['phoneNumberId', 'accessToken', 'businessAccountId', 'verifyToken'],
+    features: ['Lead notifications', 'Follow-up messages', 'Template messages', 'Quick replies', 'Media sharing', 'Auto lead capture']
   },
   {
     id: 'email-smtp',
