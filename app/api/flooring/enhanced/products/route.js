@@ -17,9 +17,12 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
     const category = searchParams.get('category')
+    const categoryId = searchParams.get('categoryId')
     const brand = searchParams.get('brand')
     const search = searchParams.get('search')
     const status = searchParams.get('status')
+    const sortBy = searchParams.get('sortBy')
+    const sortDir = (searchParams.get('sortDir') || 'desc').toLowerCase() === 'asc' ? 1 : -1
     const limit = parseInt(searchParams.get('limit')) || 100
     const skip = parseInt(searchParams.get('skip')) || 0
 
