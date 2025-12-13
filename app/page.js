@@ -595,7 +595,8 @@ function ClientDashboard({ user, client, onLogout }) {
         api.getTasks(),
         api.getExpenses(),
         api.getUsers(),
-        api.getClientModules()
+        api.getClientModules(),
+        api.getContacts()
       ])
       setStats(statsData)
       setLeads(leadsData)
@@ -604,6 +605,7 @@ function ClientDashboard({ user, client, onLogout }) {
       setExpenses(expensesData)
       setUsers(usersData)
       setModules(modulesData)
+      setContacts(contactsData?.contacts || [])
     } catch (error) {
       toast.error('Failed to load dashboard')
     } finally {
