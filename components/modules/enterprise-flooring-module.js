@@ -4795,7 +4795,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       try {
         setLoading(true)
 
-        const selectedItems = Object.values(selectedProducts).filter(p => p.selected)
+        const selectedItems = Object.values(measurementProducts).filter(p => p.selected)
         if (selectedItems.length === 0) {
           toast.error('Please select at least one product for the quote')
           return
