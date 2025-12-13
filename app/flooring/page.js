@@ -952,6 +952,33 @@ export default function FlooringModule({ onBack, client, user, onUpgrade }) {
             )}
           </AnimatePresence>
         </main>
+
+        {/* Mee AI Agent Panel */}
+        <AnimatePresence>
+          {showMeeAgent && (
+            <motion.div
+              initial={{ opacity: 0, x: 20, width: 0 }}
+              animate={{ opacity: 1, x: 0, width: 380 }}
+              exit={{ opacity: 0, x: 20, width: 0 }}
+              className="border-l bg-white/60 backdrop-blur-xl overflow-hidden"
+            >
+              <div className="p-4 h-[calc(100vh-73px)]">
+                <FlooringMeeAgent
+                  client={client}
+                  user={user}
+                  moduleData={{
+                    products: products.products,
+                    inventory: inventory.inventory,
+                    quotations: quotations.quotations,
+                    projects: projects.projects
+                  }}
+                  onUpgrade={onUpgrade}
+                  onClose={() => setShowMeeAgent(false)}
+                />
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Dialogs */}
