@@ -4735,7 +4735,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           return false
         }
 
-        const hasSelectedProducts = Object.values(selectedProducts).some(p => p.selected)
+        const hasSelectedProducts = Object.values(measurementProducts).some(p => p.selected)
         
         if (blockInventory && hasSelectedProducts) {
           const { allAvailable, insufficientItems } = checkInventoryAvailability()
