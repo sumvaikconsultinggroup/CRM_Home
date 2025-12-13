@@ -768,10 +768,10 @@ function ClientDashboard({ user, client, onLogout }) {
             <Button variant="outline" size="icon" onClick={fetchData}>
               <RefreshCw className="h-4 w-4" />
             </Button>
-            {/* Client Code Badge */}
-            {client?.clientCode && (
+            {/* Client ID Badge */}
+            {(client?.clientId || client?.clientCode) && (
               <Badge variant="secondary" className="px-3 py-1 bg-slate-100 text-slate-700 font-mono">
-                {client.clientCode}
+                {client.clientId || client.clientCode}
               </Badge>
             )}
             <Badge variant="outline" className="px-3 py-1">
