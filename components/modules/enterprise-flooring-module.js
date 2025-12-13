@@ -2144,6 +2144,11 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       }
       
       await handleUpdateProjectStatus(selectedProject.id, 'material_ready')
+      // Update local state immediately
+      setSelectedProject(prev => ({
+        ...prev,
+        status: 'material_ready'
+      }))
       toast.success('Materials are ready for dispatch. Inventory remains blocked.')
     }
 
