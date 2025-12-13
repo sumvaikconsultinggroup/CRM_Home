@@ -3129,6 +3129,71 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             actionLabel="Add Room"
           />
         )}
+
+        {/* B2C Workflow Actions */}
+        {rooms.length > 0 && (
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-sm">B2C Workflow Progress</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="flex items-center gap-2 mb-4">
+                {[
+                  { status: 'measurement_scheduled', label: 'Scheduled', icon: Calendar },
+                  { status: 'measurement_done', label: 'Measured', icon: Ruler },
+                  { status: 'quote_pending', label: 'Quote', icon: FileText },
+                  { status: 'invoice_sent', label: 'Invoice', icon: Receipt },
+                  { status: 'installation_scheduled', label: 'Install', icon: Wrench },
+                  { status: 'completed', label: 'Complete', icon: CheckCircle2 }
+                ].map((step, idx) => {
+                  const statusOrder = ['pending', 'measurement_scheduled', 'measurement_done', 'quote_pending', 'quote_sent', 'quote_approved', 'invoice_sent', 'payment_received', 'installation_scheduled', 'installation_in_progress', 'completed']
+                  const currentIdx = statusOrder.indexOf(selectedProject.status)
+                  const stepIdx = statusOrder.indexOf(step.status)
+                  const isActive = currentIdx >= stepIdx
+                  const Icon = step.icon
+                  return (
+                    <div key={step.status} className="flex items-center gap-2">
+                      <div className={`p-2 rounded-full ${isActive ? 'bg-green-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                        <Icon className="h-4 w-4" />
+                      </div>
+                      <span className={`text-xs ${isActive ? 'text-green-600 font-medium' : 'text-slate-400'}`}>{step.label}</span>
+                      {idx < 5 && <div className={`w-8 h-0.5 ${isActive ? 'bg-green-600' : 'bg-slate-200'}`} />}
+                    </div>
+                  )
+                })}
+              </div>
+              
+              {/* Action Buttons based on status */}
+              <div className="flex gap-3 pt-3 border-t">
+                {selectedProject.status === 'measurement_scheduled' && (
+                  <Button 
+                    className="bg-cyan-600 hover:bg-cyan-700"
+                    onClick={async () => {
+                      await handleUpdateProjectStatus(selectedProject.id, 'measurement_done')
+                      toast.success('Measurements completed!')
+                    }}
+                  >
+                    <CheckCircle2 className="h-4 w-4 mr-2" /> Mark Measurement Done
+                  </Button>
+                )}
+                {selectedProject.status === 'measurement_done' && (
+                  <Button 
+                    className="bg-emerald-600 hover:bg-emerald-700"
+                    onClick={() => {
+                      handleUpdateProjectStatus(selectedProject.id, 'quote_pending')
+                      handleSendForQuotation(selectedProject)
+                    }}
+                  >
+                    <FileText className="h-4 w-4 mr-2" /> Send for Quote
+                  </Button>
+                )}
+                {['quote_sent', 'quote_approved', 'invoice_sent', 'payment_received'].includes(selectedProject.status) && (
+                  <Badge className="py-2 px-4">{ProjectStatusB2C[selectedProject.status]?.label}</Badge>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        )}
       </div>
     )
   }
