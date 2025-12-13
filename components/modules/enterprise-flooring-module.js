@@ -589,6 +589,35 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }
 
+  // Handle Project Status Update
+  const handleUpdateProjectStatus = async (projectId, newStatus) => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/flooring/enhanced/projects', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ 
+          id: projectId, 
+          action: 'update_status', 
+          status: newStatus,
+          statusNotes: `Status changed to ${newStatus}`
+        })
+      })
+      
+      if (res.ok) {
+        toast.success(`Project status updated to ${ProjectStatus[newStatus]?.label || newStatus}`)
+        fetchProjects()
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to update status')
+      }
+    } catch (error) {
+      toast.error('An error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleSaveQuote = async (quoteData) => {
     try {
       setLoading(true)
