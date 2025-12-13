@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection } from '@/lib/db/mongodb'
-import { getAuthUser, requireAuth } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireAuth, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -16,15 +16,17 @@ export async function GET(request) {
     const status = searchParams.get('status')
     const orderId = searchParams.get('id')
 
-    const collection = await getCollection('wf_orders')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_orders')
 
     if (orderId) {
-      const order = await collection.findOne({ id: orderId, clientId: user.clientId })
+      const order = await collection.findOne({ id: orderId })
       if (!order) return errorResponse('Order not found', 404)
       return successResponse(sanitizeDocument(order))
     }
 
-    let query = { clientId: user.clientId }
+    let query = {}
     if (status) query.status = status
 
     const orders = await collection.find(query).sort({ createdAt: -1 }).toArray()
@@ -55,15 +57,16 @@ export async function POST(request) {
     requireAuth(user)
 
     const body = await request.json()
-    const collection = await getCollection('wf_orders')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_orders')
 
-    // If converting from quotation
     let orderItems = body.items || []
     let grandTotal = body.grandTotal || 0
 
     if (body.quotationId) {
-      const quotationsCollection = await getCollection('wf_quotations')
-      const quotation = await quotationsCollection.findOne({ id: body.quotationId, clientId: user.clientId })
+      const quotationsCollection = db.collection('wf_quotations')
+      const quotation = await quotationsCollection.findOne({ id: body.quotationId })
       if (quotation) {
         orderItems = [
           ...quotation.lineItems.map(item => ({
@@ -80,27 +83,21 @@ export async function POST(request) {
       id: uuidv4(),
       clientId: user.clientId,
       orderNumber: `WFO-${Date.now().toString().slice(-8)}`,
-      // References
       quotationId: body.quotationId || null,
       projectId: body.projectId || null,
-      // Customer
       customerId: body.customerId,
       customerName: body.customerName || '',
       customerEmail: body.customerEmail || '',
       customerPhone: body.customerPhone || '',
-      // Delivery
       deliveryAddress: body.deliveryAddress || '',
       deliveryCity: body.deliveryCity || '',
       deliveryPincode: body.deliveryPincode || '',
       deliveryDate: body.deliveryDate ? new Date(body.deliveryDate) : null,
-      // Items
       items: orderItems,
-      // Financials
       subtotal: body.subtotal || grandTotal,
       discount: body.discount || 0,
       gstAmount: body.gstAmount || 0,
       grandTotal,
-      // Payments
       paidAmount: parseFloat(body.advanceAmount) || 0,
       balanceAmount: grandTotal - (parseFloat(body.advanceAmount) || 0),
       payments: body.advanceAmount ? [{
@@ -111,13 +108,10 @@ export async function POST(request) {
         date: new Date(),
         type: 'advance'
       }] : [],
-      // Status
       status: 'pending',
-      // Installation
       installationDate: body.installationDate ? new Date(body.installationDate) : null,
       installationTeam: body.installationTeam || [],
       installationStatus: 'not_started',
-      // Tracking
       timeline: [{
         status: 'pending',
         date: new Date(),
@@ -132,9 +126,8 @@ export async function POST(request) {
 
     await collection.insertOne(order)
 
-    // Update quotation status if converting
     if (body.quotationId) {
-      const quotationsCollection = await getCollection('wf_quotations')
+      const quotationsCollection = db.collection('wf_quotations')
       await quotationsCollection.updateOne(
         { id: body.quotationId },
         { $set: { status: 'accepted', acceptedAt: new Date(), orderId: order.id } }
@@ -159,12 +152,13 @@ export async function PUT(request) {
 
     if (!id) return errorResponse('Order ID is required', 400)
 
-    const collection = await getCollection('wf_orders')
-    const order = await collection.findOne({ id, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_orders')
+    const order = await collection.findOne({ id })
     
     if (!order) return errorResponse('Order not found', 404)
 
-    // Handle payment
     if (action === 'add_payment') {
       const payment = {
         id: uuidv4(),
@@ -186,7 +180,6 @@ export async function PUT(request) {
       }]
     }
 
-    // Handle status change
     if (updates.status && updates.status !== order.status) {
       updates.timeline = [...(order.timeline || []), {
         status: updates.status,
@@ -197,7 +190,7 @@ export async function PUT(request) {
     }
 
     const result = await collection.findOneAndUpdate(
-      { id, clientId: user.clientId },
+      { id },
       { $set: { ...updates, updatedAt: new Date() } },
       { returnDocument: 'after' }
     )
@@ -220,8 +213,10 @@ export async function DELETE(request) {
 
     if (!id) return errorResponse('Order ID is required', 400)
 
-    const collection = await getCollection('wf_orders')
-    const result = await collection.deleteOne({ id, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_orders')
+    const result = await collection.deleteOne({ id })
 
     if (result.deletedCount === 0) return errorResponse('Order not found', 404)
     return successResponse({ message: 'Order deleted successfully' })

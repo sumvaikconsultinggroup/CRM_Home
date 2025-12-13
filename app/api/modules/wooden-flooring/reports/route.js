@@ -1,5 +1,5 @@
-import { getCollection } from '@/lib/db/mongodb'
-import { getAuthUser, requireAuth } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireAuth, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -13,26 +13,23 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url)
     const reportType = searchParams.get('type') || 'overview'
-    const startDate = searchParams.get('startDate') ? new Date(searchParams.get('startDate')) : new Date(new Date().setMonth(new Date().getMonth() - 1))
-    const endDate = searchParams.get('endDate') ? new Date(searchParams.get('endDate')) : new Date()
 
-    const clientId = user.clientId
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
 
     // Fetch all relevant data
     const [inventory, customers, projects, quotations, orders, invoices, vendors] = await Promise.all([
-      (await getCollection('wf_inventory')).find({ clientId }).toArray(),
-      (await getCollection('wf_customers')).find({ clientId }).toArray(),
-      (await getCollection('wf_projects')).find({ clientId }).toArray(),
-      (await getCollection('wf_quotations')).find({ clientId }).toArray(),
-      (await getCollection('wf_orders')).find({ clientId }).toArray(),
-      (await getCollection('wf_invoices')).find({ clientId }).toArray(),
-      (await getCollection('wf_vendors')).find({ clientId }).toArray()
+      db.collection('wf_inventory').find({}).toArray(),
+      db.collection('wf_customers').find({}).toArray(),
+      db.collection('wf_projects').find({}).toArray(),
+      db.collection('wf_quotations').find({}).toArray(),
+      db.collection('wf_orders').find({}).toArray(),
+      db.collection('wf_invoices').find({}).toArray(),
+      db.collection('wf_vendors').find({}).toArray()
     ])
 
-    // Calculate reports based on type
     if (reportType === 'overview') {
       const report = {
-        // Summary Cards
         summary: {
           totalRevenue: invoices.filter(i => i.status === 'paid').reduce((sum, i) => sum + (i.grandTotal || 0), 0),
           pendingPayments: invoices.reduce((sum, i) => sum + (i.balanceAmount || 0), 0),
@@ -41,7 +38,6 @@ export async function GET(request) {
           inventoryValue: inventory.reduce((sum, i) => sum + (i.quantity * i.costPrice || 0), 0),
           lowStockItems: inventory.filter(i => i.quantity <= i.reorderLevel).length
         },
-        // Project Pipeline
         projectPipeline: {
           inquiry: projects.filter(p => p.status === 'inquiry').length,
           siteVisit: projects.filter(p => p.status === 'site_visit').length,
@@ -50,7 +46,6 @@ export async function GET(request) {
           inProgress: projects.filter(p => p.status === 'in_progress').length,
           completed: projects.filter(p => p.status === 'completed').length
         },
-        // Quotation Stats
         quotationStats: {
           total: quotations.length,
           sent: quotations.filter(q => q.status === 'sent').length,
@@ -61,7 +56,6 @@ export async function GET(request) {
             : 0,
           totalValue: quotations.reduce((sum, q) => sum + (q.grandTotal || 0), 0)
         },
-        // Order Stats
         orderStats: {
           total: orders.length,
           pending: orders.filter(o => o.status === 'pending').length,
@@ -70,11 +64,8 @@ export async function GET(request) {
           installed: orders.filter(o => o.status === 'installed').length,
           totalValue: orders.reduce((sum, o) => sum + (o.grandTotal || 0), 0)
         },
-        // Revenue Trends (last 6 months)
         revenueTrends: getMonthlyRevenue(invoices, 6),
-        // Top Products
         topProducts: getTopProducts(orders),
-        // Recent Activity
         recentProjects: projects.slice(0, 5).map(p => ({
           id: p.id,
           projectNumber: p.projectNumber,
@@ -97,12 +88,7 @@ export async function GET(request) {
         },
         byCategory: getCategoryBreakdown(inventory),
         lowStockAlert: inventory.filter(i => i.quantity <= i.reorderLevel).map(i => ({
-          id: i.id,
-          name: i.name,
-          sku: i.sku,
-          quantity: i.quantity,
-          reorderLevel: i.reorderLevel,
-          category: i.category
+          id: i.id, name: i.name, sku: i.sku, quantity: i.quantity, reorderLevel: i.reorderLevel, category: i.category
         })),
         inventoryTurnover: calculateInventoryTurnover(inventory, orders)
       }
@@ -148,13 +134,8 @@ export async function GET(request) {
         },
         byPropertyType: getProjectsByPropertyType(projects),
         projectTimeline: projects.map(p => ({
-          id: p.id,
-          projectNumber: p.projectNumber,
-          customerName: p.customerName,
-          status: p.status,
-          inquiryDate: p.inquiryDate,
-          expectedEndDate: p.expectedEndDate,
-          totalArea: p.totalArea
+          id: p.id, projectNumber: p.projectNumber, customerName: p.customerName, status: p.status,
+          inquiryDate: p.inquiryDate, expectedEndDate: p.expectedEndDate, totalArea: p.totalArea
         }))
       }
       return successResponse(report)
@@ -168,7 +149,6 @@ export async function GET(request) {
   }
 }
 
-// Helper functions
 function getMonthlyRevenue(invoices, months) {
   const result = []
   const now = new Date()
@@ -204,9 +184,7 @@ function getTopProducts(orders) {
     })
   })
   
-  return Object.values(productMap)
-    .sort((a, b) => b.revenue - a.revenue)
-    .slice(0, 10)
+  return Object.values(productMap).sort((a, b) => b.revenue - a.revenue).slice(0, 10)
 }
 
 function getCategoryBreakdown(inventory) {

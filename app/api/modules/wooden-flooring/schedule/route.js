@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection } from '@/lib/db/mongodb'
-import { getAuthUser, requireAuth } from '@/lib/utils/auth'
+import { getClientDb, getMainDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireAuth, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -13,12 +13,14 @@ export async function GET(request) {
     requireAuth(user)
 
     const { searchParams } = new URL(request.url)
-    const month = searchParams.get('month') // Format: YYYY-MM
-    const type = searchParams.get('type') // installation, site_visit, delivery
+    const month = searchParams.get('month')
+    const type = searchParams.get('type')
 
-    const collection = await getCollection('wf_schedule')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_schedule')
 
-    let query = { clientId: user.clientId }
+    let query = {}
     
     if (month) {
       const [year, monthNum] = month.split('-')
@@ -31,8 +33,9 @@ export async function GET(request) {
 
     const schedules = await collection.find(query).sort({ scheduledDate: 1 }).toArray()
     
-    // Get team members for availability
-    const usersCollection = await getCollection('users')
+    // Get team members from main database
+    const mainDb = await getMainDb()
+    const usersCollection = mainDb.collection('users')
     const teamMembers = await usersCollection.find({ clientId: user.clientId }).toArray()
 
     return successResponse({ 
@@ -52,43 +55,36 @@ export async function POST(request) {
     requireAuth(user)
 
     const body = await request.json()
-    const collection = await getCollection('wf_schedule')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_schedule')
 
     const schedule = {
       id: uuidv4(),
       clientId: user.clientId,
-      // Type: installation, site_visit, delivery, measurement, follow_up
       type: body.type || 'installation',
       title: body.title || '',
       description: body.description || '',
-      // References
       projectId: body.projectId || null,
       orderId: body.orderId || null,
       customerId: body.customerId || null,
       customerName: body.customerName || '',
       customerPhone: body.customerPhone || '',
-      // Location
       address: body.address || '',
       city: body.city || '',
-      // Schedule
       scheduledDate: body.scheduledDate ? new Date(body.scheduledDate) : new Date(),
       startTime: body.startTime || '09:00',
       endTime: body.endTime || '18:00',
-      duration: body.duration || 480, // minutes
-      // Team
+      duration: body.duration || 480,
       assignedTo: body.assignedTo || [],
       teamLead: body.teamLead || null,
-      // Status
-      status: 'scheduled', // scheduled, in_progress, completed, cancelled, rescheduled
+      status: 'scheduled',
       priority: body.priority || 'normal',
-      // Notifications
       reminderSent: false,
       customerNotified: false,
-      // Completion
       completedAt: null,
       completionNotes: '',
       photos: [],
-      // Notes
       notes: body.notes || '',
       createdBy: user.id,
       createdAt: new Date(),
@@ -114,12 +110,13 @@ export async function PUT(request) {
 
     if (!id) return errorResponse('Schedule ID is required', 400)
 
-    const collection = await getCollection('wf_schedule')
-    const schedule = await collection.findOne({ id, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_schedule')
+    const schedule = await collection.findOne({ id })
     
     if (!schedule) return errorResponse('Schedule not found', 404)
 
-    // Handle special actions
     if (action === 'complete') {
       updates.status = 'completed'
       updates.completedAt = new Date()
@@ -148,7 +145,7 @@ export async function PUT(request) {
     }
 
     const result = await collection.findOneAndUpdate(
-      { id, clientId: user.clientId },
+      { id },
       { $set: { ...updates, updatedAt: new Date() } },
       { returnDocument: 'after' }
     )
@@ -171,8 +168,10 @@ export async function DELETE(request) {
 
     if (!id) return errorResponse('Schedule ID is required', 400)
 
-    const collection = await getCollection('wf_schedule')
-    const result = await collection.deleteOne({ id, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_schedule')
+    const result = await collection.deleteOne({ id })
 
     if (result.deletedCount === 0) return errorResponse('Schedule not found', 404)
     return successResponse({ message: 'Schedule deleted successfully' })

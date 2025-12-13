@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection } from '@/lib/db/mongodb'
-import { getAuthUser, requireAuth } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireAuth, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -16,15 +16,17 @@ export async function GET(request) {
     const status = searchParams.get('status')
     const invoiceId = searchParams.get('id')
 
-    const collection = await getCollection('wf_invoices')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_invoices')
 
     if (invoiceId) {
-      const invoice = await collection.findOne({ id: invoiceId, clientId: user.clientId })
+      const invoice = await collection.findOne({ id: invoiceId })
       if (!invoice) return errorResponse('Invoice not found', 404)
       return successResponse(sanitizeDocument(invoice))
     }
 
-    let query = { clientId: user.clientId }
+    let query = {}
     if (status) query.status = status
 
     const invoices = await collection.find(query).sort({ createdAt: -1 }).toArray()
@@ -55,9 +57,10 @@ export async function POST(request) {
     requireAuth(user)
 
     const body = await request.json()
-    const collection = await getCollection('wf_invoices')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_invoices')
 
-    // Calculate totals
     const items = body.items || []
     let subtotal = items.reduce((sum, item) => sum + ((item.quantity || 0) * (item.rate || 0)), 0)
     
@@ -76,38 +79,31 @@ export async function POST(request) {
       id: uuidv4(),
       clientId: user.clientId,
       invoiceNumber: body.invoiceNumber || `WFI-${Date.now().toString().slice(-8)}`,
-      // References
       orderId: body.orderId || null,
       quotationId: body.quotationId || null,
       projectId: body.projectId || null,
-      // Customer Details
       customerId: body.customerId,
       customerName: body.customerName || '',
       customerEmail: body.customerEmail || '',
       customerPhone: body.customerPhone || '',
       customerGst: body.customerGst || '',
-      // Billing Address
       billingAddress: body.billingAddress || '',
       billingCity: body.billingCity || '',
       billingState: body.billingState || '',
       billingPincode: body.billingPincode || '',
-      // Shipping Address
       shippingAddress: body.shippingAddress || body.billingAddress || '',
       shippingCity: body.shippingCity || body.billingCity || '',
       shippingState: body.shippingState || body.billingState || '',
       shippingPincode: body.shippingPincode || body.billingPincode || '',
-      // Items
       items: items.map(item => ({
         ...item,
         total: (item.quantity || 0) * (item.rate || 0)
       })),
-      // Financials
       subtotal,
       discountType: body.discountType || 'amount',
       discountValue: parseFloat(body.discountValue) || 0,
       discountAmount,
       taxableAmount,
-      // GST
       isInterState: body.isInterState || false,
       cgstRate: body.cgstRate || 9,
       sgstRate: body.sgstRate || 9,
@@ -117,28 +113,22 @@ export async function POST(request) {
       igst: body.isInterState ? igst : 0,
       totalGst,
       grandTotal,
-      // Payments
       paidAmount: 0,
       balanceAmount: grandTotal,
       payments: [],
-      // Dates
       invoiceDate: body.invoiceDate ? new Date(body.invoiceDate) : new Date(),
       dueDate: body.dueDate ? new Date(body.dueDate) : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      // Status
       status: body.status || 'draft',
-      // Bank Details
       bankName: body.bankName || '',
       accountNumber: body.accountNumber || '',
       ifscCode: body.ifscCode || '',
       upiId: body.upiId || '',
-      // Terms
       termsAndConditions: body.termsAndConditions || [
         'Payment due within 30 days',
         'Late payments subject to interest',
         'Goods once sold will not be taken back'
       ],
       notes: body.notes || '',
-      // Metadata
       createdBy: user.id,
       createdAt: new Date(),
       updatedAt: new Date()
@@ -163,12 +153,13 @@ export async function PUT(request) {
 
     if (!id) return errorResponse('Invoice ID is required', 400)
 
-    const collection = await getCollection('wf_invoices')
-    const invoice = await collection.findOne({ id, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_invoices')
+    const invoice = await collection.findOne({ id })
     
     if (!invoice) return errorResponse('Invoice not found', 404)
 
-    // Handle payment
     if (action === 'add_payment') {
       const payment = {
         id: uuidv4(),
@@ -187,14 +178,13 @@ export async function PUT(request) {
       updates.status = newBalanceAmount <= 0 ? 'paid' : 'partially_paid'
     }
 
-    // Handle send
     if (action === 'send') {
       updates.status = 'sent'
       updates.sentAt = new Date()
     }
 
     const result = await collection.findOneAndUpdate(
-      { id, clientId: user.clientId },
+      { id },
       { $set: { ...updates, updatedAt: new Date() } },
       { returnDocument: 'after' }
     )
@@ -217,8 +207,10 @@ export async function DELETE(request) {
 
     if (!id) return errorResponse('Invoice ID is required', 400)
 
-    const collection = await getCollection('wf_invoices')
-    const result = await collection.deleteOne({ id, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_invoices')
+    const result = await collection.deleteOne({ id })
 
     if (result.deletedCount === 0) return errorResponse('Invoice not found', 404)
     return successResponse({ message: 'Invoice deleted successfully' })

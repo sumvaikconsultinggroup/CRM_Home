@@ -1,6 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection } from '@/lib/db/mongodb'
-import { getAuthUser, requireAuth } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireAuth, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -16,15 +16,17 @@ export async function GET(request) {
     const status = searchParams.get('status')
     const quotationId = searchParams.get('id')
 
-    const collection = await getCollection('wf_quotations')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_quotations')
 
     if (quotationId) {
-      const quotation = await collection.findOne({ id: quotationId, clientId: user.clientId })
+      const quotation = await collection.findOne({ id: quotationId })
       if (!quotation) return errorResponse('Quotation not found', 404)
       return successResponse(sanitizeDocument(quotation))
     }
 
-    let query = { clientId: user.clientId }
+    let query = {}
     if (status) query.status = status
 
     const quotations = await collection.find(query).sort({ createdAt: -1 }).toArray()
@@ -54,21 +56,20 @@ export async function POST(request) {
     requireAuth(user)
 
     const body = await request.json()
-    const collection = await getCollection('wf_quotations')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_quotations')
 
-    // Calculate totals
     const lineItems = body.lineItems || []
     const roomItems = body.roomItems || []
     
     let subtotal = 0
     
-    // Simple line items
     lineItems.forEach(item => {
       item.total = (item.quantity || 0) * (item.rate || 0)
       subtotal += item.total
     })
     
-    // Room-wise items (advanced)
     roomItems.forEach(room => {
       room.items?.forEach(item => {
         item.total = (item.area || 0) * (item.ratePerSqFt || 0)
@@ -89,28 +90,20 @@ export async function POST(request) {
       id: uuidv4(),
       clientId: user.clientId,
       quotationNumber: `WFQ-${Date.now().toString().slice(-8)}`,
-      // Customer & Project
       customerId: body.customerId,
       customerName: body.customerName || '',
       customerEmail: body.customerEmail || '',
       customerPhone: body.customerPhone || '',
       customerAddress: body.customerAddress || '',
       projectId: body.projectId || null,
-      // Site Details
       siteAddress: body.siteAddress || '',
       totalArea: parseFloat(body.totalArea) || 0,
-      // Quotation Type
-      quotationType: body.quotationType || 'simple', // simple or advanced
-      // Line Items (Simple)
+      quotationType: body.quotationType || 'simple',
       lineItems,
-      // Room-wise Items (Advanced)
       roomItems,
-      // Additional Items
       additionalItems: body.additionalItems || [],
-      // Labor
       laborCharges: parseFloat(body.laborCharges) || 0,
       laborDescription: body.laborDescription || 'Installation charges',
-      // Financials
       subtotal,
       discountType: body.discountType || 'amount',
       discountValue: parseFloat(body.discountValue) || 0,
@@ -119,7 +112,6 @@ export async function POST(request) {
       gstRate: parseFloat(body.gstRate) || 18,
       gstAmount,
       grandTotal,
-      // Terms
       validUntil: body.validUntil ? new Date(body.validUntil) : new Date(Date.now() + 15 * 24 * 60 * 60 * 1000),
       paymentTerms: body.paymentTerms || '50% advance, 50% on completion',
       deliveryTerms: body.deliveryTerms || '7-10 working days after confirmation',
@@ -130,13 +122,11 @@ export async function POST(request) {
         'Quotation valid for 15 days from date of issue'
       ],
       notes: body.notes || '',
-      // Status
       status: body.status || 'draft',
       sentAt: null,
       acceptedAt: null,
       rejectedAt: null,
       rejectionReason: '',
-      // Metadata
       createdBy: user.id,
       createdAt: new Date(),
       updatedAt: new Date()
@@ -161,9 +151,10 @@ export async function PUT(request) {
 
     if (!id) return errorResponse('Quotation ID is required', 400)
 
-    const collection = await getCollection('wf_quotations')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_quotations')
     
-    // Handle special actions
     if (action === 'send') {
       updates.status = 'sent'
       updates.sentAt = new Date()
@@ -178,7 +169,6 @@ export async function PUT(request) {
       updates.rejectionReason = body.rejectionReason || ''
     }
 
-    // Recalculate totals if items changed
     if (updates.lineItems || updates.roomItems) {
       let subtotal = 0
       
@@ -209,7 +199,7 @@ export async function PUT(request) {
     }
 
     const result = await collection.findOneAndUpdate(
-      { id, clientId: user.clientId },
+      { id },
       { $set: { ...updates, updatedAt: new Date() } },
       { returnDocument: 'after' }
     )
@@ -233,8 +223,10 @@ export async function DELETE(request) {
 
     if (!id) return errorResponse('Quotation ID is required', 400)
 
-    const collection = await getCollection('wf_quotations')
-    const result = await collection.deleteOne({ id, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('wf_quotations')
+    const result = await collection.deleteOne({ id })
 
     if (result.deletedCount === 0) return errorResponse('Quotation not found', 404)
     return successResponse({ message: 'Quotation deleted successfully' })
