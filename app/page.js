@@ -716,12 +716,18 @@ function ClientDashboard({ user, client, onLogout }) {
   // Render Flooring Module if active
   if (activeModule === 'flooring') {
     return (
-      <FlooringModule 
-        onBack={() => setActiveModule(null)} 
-        client={client}
-        user={user}
-        onUpgrade={() => setShowUpgradeFlow(true)}
-      />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50">
+        <div className="p-6">
+          <Button variant="ghost" onClick={() => setActiveModule(null)} className="mb-4">
+            <ChevronLeft className="h-4 w-4 mr-2" /> Back to Dashboard
+          </Button>
+          <FlooringModule 
+            client={client}
+            leads={leads}
+            projects={projects}
+          />
+        </div>
+      </div>
     )
   }
 
