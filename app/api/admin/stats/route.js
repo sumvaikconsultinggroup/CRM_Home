@@ -1,4 +1,4 @@
-import { getCollection, Collections } from '@/lib/db/mongodb'
+import { getMainDb } from '@/lib/db/multitenancy'
 import { getAuthUser, requireSuperAdmin } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse } from '@/lib/utils/response'
 
@@ -11,18 +11,17 @@ export async function GET(request) {
     const user = getAuthUser(request)
     requireSuperAdmin(user)
 
-    const clientsCollection = await getCollection(Collections.CLIENTS)
-    const usersCollection = await getCollection(Collections.USERS)
-    const leadsCollection = await getCollection(Collections.LEADS)
-    const projectsCollection = await getCollection(Collections.PROJECTS)
-    const plansCollection = await getCollection(Collections.PLANS)
-    const moduleRequestsCollection = await getCollection(Collections.MODULE_REQUESTS)
+    // Admin stats use main database (platform-level data)
+    const mainDb = await getMainDb()
+    
+    const clientsCollection = mainDb.collection('clients')
+    const usersCollection = mainDb.collection('users')
+    const plansCollection = mainDb.collection('plans')
+    const moduleRequestsCollection = mainDb.collection('module_requests')
 
     const totalClients = await clientsCollection.countDocuments()
     const activeClients = await clientsCollection.countDocuments({ subscriptionStatus: 'active' })
     const totalUsers = await usersCollection.countDocuments({ role: { $ne: 'super_admin' } })
-    const totalLeads = await leadsCollection.countDocuments()
-    const totalProjects = await projectsCollection.countDocuments()
     const pendingModuleRequests = await moduleRequestsCollection.countDocuments({ status: 'pending' })
 
     // Calculate revenue
@@ -31,6 +30,8 @@ export async function GET(request) {
     
     let monthlyRevenue = 0
     let moduleRevenue = 0
+    let totalLeads = 0
+    let totalProjects = 0
     
     clients.forEach(c => {
       const plan = plans.find(p => p.id === c.planId)
