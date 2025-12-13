@@ -2456,6 +2456,94 @@ export function EnterpriseFlooringModule({ client, user, token }) {
 
       {/* Dialogs */}
       {renderDialogs()}
+
+      {/* MEE AI Floating Button */}
+      <motion.button
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        whileHover={{ scale: 1.1 }}
+        onClick={() => setDialogOpen({ type: 'mee_ai', data: null })}
+        className="fixed bottom-6 right-6 p-4 rounded-full bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg hover:shadow-xl z-50"
+      >
+        <Bot className="h-6 w-6" />
+      </motion.button>
+
+      {/* MEE AI Chat Dialog */}
+      <Dialog open={dialogOpen.type === 'mee_ai'} onOpenChange={(open) => !open && setDialogOpen({ type: null, data: null })}>
+        <DialogContent className="max-w-md h-[600px] flex flex-col p-0">
+          <DialogHeader className="p-4 border-b bg-gradient-to-r from-violet-500 to-purple-600 text-white rounded-t-lg">
+            <DialogTitle className="flex items-center gap-2">
+              <Sparkles className="h-5 w-5" />
+              MEE AI Assistant
+            </DialogTitle>
+            <DialogDescription className="text-violet-100">
+              Your intelligent flooring business assistant
+            </DialogDescription>
+          </DialogHeader>
+
+          <ScrollArea className="flex-1 p-4">
+            <div className="space-y-4">
+              {meeAiMessages.length === 0 && (
+                <div className="text-center py-8">
+                  <Bot className="h-12 w-12 text-violet-300 mx-auto mb-3" />
+                  <p className="text-slate-500">Hi! I'm MEE AI, your flooring business assistant.</p>
+                  <p className="text-sm text-slate-400 mt-2">Ask me anything about:</p>
+                  <div className="flex flex-wrap gap-2 justify-center mt-3">
+                    {['Quote calculation', 'Inventory', 'Product recommendations', 'Installation tips'].map(topic => (
+                      <button
+                        key={topic}
+                        onClick={() => setMeeAiInput(topic)}
+                        className="px-3 py-1 text-xs bg-violet-100 text-violet-700 rounded-full hover:bg-violet-200"
+                      >
+                        {topic}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {meeAiMessages.map((msg, i) => (
+                <div key={i} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`max-w-[80%] p-3 rounded-lg ${
+                    msg.role === 'user' 
+                      ? 'bg-violet-500 text-white rounded-br-none' 
+                      : 'bg-slate-100 text-slate-800 rounded-bl-none'
+                  }`}>
+                    <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                  </div>
+                </div>
+              ))}
+
+              {meeAiLoading && (
+                <div className="flex justify-start">
+                  <div className="bg-slate-100 p-3 rounded-lg rounded-bl-none">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 bg-violet-500 rounded-full animate-bounce" />
+                      <div className="w-2 h-2 bg-violet-500 rounded-full animate-bounce" style={{ animationDelay: '0.1s' }} />
+                      <div className="w-2 h-2 bg-violet-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }} />
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </ScrollArea>
+
+          <div className="p-4 border-t">
+            <div className="flex gap-2">
+              <Input
+                value={meeAiInput}
+                onChange={(e) => setMeeAiInput(e.target.value)}
+                placeholder="Ask MEE AI anything..."
+                onKeyPress={(e) => e.key === 'Enter' && handleMeeAiChat()}
+                disabled={meeAiLoading}
+              />
+              <Button onClick={handleMeeAiChat} disabled={meeAiLoading || !meeAiInput.trim()}>
+                <Send className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
