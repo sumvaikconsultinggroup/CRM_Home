@@ -872,6 +872,24 @@ ${crmContext.businessHealth.alerts.map(a => `- [${a.priority.toUpperCase()}] ${a
 function generateContextualFallback(message, context) {
   const msg = message.toLowerCase()
 
+  // Financial queries - match first (more specific)
+  if (msg.includes('invoice') || msg.includes('payment') || msg.includes('revenue') || msg.includes('money') || msg.includes('financial') || msg.includes('pending') || msg.includes('collection')) {
+    return `💰 **Financial Overview (Real-Time)**\n\n` +
+      `**Revenue:**\n` +
+      `• Total Revenue: ₹${context.businessHealth.revenue.total.toLocaleString()}\n` +
+      `• Pipeline Value: ₹${context.businessHealth.revenue.pipeline.toLocaleString()}\n` +
+      `• Pending Collections: ₹${context.businessHealth.revenue.pending.toLocaleString()}\n\n` +
+      `**Invoices:**\n` +
+      `• Total: ${context.woodenFlooring.invoices.total}\n` +
+      `• Paid: ₹${context.woodenFlooring.invoices.paidAmount.toLocaleString()}\n` +
+      `• Pending: ₹${context.woodenFlooring.invoices.pendingAmount.toLocaleString()}\n` +
+      `• Overdue: ${context.woodenFlooring.invoices.overdueInvoices.length}\n\n` +
+      (context.woodenFlooring.invoices.overdueInvoices.length > 0 ? 
+        `**Overdue Invoices:**\n` +
+        context.woodenFlooring.invoices.overdueInvoices.slice(0, 5).map(i => `• ${i.invoiceNumber} - ${i.customerName} - ₹${(i.balanceAmount || 0).toLocaleString()}`).join('\n') + '\n\n' : '') +
+      `**Expenses This Month:** ₹${context.expenses.thisMonth.toLocaleString()}\n\n- Mee 🤖`
+  }
+
   if (msg.includes('lead') || msg.includes('follow')) {
     return `📊 **Lead Analysis (Real-Time)**\n\nYou have **${context.leads.total} leads** worth **₹${context.leads.totalValue.toLocaleString()}**.\n\n` +
       `**Immediate Actions Needed:**\n` +
@@ -885,7 +903,7 @@ function generateContextualFallback(message, context) {
       `${context.leads.conversionFunnel.new} → ${context.leads.conversionFunnel.contacted} → ${context.leads.conversionFunnel.qualified} → ${context.leads.conversionFunnel.proposal} → ${context.leads.conversionFunnel.won}\n\n- Mee 🤖`
   }
 
-  if (msg.includes('task') || msg.includes('todo') || msg.includes('overdue')) {
+  if (msg.includes('task') || msg.includes('todo')) {
     return `✅ **Task Overview (Real-Time)**\n\n` +
       `**Summary:** ${context.tasks.total} total tasks, ${context.tasks.completionRate}% completed\n\n` +
       `**Attention Required:**\n` +
