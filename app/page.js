@@ -713,7 +713,7 @@ function ClientDashboard({ user, client, onLogout }) {
     )
   }
 
-  // Render Flooring Module if active
+  // Render Enterprise Flooring Module if active
   if (activeModule === 'flooring') {
     return (
       <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50">
@@ -721,10 +721,10 @@ function ClientDashboard({ user, client, onLogout }) {
           <Button variant="ghost" onClick={() => setActiveModule(null)} className="mb-4">
             <ChevronLeft className="h-4 w-4 mr-2" /> Back to Dashboard
           </Button>
-          <FlooringModule 
+          <EnterpriseFlooringModule 
             client={client}
-            leads={leads}
-            projects={projects}
+            user={user}
+            token={token}
           />
         </div>
       </div>
