@@ -4870,7 +4870,7 @@ function RoomMeasurementDialog({ open, onClose, room, project, onSave, loading }
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-3 gap-4">
                   <div className="space-y-2">
-                    <Label>Length (ft) *</Label>
+                    <Label>{form.applicationType === 'cladding' ? 'Height' : 'Length'} (ft) *</Label>
                     <Input
                       type="number"
                       step="0.1"
@@ -4890,7 +4890,7 @@ function RoomMeasurementDialog({ open, onClose, room, project, onSave, loading }
                     />
                   </div>
                   <div className="space-y-2">
-                    <Label>Ceiling Height (ft)</Label>
+                    <Label>{form.applicationType === 'cladding' ? 'Wall Thickness' : 'Ceiling Height'} (ft)</Label>
                     <Input
                       type="number"
                       step="0.1"
@@ -4901,29 +4901,37 @@ function RoomMeasurementDialog({ open, onClose, room, project, onSave, loading }
                   </div>
                 </div>
 
-                {/* Visual Room Drawing */}
+                {/* Room Sketch Drawing Tool */}
                 <div className="border rounded-lg p-4 bg-slate-50">
                   <div className="flex items-center justify-between mb-3">
-                    <p className="text-sm font-medium">Room Floor Plan Preview</p>
-                    <Button variant="outline" size="sm" onClick={() => setShowDrawing(!showDrawing)}>
-                      {showDrawing ? 'Hide' : 'Show'} Drawing
-                    </Button>
+                    <p className="text-sm font-medium flex items-center gap-2">
+                      <Camera className="h-4 w-4" />
+                      {form.applicationType === 'cladding' ? 'Wall' : form.applicationType === 'decking' ? 'Area' : 'Room'} Layout Sketch
+                    </p>
+                    <div className="flex items-center gap-2">
+                      <Badge variant="outline" className="text-xs">
+                        {grossArea.toFixed(1)} sq.ft {form.applicationType === 'cladding' ? '(wall area)' : ''}
+                      </Badge>
+                      <Button variant="outline" size="sm" onClick={() => setShowDrawing(!showDrawing)}>
+                        {showDrawing ? 'Hide Canvas' : 'Open Drawing Tool'}
+                      </Button>
+                    </div>
                   </div>
-                  {showDrawing && form.length && form.width && (
+                  
+                  {/* Simple Preview */}
+                  {!showDrawing && form.length && form.width && (
                     <div className="relative bg-white border-2 border-blue-300 rounded" 
                          style={{ 
                            width: '100%', 
-                           height: `${Math.min(300, (parseFloat(form.width) / parseFloat(form.length)) * 400)}px`,
-                           maxHeight: '300px'
+                           height: `${Math.min(200, (parseFloat(form.width) / parseFloat(form.length)) * 300)}px`,
+                           maxHeight: '200px'
                          }}>
-                      {/* Room border */}
                       <div className="absolute inset-2 border-2 border-dashed border-blue-400 flex items-center justify-center">
                         <div className="text-center">
                           <p className="text-lg font-bold text-blue-600">{form.length}' × {form.width}'</p>
                           <p className="text-sm text-slate-500">{grossArea.toFixed(1)} sq.ft</p>
                         </div>
                       </div>
-                      {/* Obstacles */}
                       {form.obstacles.map((obs, idx) => (
                         <div
                           key={obs.id}
@@ -4938,9 +4946,20 @@ function RoomMeasurementDialog({ open, onClose, room, project, onSave, loading }
                           <span className="text-red-600">{obs.type}</span>
                         </div>
                       ))}
-                      {/* Doorway indicator */}
-                      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-2 bg-amber-400 rounded-t" title="Doorway" />
+                      {form.doorways > 0 && (
+                        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-12 h-2 bg-amber-400 rounded-t" title="Doorway" />
+                      )}
                     </div>
+                  )}
+                  
+                  {/* Full Drawing Canvas */}
+                  {showDrawing && (
+                    <RoomDrawingCanvas 
+                      width={400}
+                      height={300}
+                      obstacles={form.obstacles}
+                      onDrawingComplete={(dataUrl) => setForm(f => ({ ...f, roomSketch: dataUrl }))}
+                    />
                   )}
                 </div>
               </CardContent>
