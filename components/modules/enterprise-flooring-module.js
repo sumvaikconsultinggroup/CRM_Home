@@ -245,6 +245,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   const [measurementDate, setMeasurementDate] = useState(new Date().toISOString().split('T')[0])
   const [measurementNotes, setMeasurementNotes] = useState('')
   const [materialDecideLater, setMaterialDecideLater] = useState(false) // Skip material selection
+  const [productSearchTerm, setProductSearchTerm] = useState('') // Search term for product selection
   
   // Selection States
   const [selectedProject, setSelectedProject] = useState(null)
