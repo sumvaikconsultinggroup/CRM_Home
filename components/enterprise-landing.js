@@ -918,7 +918,7 @@ export default function EnterpriseLanding({ onLogin }) {
                     <Star key={j} className="h-5 w-5 fill-amber-400 text-amber-400" />
                   ))}
                 </div>
-                <p className="text-gray-700 text-lg mb-6 italic">"{testimonial.quote}"</p>
+                <p className="text-gray-700 text-lg mb-6 italic">&ldquo;{testimonial.quote}&rdquo;</p>
                 <div className="flex items-center gap-3">
                   <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-full flex items-center justify-center text-white font-bold">
                     {testimonial.avatar}
