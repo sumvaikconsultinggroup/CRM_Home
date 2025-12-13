@@ -9,7 +9,7 @@ import json
 import time
 
 # Configuration
-BASE_URL = "https://crm-hub-20.preview.emergentagent.com/api"
+BASE_URL = "https://homepro-hub-5.preview.emergentagent.com/api"
 SUPER_ADMIN_EMAIL = "admin@buildcrm.com"
 SUPER_ADMIN_PASSWORD = "admin123"
 
