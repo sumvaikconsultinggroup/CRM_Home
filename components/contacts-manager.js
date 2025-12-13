@@ -732,6 +732,163 @@ const ContactDetailDialog = ({ contact, open, onOpenChange, onEdit }) => {
   )
 }
 
+// Import Contacts Dialog
+const ImportContactsDialog = ({ open, onOpenChange, onImport, onDownloadTemplate }) => {
+  const [file, setFile] = useState(null)
+  const [skipDuplicates, setSkipDuplicates] = useState(true)
+  const [importing, setImporting] = useState(false)
+  const [results, setResults] = useState(null)
+
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files[0]
+    if (selectedFile && selectedFile.type === 'text/csv') {
+      setFile(selectedFile)
+      setResults(null)
+    } else {
+      toast.error('Please select a valid CSV file')
+    }
+  }
+
+  const handleImport = async () => {
+    if (!file) {
+      toast.error('Please select a file')
+      return
+    }
+    
+    setImporting(true)
+    try {
+      const importResults = await onImport(file, skipDuplicates)
+      setResults(importResults)
+    } catch (error) {
+      // Error handled in parent
+    } finally {
+      setImporting(false)
+    }
+  }
+
+  const handleClose = () => {
+    setFile(null)
+    setResults(null)
+    onOpenChange(false)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={handleClose}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>Import Contacts</DialogTitle>
+          <DialogDescription>
+            Upload a CSV file to import contacts in bulk
+          </DialogDescription>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          {/* Download Template */}
+          <div className="p-4 bg-blue-50 rounded-lg">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="font-medium text-blue-900">Need a template?</p>
+                <p className="text-sm text-blue-700">Download our CSV template with sample data</p>
+              </div>
+              <Button variant="outline" size="sm" onClick={onDownloadTemplate}>
+                <Download className="h-4 w-4 mr-2" /> Template
+              </Button>
+            </div>
+          </div>
+
+          {/* File Upload */}
+          <div className="space-y-2">
+            <Label>Select CSV File</Label>
+            <div className="border-2 border-dashed rounded-lg p-6 text-center hover:border-primary transition-colors">
+              <input
+                type="file"
+                accept=".csv"
+                onChange={handleFileChange}
+                className="hidden"
+                id="csv-upload"
+              />
+              <label htmlFor="csv-upload" className="cursor-pointer">
+                <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                {file ? (
+                  <p className="font-medium text-primary">{file.name}</p>
+                ) : (
+                  <p className="text-muted-foreground">Click to select a CSV file</p>
+                )}
+              </label>
+            </div>
+          </div>
+
+          {/* Options */}
+          <div className="flex items-center space-x-2">
+            <input
+              type="checkbox"
+              id="skip-duplicates"
+              checked={skipDuplicates}
+              onChange={(e) => setSkipDuplicates(e.target.checked)}
+              className="h-4 w-4"
+            />
+            <label htmlFor="skip-duplicates" className="text-sm">
+              Skip contacts with duplicate emails
+            </label>
+          </div>
+
+          {/* Results */}
+          {results && (
+            <div className="p-4 bg-slate-50 rounded-lg space-y-2">
+              <p className="font-medium">Import Results:</p>
+              <div className="grid grid-cols-3 gap-2 text-sm">
+                <div className="p-2 bg-green-100 rounded text-center">
+                  <p className="font-bold text-green-700">{results.imported}</p>
+                  <p className="text-green-600">Imported</p>
+                </div>
+                <div className="p-2 bg-yellow-100 rounded text-center">
+                  <p className="font-bold text-yellow-700">{results.skipped}</p>
+                  <p className="text-yellow-600">Skipped</p>
+                </div>
+                <div className="p-2 bg-red-100 rounded text-center">
+                  <p className="font-bold text-red-700">{results.errors?.length || 0}</p>
+                  <p className="text-red-600">Errors</p>
+                </div>
+              </div>
+              {results.errors?.length > 0 && (
+                <div className="mt-2 text-xs text-red-600 max-h-20 overflow-y-auto">
+                  {results.errors.slice(0, 5).map((err, i) => (
+                    <p key={i}>Row {err.row}: {err.error}</p>
+                  ))}
+                  {results.errors.length > 5 && (
+                    <p>...and {results.errors.length - 5} more errors</p>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={handleClose}>
+            {results ? 'Close' : 'Cancel'}
+          </Button>
+          {!results && (
+            <Button onClick={handleImport} disabled={!file || importing}>
+              {importing ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Importing...
+                </>
+              ) : (
+                <>
+                  <Upload className="h-4 w-4 mr-2" />
+                  Import Contacts
+                </>
+              )}
+            </Button>
+          )}
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 // Main Contacts Component
 export function ContactsManager() {
   const [contacts, setContacts] = useState([])
