@@ -1563,6 +1563,216 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     )
   }
 
+  // Materials Tab (B2B Flow)
+  const renderMaterials = () => {
+    // Filter to show only B2B projects
+    const b2bProjects = projects.filter(p => p.segment === 'b2b')
+    const projectsWithMaterialReq = b2bProjects.filter(p => 
+      ['material_requisition', 'material_processing', 'material_ready'].includes(p.status)
+    )
+
+    return (
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold">Material Requisitions</h3>
+            <p className="text-sm text-muted-foreground">Manage material orders for B2B dealer projects</p>
+          </div>
+          {selectedProject && selectedProject.segment === 'b2b' && (
+            <Badge className="bg-blue-100 text-blue-700">
+              Working on: {selectedProject.projectNumber}
+            </Badge>
+          )}
+        </div>
+
+        {/* Project Selection for Material Requisition */}
+        {!selectedProject || selectedProject.segment !== 'b2b' ? (
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg flex items-center gap-2">
+                <Boxes className="h-5 w-5 text-purple-600" />
+                Select a B2B Project
+              </CardTitle>
+              <CardDescription>Choose a B2B project to create or manage material requisition</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {b2bProjects.length > 0 ? (
+                <div className="grid gap-3">
+                  {b2bProjects.map(project => (
+                    <div 
+                      key={project.id}
+                      className={`p-4 border rounded-lg cursor-pointer transition-all hover:border-purple-500 hover:bg-purple-50 ${selectedProject?.id === project.id ? 'border-purple-500 bg-purple-50' : ''}`}
+                      onClick={() => setSelectedProject(project)}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{project.projectNumber}</p>
+                          <p className="text-sm text-muted-foreground">{project.customerName || project.name}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Badge className={ProjectStatusB2B[project.status]?.color || 'bg-slate-100'}>
+                            {ProjectStatusB2B[project.status]?.label || project.status}
+                          </Badge>
+                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <Boxes className="h-12 w-12 mx-auto text-slate-300 mb-3" />
+                  <p className="text-muted-foreground">No B2B projects found</p>
+                  <p className="text-sm text-muted-foreground mt-1">Create a B2B project first</p>
+                  <Button className="mt-4" onClick={() => setActiveTab('projects')}>
+                    Go to Projects
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        ) : (
+          /* Material Requisition Form */
+          <div className="space-y-4">
+            <Card>
+              <CardHeader className="pb-3">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Building2 className="h-5 w-5 text-purple-600" />
+                      {selectedProject.projectNumber} - {selectedProject.customerName}
+                    </CardTitle>
+                    <CardDescription>Material requisition for dealer</CardDescription>
+                  </div>
+                  <Button variant="outline" size="sm" onClick={() => setSelectedProject(null)}>
+                    <X className="h-4 w-4 mr-1" /> Change Project
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-3 gap-4 mb-6">
+                  <div className="p-3 bg-slate-50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Status</p>
+                    <Badge className={ProjectStatusB2B[selectedProject.status]?.color || 'bg-slate-100'}>
+                      {ProjectStatusB2B[selectedProject.status]?.label || selectedProject.status}
+                    </Badge>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Estimated Value</p>
+                    <p className="font-semibold text-emerald-600">₹{(selectedProject.estimatedValue || 0).toLocaleString()}</p>
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded-lg">
+                    <p className="text-sm text-muted-foreground">Flooring Type</p>
+                    <p className="font-medium capitalize">{selectedProject.flooringType?.replace('_', ' ') || '-'}</p>
+                  </div>
+                </div>
+
+                {/* Product Selection for Material */}
+                <div className="space-y-4">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <Package className="h-4 w-4" /> Select Products
+                  </h4>
+                  <div className="border rounded-lg p-4">
+                    {products.length > 0 ? (
+                      <div className="grid gap-2 max-h-60 overflow-y-auto">
+                        {products.slice(0, 10).map(product => (
+                          <div key={product.id} className="flex items-center justify-between p-2 border rounded hover:bg-slate-50">
+                            <div className="flex items-center gap-3">
+                              <Checkbox id={`prod-${product.id}`} />
+                              <div>
+                                <p className="font-medium text-sm">{product.name}</p>
+                                <p className="text-xs text-muted-foreground">{product.sku} • ₹{product.price}/unit</p>
+                              </div>
+                            </div>
+                            <Input className="w-20 h-8" type="number" placeholder="Qty" min="1" />
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-center py-4 text-muted-foreground">No products available</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-3 mt-6">
+                  {selectedProject.status === 'material_requisition' && (
+                    <Button 
+                      className="bg-purple-600 hover:bg-purple-700"
+                      onClick={async () => {
+                        await handleUpdateProjectStatus(selectedProject.id, 'material_processing')
+                        toast.success('Material order is being processed')
+                      }}
+                    >
+                      <ClipboardList className="h-4 w-4 mr-2" /> Process Order
+                    </Button>
+                  )}
+                  {selectedProject.status === 'material_processing' && (
+                    <Button 
+                      className="bg-teal-600 hover:bg-teal-700"
+                      onClick={async () => {
+                        await handleUpdateProjectStatus(selectedProject.id, 'material_ready')
+                        toast.success('Material is ready for dispatch')
+                      }}
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-2" /> Mark Ready
+                    </Button>
+                  )}
+                  {selectedProject.status === 'material_ready' && (
+                    <Button 
+                      className="bg-emerald-600 hover:bg-emerald-700"
+                      onClick={() => {
+                        handleUpdateProjectStatus(selectedProject.id, 'quote_pending')
+                        handleSendForQuotation(selectedProject)
+                      }}
+                    >
+                      <FileText className="h-4 w-4 mr-2" /> Send for Quote
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Workflow Progress */}
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm">B2B Workflow Progress</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-center gap-2">
+                  {[
+                    { status: 'material_requisition', label: 'Requisition', icon: ClipboardList },
+                    { status: 'material_processing', label: 'Processing', icon: Clock },
+                    { status: 'material_ready', label: 'Ready', icon: CheckCircle2 },
+                    { status: 'quote_pending', label: 'Quote', icon: FileText },
+                    { status: 'invoice_sent', label: 'Invoice', icon: Receipt },
+                    { status: 'delivered', label: 'Delivered', icon: Truck }
+                  ].map((step, idx) => {
+                    const statusOrder = ['pending', 'material_requisition', 'material_processing', 'material_ready', 'quote_pending', 'quote_sent', 'quote_approved', 'invoice_sent', 'in_transit', 'delivered', 'completed']
+                    const currentIdx = statusOrder.indexOf(selectedProject.status)
+                    const stepIdx = statusOrder.indexOf(step.status)
+                    const isActive = currentIdx >= stepIdx
+                    const Icon = step.icon
+                    return (
+                      <div key={step.status} className="flex items-center gap-2">
+                        <div className={`p-2 rounded-full ${isActive ? 'bg-purple-600 text-white' : 'bg-slate-100 text-slate-400'}`}>
+                          <Icon className="h-4 w-4" />
+                        </div>
+                        <span className={`text-xs ${isActive ? 'text-purple-600 font-medium' : 'text-slate-400'}`}>{step.label}</span>
+                        {idx < 5 && <div className={`w-8 h-0.5 ${isActive ? 'bg-purple-600' : 'bg-slate-200'}`} />}
+                      </div>
+                    )
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   // Quotes Tab
   const renderQuotes = () => {
     const filteredQuotes = quotes.filter(q => {
