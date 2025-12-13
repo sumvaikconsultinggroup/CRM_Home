@@ -2054,6 +2054,11 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       const saved = await saveMaterialRequisition(true) // true = block inventory
       if (saved) {
         await handleUpdateProjectStatus(selectedProject.id, 'material_processing')
+        // Update local state immediately
+        setSelectedProject(prev => ({
+          ...prev,
+          status: 'material_processing'
+        }))
         toast.success('Material order processed. Inventory has been blocked/reserved.')
       }
     }
