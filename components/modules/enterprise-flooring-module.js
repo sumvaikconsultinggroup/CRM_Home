@@ -2765,8 +2765,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           onClose={() => setDialogOpen({ type: null, data: null })}
           project={data}
           customers={customers}
+          crmContacts={crmContacts}
           onSave={handleSaveProject}
           loading={loading}
+          onAddContact={() => {
+            // Navigate to CRM contacts - open in new tab
+            window.open('/?tab=contacts', '_blank')
+          }}
         />
 
         {/* View Project Dialog */}
