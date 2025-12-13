@@ -121,6 +121,7 @@ export async function POST(request) {
 
     const productsCol = db.collection('flooring_products')
     const inventoryCol = db.collection('flooring_inventory_v2')
+    const categoriesCol = db.collection('flooring_categories')
 
     let items = []
 
