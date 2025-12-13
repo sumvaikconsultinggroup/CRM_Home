@@ -5101,7 +5101,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                             <Checkbox 
                               checked={isSelected}
                               onCheckedChange={(checked) => {
-                                setSelectedProducts(prev => ({
+                                setMeasurementProducts(prev => ({
                                   ...prev,
                                   [product.id]: {
                                     product,
@@ -5143,7 +5143,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                   min="1"
                                   value={quantity}
                                   onChange={(e) => {
-                                    setSelectedProducts(prev => ({
+                                    setMeasurementProducts(prev => ({
                                       ...prev,
                                       [product.id]: {
                                         ...prev[product.id],
