@@ -1115,6 +1115,137 @@ export function FurnitureModule({ user, client, token, onBack }) {
             </div>
           </GlassCard>
         </TabsContent>
+
+        <TabsContent value="data" className="mt-4 space-y-4">
+          <GlassCard className="p-5">
+            <h3 className="font-semibold text-slate-900 mb-4">Sample Data Management</h3>
+            <p className="text-sm text-slate-500 mb-6">
+              Seed the module with sample products, materials, hardware, and warehouses to get started quickly.
+            </p>
+            
+            <div className="grid grid-cols-4 gap-4 mb-6">
+              <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200">
+                <Package className="h-8 w-8 text-blue-600 mb-2" />
+                <p className="font-semibold text-slate-900">{products.length}</p>
+                <p className="text-sm text-slate-500">Products</p>
+              </div>
+              <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200">
+                <Layers className="h-8 w-8 text-emerald-600 mb-2" />
+                <p className="font-semibold text-slate-900">{materials.length}</p>
+                <p className="text-sm text-slate-500">Materials</p>
+              </div>
+              <div className="p-4 rounded-xl bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200">
+                <Cog className="h-8 w-8 text-amber-600 mb-2" />
+                <p className="font-semibold text-slate-900">{hardware.length}</p>
+                <p className="text-sm text-slate-500">Hardware</p>
+              </div>
+              <div className="p-4 rounded-xl bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200">
+                <Warehouse className="h-8 w-8 text-purple-600 mb-2" />
+                <p className="font-semibold text-slate-900">{warehouses.length}</p>
+                <p className="text-sm text-slate-500">Warehouses</p>
+              </div>
+            </div>
+
+            {products.length === 0 && materials.length === 0 && hardware.length === 0 ? (
+              <div className="text-center py-6 border-2 border-dashed border-slate-200 rounded-xl">
+                <Sparkles className="h-12 w-12 text-indigo-400 mx-auto mb-3" />
+                <h4 className="font-semibold text-slate-900 mb-2">No data yet</h4>
+                <p className="text-sm text-slate-500 mb-4">
+                  Seed sample data to populate products, materials, and hardware
+                </p>
+                <Button 
+                  onClick={handleSeedData} 
+                  disabled={seeding}
+                  className="bg-gradient-to-r from-indigo-500 to-purple-600"
+                >
+                  {seeding ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Seeding Data...
+                    </>
+                  ) : (
+                    <>
+                      <Zap className="h-4 w-4 mr-2" />
+                      Seed Sample Data
+                    </>
+                  )}
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between p-4 bg-emerald-50 rounded-xl border border-emerald-200">
+                <div className="flex items-center gap-3">
+                  <CheckCircle2 className="h-6 w-6 text-emerald-600" />
+                  <div>
+                    <p className="font-semibold text-emerald-900">Data Ready</p>
+                    <p className="text-sm text-emerald-600">Your module is populated with master data</p>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  onClick={handleSeedData} 
+                  disabled={seeding}
+                >
+                  {seeding ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Refresh Sample Data
+                    </>
+                  )}
+                </Button>
+              </div>
+            )}
+          </GlassCard>
+
+          <GlassCard className="p-5">
+            <h3 className="font-semibold text-slate-900 mb-4">Sample Data Includes</h3>
+            <div className="grid grid-cols-3 gap-6">
+              <div>
+                <h4 className="font-medium text-slate-700 mb-2 flex items-center gap-2">
+                  <Package className="h-4 w-4 text-blue-500" /> Products (12)
+                </h4>
+                <ul className="text-sm text-slate-500 space-y-1">
+                  <li>• King Size Storage Bed</li>
+                  <li>• 3-Door Sliding Wardrobe</li>
+                  <li>• L-Shaped Sectional Sofa</li>
+                  <li>• 6-Seater Dining Set</li>
+                  <li>• Executive Study Desk</li>
+                  <li>• And more...</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium text-slate-700 mb-2 flex items-center gap-2">
+                  <Layers className="h-4 w-4 text-emerald-500" /> Materials (20+)
+                </h4>
+                <ul className="text-sm text-slate-500 space-y-1">
+                  <li>• HDHMR & Plywood Boards</li>
+                  <li>• Premium Laminates</li>
+                  <li>• Edge Bands</li>
+                  <li>• Adhesives & Paints</li>
+                  <li>• Fabrics & Foam</li>
+                  <li>• And more...</li>
+                </ul>
+              </div>
+              <div>
+                <h4 className="font-medium text-slate-700 mb-2 flex items-center gap-2">
+                  <Cog className="h-4 w-4 text-amber-500" /> Hardware (20+)
+                </h4>
+                <ul className="text-sm text-slate-500 space-y-1">
+                  <li>• Soft Close Hinges (Hettich, Blum)</li>
+                  <li>• Drawer Channels</li>
+                  <li>• Handles & Knobs</li>
+                  <li>• Locks & Connectors</li>
+                  <li>• Wardrobe Accessories</li>
+                  <li>• And more...</li>
+                </ul>
+              </div>
+            </div>
+          </GlassCard>
+        </TabsContent>
       </Tabs>
     </div>
   )
