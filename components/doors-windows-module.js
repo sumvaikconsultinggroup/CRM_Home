@@ -551,8 +551,10 @@ export function DoorsWindowsModule({ client, user }) {
           <nav className="space-y-1">
             {[
               { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+              { id: 'projects', icon: FolderKanban, label: 'Projects' },
               { id: 'surveys', icon: ClipboardList, label: 'Surveys & Measurements' },
               { id: 'quotations', icon: FileText, label: 'Quotations' },
+              { id: 'quote-builder', icon: Ruler, label: 'Quote Builder', highlight: true },
               { id: 'orders', icon: ShoppingCart, label: 'Sales Orders' },
               { id: 'production', icon: Factory, label: 'Production' },
               { id: 'dispatch', icon: Truck, label: 'Dispatch' },
@@ -560,6 +562,7 @@ export function DoorsWindowsModule({ client, user }) {
               { id: 'service', icon: Hammer, label: 'Service Tickets' },
               { id: 'warranty', icon: Shield, label: 'Warranty & AMC' },
               { id: 'catalog', icon: Package, label: 'Product Catalog' },
+              { id: 'mee-ai', icon: Brain, label: 'MEE AI', highlight: true },
               { id: 'reports', icon: BarChart3, label: 'Reports' },
               { id: 'automation', icon: Bell, label: 'Automation' },
             ].map((item) => (
@@ -569,11 +572,14 @@ export function DoorsWindowsModule({ client, user }) {
                 className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                   activeTab === item.id 
                     ? 'bg-blue-50 text-blue-700 font-medium' 
+                    : item.highlight
+                    ? 'bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-600 hover:from-blue-100 hover:to-indigo-100'
                     : 'text-gray-600 hover:bg-gray-50'
                 }`}
               >
                 <item.icon className="h-4 w-4" />
                 {item.label}
+                {item.highlight && <Sparkles className="h-3 w-3 ml-auto text-amber-500" />}
               </button>
             ))}
           </nav>
