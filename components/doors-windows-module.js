@@ -1435,6 +1435,585 @@ export function DoorsWindowsModule({ client, user }) {
               </div>
             </motion.div>
           )}
+
+          {/* Projects Tab */}
+          {activeTab === 'projects' && (
+            <motion.div
+              key="projects"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold">Projects</h2>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" /> New Project
+                </Button>
+              </div>
+              <Card className="p-8 text-center">
+                <FolderKanban className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                <h3 className="font-semibold mb-2">Project Management</h3>
+                <p className="text-muted-foreground mb-4">Organize and track your doors & windows projects</p>
+                <Button variant="outline">Create First Project</Button>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* Quote Builder Tab - With Dynamic Drawings */}
+          {activeTab === 'quote-builder' && (
+            <motion.div
+              key="quote-builder"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="flex items-center justify-between mb-6">
+                <div>
+                  <h2 className="text-2xl font-bold">Quote Builder</h2>
+                  <p className="text-muted-foreground">Create quotations with dynamic technical drawings</p>
+                </div>
+                <div className="flex gap-2">
+                  <Button variant="outline" onClick={() => setQuoteBuilderItems([...quoteBuilderItems, {
+                    id: Date.now().toString(),
+                    productType: 'Window',
+                    category: 'Casement',
+                    name: 'New Window',
+                    location: '',
+                    width: 1200,
+                    height: 1500,
+                    material: 'uPVC',
+                    profile: 'KM01',
+                    profileColor: 'white',
+                    glassType: 'Clear 5mm',
+                    panels: [{ type: 'openable', direction: 'left' }],
+                    quantity: 1,
+                    rate: 0
+                  }])}>
+                    <Plus className="h-4 w-4 mr-2" /> Add Item
+                  </Button>
+                  <Button className="bg-gradient-to-r from-blue-500 to-indigo-600">
+                    <Save className="h-4 w-4 mr-2" /> Save Quote
+                  </Button>
+                </div>
+              </div>
+
+              {/* Customer Information */}
+              <Card className="p-4 mb-6">
+                <h3 className="font-semibold mb-3">Customer Information</h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="space-y-1">
+                    <Label className="text-xs">Customer Name</Label>
+                    <Input 
+                      placeholder="Enter name" 
+                      value={quoteCustomerInfo.name}
+                      onChange={e => setQuoteCustomerInfo({...quoteCustomerInfo, name: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Phone</Label>
+                    <Input 
+                      placeholder="Phone number"
+                      value={quoteCustomerInfo.phone}
+                      onChange={e => setQuoteCustomerInfo({...quoteCustomerInfo, phone: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Email</Label>
+                    <Input 
+                      placeholder="Email address"
+                      value={quoteCustomerInfo.email}
+                      onChange={e => setQuoteCustomerInfo({...quoteCustomerInfo, email: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Site Address</Label>
+                    <Input 
+                      placeholder="Delivery address"
+                      value={quoteCustomerInfo.address}
+                      onChange={e => setQuoteCustomerInfo({...quoteCustomerInfo, address: e.target.value})}
+                    />
+                  </div>
+                </div>
+              </Card>
+
+              {/* Line Items */}
+              <div className="space-y-4 mb-6">
+                {quoteBuilderItems.map((item, idx) => (
+                  <Card key={item.id} className="p-4">
+                    <div className="flex flex-col lg:flex-row gap-6">
+                      {/* Drawing Preview */}
+                      <div className="w-full lg:w-72 flex-shrink-0">
+                        <WindowDoorDrawing 
+                          config={{
+                            width: item.width,
+                            height: item.height,
+                            type: item.category,
+                            profileColor: item.profileColor,
+                            panels: item.panels || [{ type: 'openable', direction: 'left' }]
+                          }}
+                          width={280}
+                          height={280}
+                        />
+                      </div>
+
+                      {/* Configuration */}
+                      <div className="flex-1 space-y-4">
+                        <div className="flex items-center justify-between">
+                          <Badge variant="outline">Item #{idx + 1}</Badge>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => setQuoteBuilderItems(quoteBuilderItems.filter(i => i.id !== item.id))}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          <div className="space-y-1">
+                            <Label className="text-xs">Type</Label>
+                            <Select 
+                              value={item.productType} 
+                              onValueChange={v => {
+                                const updated = [...quoteBuilderItems]
+                                updated[idx].productType = v
+                                setQuoteBuilderItems(updated)
+                              }}
+                            >
+                              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Window">Window</SelectItem>
+                                <SelectItem value="Door">Door</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Category</Label>
+                            <Select 
+                              value={item.category}
+                              onValueChange={v => {
+                                const updated = [...quoteBuilderItems]
+                                updated[idx].category = v
+                                setQuoteBuilderItems(updated)
+                              }}
+                            >
+                              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Casement">Casement</SelectItem>
+                                <SelectItem value="Fixed">Fixed</SelectItem>
+                                <SelectItem value="Sliding">Sliding</SelectItem>
+                                <SelectItem value="Tilt & Turn">Tilt & Turn</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Material</Label>
+                            <Select 
+                              value={item.material}
+                              onValueChange={v => {
+                                const updated = [...quoteBuilderItems]
+                                updated[idx].material = v
+                                setQuoteBuilderItems(updated)
+                              }}
+                            >
+                              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="uPVC">uPVC</SelectItem>
+                                <SelectItem value="Aluminium">Aluminium</SelectItem>
+                                <SelectItem value="Wood">Wood</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Color</Label>
+                            <Select 
+                              value={item.profileColor}
+                              onValueChange={v => {
+                                const updated = [...quoteBuilderItems]
+                                updated[idx].profileColor = v
+                                setQuoteBuilderItems(updated)
+                              }}
+                            >
+                              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="white">White</SelectItem>
+                                <SelectItem value="black">Black</SelectItem>
+                                <SelectItem value="grey">Grey</SelectItem>
+                                <SelectItem value="brown">Brown</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+                          <div className="space-y-1">
+                            <Label className="text-xs">Width (mm)</Label>
+                            <Input 
+                              type="number" 
+                              value={item.width}
+                              onChange={e => {
+                                const updated = [...quoteBuilderItems]
+                                updated[idx].width = parseInt(e.target.value) || 0
+                                setQuoteBuilderItems(updated)
+                              }}
+                              className="h-9"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Height (mm)</Label>
+                            <Input 
+                              type="number" 
+                              value={item.height}
+                              onChange={e => {
+                                const updated = [...quoteBuilderItems]
+                                updated[idx].height = parseInt(e.target.value) || 0
+                                setQuoteBuilderItems(updated)
+                              }}
+                              className="h-9"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Area (sqft)</Label>
+                            <Input 
+                              value={((item.width / 304.8) * (item.height / 304.8)).toFixed(2)} 
+                              disabled 
+                              className="h-9 bg-gray-50" 
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Qty</Label>
+                            <Input 
+                              type="number" 
+                              value={item.quantity}
+                              onChange={e => {
+                                const updated = [...quoteBuilderItems]
+                                updated[idx].quantity = parseInt(e.target.value) || 1
+                                setQuoteBuilderItems(updated)
+                              }}
+                              className="h-9"
+                              min={1}
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Rate (₹)</Label>
+                            <Input 
+                              type="number" 
+                              value={item.rate}
+                              onChange={e => {
+                                const updated = [...quoteBuilderItems]
+                                updated[idx].rate = parseFloat(e.target.value) || 0
+                                setQuoteBuilderItems(updated)
+                              }}
+                              className="h-9"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-1">
+                            <Label className="text-xs">Location</Label>
+                            <Input 
+                              placeholder="e.g., FF Front Right"
+                              value={item.location}
+                              onChange={e => {
+                                const updated = [...quoteBuilderItems]
+                                updated[idx].location = e.target.value
+                                setQuoteBuilderItems(updated)
+                              }}
+                              className="h-9"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-xs">Glass Type</Label>
+                            <Select 
+                              value={item.glassType}
+                              onValueChange={v => {
+                                const updated = [...quoteBuilderItems]
+                                updated[idx].glassType = v
+                                setQuoteBuilderItems(updated)
+                              }}
+                            >
+                              <SelectTrigger className="h-9"><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="Clear 5mm">Clear 5mm</SelectItem>
+                                <SelectItem value="Clear 6mm">Clear 6mm</SelectItem>
+                                <SelectItem value="Toughened 8mm">Toughened 8mm</SelectItem>
+                                <SelectItem value="Toughened 10mm">Toughened 10mm</SelectItem>
+                                <SelectItem value="12mm Reflective Toughened">12mm Reflective Toughened</SelectItem>
+                                <SelectItem value="Laminated 6.38mm">Laminated 6.38mm</SelectItem>
+                                <SelectItem value="DGU 20mm">Double Glazed 20mm</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        {/* Panel Configuration */}
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label className="text-xs">Panel Configuration</Label>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {
+                                const updated = [...quoteBuilderItems]
+                                updated[idx].panels = [...(updated[idx].panels || []), { type: 'openable', direction: 'left' }]
+                                setQuoteBuilderItems(updated)
+                              }}
+                            >
+                              <Plus className="h-3 w-3 mr-1" /> Add Panel
+                            </Button>
+                          </div>
+                          <div className="flex flex-wrap gap-2">
+                            {(item.panels || []).map((panel, pIdx) => (
+                              <div key={pIdx} className="flex items-center gap-1 bg-gray-50 rounded px-2 py-1">
+                                <Select 
+                                  value={panel.type}
+                                  onValueChange={v => {
+                                    const updated = [...quoteBuilderItems]
+                                    updated[idx].panels[pIdx].type = v
+                                    setQuoteBuilderItems(updated)
+                                  }}
+                                >
+                                  <SelectTrigger className="h-7 w-24 text-xs"><SelectValue /></SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="fixed">Fixed</SelectItem>
+                                    <SelectItem value="openable">Openable</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                {panel.type === 'openable' && (
+                                  <Select 
+                                    value={panel.direction || 'left'}
+                                    onValueChange={v => {
+                                      const updated = [...quoteBuilderItems]
+                                      updated[idx].panels[pIdx].direction = v
+                                      setQuoteBuilderItems(updated)
+                                    }}
+                                  >
+                                    <SelectTrigger className="h-7 w-20 text-xs"><SelectValue /></SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="left">Left</SelectItem>
+                                      <SelectItem value="right">Right</SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                )}
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  className="h-7 w-7 p-0"
+                                  onClick={() => {
+                                    const updated = [...quoteBuilderItems]
+                                    updated[idx].panels.splice(pIdx, 1)
+                                    setQuoteBuilderItems(updated)
+                                  }}
+                                >
+                                  <Trash2 className="h-3 w-3" />
+                                </Button>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Amount */}
+                      <div className="text-right lg:w-28">
+                        <p className="text-xs text-muted-foreground">Amount</p>
+                        <p className="text-xl font-bold">₹{(item.rate * item.quantity).toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+
+              {/* Totals */}
+              <Card className="p-4">
+                <div className="flex justify-end">
+                  <div className="w-64 space-y-2">
+                    <div className="flex justify-between">
+                      <span>Subtotal</span>
+                      <span className="font-medium">₹{quoteBuilderItems.reduce((sum, i) => sum + (i.rate * i.quantity), 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>SGST (9%)</span>
+                      <span>₹{(quoteBuilderItems.reduce((sum, i) => sum + (i.rate * i.quantity), 0) * 0.09).toLocaleString()}</span>
+                    </div>
+                    <div className="flex justify-between text-sm text-muted-foreground">
+                      <span>CGST (9%)</span>
+                      <span>₹{(quoteBuilderItems.reduce((sum, i) => sum + (i.rate * i.quantity), 0) * 0.09).toLocaleString()}</span>
+                    </div>
+                    <Separator />
+                    <div className="flex justify-between text-lg font-bold">
+                      <span>Grand Total</span>
+                      <span className="text-green-600">₹{(quoteBuilderItems.reduce((sum, i) => sum + (i.rate * i.quantity), 0) * 1.18).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          )}
+
+          {/* MEE AI Tab */}
+          {activeTab === 'mee-ai' && (
+            <motion.div
+              key="mee-ai"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3 }}
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg">
+                  <Brain className="h-6 w-6 text-white" />
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold">MEE AI Studio</h2>
+                  <p className="text-muted-foreground">Your intelligent doors & windows assistant</p>
+                </div>
+                <Badge className="ml-auto bg-gradient-to-r from-violet-100 to-purple-100 text-purple-700">
+                  <Sparkles className="h-3 w-3 mr-1" /> Powered by GPT-4
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Chat Interface */}
+                <Card className="lg:col-span-2 overflow-hidden">
+                  <div className="h-[500px] flex flex-col">
+                    <div className="p-4 border-b bg-gradient-to-r from-violet-50 to-purple-50">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                          <Brain className="h-5 w-5 text-white" />
+                        </div>
+                        <div>
+                          <p className="font-semibold">MEE AI</p>
+                          <p className="text-xs text-green-600 flex items-center gap-1">
+                            <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse" /> Online
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+
+                    <ScrollArea className="flex-1 p-4">
+                      <div className="space-y-4">
+                        {aiChatMessages.length === 0 && (
+                          <div className="text-center py-12">
+                            <MessageSquare className="h-12 w-12 mx-auto mb-4 text-purple-200" />
+                            <h3 className="font-semibold mb-2">How can I help you today?</h3>
+                            <p className="text-sm text-muted-foreground mb-4">Ask about products, materials, pricing, or get recommendations</p>
+                            <div className="flex flex-wrap justify-center gap-2">
+                              {['Best glass for sound insulation?', 'uPVC vs Aluminium comparison', 'Suggest hardware for sliding doors', 'Price estimate for 5 windows'].map(q => (
+                                <Button key={q} variant="outline" size="sm" onClick={() => setAiInput(q)}>
+                                  {q}
+                                </Button>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {aiChatMessages.map((msg, idx) => (
+                          <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                            <div className={`max-w-[80%] p-3 rounded-2xl ${
+                              msg.role === 'user'
+                                ? 'bg-gradient-to-br from-blue-500 to-indigo-600 text-white rounded-tr-none'
+                                : 'bg-gray-100 rounded-tl-none'
+                            }`}>
+                              <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                            </div>
+                          </div>
+                        ))}
+                        {aiLoading && (
+                          <div className="flex justify-start">
+                            <div className="bg-gray-100 rounded-2xl rounded-tl-none p-3">
+                              <Loader2 className="h-4 w-4 animate-spin text-purple-600" />
+                            </div>
+                          </div>
+                        )}
+                      </div>
+                    </ScrollArea>
+
+                    <div className="p-4 border-t">
+                      <div className="flex gap-2">
+                        <Input 
+                          placeholder="Ask MEE AI about doors, windows, materials..."
+                          value={aiInput}
+                          onChange={e => setAiInput(e.target.value)}
+                          onKeyPress={e => {
+                            if (e.key === 'Enter' && aiInput.trim()) {
+                              setAiChatMessages([...aiChatMessages, { role: 'user', content: aiInput }])
+                              setAiLoading(true)
+                              setTimeout(() => {
+                                setAiChatMessages(prev => [...prev, { 
+                                  role: 'assistant', 
+                                  content: 'Thank you for your question! I can help you with:\n\n• Product recommendations\n• Material comparisons\n• Price estimates\n• Technical specifications\n• Installation guidelines\n\nPlease note: Full AI integration requires API configuration. This is a demo response.' 
+                                }])
+                                setAiLoading(false)
+                              }, 1500)
+                              setAiInput('')
+                            }
+                          }}
+                        />
+                        <Button 
+                          disabled={aiLoading || !aiInput.trim()}
+                          className="bg-gradient-to-r from-violet-500 to-purple-600"
+                          onClick={() => {
+                            if (aiInput.trim()) {
+                              setAiChatMessages([...aiChatMessages, { role: 'user', content: aiInput }])
+                              setAiLoading(true)
+                              setTimeout(() => {
+                                setAiChatMessages(prev => [...prev, { 
+                                  role: 'assistant', 
+                                  content: 'Thank you for your question! I can help you with:\n\n• Product recommendations\n• Material comparisons\n• Price estimates\n• Technical specifications\n• Installation guidelines\n\nPlease note: Full AI integration requires API configuration. This is a demo response.' 
+                                }])
+                                setAiLoading(false)
+                              }, 1500)
+                              setAiInput('')
+                            }
+                          }}
+                        >
+                          <Send className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+
+                {/* Quick Actions */}
+                <div className="space-y-4">
+                  <Card className="p-4">
+                    <h3 className="font-semibold mb-3 flex items-center gap-2">
+                      <Zap className="h-4 w-4 text-amber-500" /> Quick Actions
+                    </h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {[
+                        { label: 'Analyze Survey', icon: Sparkles, color: 'from-purple-500 to-indigo-600' },
+                        { label: 'Material Advice', icon: Layers, color: 'from-emerald-500 to-teal-600' },
+                        { label: 'Price Estimate', icon: TrendingUp, color: 'from-amber-500 to-orange-600' },
+                        { label: 'Config Help', icon: Cog, color: 'from-blue-500 to-cyan-600' }
+                      ].map(action => (
+                        <Button key={action.label} variant="outline" className="h-auto py-3 flex flex-col gap-1">
+                          <div className={`p-2 rounded-lg bg-gradient-to-br ${action.color} text-white`}>
+                            <action.icon className="h-4 w-4" />
+                          </div>
+                          <span className="text-xs">{action.label}</span>
+                        </Button>
+                      ))}
+                    </div>
+                  </Card>
+
+                  <Card className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
+                    <h3 className="font-semibold mb-2 flex items-center gap-2 text-amber-900">
+                      <Sparkles className="h-4 w-4" /> Pro Tips
+                    </h3>
+                    <ul className="text-xs text-gray-600 space-y-1">
+                      <li>• Ask for product comparisons</li>
+                      <li>• Request energy efficiency tips</li>
+                      <li>• Get maintenance schedules</li>
+                      <li>• Calculate material requirements</li>
+                    </ul>
+                  </Card>
+                </div>
+              </div>
+            </motion.div>
+          )}
         </AnimatePresence>
       </div>
 
