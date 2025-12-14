@@ -22,7 +22,7 @@ import {
   Layers, Grid3X3, Box, Palette, Cog, Hammer, DoorOpen, Maximize2,
   MoreHorizontal, Send, FileCheck, Loader2, TrendingUp, TrendingDown,
   Brain, MessageSquare, Sparkles, Zap, Save, Printer, FolderKanban,
-  Cloud, Link2, Users, Home, Activity
+  Cloud, Link2, Users, Home, Activity, Receipt, Ticket
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -32,6 +32,13 @@ import { SiteSurvey } from './SiteSurvey'
 import { QuoteBuilder } from './QuoteBuilder'
 import { ProjectsTab } from './ProjectsTab'
 import { CRMSync } from './CRMSync'
+import { InventoryTab } from './InventoryTab'
+import { ProductionTab } from './ProductionTab'
+import { InstallationTab } from './InstallationTab'
+import { WarrantyTicketsTab } from './WarrantyTicketsTab'
+import { ReportsTab } from './ReportsTab'
+import { SettingsTab } from './SettingsTab'
+import { MEEAIFloater } from './MEEAIFloater'
 import { DoorWindow3DPreview } from './DoorWindow3DPreview'
 import { PRODUCT_FAMILIES, CATEGORIES, PRODUCT_TYPES, GLASS_TYPES, HARDWARE_TYPES, FINISHES, PRICING_RATES } from './constants'
 
@@ -45,6 +52,27 @@ const glassStyles = {
   tab: 'backdrop-blur-sm data-[state=active]:bg-white/90 data-[state=active]:shadow-lg',
 }
 
+// Tab groups for better organization
+const TAB_GROUPS = {
+  main: [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'projects', label: 'Projects', icon: FolderKanban },
+    { id: 'surveys', label: 'Site Survey', icon: ClipboardList },
+    { id: 'quotes', label: 'Quotes', icon: FileText },
+  ],
+  operations: [
+    { id: 'orders', label: 'Orders', icon: ShoppingCart },
+    { id: 'inventory', label: 'Inventory', icon: Package },
+    { id: 'production', label: 'Production', icon: Factory },
+    { id: 'installation', label: 'Installation', icon: Wrench },
+  ],
+  support: [
+    { id: 'warranty', label: 'Warranty', icon: Shield },
+    { id: 'reports', label: 'Reports', icon: BarChart3 },
+    { id: 'settings', label: 'Settings', icon: Settings },
+  ]
+}
+
 export function DoorsWindowsModule({ client, user }) {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [loading, setLoading] = useState(true)
@@ -55,13 +83,14 @@ export function DoorsWindowsModule({ client, user }) {
   const [surveys, setSurveys] = useState([])
   const [quotations, setQuotations] = useState([])
   const [orders, setOrders] = useState([])
+  const [invoices, setInvoices] = useState([])
   const [workOrders, setWorkOrders] = useState([])
   const [dispatches, setDispatches] = useState([])
   const [installations, setInstallations] = useState([])
   const [serviceTickets, setServiceTickets] = useState([])
   const [warranties, setWarranties] = useState([])
-  const [catalog, setCatalog] = useState([])
-  const [automationRules, setAutomationRules] = useState([])
+  const [inventory, setInventory] = useState([])
+  const [moduleSettings, setModuleSettings] = useState({})
   
   // Projects & CRM states
   const [projects, setProjects] = useState([])
@@ -155,6 +184,13 @@ export function DoorsWindowsModule({ client, user }) {
     setRefreshKey(prev => prev + 1)
   }
 
+  const handleSaveSettings = (newSettings) => {
+    setModuleSettings(newSettings)
+  }
+
+  // Get all tabs flat list
+  const allTabs = [...TAB_GROUPS.main, ...TAB_GROUPS.operations, ...TAB_GROUPS.support]
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
       {/* Glassmorphism Header */}
@@ -211,32 +247,56 @@ export function DoorsWindowsModule({ client, user }) {
       </div>
 
       <div className="px-6 pb-6">
-        {/* Tabs Navigation */}
+        {/* Tabs Navigation - Multi-row for all tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <div className={`${glassStyles.card} p-2 rounded-2xl`}>
-            <TabsList className="grid grid-cols-7 gap-2 bg-transparent p-1">
-              <TabsTrigger value="dashboard" className={`${glassStyles.tab} rounded-xl flex items-center gap-2`}>
-                <LayoutDashboard className="h-4 w-4" /> Dashboard
-              </TabsTrigger>
-              <TabsTrigger value="projects" className={`${glassStyles.tab} rounded-xl flex items-center gap-2`}>
-                <FolderKanban className="h-4 w-4" /> Projects
-              </TabsTrigger>
-              <TabsTrigger value="surveys" className={`${glassStyles.tab} rounded-xl flex items-center gap-2`}>
-                <ClipboardList className="h-4 w-4" /> Site Survey
-              </TabsTrigger>
-              <TabsTrigger value="quotes" className={`${glassStyles.tab} rounded-xl flex items-center gap-2`}>
-                <FileText className="h-4 w-4" /> Quote Builder
-              </TabsTrigger>
-              <TabsTrigger value="orders" className={`${glassStyles.tab} rounded-xl flex items-center gap-2`}>
-                <ShoppingCart className="h-4 w-4" /> Orders
-              </TabsTrigger>
-              <TabsTrigger value="crm" className={`${glassStyles.tab} rounded-xl flex items-center gap-2`}>
-                <Link2 className="h-4 w-4" /> CRM Sync
-              </TabsTrigger>
-              <TabsTrigger value="ai" className={`${glassStyles.tab} rounded-xl flex items-center gap-2`}>
-                <Brain className="h-4 w-4" /> MEE AI
-              </TabsTrigger>
-            </TabsList>
+          <div className={`${glassStyles.card} p-3 rounded-2xl`}>
+            {/* Main Tabs */}
+            <div className="flex flex-wrap gap-2 mb-2">
+              {TAB_GROUPS.main.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                    activeTab === tab.id 
+                      ? 'bg-white shadow-md text-indigo-600' 
+                      : 'text-slate-600 hover:bg-white/50'
+                  }`}
+                >
+                  <tab.icon className="h-4 w-4" />
+                  {tab.label}
+                </button>
+              ))}
+              <Separator orientation="vertical" className="h-8 mx-2" />
+              {TAB_GROUPS.operations.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                    activeTab === tab.id 
+                      ? 'bg-white shadow-md text-indigo-600' 
+                      : 'text-slate-600 hover:bg-white/50'
+                  }`}
+                >
+                  <tab.icon className="h-4 w-4" />
+                  {tab.label}
+                </button>
+              ))}
+              <Separator orientation="vertical" className="h-8 mx-2" />
+              {TAB_GROUPS.support.map(tab => (
+                <button
+                  key={tab.id}
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                    activeTab === tab.id 
+                      ? 'bg-white shadow-md text-indigo-600' 
+                      : 'text-slate-600 hover:bg-white/50'
+                  }`}
+                >
+                  <tab.icon className="h-4 w-4" />
+                  {tab.label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Dashboard Tab */}
@@ -296,35 +356,44 @@ export function DoorsWindowsModule({ client, user }) {
           <TabsContent value="orders" className="space-y-6">
             <Card className={glassStyles.card}>
               <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <ShoppingCart className="h-5 w-5 text-emerald-600" />
-                  Orders & Production
-                </CardTitle>
-                <CardDescription>Manage orders, production schedules, and deliveries</CardDescription>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <ShoppingCart className="h-5 w-5 text-emerald-600" />
+                      Orders & Invoices
+                    </CardTitle>
+                    <CardDescription>Manage orders, invoices and payments</CardDescription>
+                  </div>
+                  <Button className="bg-gradient-to-r from-indigo-600 to-purple-600">
+                    <Plus className="h-4 w-4 mr-2" /> Create Order
+                  </Button>
+                </div>
               </CardHeader>
               <CardContent>
                 {orders.length === 0 ? (
                   <div className="text-center py-12">
                     <ShoppingCart className="h-16 w-16 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-500">No orders yet. Create quotes and convert them to orders.</p>
+                    <p className="text-slate-500">No orders yet. Approve quotes to create orders.</p>
                   </div>
                 ) : (
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  <div className="space-y-4">
                     {orders.map(order => (
                       <Card key={order.id} className="hover:shadow-lg transition-all">
                         <CardContent className="p-4">
-                          <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center justify-between">
                             <div>
-                              <h4 className="font-semibold">{order.orderNumber}</h4>
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-semibold">{order.orderNumber}</h4>
+                                <Badge variant={order.status === 'completed' ? 'default' : 'secondary'}>
+                                  {order.status}
+                                </Badge>
+                              </div>
                               <p className="text-sm text-slate-500">{order.customerName}</p>
                             </div>
-                            <Badge variant={order.status === 'completed' ? 'default' : 'secondary'}>
-                              {order.status}
-                            </Badge>
-                          </div>
-                          <div className="text-sm text-slate-600">
-                            <p>Items: {order.itemsCount || 0}</p>
-                            <p className="font-semibold text-emerald-600">₹{order.grandTotal?.toLocaleString()}</p>
+                            <div className="text-right">
+                              <p className="font-semibold text-emerald-600">₹{order.grandTotal?.toLocaleString()}</p>
+                              <p className="text-sm text-slate-500">{order.itemsCount || 0} items</p>
+                            </div>
                           </div>
                         </CardContent>
                       </Card>
@@ -335,43 +404,66 @@ export function DoorsWindowsModule({ client, user }) {
             </Card>
           </TabsContent>
 
-          {/* CRM Sync Tab */}
-          <TabsContent value="crm" className="space-y-6">
-            <CRMSync
-              crmSyncStatus={crmSyncStatus}
-              syncing={syncing}
-              onSync={handleCrmSync}
-              projects={projects}
+          {/* Inventory Tab */}
+          <TabsContent value="inventory" className="space-y-6">
+            <InventoryTab
               headers={headers}
               glassStyles={glassStyles}
             />
           </TabsContent>
 
-          {/* MEE AI Tab */}
-          <TabsContent value="ai" className="space-y-6">
-            <Card className={glassStyles.card}>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Brain className="h-5 w-5 text-purple-600" />
-                  MEE AI Assistant
-                </CardTitle>
-                <CardDescription>AI-powered assistance for quotes, measurements, and recommendations</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center py-12">
-                  <div className="p-4 rounded-full bg-gradient-to-br from-purple-100 to-indigo-100 w-fit mx-auto mb-4">
-                    <Sparkles className="h-12 w-12 text-purple-600" />
-                  </div>
-                  <h3 className="text-xl font-semibold text-slate-800 mb-2">Coming Soon</h3>
-                  <p className="text-slate-500 max-w-md mx-auto">
-                    AI-powered assistant for intelligent quoting, measurement suggestions, and product recommendations.
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Production Tab */}
+          <TabsContent value="production" className="space-y-6">
+            <ProductionTab
+              orders={orders}
+              settings={moduleSettings}
+              headers={headers}
+              glassStyles={glassStyles}
+              onRefresh={fetchAllData}
+            />
+          </TabsContent>
+
+          {/* Installation Tab */}
+          <TabsContent value="installation" className="space-y-6">
+            <InstallationTab
+              orders={orders}
+              headers={headers}
+              glassStyles={glassStyles}
+              onRefresh={fetchAllData}
+            />
+          </TabsContent>
+
+          {/* Warranty & Tickets Tab */}
+          <TabsContent value="warranty" className="space-y-6">
+            <WarrantyTicketsTab
+              orders={orders}
+              headers={headers}
+              glassStyles={glassStyles}
+            />
+          </TabsContent>
+
+          {/* Reports Tab */}
+          <TabsContent value="reports" className="space-y-6">
+            <ReportsTab
+              headers={headers}
+              glassStyles={glassStyles}
+            />
+          </TabsContent>
+
+          {/* Settings Tab */}
+          <TabsContent value="settings" className="space-y-6">
+            <SettingsTab
+              settings={moduleSettings}
+              onSave={handleSaveSettings}
+              headers={headers}
+              glassStyles={glassStyles}
+            />
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* MEE AI Floater - Shows on every screen */}
+      <MEEAIFloater context={{ activeTab, selectedProject }} />
     </div>
   )
 }
