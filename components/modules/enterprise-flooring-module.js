@@ -8353,10 +8353,11 @@ function ViewQuoteDialog({ open, onClose, quote, moduleSettings, onDownload, onE
     rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700', icon: X },
     revised: { label: 'Needs Revision', color: 'bg-amber-100 text-amber-700', icon: Edit },
     invoiced: { label: 'Invoiced', color: 'bg-purple-100 text-purple-700', icon: Receipt },
+    converted: { label: 'Converted to Invoice', color: 'bg-green-100 text-green-700', icon: Receipt },
     expired: { label: 'Expired', color: 'bg-gray-100 text-gray-700', icon: Clock }
   }
 
-  const isExpired = new Date(quote.validUntil) < new Date() && !['approved', 'invoiced'].includes(quote.status)
+  const isExpired = new Date(quote.validUntil) < new Date() && !['approved', 'invoiced', 'converted'].includes(quote.status)
   const statusConfig = QuoteStatusConfig[isExpired ? 'expired' : quote.status] || QuoteStatusConfig.draft
   const StatusIcon = statusConfig.icon
 
