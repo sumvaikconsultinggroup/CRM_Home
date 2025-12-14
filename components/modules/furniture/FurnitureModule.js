@@ -2819,6 +2819,871 @@ export function FurnitureModule({ user, client, token, onBack }) {
     </div>
   )
 
+  // Render MEE AI Studio - Full AI Intelligence Layer
+  const renderMeeAiStudio = () => {
+    const [aiMode, setAiMode] = useState('chat')
+    const [selectedRequirement, setSelectedRequirement] = useState(null)
+    const [aiSuggestions, setAiSuggestions] = useState(null)
+    const [materialSuggestions, setMaterialSuggestions] = useState(null)
+    const [pricingSuggestions, setPricingSuggestions] = useState(null)
+    const [leadTimePrediction, setLeadTimePrediction] = useState(null)
+
+    const quickActions = [
+      { id: 'analyze', label: 'Analyze Requirement', icon: Sparkles, color: 'from-purple-500 to-indigo-600' },
+      { id: 'materials', label: 'Material Suggestions', icon: Layers, color: 'from-emerald-500 to-teal-600' },
+      { id: 'pricing', label: 'Smart Pricing', icon: DollarSign, color: 'from-amber-500 to-orange-600' },
+      { id: 'timeline', label: 'Lead Time Prediction', icon: Clock, color: 'from-blue-500 to-cyan-600' },
+      { id: 'style', label: 'Style Matching', icon: Palette, color: 'from-pink-500 to-rose-600' },
+      { id: 'quote', label: 'Generate Quote Narrative', icon: FileText, color: 'from-violet-500 to-purple-600' }
+    ]
+
+    const handleQuickAction = async (actionId) => {
+      setAiLoading(true)
+      try {
+        let response
+        switch (actionId) {
+          case 'analyze':
+            if (!selectedRequirement) {
+              toast.error('Please select a requirement first')
+              setAiLoading(false)
+              return
+            }
+            response = await fetch('/api/module/furniture/ai', {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({ action: 'analyze_requirement', requirementId: selectedRequirement })
+            })
+            if (response.ok) {
+              const data = await response.json()
+              setAiSuggestions(data.result)
+              toast.success('Analysis complete!')
+            }
+            break
+          case 'materials':
+            response = await fetch('/api/module/furniture/ai', {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({ 
+                action: 'suggest_materials', 
+                productType: 'wardrobe',
+                budget: 'luxury',
+                style: 'modern minimalist'
+              })
+            })
+            if (response.ok) {
+              const data = await response.json()
+              setMaterialSuggestions(data.result)
+              toast.success('Material suggestions ready!')
+            }
+            break
+          case 'pricing':
+            response = await fetch('/api/module/furniture/ai', {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({ 
+                action: 'suggest_pricing', 
+                productId: 'custom-wardrobe',
+                materials: ['Teak Wood', 'Soft-close hinges'],
+                dimensions: { width: 8, height: 9, depth: 2 }
+              })
+            })
+            if (response.ok) {
+              const data = await response.json()
+              setPricingSuggestions(data.result)
+              toast.success('Pricing insights ready!')
+            }
+            break
+          case 'timeline':
+            response = await fetch('/api/module/furniture/ai', {
+              method: 'POST',
+              headers,
+              body: JSON.stringify({ 
+                action: 'predict_lead_time', 
+                items: [{ name: 'Custom Wardrobe', quantity: 2 }, { name: 'TV Unit', quantity: 1 }],
+                currentLoad: 'moderate'
+              })
+            })
+            if (response.ok) {
+              const data = await response.json()
+              setLeadTimePrediction(data.result)
+              toast.success('Timeline predicted!')
+            }
+            break
+          default:
+            toast.info('Feature coming soon!')
+        }
+      } catch (error) {
+        toast.error('AI request failed')
+      } finally {
+        setAiLoading(false)
+      }
+    }
+
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-purple-500/25">
+                <Brain className="h-7 w-7 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">MEE AI Studio</h2>
+                <p className="text-slate-500">Your intelligent furniture design & business assistant</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Badge className="bg-gradient-to-r from-violet-100 to-purple-100 text-purple-700 border-purple-200">
+              <Sparkles className="h-3 w-3 mr-1" /> Powered by GPT-4
+            </Badge>
+          </div>
+        </div>
+
+        {/* AI Mode Tabs */}
+        <div className="flex gap-2 p-1 bg-white/50 backdrop-blur-sm rounded-xl w-fit">
+          {[
+            { id: 'chat', label: 'Chat', icon: MessageSquare },
+            { id: 'analyze', label: 'Analyze', icon: Sparkles },
+            { id: 'design', label: 'Design', icon: Palette },
+            { id: 'optimize', label: 'Optimize', icon: Target }
+          ].map(mode => (
+            <Button
+              key={mode.id}
+              variant={aiMode === mode.id ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setAiMode(mode.id)}
+              className={aiMode === mode.id ? 'bg-gradient-to-r from-violet-500 to-purple-600' : ''}
+            >
+              <mode.icon className="h-4 w-4 mr-2" />
+              {mode.label}
+            </Button>
+          ))}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Main Chat/AI Interface */}
+          <GlassCard className="lg:col-span-2 p-0 overflow-hidden">
+            <div className="h-[600px] flex flex-col">
+              {/* Chat Header */}
+              <div className="p-4 border-b border-slate-200/50 bg-gradient-to-r from-violet-50 to-purple-50">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                      <Brain className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <p className="font-semibold text-slate-900">MEE AI Assistant</p>
+                      <p className="text-xs text-emerald-600 flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Online
+                      </p>
+                    </div>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => setAiChatMessages([])}>
+                    <RotateCcw className="h-4 w-4 mr-2" /> Clear
+                  </Button>
+                </div>
+              </div>
+
+              {/* Chat Messages */}
+              <ScrollArea className="flex-1 p-4">
+                <div className="space-y-4">
+                  {aiChatMessages.length === 0 && (
+                    <div className="text-center py-12">
+                      <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-violet-100 to-purple-100 mx-auto mb-4 flex items-center justify-center">
+                        <Wand2 className="h-8 w-8 text-purple-600" />
+                      </div>
+                      <h3 className="font-semibold text-slate-900 mb-2">How can I help you today?</h3>
+                      <p className="text-sm text-slate-500 max-w-md mx-auto mb-6">
+                        Ask me about product recommendations, material suggestions, pricing strategies, or design ideas!
+                      </p>
+                      <div className="flex flex-wrap justify-center gap-2">
+                        {['Suggest materials for a luxury wardrobe', 'How to price a custom dining table?', 'Design tips for small bedrooms'].map(suggestion => (
+                          <Button
+                            key={suggestion}
+                            variant="outline"
+                            size="sm"
+                            className="text-xs"
+                            onClick={() => setAiInput(suggestion)}
+                          >
+                            {suggestion}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {aiChatMessages.map((msg, idx) => (
+                    <motion.div
+                      key={idx}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                    >
+                      <div className={`max-w-[80%] p-4 rounded-2xl ${
+                        msg.role === 'user' 
+                          ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-tr-none' 
+                          : 'bg-white border border-slate-200 shadow-sm rounded-tl-none'
+                      }`}>
+                        <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                      </div>
+                    </motion.div>
+                  ))}
+                  {aiLoading && (
+                    <div className="flex justify-start">
+                      <div className="bg-white border border-slate-200 shadow-sm rounded-2xl rounded-tl-none p-4">
+                        <div className="flex items-center gap-2">
+                          <motion.div
+                            animate={{ rotate: 360 }}
+                            transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
+                          >
+                            <RefreshCw className="h-4 w-4 text-purple-600" />
+                          </motion.div>
+                          <span className="text-sm text-slate-500">Thinking...</span>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </ScrollArea>
+
+              {/* Chat Input */}
+              <div className="p-4 border-t border-slate-200/50 bg-white/50">
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Ask MEE AI anything about furniture design, materials, pricing..."
+                    value={aiInput}
+                    onChange={(e) => setAiInput(e.target.value)}
+                    onKeyPress={(e) => e.key === 'Enter' && handleAIChat()}
+                    className="flex-1"
+                  />
+                  <Button 
+                    onClick={handleAIChat} 
+                    disabled={aiLoading || !aiInput.trim()}
+                    className="bg-gradient-to-r from-violet-500 to-purple-600"
+                  >
+                    <Send className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </GlassCard>
+
+          {/* Quick Actions & Insights Panel */}
+          <div className="space-y-4">
+            {/* Quick Actions */}
+            <GlassCard className="p-4">
+              <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+                <Zap className="h-4 w-4 text-amber-500" /> Quick Actions
+              </h3>
+              <div className="grid grid-cols-2 gap-2">
+                {quickActions.map(action => (
+                  <Button
+                    key={action.id}
+                    variant="outline"
+                    size="sm"
+                    className="h-auto py-3 flex flex-col gap-1 hover:bg-slate-50"
+                    onClick={() => handleQuickAction(action.id)}
+                    disabled={aiLoading}
+                  >
+                    <div className={`p-2 rounded-lg bg-gradient-to-br ${action.color} text-white`}>
+                      <action.icon className="h-4 w-4" />
+                    </div>
+                    <span className="text-xs">{action.label}</span>
+                  </Button>
+                ))}
+              </div>
+            </GlassCard>
+
+            {/* Select Requirement for Analysis */}
+            <GlassCard className="p-4">
+              <h3 className="font-semibold text-slate-900 mb-3">Analyze Requirement</h3>
+              <Select value={selectedRequirement || ''} onValueChange={setSelectedRequirement}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a requirement..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {requirements.map(req => (
+                    <SelectItem key={req.id} value={req.id}>
+                      {req.title || req.requirementNumber}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </GlassCard>
+
+            {/* AI Insights Display */}
+            {aiSuggestions && (
+              <GlassCard className="p-4 bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200">
+                <h3 className="font-semibold text-purple-900 mb-3 flex items-center gap-2">
+                  <Sparkles className="h-4 w-4" /> AI Analysis
+                </h3>
+                <div className="space-y-3 text-sm">
+                  {aiSuggestions.estimatedCost && (
+                    <div>
+                      <p className="text-purple-600 font-medium">Estimated Cost</p>
+                      <p className="text-slate-700">{typeof aiSuggestions.estimatedCost === 'object' 
+                        ? `₹${aiSuggestions.estimatedCost.min?.toLocaleString()} - ₹${aiSuggestions.estimatedCost.max?.toLocaleString()}`
+                        : aiSuggestions.estimatedCost}</p>
+                    </div>
+                  )}
+                  {aiSuggestions.timelineRecommendation && (
+                    <div>
+                      <p className="text-purple-600 font-medium">Timeline</p>
+                      <p className="text-slate-700">{aiSuggestions.timelineRecommendation} days</p>
+                    </div>
+                  )}
+                  {aiSuggestions.designSuggestions && (
+                    <div>
+                      <p className="text-purple-600 font-medium">Design Tips</p>
+                      <ul className="text-slate-700 list-disc list-inside">
+                        {Array.isArray(aiSuggestions.designSuggestions) 
+                          ? aiSuggestions.designSuggestions.map((tip, i) => <li key={i}>{tip}</li>)
+                          : <li>{aiSuggestions.designSuggestions}</li>}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              </GlassCard>
+            )}
+
+            {/* Material Suggestions */}
+            {materialSuggestions && (
+              <GlassCard className="p-4 bg-gradient-to-br from-emerald-50 to-teal-50 border-emerald-200">
+                <h3 className="font-semibold text-emerald-900 mb-3 flex items-center gap-2">
+                  <Layers className="h-4 w-4" /> Material Suggestions
+                </h3>
+                <div className="space-y-2 text-sm">
+                  {materialSuggestions.primaryMaterial && (
+                    <p className="text-slate-700"><strong>Primary:</strong> {typeof materialSuggestions.primaryMaterial === 'object' ? materialSuggestions.primaryMaterial.name : materialSuggestions.primaryMaterial}</p>
+                  )}
+                  {materialSuggestions.finishOptions && (
+                    <p className="text-slate-700"><strong>Finishes:</strong> {Array.isArray(materialSuggestions.finishOptions) ? materialSuggestions.finishOptions.join(', ') : materialSuggestions.finishOptions}</p>
+                  )}
+                </div>
+              </GlassCard>
+            )}
+
+            {/* Pricing Insights */}
+            {pricingSuggestions && (
+              <GlassCard className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
+                <h3 className="font-semibold text-amber-900 mb-3 flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" /> Pricing Insights
+                </h3>
+                <div className="space-y-2 text-sm">
+                  {pricingSuggestions.suggestedPrice && (
+                    <p className="text-2xl font-bold text-amber-700">₹{pricingSuggestions.suggestedPrice?.toLocaleString()}</p>
+                  )}
+                  {pricingSuggestions.priceRange && (
+                    <p className="text-slate-700">Range: ₹{pricingSuggestions.priceRange.min?.toLocaleString()} - ₹{pricingSuggestions.priceRange.max?.toLocaleString()}</p>
+                  )}
+                  {pricingSuggestions.marginAnalysis && (
+                    <p className="text-slate-600">{pricingSuggestions.marginAnalysis}</p>
+                  )}
+                </div>
+              </GlassCard>
+            )}
+
+            {/* Lead Time Prediction */}
+            {leadTimePrediction && (
+              <GlassCard className="p-4 bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200">
+                <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                  <Clock className="h-4 w-4" /> Lead Time Prediction
+                </h3>
+                <div className="space-y-2 text-sm">
+                  {leadTimePrediction.estimatedDays && (
+                    <p className="text-2xl font-bold text-blue-700">{leadTimePrediction.estimatedDays} days</p>
+                  )}
+                  {leadTimePrediction.rushPossible !== undefined && (
+                    <Badge className={leadTimePrediction.rushPossible ? 'bg-emerald-100 text-emerald-700' : 'bg-red-100 text-red-700'}>
+                      {leadTimePrediction.rushPossible ? 'Rush delivery possible' : 'No rush option'}
+                    </Badge>
+                  )}
+                </div>
+              </GlassCard>
+            )}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Render Media Gallery - 3D Models, Images, Videos
+  const renderMediaGallery = () => {
+    const [mediaFilter, setMediaFilter] = useState('all')
+    const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
+    const [selectedMedia, setSelectedMedia] = useState(null)
+    const [viewMode, setViewMode] = useState('grid')
+    const [uploadForm, setUploadForm] = useState({
+      fileName: '',
+      fileUrl: '',
+      mediaType: 'image',
+      category: 'general',
+      title: '',
+      description: ''
+    })
+
+    const mediaCategories = [
+      { id: 'all', label: 'All Media', icon: Grid3X3 },
+      { id: '3d_model', label: '3D Models', icon: Cube },
+      { id: 'image', label: 'Images', icon: Image },
+      { id: 'video', label: 'Videos', icon: Video },
+      { id: 'document', label: 'Documents', icon: FileText }
+    ]
+
+    const categoryLabels = {
+      design_render: 'Design Renders',
+      site_photo: 'Site Photos',
+      reference: 'Reference Images',
+      material_swatch: 'Material Swatches',
+      mood_board: 'Mood Boards',
+      cad_drawing: 'CAD Drawings',
+      product_photo: 'Product Photos',
+      general: 'General'
+    }
+
+    const filteredMedia = mediaFilter === 'all' 
+      ? mediaGallery 
+      : mediaGallery.filter(m => m.mediaType === mediaFilter)
+
+    const handleUploadMedia = async () => {
+      try {
+        const res = await fetch('/api/module/furniture/media', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify(uploadForm)
+        })
+        if (res.ok) {
+          toast.success('Media uploaded successfully!')
+          fetchMediaGallery()
+          setUploadDialogOpen(false)
+          setUploadForm({ fileName: '', fileUrl: '', mediaType: 'image', category: 'general', title: '', description: '' })
+        } else {
+          toast.error('Failed to upload media')
+        }
+      } catch (error) {
+        toast.error('Upload failed')
+      }
+    }
+
+    const handleDeleteMedia = async (mediaId) => {
+      try {
+        const res = await fetch(`/api/module/furniture/media?id=${mediaId}`, {
+          method: 'DELETE',
+          headers
+        })
+        if (res.ok) {
+          toast.success('Media deleted')
+          fetchMediaGallery()
+        }
+      } catch (error) {
+        toast.error('Delete failed')
+      }
+    }
+
+    // 3D Model Viewer Component
+    const Model3DViewer = ({ media }) => (
+      <div className="relative aspect-square bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl overflow-hidden">
+        <div className="absolute inset-0 flex items-center justify-center">
+          {/* model-viewer web component placeholder - in production use actual model-viewer */}
+          <div className="text-center">
+            <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 mx-auto mb-4 flex items-center justify-center animate-pulse">
+              <Cube className="h-10 w-10 text-white" />
+            </div>
+            <p className="text-sm font-medium text-slate-700">{media.fileName}</p>
+            <p className="text-xs text-slate-500 mt-1">Click to view in 3D</p>
+          </div>
+        </div>
+        {/* Interactive controls hint */}
+        <div className="absolute bottom-3 left-3 right-3 flex justify-center gap-2">
+          <Badge variant="outline" className="bg-white/80 backdrop-blur-sm text-xs">
+            <RotateCcw className="h-3 w-3 mr-1" /> Rotate
+          </Badge>
+          <Badge variant="outline" className="bg-white/80 backdrop-blur-sm text-xs">
+            <Maximize2 className="h-3 w-3 mr-1" /> Zoom
+          </Badge>
+        </div>
+      </div>
+    )
+
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-blue-500/25">
+                <ImagePlus className="h-7 w-7 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">Media Gallery</h2>
+                <p className="text-slate-500">3D Models, Images, Videos & Design Assets</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex bg-white/50 rounded-lg p-1">
+              <Button 
+                variant={viewMode === 'grid' ? 'secondary' : 'ghost'} 
+                size="sm"
+                onClick={() => setViewMode('grid')}
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant={viewMode === 'list' ? 'secondary' : 'ghost'} 
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+            <Button 
+              onClick={() => setUploadDialogOpen(true)}
+              className="bg-gradient-to-r from-cyan-500 to-blue-600"
+            >
+              <Upload className="h-4 w-4 mr-2" /> Upload Media
+            </Button>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <GlassCard className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20">
+                <Cube className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">{mediaGallery.filter(m => m.mediaType === '3d_model').length}</p>
+                <p className="text-xs text-slate-500">3D Models</p>
+              </div>
+            </div>
+          </GlassCard>
+          <GlassCard className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20">
+                <Image className="h-5 w-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">{mediaGallery.filter(m => m.mediaType === 'image').length}</p>
+                <p className="text-xs text-slate-500">Images</p>
+              </div>
+            </div>
+          </GlassCard>
+          <GlassCard className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-violet-500/20">
+                <Video className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">{mediaGallery.filter(m => m.mediaType === 'video').length}</p>
+                <p className="text-xs text-slate-500">Videos</p>
+              </div>
+            </div>
+          </GlassCard>
+          <GlassCard className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20">
+                <FileImage className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">{mediaGallery.length}</p>
+                <p className="text-xs text-slate-500">Total Assets</p>
+              </div>
+            </div>
+          </GlassCard>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {mediaCategories.map(cat => (
+            <Button
+              key={cat.id}
+              variant={mediaFilter === cat.id ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setMediaFilter(cat.id)}
+              className={mediaFilter === cat.id ? 'bg-gradient-to-r from-cyan-500 to-blue-600' : ''}
+            >
+              <cat.icon className="h-4 w-4 mr-2" />
+              {cat.label}
+            </Button>
+          ))}
+        </div>
+
+        {/* Media Grid/List */}
+        {viewMode === 'grid' ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+            {filteredMedia.map(media => (
+              <motion.div
+                key={media.id}
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                whileHover={{ y: -4 }}
+                transition={{ duration: 0.2 }}
+              >
+                <GlassCard className="overflow-hidden group cursor-pointer" onClick={() => setSelectedMedia(media)}>
+                  {/* Preview */}
+                  <div className="aspect-square bg-slate-100 relative">
+                    {media.mediaType === '3d_model' ? (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100">
+                        <Cube className="h-12 w-12 text-indigo-500" />
+                      </div>
+                    ) : media.mediaType === 'video' ? (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-100 to-pink-100">
+                        <Video className="h-12 w-12 text-purple-500" />
+                      </div>
+                    ) : media.thumbnailUrl || media.fileUrl ? (
+                      <img 
+                        src={media.thumbnailUrl || media.fileUrl} 
+                        alt={media.title || media.fileName}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
+                        <FileImage className="h-12 w-12 text-slate-400" />
+                      </div>
+                    )}
+                    
+                    {/* Type Badge */}
+                    <div className="absolute top-2 left-2">
+                      <Badge className={`text-xs ${
+                        media.mediaType === '3d_model' ? 'bg-indigo-500' :
+                        media.mediaType === 'video' ? 'bg-purple-500' :
+                        media.mediaType === 'image' ? 'bg-emerald-500' : 'bg-slate-500'
+                      } text-white`}>
+                        {media.mediaType === '3d_model' ? '3D' : media.mediaType?.toUpperCase()}
+                      </Badge>
+                    </div>
+
+                    {/* Hover Actions */}
+                    <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                      <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); setSelectedMedia(media) }}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                      <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); handleDeleteMedia(media.id) }}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+
+                  {/* Info */}
+                  <div className="p-3">
+                    <p className="font-medium text-sm text-slate-900 truncate">{media.title || media.fileName}</p>
+                    <p className="text-xs text-slate-500 truncate">{categoryLabels[media.category] || media.category}</p>
+                  </div>
+                </GlassCard>
+              </motion.div>
+            ))}
+
+            {filteredMedia.length === 0 && (
+              <div className="col-span-full py-16 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-slate-100 mx-auto mb-4 flex items-center justify-center">
+                  <ImagePlus className="h-8 w-8 text-slate-400" />
+                </div>
+                <h3 className="font-semibold text-slate-900 mb-2">No media found</h3>
+                <p className="text-sm text-slate-500 mb-4">Upload your first media file to get started</p>
+                <Button onClick={() => setUploadDialogOpen(true)}>
+                  <Upload className="h-4 w-4 mr-2" /> Upload Media
+                </Button>
+              </div>
+            )}
+          </div>
+        ) : (
+          // List View
+          <GlassCard className="overflow-hidden">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b border-slate-200 bg-slate-50/50">
+                  <th className="px-4 py-3 text-left font-semibold text-slate-600">File</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-600">Type</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-600">Category</th>
+                  <th className="px-4 py-3 text-left font-semibold text-slate-600">Uploaded</th>
+                  <th className="px-4 py-3 text-center font-semibold text-slate-600">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {filteredMedia.map(media => (
+                  <tr key={media.id} className="hover:bg-slate-50/50">
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
+                          {media.mediaType === '3d_model' ? <Cube className="h-5 w-5 text-indigo-500" /> :
+                           media.mediaType === 'video' ? <Video className="h-5 w-5 text-purple-500" /> :
+                           <Image className="h-5 w-5 text-emerald-500" />}
+                        </div>
+                        <div>
+                          <p className="font-medium text-slate-900">{media.title || media.fileName}</p>
+                          <p className="text-xs text-slate-500">{media.fileName}</p>
+                        </div>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <Badge variant="outline" className="capitalize">{media.mediaType?.replace('_', ' ')}</Badge>
+                    </td>
+                    <td className="px-4 py-3 text-slate-600">{categoryLabels[media.category] || media.category}</td>
+                    <td className="px-4 py-3 text-slate-500">{new Date(media.createdAt).toLocaleDateString()}</td>
+                    <td className="px-4 py-3">
+                      <div className="flex justify-center gap-1">
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedMedia(media)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteMedia(media.id)}>
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </GlassCard>
+        )}
+
+        {/* Upload Dialog */}
+        <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Upload className="h-5 w-5 text-blue-600" /> Upload Media
+              </DialogTitle>
+              <DialogDescription>Add images, 3D models, videos or documents to your gallery</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Media Type</Label>
+                  <Select value={uploadForm.mediaType} onValueChange={(v) => setUploadForm(prev => ({ ...prev, mediaType: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="image">Image</SelectItem>
+                      <SelectItem value="3d_model">3D Model</SelectItem>
+                      <SelectItem value="video">Video</SelectItem>
+                      <SelectItem value="document">Document</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Category</Label>
+                  <Select value={uploadForm.category} onValueChange={(v) => setUploadForm(prev => ({ ...prev, category: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="general">General</SelectItem>
+                      <SelectItem value="design_render">Design Render</SelectItem>
+                      <SelectItem value="site_photo">Site Photo</SelectItem>
+                      <SelectItem value="reference">Reference</SelectItem>
+                      <SelectItem value="material_swatch">Material Swatch</SelectItem>
+                      <SelectItem value="mood_board">Mood Board</SelectItem>
+                      <SelectItem value="product_photo">Product Photo</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label>File Name</Label>
+                <Input 
+                  placeholder="e.g., living-room-wardrobe.glb"
+                  value={uploadForm.fileName}
+                  onChange={(e) => setUploadForm(prev => ({ ...prev, fileName: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>File URL</Label>
+                <Input 
+                  placeholder="https://..."
+                  value={uploadForm.fileUrl}
+                  onChange={(e) => setUploadForm(prev => ({ ...prev, fileUrl: e.target.value }))}
+                />
+                <p className="text-xs text-slate-500 mt-1">Paste URL from your cloud storage (AWS S3, Google Drive, Dropbox)</p>
+              </div>
+              <div>
+                <Label>Title (optional)</Label>
+                <Input 
+                  placeholder="Display name for the file"
+                  value={uploadForm.title}
+                  onChange={(e) => setUploadForm(prev => ({ ...prev, title: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>Description (optional)</Label>
+                <Textarea 
+                  placeholder="Add notes or description..."
+                  value={uploadForm.description}
+                  onChange={(e) => setUploadForm(prev => ({ ...prev, description: e.target.value }))}
+                  rows={2}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleUploadMedia} className="bg-gradient-to-r from-cyan-500 to-blue-600">
+                <Upload className="h-4 w-4 mr-2" /> Upload
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Media Preview Dialog */}
+        <Dialog open={!!selectedMedia} onOpenChange={() => setSelectedMedia(null)}>
+          <DialogContent className="sm:max-w-3xl">
+            <DialogHeader>
+              <DialogTitle>{selectedMedia?.title || selectedMedia?.fileName}</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              {selectedMedia?.mediaType === '3d_model' ? (
+                <Model3DViewer media={selectedMedia} />
+              ) : selectedMedia?.mediaType === 'video' ? (
+                <div className="aspect-video bg-black rounded-xl flex items-center justify-center">
+                  <Video className="h-16 w-16 text-white/50" />
+                </div>
+              ) : (
+                <div className="aspect-video bg-slate-100 rounded-xl overflow-hidden">
+                  {selectedMedia?.fileUrl ? (
+                    <img src={selectedMedia.fileUrl} alt={selectedMedia.title} className="w-full h-full object-contain" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <FileImage className="h-16 w-16 text-slate-300" />
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Media Info */}
+              <div className="mt-4 p-4 bg-slate-50 rounded-xl">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-slate-500">Type</p>
+                    <p className="font-medium capitalize">{selectedMedia?.mediaType?.replace('_', ' ')}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Category</p>
+                    <p className="font-medium">{categoryLabels[selectedMedia?.category] || selectedMedia?.category}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Uploaded</p>
+                    <p className="font-medium">{selectedMedia?.createdAt ? new Date(selectedMedia.createdAt).toLocaleString() : '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Status</p>
+                    <Badge className={selectedMedia?.approvalStatus === 'approved' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}>
+                      {selectedMedia?.approvalStatus || 'pending'}
+                    </Badge>
+                  </div>
+                </div>
+                {selectedMedia?.description && (
+                  <div className="mt-3 pt-3 border-t border-slate-200">
+                    <p className="text-slate-500 text-sm">Description</p>
+                    <p className="text-slate-700 mt-1">{selectedMedia.description}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+    )
+  }
+
   // Main content renderer
   const renderContent = () => {
     switch (activeTab) {
