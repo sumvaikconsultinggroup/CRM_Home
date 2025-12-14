@@ -8720,8 +8720,20 @@ function QuoteEditDialog({ open, onClose, quote, projects, products, moduleSetti
                     <div>
                       <Label>Pincode</Label>
                       <Input 
+                        type="text"
+                        maxLength={6}
                         value={form.site?.pincode || ''} 
-                        onChange={(e) => setForm(prev => ({ ...prev, site: { ...prev.site, pincode: e.target.value } }))}
+                        onChange={(e) => {
+                          const pincode = e.target.value.replace(/\D/g, '').slice(0, 6)
+                          setForm(prev => ({ ...prev, site: { ...prev.site, pincode } }))
+                        }}
+                        onBlur={(e) => {
+                          const pincode = e.target.value
+                          if (pincode && !/^[1-9][0-9]{5}$/.test(pincode)) {
+                            toast.error('Please enter a valid 6-digit pincode')
+                          }
+                        }}
+                        placeholder="400001"
                       />
                     </div>
                   </div>
