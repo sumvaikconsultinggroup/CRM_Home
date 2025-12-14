@@ -942,6 +942,7 @@ export function FurnitureModule({ user, client, token, onBack }) {
           <TabsTrigger value="pricing">Pricing Rules</TabsTrigger>
           <TabsTrigger value="automation">Automation</TabsTrigger>
           <TabsTrigger value="permissions">Permissions</TabsTrigger>
+          <TabsTrigger value="data">Data Management</TabsTrigger>
         </TabsList>
 
         <TabsContent value="schemas" className="mt-4 space-y-4">
