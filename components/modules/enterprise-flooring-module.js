@@ -5153,16 +5153,21 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                       <Info className="h-4 w-4 inline mr-1" />
                       Click a template to set it as your default. The selected template will be used when downloading/printing quotations.
                     </p>
-                  </CardContent>
-                </Card>
-                        </div>
-                      </div>
-                    </div>
                     
                     {/* Template Features Info */}
                     <div className="mt-4 grid grid-cols-3 gap-4 text-sm">
+                      <div className="p-3 bg-teal-50 rounded-lg">
+                        <h5 className="font-medium text-teal-800 mb-2">Premium Teal Features</h5>
+                        <ul className="text-xs text-teal-600 space-y-1">
+                          <li>✓ Watermark logo (5% opacity)</li>
+                          <li>✓ Measurement details (B2C)</li>
+                          <li>✓ Amount in words</li>
+                          <li>✓ Bank details section</li>
+                          <li>✓ Signature boxes</li>
+                        </ul>
+                      </div>
                       <div className="p-3 bg-blue-50 rounded-lg">
-                        <h5 className="font-medium text-blue-800 mb-2">Professional Features</h5>
+                        <h5 className="font-medium text-blue-800 mb-2">Classic Blue Features</h5>
                         <ul className="text-xs text-blue-600 space-y-1">
                           <li>✓ Company branding</li>
                           <li>✓ Customer details</li>
@@ -5171,24 +5176,14 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           <li>✓ Terms & conditions</li>
                         </ul>
                       </div>
-                      <div className="p-3 bg-slate-50 rounded-lg">
-                        <h5 className="font-medium text-slate-800 mb-2">Detailed Features</h5>
+                      <div className="p-3 bg-slate-100 rounded-lg">
+                        <h5 className="font-medium text-slate-800 mb-2">Detailed Dark Features</h5>
                         <ul className="text-xs text-slate-600 space-y-1">
                           <li>✓ Full GSTIN details</li>
-                          <li>✓ Product images</li>
-                          <li>✓ Specifications</li>
+                          <li>✓ Dark header theme</li>
                           <li>✓ CGST/SGST breakdown</li>
                           <li>✓ Site address</li>
-                        </ul>
-                      </div>
-                      <div className="p-3 bg-amber-50 rounded-lg">
-                        <h5 className="font-medium text-amber-800 mb-2">Luxury Features</h5>
-                        <ul className="text-xs text-amber-600 space-y-1">
-                          <li>✓ Premium design</li>
-                          <li>✓ Gold accents</li>
-                          <li>✓ Product showcase</li>
-                          <li>✓ VIP presentation</li>
-                          <li>✓ Exclusive branding</li>
+                          <li>✓ Professional look</li>
                         </ul>
                       </div>
                     </div>
