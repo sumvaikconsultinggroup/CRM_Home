@@ -5726,6 +5726,9 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                 }
 
                 if (status === 'measurement_done') {
+                  // Can create quote if either has products OR materialDecideLater is checked
+                  const canCreateQuote = hasProducts || materialDecideLater
+                  
                   return (
                     <div className="space-y-3">
                       <div className="flex gap-3 flex-wrap">
@@ -5741,15 +5744,15 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                         </Button>
                         <Button 
                           className="bg-emerald-600 hover:bg-emerald-700"
-                          disabled={loading || !hasProducts}
+                          disabled={loading || !canCreateQuote}
                           onClick={createQuoteFromMeasurement}
                         >
                           {loading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <FileText className="h-4 w-4 mr-2" />}
                           Create Quote ({totalArea.toFixed(0)} sqft)
                         </Button>
                       </div>
-                      {!hasProducts && (
-                        <p className="text-sm text-amber-600">Select products above to create a quote.</p>
+                      {!canCreateQuote && (
+                        <p className="text-sm text-amber-600">Select products above or check "Material to be decided later" to create a quote.</p>
                       )}
                     </div>
                   )
