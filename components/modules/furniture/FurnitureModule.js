@@ -3225,7 +3225,7 @@ export function FurnitureModule({ user, client, token, onBack }) {
 
     const mediaCategories = [
       { id: 'all', label: 'All Media', icon: Grid3X3 },
-      { id: '3d_model', label: '3D Models', icon: Cube },
+      { id: '3d_model', label: '3D Models', icon: Box },
       { id: 'image', label: 'Images', icon: Image },
       { id: 'video', label: 'Videos', icon: Video },
       { id: 'document', label: 'Documents', icon: FileText }
