@@ -343,11 +343,32 @@ export async function PUT(request) {
         return successResponse({ message: 'Invoice marked as viewed' })
 
       case 'cancel':
+        // Cancel invoice and revert quote status if this invoice was created from a quote
         await invoices.updateOne({ id }, {
           $set: { status: 'cancelled', cancelledAt: now, cancelReason: body.reason, updatedAt: now },
           $push: { statusHistory: { status: 'cancelled', timestamp: now, by: user.id, reason: body.reason } }
         })
-        return successResponse({ message: 'Invoice cancelled' })
+        
+        // If this invoice was created from a quote, revert the quote status back to 'approved'
+        if (invoice.quoteId) {
+          const quotes = db.collection('flooring_quotes_v2')
+          await quotes.updateOne(
+            { id: invoice.quoteId },
+            {
+              $set: { status: 'approved', invoiceId: null, invoiceCancelledAt: now, updatedAt: now },
+              $push: {
+                statusHistory: {
+                  status: 'approved',
+                  timestamp: now,
+                  by: user.id,
+                  notes: `Invoice ${invoice.invoiceNumber} was cancelled. Quote can be re-invoiced.`
+                }
+              }
+            }
+          )
+        }
+        
+        return successResponse({ message: 'Invoice cancelled', quoteReverted: !!invoice.quoteId })
 
       default:
         // Regular update
