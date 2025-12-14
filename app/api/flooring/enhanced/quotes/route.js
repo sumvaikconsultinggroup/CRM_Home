@@ -407,6 +407,19 @@ export async function PUT(request) {
         updateData.updatedAt = now
         updateData.updatedBy = user.id
 
+        // If status is being changed to 'revised', add to status history
+        if (updateData.status === 'revised' && quote.status !== 'revised') {
+          updateData.$push = {
+            statusHistory: {
+              status: 'revised',
+              timestamp: now,
+              by: user.id,
+              notes: updateData.revisionNote || 'Quote revised for resubmission'
+            }
+          }
+          delete updateData.revisionNote
+        }
+
         // Recalculate totals if items changed
         if (updateData.items) {
           const items = updateData.items
@@ -434,9 +447,24 @@ export async function PUT(request) {
           updateData.grandTotal = updateData.taxableAmount + updateData.totalTax
         }
 
+        // Build update operation
+        const updateOp = { $set: {} }
+        const pushData = updateData.$push
+        delete updateData.$push
+        
+        // Copy all fields to $set
+        Object.keys(updateData).forEach(key => {
+          updateOp.$set[key] = updateData[key]
+        })
+        
+        // Add $push if we have status history to add
+        if (pushData) {
+          updateOp.$push = pushData
+        }
+
         const result = await quotes.findOneAndUpdate(
           { id },
-          { $set: updateData },
+          updateOp,
           { returnDocument: 'after' }
         )
 
