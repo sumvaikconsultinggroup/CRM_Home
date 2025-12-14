@@ -98,19 +98,46 @@ const StatCard = ({ title, value, subtitle, icon: Icon, trend, trendValue, color
   )
 }
 
-// Navigation items
+// Navigation items - Enterprise level with all features for Manufacturers & Dealers
 const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'requirements', label: 'Requirements', icon: ClipboardList },
-  { id: 'measurements', label: 'Measurements', icon: Ruler },
-  { id: 'design-briefs', label: 'Design Briefs', icon: Palette },
-  { id: 'products', label: 'Product Catalog', icon: Package },
-  { id: 'materials', label: 'Materials', icon: Layers },
-  { id: 'hardware', label: 'Hardware', icon: Cog },
-  { id: 'inventory', label: 'Inventory', icon: Warehouse },
-  { id: 'reports', label: 'Reports', icon: BarChart3 },
-  { id: 'config', label: 'Config Studio', icon: Settings }
+  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, group: 'main' },
+  // Intake & CRM
+  { id: 'requirements', label: 'Requirements', icon: ClipboardList, group: 'intake', badge: 'intake' },
+  { id: 'measurements', label: 'Measurements', icon: Ruler, group: 'intake' },
+  { id: 'design-briefs', label: 'Design Briefs', icon: Palette, group: 'intake' },
+  // Sales & Quotations
+  { id: 'quotations', label: 'Quotations', icon: FileText, group: 'sales' },
+  { id: 'orders', label: 'Orders', icon: PackageCheck, group: 'sales' },
+  // Product Management
+  { id: 'products', label: 'Product Catalog', icon: Package, group: 'products' },
+  { id: 'materials', label: 'Materials', icon: Layers, group: 'products' },
+  { id: 'hardware', label: 'Hardware', icon: Cog, group: 'products' },
+  // Procurement & Inventory
+  { id: 'suppliers', label: 'Suppliers', icon: Truck, group: 'procurement' },
+  { id: 'purchase-orders', label: 'Purchase Orders', icon: FileCheck, group: 'procurement' },
+  { id: 'inventory', label: 'Inventory', icon: Warehouse, group: 'procurement' },
+  // Execution & Delivery (for Manufacturers)
+  { id: 'installations', label: 'Delivery & Install', icon: Hammer, group: 'execution' },
+  { id: 'service-tickets', label: 'Service & Warranty', icon: ShieldCheck, group: 'execution' },
+  // Dealer Features
+  { id: 'showroom', label: 'Showroom', icon: Building2, group: 'dealer' },
+  // Reports & Config
+  { id: 'reports', label: 'Reports', icon: BarChart3, group: 'reports' },
+  { id: 'config', label: 'Config Studio', icon: Settings, group: 'config' }
 ]
+
+// Navigation group labels
+const navGroups = {
+  main: null,
+  intake: 'CRM & Intake',
+  sales: 'Sales',
+  products: 'Catalog',
+  procurement: 'Procurement',
+  execution: 'Execution',
+  dealer: 'Dealer',
+  reports: 'Analytics',
+  config: 'Settings'
+}
 
 // Category icons
 const categoryIcons = {
