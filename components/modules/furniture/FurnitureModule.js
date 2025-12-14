@@ -3706,6 +3706,8 @@ export function FurnitureModule({ user, client, token, onBack }) {
       case 'production': return renderProduction()
       case 'invoices': return renderInvoices()
       case 'settings': return renderSettings()
+      case 'mee-ai': return renderMeeAiStudio()
+      case 'media-gallery': return renderMediaGallery()
       default: {
         const activeNavItem = navItems.find(n => n.id === activeTab)
         const IconComponent = activeNavItem?.icon || Package
