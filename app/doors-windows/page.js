@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
-import { DoorsWindowsModule } from '@/components/doors-windows-module'
+import { DoorsWindowsModule } from '@/components/modules/doors-windows'
 
 export default function DoorsWindowsPage() {
   const router = useRouter()
