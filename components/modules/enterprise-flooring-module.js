@@ -4956,10 +4956,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       { id: 'wastage', name: 'Wastage Report', icon: AlertTriangle }
     ]
 
+    // Get report data based on selected type
+    const reportData = reports[selectedReportType] || {}
+    
     return (
       <div className="space-y-6">
         {/* Report Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between bg-white p-4 rounded-lg border">
           <div className="flex items-center gap-3">
             <Select value={reportPeriod} onValueChange={(v) => { setReportPeriod(v); fetchReports(selectedReportType) }}>
               <SelectTrigger className="w-[160px]">
@@ -4973,6 +4976,9 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                 <SelectItem value="all">All Time</SelectItem>
               </SelectContent>
             </Select>
+            <Button variant="outline" size="sm" onClick={() => fetchReports(selectedReportType)}>
+              <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+            </Button>
           </div>
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm">
@@ -5014,55 +5020,76 @@ export function EnterpriseFlooringModule({ client, user, token }) {
 
           {/* Report Content */}
           <div className="lg:col-span-3 space-y-4">
+            {/* Summary Report */}
             {selectedReportType === 'summary' && (
               <>
-                {/* KPI Cards */}
+                {/* KPI Cards - Dynamic Data */}
                 <div className="grid grid-cols-4 gap-4">
-                  <Card className="p-4">
-                    <p className="text-sm text-slate-500">Total Revenue</p>
-                    <p className="text-2xl font-bold text-emerald-600">₹{(dashboardData?.overview?.collectedAmount || 0).toLocaleString()}</p>
-                    <p className="text-xs text-slate-400 mt-1">+12% from last period</p>
+                  <Card className="p-4 bg-gradient-to-br from-emerald-50 to-green-50">
+                    <p className="text-sm text-emerald-600 font-medium">Total Revenue</p>
+                    <p className="text-2xl font-bold text-emerald-700">₹{(reportData?.overview?.totalCollected || dashboardData?.overview?.collectedAmount || 0).toLocaleString()}</p>
+                    <p className="text-xs text-emerald-500 mt-1">{reportData?.overview?.collectedChange || '+0%'} from last period</p>
                   </Card>
-                  <Card className="p-4">
-                    <p className="text-sm text-slate-500">Quotes Sent</p>
-                    <p className="text-2xl font-bold">{dashboardData?.overview?.totalQuotes || 0}</p>
-                    <p className="text-xs text-slate-400 mt-1">₹{(dashboardData?.overview?.totalQuoteValue || 0).toLocaleString()} value</p>
+                  <Card className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+                    <p className="text-sm text-blue-600 font-medium">Quotes Sent</p>
+                    <p className="text-2xl font-bold text-blue-700">{reportData?.overview?.periodQuotes || dashboardData?.overview?.totalQuotes || 0}</p>
+                    <p className="text-xs text-blue-500 mt-1">₹{(reportData?.overview?.periodQuoteValue || dashboardData?.overview?.totalQuoteValue || 0).toLocaleString()} value</p>
                   </Card>
-                  <Card className="p-4">
-                    <p className="text-sm text-slate-500">Conversion Rate</p>
-                    <p className="text-2xl font-bold text-blue-600">{dashboardData?.overview?.conversionRate || 0}%</p>
-                    <p className="text-xs text-slate-400 mt-1">{dashboardData?.overview?.approvedQuotes || 0} approved</p>
+                  <Card className="p-4 bg-gradient-to-br from-purple-50 to-violet-50">
+                    <p className="text-sm text-purple-600 font-medium">Conversion Rate</p>
+                    <p className="text-2xl font-bold text-purple-700">{reportData?.overview?.conversionRate || dashboardData?.overview?.conversionRate || 0}%</p>
+                    <p className="text-xs text-purple-500 mt-1">{reportData?.overview?.approvedQuotes || dashboardData?.overview?.approvedQuotes || 0} approved</p>
                   </Card>
-                  <Card className="p-4">
-                    <p className="text-sm text-slate-500">Pending Collection</p>
-                    <p className="text-2xl font-bold text-amber-600">₹{(dashboardData?.overview?.pendingAmount || 0).toLocaleString()}</p>
-                    <p className="text-xs text-slate-400 mt-1">{invoices.filter(i => i.status !== 'paid').length} invoices</p>
+                  <Card className="p-4 bg-gradient-to-br from-amber-50 to-yellow-50">
+                    <p className="text-sm text-amber-600 font-medium">Pending Collection</p>
+                    <p className="text-2xl font-bold text-amber-700">₹{(reportData?.overview?.pendingAmount || dashboardData?.overview?.pendingAmount || 0).toLocaleString()}</p>
+                    <p className="text-xs text-amber-500 mt-1">{invoices.filter(i => !['paid', 'cancelled'].includes(i.status)).length} unpaid invoices</p>
                   </Card>
                 </div>
 
-                {/* Charts placeholder */}
+                {/* Status Distributions */}
                 <div className="grid grid-cols-2 gap-4">
                   <Card className="p-4">
-                    <h3 className="font-semibold mb-4">Revenue Trend</h3>
-                    <div className="h-48 bg-gradient-to-br from-blue-50 to-indigo-100 rounded-lg flex items-center justify-center">
-                      <div className="text-center">
-                        <BarChart3 className="h-12 w-12 text-blue-400 mx-auto mb-2" />
-                        <p className="text-slate-500 text-sm">Chart visualization</p>
-                      </div>
+                    <h3 className="font-semibold mb-4">Quote Status Distribution</h3>
+                    <div className="space-y-3">
+                      {Object.entries(reportData?.quotesByStatus || {}).map(([status, count]) => (
+                        <div key={status} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${
+                              status === 'approved' || status === 'invoiced' ? 'bg-emerald-500' :
+                              status === 'rejected' ? 'bg-red-500' :
+                              status === 'sent' ? 'bg-blue-500' :
+                              status === 'draft' ? 'bg-slate-400' : 'bg-amber-500'
+                            }`} />
+                            <span className="text-sm capitalize">{status.replace('_', ' ')}</span>
+                          </div>
+                          <span className="font-semibold">{count}</span>
+                        </div>
+                      ))}
                     </div>
                   </Card>
                   <Card className="p-4">
-                    <h3 className="font-semibold mb-4">Quote Status Distribution</h3>
-                    <div className="h-48 bg-gradient-to-br from-emerald-50 to-teal-100 rounded-lg flex items-center justify-center">
-                      <div className="text-center">
-                        <PieChart className="h-12 w-12 text-emerald-400 mx-auto mb-2" />
-                        <p className="text-slate-500 text-sm">Chart visualization</p>
-                      </div>
+                    <h3 className="font-semibold mb-4">Invoice Status Distribution</h3>
+                    <div className="space-y-3">
+                      {Object.entries(reportData?.invoicesByStatus || {}).map(([status, count]) => (
+                        <div key={status} className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-3 h-3 rounded-full ${
+                              status === 'paid' ? 'bg-emerald-500' :
+                              status === 'overdue' ? 'bg-red-500' :
+                              status === 'partially_paid' ? 'bg-amber-500' :
+                              status === 'sent' ? 'bg-blue-500' : 'bg-slate-400'
+                            }`} />
+                            <span className="text-sm capitalize">{status.replace('_', ' ')}</span>
+                          </div>
+                          <span className="font-semibold">{count}</span>
+                        </div>
+                      ))}
                     </div>
                   </Card>
                 </div>
 
-                {/* Top Products */}
+                {/* Top Products with Real Data */}
                 <Card>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-lg">Top Products by Revenue</CardTitle>
@@ -5078,7 +5105,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                         </tr>
                       </thead>
                       <tbody className="divide-y">
-                        {products.slice(0, 5).map((product, i) => (
+                        {(reports.products?.topProducts || products.slice(0, 5)).map((product, i) => (
                           <tr key={product.id || i} className="hover:bg-slate-50">
                             <td className="px-4 py-3 font-medium">{product.name}</td>
                             <td className="px-4 py-3">
@@ -5086,12 +5113,19 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                 {FlooringCategories[product.category]?.label || product.category}
                               </Badge>
                             </td>
-                            <td className="px-4 py-3 text-right">{Math.floor(Math.random() * 500 + 100)} sqft</td>
+                            <td className="px-4 py-3 text-right">{(product.sales?.quantity || 0).toLocaleString()} sqft</td>
                             <td className="px-4 py-3 text-right font-semibold text-emerald-600">
-                              ₹{Math.floor(Math.random() * 100000 + 20000).toLocaleString()}
+                              ₹{(product.sales?.revenue || 0).toLocaleString()}
                             </td>
                           </tr>
                         ))}
+                        {(!reports.products?.topProducts || reports.products?.topProducts?.length === 0) && products.length === 0 && (
+                          <tr>
+                            <td colSpan="4" className="px-4 py-8 text-center text-slate-500">
+                              No product data available. Create quotes or invoices to see product performance.
+                            </td>
+                          </tr>
+                        )}
                       </tbody>
                     </table>
                   </CardContent>
@@ -5099,7 +5133,210 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               </>
             )}
 
-            {selectedReportType !== 'summary' && (
+            {/* Invoice Report */}
+            {selectedReportType === 'invoices' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-4 gap-4">
+                  <Card className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+                    <p className="text-sm text-blue-600 font-medium">Total Invoiced</p>
+                    <p className="text-2xl font-bold text-blue-700">₹{(reportData?.totalInvoiced || 0).toLocaleString()}</p>
+                    <p className="text-xs text-blue-500 mt-1">{reportData?.invoiceCount || 0} invoices</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-emerald-50 to-green-50">
+                    <p className="text-sm text-emerald-600 font-medium">Collected</p>
+                    <p className="text-2xl font-bold text-emerald-700">₹{(reportData?.totalCollected || 0).toLocaleString()}</p>
+                    <p className="text-xs text-emerald-500 mt-1">{reportData?.collectionRate || 0}% collection rate</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-amber-50 to-yellow-50">
+                    <p className="text-sm text-amber-600 font-medium">Pending</p>
+                    <p className="text-2xl font-bold text-amber-700">₹{(reportData?.totalPending || 0).toLocaleString()}</p>
+                    <p className="text-xs text-amber-500 mt-1">{reportData?.partiallyPaidCount || 0} partially paid</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-red-50 to-rose-50">
+                    <p className="text-sm text-red-600 font-medium">Overdue</p>
+                    <p className="text-2xl font-bold text-red-700">₹{(reportData?.overdueAmount || 0).toLocaleString()}</p>
+                    <p className="text-xs text-red-500 mt-1">{reportData?.overdueCount || 0} overdue</p>
+                  </Card>
+                </div>
+                
+                <Card className="p-4">
+                  <h3 className="font-semibold mb-4">Invoice Metrics</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="text-center p-4 bg-slate-50 rounded-lg">
+                      <p className="text-3xl font-bold text-slate-700">{reportData?.averageDaysToPay || 0}</p>
+                      <p className="text-sm text-slate-500">Avg Days to Pay</p>
+                    </div>
+                    <div className="text-center p-4 bg-slate-50 rounded-lg">
+                      <p className="text-3xl font-bold text-slate-700">{reportData?.paidCount || 0}</p>
+                      <p className="text-sm text-slate-500">Paid Invoices</p>
+                    </div>
+                    <div className="text-center p-4 bg-slate-50 rounded-lg">
+                      <p className="text-3xl font-bold text-slate-700">{reportData?.collectionRate || 0}%</p>
+                      <p className="text-sm text-slate-500">Collection Rate</p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* Aging Report */}
+            {selectedReportType === 'aging' && (
+              <div className="space-y-4">
+                <Card className="p-4">
+                  <h3 className="font-semibold mb-4">Receivables Aging Summary</h3>
+                  <p className="text-2xl font-bold text-slate-700 mb-4">
+                    Total Outstanding: ₹{(reportData?.totalOutstanding || 0).toLocaleString()}
+                  </p>
+                  <div className="grid grid-cols-5 gap-4">
+                    {['current', '1-30', '31-60', '61-90', '90+'].map((bucket) => {
+                      const data = reportData?.aging?.[bucket] || { count: 0, amount: 0 }
+                      const colors = {
+                        'current': 'bg-emerald-50 border-emerald-200 text-emerald-700',
+                        '1-30': 'bg-blue-50 border-blue-200 text-blue-700',
+                        '31-60': 'bg-amber-50 border-amber-200 text-amber-700',
+                        '61-90': 'bg-orange-50 border-orange-200 text-orange-700',
+                        '90+': 'bg-red-50 border-red-200 text-red-700'
+                      }
+                      return (
+                        <Card key={bucket} className={`p-4 border-2 ${colors[bucket]}`}>
+                          <p className="text-sm font-medium">{bucket === 'current' ? 'Current' : `${bucket} Days`}</p>
+                          <p className="text-xl font-bold">₹{data.amount.toLocaleString()}</p>
+                          <p className="text-xs mt-1">{data.count} invoice{data.count !== 1 ? 's' : ''}</p>
+                        </Card>
+                      )
+                    })}
+                  </div>
+                </Card>
+                
+                {reportData?.aging?.['90+']?.invoices?.length > 0 && (
+                  <Card className="p-4">
+                    <h3 className="font-semibold text-red-600 mb-4">Critical: 90+ Days Overdue</h3>
+                    <table className="w-full">
+                      <thead className="bg-red-50">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-red-700">Invoice</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-red-700">Customer</th>
+                          <th className="px-4 py-2 text-right text-xs font-semibold text-red-700">Amount</th>
+                          <th className="px-4 py-2 text-right text-xs font-semibold text-red-700">Days Overdue</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {reportData.aging['90+'].invoices.slice(0, 10).map((inv, i) => (
+                          <tr key={i} className="hover:bg-red-50">
+                            <td className="px-4 py-2 font-medium">{inv.invoiceNumber}</td>
+                            <td className="px-4 py-2">{inv.customer}</td>
+                            <td className="px-4 py-2 text-right font-semibold">₹{inv.amount.toLocaleString()}</td>
+                            <td className="px-4 py-2 text-right text-red-600 font-semibold">{inv.daysPastDue}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </Card>
+                )}
+              </div>
+            )}
+
+            {/* Tax/GST Report */}
+            {selectedReportType === 'tax' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-4 gap-4">
+                  <Card className="p-4 bg-gradient-to-br from-slate-50 to-gray-50">
+                    <p className="text-sm text-slate-600 font-medium">Taxable Value</p>
+                    <p className="text-2xl font-bold text-slate-700">₹{(reportData?.gstSummary?.taxableValue || 0).toLocaleString()}</p>
+                    <p className="text-xs text-slate-500 mt-1">{reportData?.gstSummary?.invoiceCount || 0} invoices</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+                    <p className="text-sm text-blue-600 font-medium">CGST</p>
+                    <p className="text-2xl font-bold text-blue-700">₹{(reportData?.gstSummary?.totalCGST || 0).toLocaleString()}</p>
+                    <p className="text-xs text-blue-500 mt-1">Central GST</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-emerald-50 to-green-50">
+                    <p className="text-sm text-emerald-600 font-medium">SGST</p>
+                    <p className="text-2xl font-bold text-emerald-700">₹{(reportData?.gstSummary?.totalSGST || 0).toLocaleString()}</p>
+                    <p className="text-xs text-emerald-500 mt-1">State GST</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-purple-50 to-violet-50">
+                    <p className="text-sm text-purple-600 font-medium">Total Tax</p>
+                    <p className="text-2xl font-bold text-purple-700">₹{(reportData?.gstSummary?.totalTax || 0).toLocaleString()}</p>
+                    <p className="text-xs text-purple-500 mt-1">CGST + SGST + IGST</p>
+                  </Card>
+                </div>
+                
+                <Card className="p-4">
+                  <h3 className="font-semibold mb-4">Tax by Rate</h3>
+                  <div className="grid grid-cols-3 gap-4">
+                    {Object.entries(reportData?.byTaxRate || {}).map(([rate, data]) => (
+                      <div key={rate} className="p-4 bg-slate-50 rounded-lg">
+                        <p className="text-lg font-bold text-slate-700">{rate}</p>
+                        <p className="text-sm text-slate-500">Taxable: ₹{data.taxableValue.toLocaleString()}</p>
+                        <p className="text-sm text-emerald-600 font-medium">Tax: ₹{data.taxAmount.toLocaleString()}</p>
+                        <p className="text-xs text-slate-400">{data.count} invoices</p>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* Quotes Report */}
+            {selectedReportType === 'quotes' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-4 gap-4">
+                  <Card className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+                    <p className="text-sm text-blue-600 font-medium">Quotes Created</p>
+                    <p className="text-2xl font-bold text-blue-700">{reportData?.quotesCreated || 0}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-emerald-50 to-green-50">
+                    <p className="text-sm text-emerald-600 font-medium">Approved</p>
+                    <p className="text-2xl font-bold text-emerald-700">{reportData?.quotesApproved || 0}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-red-50 to-rose-50">
+                    <p className="text-sm text-red-600 font-medium">Rejected</p>
+                    <p className="text-2xl font-bold text-red-700">{reportData?.quotesRejected || 0}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-purple-50 to-violet-50">
+                    <p className="text-sm text-purple-600 font-medium">Conversion Rate</p>
+                    <p className="text-2xl font-bold text-purple-700">{reportData?.conversionRate || 0}%</p>
+                  </Card>
+                </div>
+                
+                <Card className="p-4">
+                  <h3 className="font-semibold mb-4">Quote Conversion Funnel</h3>
+                  <div className="space-y-3">
+                    {Object.entries(reportData?.funnel || {}).map(([stage, count], index) => {
+                      const total = reportData?.funnel?.created || 1
+                      const percentage = Math.round((count / total) * 100)
+                      return (
+                        <div key={stage}>
+                          <div className="flex items-center justify-between mb-1">
+                            <span className="text-sm capitalize">{stage}</span>
+                            <span className="text-sm font-medium">{count} ({percentage}%)</span>
+                          </div>
+                          <Progress value={percentage} className="h-2" />
+                        </div>
+                      )
+                    })}
+                  </div>
+                </Card>
+                
+                <Card className="p-4">
+                  <h3 className="font-semibold mb-4">Quote Metrics</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-4 bg-slate-50 rounded-lg">
+                      <p className="text-3xl font-bold text-slate-700">₹{(reportData?.averageQuoteValue || 0).toLocaleString()}</p>
+                      <p className="text-sm text-slate-500">Average Quote Value</p>
+                    </div>
+                    <div className="text-center p-4 bg-slate-50 rounded-lg">
+                      <p className="text-3xl font-bold text-slate-700">{reportData?.averageTimeToApprove || 0} days</p>
+                      <p className="text-sm text-slate-500">Avg Time to Approve</p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* Other Reports - Placeholder */}
+            {!['summary', 'invoices', 'aging', 'tax', 'quotes'].includes(selectedReportType) && (
               <Card className="p-8">
                 <div className="text-center">
                   <div className="inline-flex p-4 rounded-full bg-slate-100 mb-4">
@@ -5111,7 +5348,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   <h3 className="text-lg font-semibold text-slate-900 mb-2">
                     {reportTypes.find(r => r.id === selectedReportType)?.name}
                   </h3>
-                  <p className="text-slate-500 mb-4">Report data is being calculated...</p>
+                  <p className="text-slate-500 mb-4">Click "Generate Report" to load data</p>
                   <Button onClick={() => fetchReports(selectedReportType)}>
                     <RefreshCw className="h-4 w-4 mr-2" /> Generate Report
                   </Button>
