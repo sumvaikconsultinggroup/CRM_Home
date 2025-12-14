@@ -4038,46 +4038,50 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                       <DropdownMenuItem onClick={() => handleQuoteStatusChange(quote.id, 'rejected')}>
                                         <X className="h-4 w-4 mr-2 text-red-600" /> Mark Rejected
                                       </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleQuoteStatusChange(quote.id, 'revised')}>
-                                      <Edit className="h-4 w-4 mr-2 text-amber-600" /> Needs Revision
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleQuoteAction(quote.id, 'send')}>
-                                      <RefreshCw className="h-4 w-4 mr-2" /> Resend
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                                
-                                {/* Approved actions */}
-                                {quote.status === 'approved' && (
-                                  <DropdownMenuItem onClick={() => handleCreateInvoiceFromQuote(quote)}>
-                                    <Receipt className="h-4 w-4 mr-2 text-purple-600" /> Create Invoice
-                                  </DropdownMenuItem>
-                                )}
-                                
-                                {/* Rejected/Revised actions */}
-                                {['rejected', 'revised', 'expired'].includes(quote.status) && (
-                                  <>
-                                    <DropdownMenuItem onClick={() => setDialogOpen({ type: 'quote', data: { ...quote, id: null, version: (quote.version || 1) + 1 } })}>
-                                      <Copy className="h-4 w-4 mr-2" /> Create Revision
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleDeleteQuote(quote.id)} className="text-red-600">
-                                      <Trash2 className="h-4 w-4 mr-2" /> Delete
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                                
-                                {/* Invoiced - view invoice */}
-                                {quote.status === 'invoiced' && (
-                                  <DropdownMenuItem onClick={() => {
-                                    const inv = invoices.find(i => i.quoteId === quote.id)
-                                    if (inv) setDialogOpen({ type: 'view_invoice', data: inv })
-                                    else setActiveTab('invoices')
-                                  }}>
-                                    <Receipt className="h-4 w-4 mr-2" /> View Invoice
-                                  </DropdownMenuItem>
-                                )}
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                                      <DropdownMenuItem onClick={() => handleQuoteStatusChange(quote.id, 'revised')}>
+                                        <Edit className="h-4 w-4 mr-2 text-amber-600" /> Needs Revision
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem onClick={() => handleQuoteAction(quote.id, 'send')}>
+                                        <RefreshCw className="h-4 w-4 mr-2" /> Resend Quote
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                  
+                                  {/* Approved actions */}
+                                  {quote.status === 'approved' && (
+                                    <>
+                                      <DropdownMenuItem onClick={() => handleCreateInvoiceFromQuote(quote)}>
+                                        <Receipt className="h-4 w-4 mr-2 text-purple-600" /> Create Invoice
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                  
+                                  {/* Rejected/Revised actions */}
+                                  {['rejected', 'revised'].includes(quote.status) && (
+                                    <>
+                                      <DropdownMenuItem onClick={() => {
+                                        // Create a revision
+                                        setDialogOpen({ type: 'quote', data: { ...quote, version: (quote.version || 1) + 1 } })
+                                      }}>
+                                        <Edit className="h-4 w-4 mr-2 text-blue-600" /> Create Revision
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem onClick={() => handleDeleteQuote(quote.id)} className="text-red-600">
+                                        <Trash2 className="h-4 w-4 mr-2" /> Delete Quote
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            )}
+                            
+                            {/* Locked indicator for invoiced quotes */}
+                            {isLocked && (
+                              <div className="p-2" title="This quote is locked (Invoiced)">
+                                <Lock className="h-4 w-4 text-purple-400" />
+                              </div>
+                            )}
                           </div>
                         </td>
                       </tr>
