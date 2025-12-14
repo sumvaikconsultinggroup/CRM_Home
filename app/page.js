@@ -787,6 +787,8 @@ function ClientDashboard({ user, client, onLogout }) {
               onClick={() => {
                 if (item.isModule && item.id === 'flooring-module') {
                   setActiveModule('flooring')
+                } else if (item.isModule && item.id === 'furniture-module') {
+                  setActiveModule('furniture')
                 } else if (item.isChat) {
                   setShowChat(true)
                 } else {
