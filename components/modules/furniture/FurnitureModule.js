@@ -108,6 +108,7 @@ const navItems = [
   // Sales & Quotations
   { id: 'quotations', label: 'Quotations', icon: FileText, group: 'sales' },
   { id: 'orders', label: 'Orders', icon: PackageCheck, group: 'sales' },
+  { id: 'invoices', label: 'Invoices', icon: DollarSign, group: 'sales' },
   // Product Management
   { id: 'products', label: 'Product Catalog', icon: Package, group: 'products' },
   { id: 'materials', label: 'Materials', icon: Layers, group: 'products' },
@@ -116,23 +117,29 @@ const navItems = [
   { id: 'suppliers', label: 'Suppliers', icon: Truck, group: 'procurement' },
   { id: 'purchase-orders', label: 'Purchase Orders', icon: FileCheck, group: 'procurement' },
   { id: 'inventory', label: 'Inventory', icon: Warehouse, group: 'procurement' },
-  // Execution & Delivery (for Manufacturers)
-  { id: 'installations', label: 'Delivery & Install', icon: Hammer, group: 'execution' },
+  // Production (for Manufacturers)
+  { id: 'bom', label: 'Bill of Materials', icon: ClipboardList, group: 'production' },
+  { id: 'work-orders', label: 'Work Orders', icon: Hammer, group: 'production' },
+  { id: 'production', label: 'Production Plan', icon: GanttChart, group: 'production' },
+  // Execution & Delivery
+  { id: 'installations', label: 'Delivery & Install', icon: Truck, group: 'execution' },
   { id: 'service-tickets', label: 'Service & Warranty', icon: ShieldCheck, group: 'execution' },
   // Dealer Features
   { id: 'showroom', label: 'Showroom', icon: Building2, group: 'dealer' },
   // Reports & Config
   { id: 'reports', label: 'Reports', icon: BarChart3, group: 'reports' },
-  { id: 'config', label: 'Config Studio', icon: Settings, group: 'config' }
+  { id: 'config', label: 'Config Studio', icon: Settings, group: 'config' },
+  { id: 'settings', label: 'Settings', icon: Cog, group: 'config' }
 ]
 
 // Navigation group labels
 const navGroups = {
   main: null,
   intake: 'CRM & Intake',
-  sales: 'Sales',
+  sales: 'Sales & Finance',
   products: 'Catalog',
   procurement: 'Procurement',
+  production: 'Production',
   execution: 'Execution',
   dealer: 'Dealer',
   reports: 'Analytics',
