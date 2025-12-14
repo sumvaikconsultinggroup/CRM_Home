@@ -576,7 +576,7 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
                         <SelectValue placeholder="Select a project (optional)" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="">No Project</SelectItem>
+                        <SelectItem value="__none__">No Project</SelectItem>
                         {projects?.map(p => (
                           <SelectItem key={p.id} value={p.id}>{p.name || p.siteName}</SelectItem>
                         ))}
