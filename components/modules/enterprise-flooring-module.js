@@ -3666,9 +3666,10 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         locked: true,
         priority: 6
       },
+      // Keep 'converted' as alias for backward compatibility with existing data
       converted: { 
-        label: 'Converted to Invoice', 
-        color: 'bg-green-100 text-green-700 border-green-300', 
+        label: 'Invoiced', 
+        color: 'bg-purple-100 text-purple-700 border-purple-300', 
         icon: Receipt,
         actions: ['view_invoice', 'download'],
         canEdit: false,
