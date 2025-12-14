@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useRef, useLayoutEffect } from 'react'
 
 // Dynamic SVG-based 3D-like preview with enhanced visuals
 export function DoorWindow3DPreview({ config, className = '' }) {
   const [isClient, setIsClient] = useState(false)
   const containerRef = useRef(null)
 
-  useEffect(() => {
+  // Use layoutEffect to set client-side flag safely
+  useLayoutEffect(() => {
     setIsClient(true)
   }, [])
 
