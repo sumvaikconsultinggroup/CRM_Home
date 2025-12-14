@@ -33,107 +33,9 @@ export async function POST(request) {
     if (action === 'sync_invoices_to_crm') {
       const allInvoices = await flooringInvoices.find({}).toArray()
       
-      for (const invoice of allInvoices) {
-        try {
-          // Update contact with invoice information
-          const customerId = invoice.customer?.id || invoice.customer?.contactId
-          if (customerId) {
-            const contact = await contacts.findOne({ id: customerId })
-            if (contact) {
-              // Calculate customer totals
-              const customerInvoices = allInvoices.filter(i => 
-                (i.customer?.id === customerId || i.customer?.contactId === customerId)
-              )
-              
-              const totalInvoiced = customerInvoices.reduce((sum, i) => sum + (i.grandTotal || 0), 0)
-              const totalPaid = customerInvoices.reduce((sum, i) => sum + (i.paidAmount || 0), 0)
-              const totalPending = customerInvoices.reduce((sum, i) => sum + (i.balanceAmount || 0), 0)
-              const overdueInvoices = customerInvoices.filter(i => 
-                new Date(i.dueDate) < new Date() && !['paid', 'cancelled'].includes(i.status)
-              )
-              
-              await contacts.updateOne(
-                { id: customerId },
-                {
-                  $set: {
-                    flooringModule: {
-                      totalInvoiced,
-                      totalPaid,
-                      totalPending,
-                      invoiceCount: customerInvoices.length,
-                      paidInvoiceCount: customerInvoices.filter(i => i.status === 'paid').length,
-                      pendingInvoiceCount: customerInvoices.filter(i => !['paid', 'cancelled'].includes(i.status)).length,
-                      overdueInvoiceCount: overdueInvoices.length,
-                      overdueAmount: overdueInvoices.reduce((sum, i) => sum + (i.balanceAmount || 0), 0),
-                      lastInvoiceDate: customerInvoices.length > 0 
-                        ? customerInvoices.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))[0].createdAt 
-                        : null,
-                      lastPaymentDate: customerInvoices.filter(i => i.lastPaymentDate).length > 0
-                        ? customerInvoices.filter(i => i.lastPaymentDate).sort((a, b) => new Date(b.lastPaymentDate) - new Date(a.lastPaymentDate))[0].lastPaymentDate
-                        : null,
-                      lastSyncedAt: now
-                    },
-                    updatedAt: now
-                  },
-                  $addToSet: { modules: 'flooring' }
-                }
-              )
-              results.contactsUpdated++
-            }
-          }
-          
-          // Update lead if linked
-          if (invoice.leadId) {
-            const leadStatus = {
-              'draft': 'invoice_created',
-              'sent': 'invoice_sent',
-              'partially_paid': 'partial_payment',
-              'paid': 'payment_complete',
-              'cancelled': 'invoice_cancelled'
-            }
-            
-            await leads.updateOne(
-              { id: invoice.leadId },
-              {
-                $set: {
-                  flooringInvoiceStatus: invoice.status,
-                  flooringInvoiceId: invoice.id,
-                  flooringInvoiceAmount: invoice.grandTotal,
-                  flooringPaidAmount: invoice.paidAmount,
-                  flooringPendingAmount: invoice.balanceAmount,
-                  status: leadStatus[invoice.status] || 'invoice_created',
-                  updatedAt: now
-                }
-              }
-            )
-          }
-          
-          // Mark invoice as synced
-          await flooringInvoices.updateOne(
-            { id: invoice.id },
-            { $set: { crmSynced: true, crmSyncedAt: now } }
-          )
-          
-          results.invoicesSynced++
-          results.synced++
-        } catch (err) {
-          results.errors.push({ invoiceId: invoice.id, error: err.message })
-        }
-      }
-      
-      return successResponse({ 
-        message: 'Invoice sync to CRM completed', 
-        results 
-      })
-    }
-    
-    // =============== SYNC ALL TO CRM (Full Sync) ===============
-    if (action === 'sync_all_to_crm') {
-      // First sync invoices
-      const allInvoices = await flooringInvoices.find({}).toArray()
+      // Build contact aggregates from invoices
       const contactUpdates = {}
       
-      // Build contact aggregates from invoices
       for (const invoice of allInvoices) {
         const customerId = invoice.customer?.id || invoice.customer?.contactId
         if (customerId) {
@@ -176,6 +78,40 @@ export async function POST(request) {
             cu.lastPaymentDate = invoice.lastPaymentDate
           }
         }
+        
+        // Update lead if linked
+        if (invoice.leadId) {
+          const leadStatus = {
+            'draft': 'invoice_created',
+            'sent': 'invoice_sent',
+            'partially_paid': 'partial_payment',
+            'paid': 'payment_complete',
+            'cancelled': 'invoice_cancelled'
+          }
+          
+          await leads.updateOne(
+            { id: invoice.leadId },
+            {
+              $set: {
+                flooringInvoiceStatus: invoice.status,
+                flooringInvoiceId: invoice.id,
+                flooringInvoiceAmount: invoice.grandTotal,
+                flooringPaidAmount: invoice.paidAmount,
+                flooringPendingAmount: invoice.balanceAmount,
+                status: leadStatus[invoice.status] || 'invoice_created',
+                updatedAt: now
+              }
+            }
+          )
+        }
+        
+        // Mark invoice as synced
+        await flooringInvoices.updateOne(
+          { id: invoice.id },
+          { $set: { crmSynced: true, crmSyncedAt: now } }
+        )
+        
+        results.invoicesSynced++
       }
       
       // Update all contacts
@@ -195,13 +131,19 @@ export async function POST(request) {
             }
           )
           results.contactsUpdated++
+          results.synced++
         } catch (err) {
           results.errors.push({ contactId: customerId, error: err.message })
         }
       }
       
-      results.invoicesSynced = allInvoices.length
+      return successResponse({ 
+        message: 'Invoice sync to CRM completed', 
+        results 
+      })
+    }
 
+    // =============== SYNC PROJECTS TO CRM ===============
     if (action === 'sync_to_crm') {
       // Sync flooring projects to CRM
       const allFlooringProjects = await flooringProjects.find({}).toArray()
@@ -269,8 +211,16 @@ export async function POST(request) {
           results.errors.push({ projectId: fp.id, error: err.message })
         }
       }
-    } else if (action === 'sync_from_crm') {
-      // STEP 1: Import NEW CRM projects that don't have a flooring project linked yet
+      
+      return successResponse({ 
+        message: 'Project sync to CRM completed', 
+        results 
+      })
+    }
+    
+    // =============== SYNC FROM CRM ===============
+    if (action === 'sync_from_crm') {
+      // Import NEW CRM projects that don't have a flooring project linked yet
       const newCrmProjects = await crmProjects.find({ 
         flooringProjectId: { $exists: false }
       }).toArray()
@@ -289,13 +239,12 @@ export async function POST(request) {
           // Get customer name from lead or contact
           let customerName = ''
           if (crm.customerId) {
-            const contact = await db.collection('contacts').findOne({ id: crm.customerId })
+            const contact = await contacts.findOne({ id: crm.customerId })
             customerName = contact?.displayName || contact?.name || ''
           } else if (crm.leadId) {
             const lead = await leads.findOne({ id: crm.leadId })
             customerName = lead?.name || ''
           }
-          // Also check clientName field
           if (!customerName && crm.clientName) {
             customerName = crm.clientName
           }
@@ -334,7 +283,7 @@ export async function POST(request) {
 
           await flooringProjects.insertOne(flooringProject)
 
-          // Update CRM project with flooring reference and add flooring module tag
+          // Update CRM project with flooring reference
           await crmProjects.updateOne(
             { id: crm.id },
             { 
@@ -350,7 +299,7 @@ export async function POST(request) {
         }
       }
 
-      // STEP 2: Update EXISTING linked flooring projects with changes from CRM
+      // Update EXISTING linked flooring projects with changes from CRM
       const linkedCrmProjects = await crmProjects.find({ 
         flooringProjectId: { $exists: true, $ne: null }
       }).toArray()
@@ -363,7 +312,7 @@ export async function POST(request) {
           // Get customer name
           let customerName = existingFlooring.customerName
           if (crm.customerId) {
-            const contact = await db.collection('contacts').findOne({ id: crm.customerId })
+            const contact = await contacts.findOne({ id: crm.customerId })
             customerName = contact?.displayName || contact?.name || customerName
           } else if (crm.clientName) {
             customerName = crm.clientName
@@ -396,8 +345,103 @@ export async function POST(request) {
           results.errors.push({ crmProjectId: crm.id, error: err.message })
         }
       }
-    } else if (action === 'link_project') {
-      // Link a CRM project to a flooring project
+      
+      return successResponse({ 
+        message: 'Sync from CRM completed', 
+        results 
+      })
+    }
+    
+    // =============== FULL SYNC (ALL) ===============
+    if (action === 'sync_all') {
+      // Sync invoices to contacts
+      const allInvoices = await flooringInvoices.find({}).toArray()
+      const contactUpdates = {}
+      
+      for (const invoice of allInvoices) {
+        const customerId = invoice.customer?.id || invoice.customer?.contactId
+        if (customerId) {
+          if (!contactUpdates[customerId]) {
+            contactUpdates[customerId] = {
+              totalInvoiced: 0,
+              totalPaid: 0,
+              totalPending: 0,
+              invoiceCount: 0,
+              paidInvoiceCount: 0,
+              overdueInvoiceCount: 0,
+              overdueAmount: 0
+            }
+          }
+          
+          const cu = contactUpdates[customerId]
+          cu.totalInvoiced += invoice.grandTotal || 0
+          cu.totalPaid += invoice.paidAmount || 0
+          cu.totalPending += invoice.balanceAmount || 0
+          cu.invoiceCount++
+          
+          if (invoice.status === 'paid') cu.paidInvoiceCount++
+          
+          if (new Date(invoice.dueDate) < new Date() && !['paid', 'cancelled'].includes(invoice.status)) {
+            cu.overdueInvoiceCount++
+            cu.overdueAmount += invoice.balanceAmount || 0
+          }
+        }
+      }
+      
+      // Update contacts
+      for (const [customerId, data] of Object.entries(contactUpdates)) {
+        try {
+          await contacts.updateOne(
+            { id: customerId },
+            {
+              $set: {
+                flooringModule: { ...data, lastSyncedAt: now },
+                updatedAt: now
+              },
+              $addToSet: { modules: 'flooring' }
+            }
+          )
+          results.contactsUpdated++
+        } catch (err) {
+          results.errors.push({ contactId: customerId, error: err.message })
+        }
+      }
+      
+      // Sync projects
+      const allFlooringProjects = await flooringProjects.find({}).toArray()
+      for (const fp of allFlooringProjects) {
+        try {
+          if (fp.crmProjectId) {
+            await crmProjects.updateOne(
+              { id: fp.crmProjectId },
+              {
+                $set: {
+                  name: fp.name,
+                  budget: fp.estimatedValue,
+                  progress: fp.status === 'completed' ? 100 : (fp.status === 'in_progress' ? 50 : 0),
+                  updatedAt: now
+                },
+                $addToSet: { modules: 'flooring' }
+              }
+            )
+            results.updated++
+          }
+          results.synced++
+        } catch (err) {
+          results.errors.push({ projectId: fp.id, error: err.message })
+        }
+      }
+      
+      results.invoicesSynced = allInvoices.length
+      
+      return successResponse({ 
+        message: 'Full sync completed', 
+        results 
+      })
+    }
+    
+    // =============== LINK PROJECT ===============
+    if (action === 'link_project') {
       const { flooringProjectId, crmProjectId } = body
 
       if (!flooringProjectId || !crmProjectId) {
@@ -420,15 +464,17 @@ export async function POST(request) {
       )
 
       results.synced = 1
+      
+      return successResponse({ 
+        message: 'Project linked successfully', 
+        results 
+      })
     }
 
-    return successResponse({ 
-      message: 'Sync completed', 
-      results 
-    })
+    return errorResponse('Invalid action', 400)
   } catch (error) {
     console.error('Project Sync Error:', error)
-    return errorResponse('Failed to sync projects', 500, error.message)
+    return errorResponse('Failed to sync', 500, error.message)
   }
 }
 
@@ -441,17 +487,28 @@ export async function GET(request) {
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
     const flooringProjects = db.collection('flooring_projects')
+    const flooringInvoices = db.collection('flooring_invoices')
     const crmProjects = db.collection('projects')
+    const contacts = db.collection('contacts')
 
-    const [allFlooring, allCrm] = await Promise.all([
+    const [allFlooring, allCrm, allInvoices, allContacts] = await Promise.all([
       flooringProjects.find({}).toArray(),
-      crmProjects.find({}).toArray()
+      crmProjects.find({}).toArray(),
+      flooringInvoices.find({}).toArray(),
+      contacts.find({}).toArray()
     ])
 
     const crmWithFlooring = allCrm.filter(p => p.modules?.includes('flooring'))
     const flooringWithCrm = allFlooring.filter(p => p.crmProjectId)
     const flooringWithoutCrm = allFlooring.filter(p => !p.crmProjectId)
     const crmWithoutFlooring = crmWithFlooring.filter(p => !p.flooringProjectId)
+    
+    // Invoice sync status
+    const invoicesSynced = allInvoices.filter(i => i.crmSynced).length
+    const invoicesNotSynced = allInvoices.filter(i => !i.crmSynced).length
+    
+    // Contacts with flooring module
+    const contactsWithFlooring = allContacts.filter(c => c.modules?.includes('flooring'))
 
     return successResponse({
       flooring: {
@@ -464,6 +521,15 @@ export async function GET(request) {
         withFlooringModule: crmWithFlooring.length,
         linkedToFlooring: crmWithFlooring.filter(p => p.flooringProjectId).length,
         notLinked: crmWithoutFlooring.length
+      },
+      invoices: {
+        total: allInvoices.length,
+        synced: invoicesSynced,
+        notSynced: invoicesNotSynced
+      },
+      contacts: {
+        total: allContacts.length,
+        withFlooringModule: contactsWithFlooring.length
       },
       unlinkedFlooringProjects: sanitizeDocuments(flooringWithoutCrm),
       unlinkedCrmProjects: sanitizeDocuments(crmWithoutFlooring)
