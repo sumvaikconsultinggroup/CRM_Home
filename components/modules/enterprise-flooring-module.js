@@ -4195,40 +4195,127 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     )
   }
 
-  // Invoices Tab
+  // Invoices Tab - Enterprise Level
+  const [invoiceStatusFilter, setInvoiceStatusFilter] = useState('all')
+  const [syncingCRM, setSyncingCRM] = useState(false)
+  
+  const handleSyncToCRM = async () => {
+    try {
+      setSyncingCRM(true)
+      const res = await fetch('/api/flooring/enhanced/sync', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ action: 'sync_invoices_to_crm' })
+      })
+      
+      if (res.ok) {
+        const result = await res.json()
+        toast.success(`Synced to CRM: ${result.data?.results?.contactsUpdated || 0} contacts updated, ${result.data?.results?.invoicesSynced || 0} invoices synced`)
+        fetchInvoices()
+      } else {
+        toast.error('Failed to sync to CRM')
+      }
+    } catch (error) {
+      toast.error('Sync failed')
+    } finally {
+      setSyncingCRM(false)
+    }
+  }
+  
   const renderInvoices = () => {
+    // Filter invoices based on status filter
+    const filteredInvoices = invoiceStatusFilter === 'all' 
+      ? invoices 
+      : invoiceStatusFilter === 'overdue'
+        ? invoices.filter(i => new Date(i.dueDate) < new Date() && !['paid', 'cancelled'].includes(i.status))
+        : invoices.filter(i => i.status === invoiceStatusFilter)
+    
     const summary = invoices.reduce((acc, inv) => {
       acc.total += inv.grandTotal || 0
       acc.paid += inv.paidAmount || 0
       acc.pending += inv.balanceAmount || 0
-      if (new Date(inv.dueDate) < new Date() && inv.status !== 'paid') acc.overdue++
+      if (new Date(inv.dueDate) < new Date() && !['paid', 'cancelled'].includes(inv.status)) {
+        acc.overdue++
+        acc.overdueAmount += inv.balanceAmount || 0
+      }
+      acc.byStatus[inv.status] = (acc.byStatus[inv.status] || 0) + 1
       return acc
-    }, { total: 0, paid: 0, pending: 0, overdue: 0 })
+    }, { total: 0, paid: 0, pending: 0, overdue: 0, overdueAmount: 0, byStatus: {} })
+
+    const collectionRate = summary.total > 0 ? Math.round((summary.paid / summary.total) * 100) : 0
 
     return (
       <div className="space-y-4">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-4 gap-4">
-          <Card className="p-4">
-            <p className="text-sm text-slate-500">Total Invoiced</p>
-            <p className="text-2xl font-bold">₹{summary.total.toLocaleString()}</p>
+        {/* Enhanced Summary Cards */}
+        <div className="grid grid-cols-5 gap-4">
+          <Card className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-blue-600 font-medium">Total Invoiced</p>
+                <p className="text-2xl font-bold text-blue-700">₹{summary.total.toLocaleString()}</p>
+                <p className="text-xs text-blue-500 mt-1">{invoices.length} invoices</p>
+              </div>
+              <div className="p-3 bg-blue-100 rounded-xl">
+                <Receipt className="h-6 w-6 text-blue-600" />
+              </div>
+            </div>
           </Card>
-          <Card className="p-4">
-            <p className="text-sm text-slate-500">Collected</p>
-            <p className="text-2xl font-bold text-emerald-600">₹{summary.paid.toLocaleString()}</p>
+          
+          <Card className="p-4 bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-emerald-600 font-medium">Collected</p>
+                <p className="text-2xl font-bold text-emerald-700">₹{summary.paid.toLocaleString()}</p>
+                <p className="text-xs text-emerald-500 mt-1">{collectionRate}% collected</p>
+              </div>
+              <div className="p-3 bg-emerald-100 rounded-xl">
+                <CheckCircle2 className="h-6 w-6 text-emerald-600" />
+              </div>
+            </div>
           </Card>
-          <Card className="p-4">
-            <p className="text-sm text-slate-500">Pending</p>
-            <p className="text-2xl font-bold text-amber-600">₹{summary.pending.toLocaleString()}</p>
+          
+          <Card className="p-4 bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-amber-600 font-medium">Pending</p>
+                <p className="text-2xl font-bold text-amber-700">₹{summary.pending.toLocaleString()}</p>
+                <p className="text-xs text-amber-500 mt-1">{summary.byStatus.sent || 0} sent, {summary.byStatus.partially_paid || 0} partial</p>
+              </div>
+              <div className="p-3 bg-amber-100 rounded-xl">
+                <Clock className="h-6 w-6 text-amber-600" />
+              </div>
+            </div>
           </Card>
-          <Card className="p-4">
-            <p className="text-sm text-slate-500">Overdue</p>
-            <p className="text-2xl font-bold text-red-600">{summary.overdue}</p>
+          
+          <Card className="p-4 bg-gradient-to-br from-red-50 to-rose-50 border-red-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-red-600 font-medium">Overdue</p>
+                <p className="text-2xl font-bold text-red-700">₹{summary.overdueAmount.toLocaleString()}</p>
+                <p className="text-xs text-red-500 mt-1">{summary.overdue} overdue invoices</p>
+              </div>
+              <div className="p-3 bg-red-100 rounded-xl">
+                <AlertTriangle className="h-6 w-6 text-red-600" />
+              </div>
+            </div>
+          </Card>
+          
+          <Card className="p-4 bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-purple-600 font-medium">Paid</p>
+                <p className="text-2xl font-bold text-purple-700">{summary.byStatus.paid || 0}</p>
+                <p className="text-xs text-purple-500 mt-1">Complete payments</p>
+              </div>
+              <div className="p-3 bg-purple-100 rounded-xl">
+                <CreditCard className="h-6 w-6 text-purple-600" />
+              </div>
+            </div>
           </Card>
         </div>
 
-        {/* Header */}
-        <div className="flex items-center justify-between">
+        {/* Header with filters and actions */}
+        <div className="flex items-center justify-between bg-white p-3 rounded-lg border">
           <div className="flex items-center gap-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
@@ -4236,18 +4323,53 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                 placeholder="Search invoices..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-[280px]"
+                className="pl-10 w-[250px]"
               />
             </div>
+            
+            {/* Status Filter */}
+            <Select value={invoiceStatusFilter} onValueChange={setInvoiceStatusFilter}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Filter by status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Invoices</SelectItem>
+                <SelectItem value="draft">Draft ({summary.byStatus.draft || 0})</SelectItem>
+                <SelectItem value="sent">Sent ({summary.byStatus.sent || 0})</SelectItem>
+                <SelectItem value="partially_paid">Partial ({summary.byStatus.partially_paid || 0})</SelectItem>
+                <SelectItem value="paid">Paid ({summary.byStatus.paid || 0})</SelectItem>
+                <SelectItem value="overdue">Overdue ({summary.overdue})</SelectItem>
+                <SelectItem value="cancelled">Cancelled ({summary.byStatus.cancelled || 0})</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-          <Button onClick={() => setDialogOpen({ type: 'invoice', data: null })}>
-            <Plus className="h-4 w-4 mr-2" /> Create Invoice
-          </Button>
+          
+          <div className="flex items-center gap-2">
+            {/* Sync to CRM Button */}
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={handleSyncToCRM}
+              disabled={syncingCRM}
+              className="gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${syncingCRM ? 'animate-spin' : ''}`} />
+              {syncingCRM ? 'Syncing...' : 'Sync to CRM'}
+            </Button>
+            
+            <Button variant="outline" size="sm" onClick={fetchInvoices}>
+              <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+            </Button>
+            
+            <Button onClick={() => setDialogOpen({ type: 'invoice', data: null })}>
+              <Plus className="h-4 w-4 mr-2" /> Create Invoice
+            </Button>
+          </div>
         </div>
 
         {/* Invoices Table */}
-        {invoices.length > 0 ? (
-          <Card>
+        {filteredInvoices.length > 0 ? (
+          <Card className="overflow-hidden">
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead className="bg-slate-50 border-b">
@@ -4259,58 +4381,160 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     <TableHeader>Balance</TableHeader>
                     <TableHeader>Due Date</TableHeader>
                     <TableHeader>Status</TableHeader>
+                    <TableHeader>CRM</TableHeader>
                     <TableHeader>Actions</TableHeader>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {invoices.map(invoice => {
-                    const isOverdue = new Date(invoice.dueDate) < new Date() && invoice.status !== 'paid'
+                  {filteredInvoices.map(invoice => {
+                    const isOverdue = new Date(invoice.dueDate) < new Date() && !['paid', 'cancelled'].includes(invoice.status)
+                    const daysOverdue = isOverdue ? Math.floor((new Date() - new Date(invoice.dueDate)) / (1000 * 60 * 60 * 24)) : 0
+                    
                     return (
-                      <tr key={invoice.id} className={`hover:bg-slate-50 ${isOverdue ? 'bg-red-50' : ''}`}>
+                      <tr key={invoice.id} className={`hover:bg-slate-50 transition-colors ${isOverdue ? 'bg-red-50/50' : ''}`}>
                         <td className="px-4 py-3">
-                          <p className="font-medium text-slate-900">{invoice.invoiceNumber}</p>
-                          {invoice.quoteNumber && <p className="text-xs text-slate-500">From: {invoice.quoteNumber}</p>}
+                          <div>
+                            <p className="font-semibold text-slate-900">{invoice.invoiceNumber}</p>
+                            {invoice.quoteNumber && (
+                              <p className="text-xs text-slate-500 flex items-center gap-1">
+                                <FileText className="h-3 w-3" /> {invoice.quoteNumber}
+                              </p>
+                            )}
+                            {invoice.projectSegment && (
+                              <Badge variant="outline" className="text-xs mt-1">
+                                {invoice.projectSegment === 'b2b' ? 'B2B' : 'B2C'}
+                              </Badge>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
-                          <p className="text-sm">{invoice.customer?.name || '-'}</p>
+                          <div>
+                            <p className="font-medium text-slate-900">{invoice.customer?.name || '-'}</p>
+                            {invoice.customer?.phone && (
+                              <p className="text-xs text-slate-500 flex items-center gap-1">
+                                <Phone className="h-3 w-3" /> {invoice.customer.phone}
+                              </p>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
-                          <p className="font-semibold">₹{(invoice.grandTotal || 0).toLocaleString()}</p>
+                          <p className="font-bold text-slate-900">₹{(invoice.grandTotal || 0).toLocaleString()}</p>
                         </td>
                         <td className="px-4 py-3">
-                          <p className="text-emerald-600">₹{(invoice.paidAmount || 0).toLocaleString()}</p>
+                          <p className="text-emerald-600 font-medium">₹{(invoice.paidAmount || 0).toLocaleString()}</p>
+                          {invoice.paidAmount > 0 && (
+                            <p className="text-xs text-slate-500">
+                              {Math.round((invoice.paidAmount / invoice.grandTotal) * 100)}% paid
+                            </p>
+                          )}
                         </td>
                         <td className="px-4 py-3">
-                          <p className={invoice.balanceAmount > 0 ? 'text-amber-600 font-semibold' : 'text-slate-400'}>
+                          <p className={`font-semibold ${invoice.balanceAmount > 0 ? 'text-amber-600' : 'text-slate-400'}`}>
                             ₹{(invoice.balanceAmount || 0).toLocaleString()}
                           </p>
                         </td>
                         <td className="px-4 py-3">
-                          <p className={`text-sm ${isOverdue ? 'text-red-600 font-medium' : ''}`}>
-                            {new Date(invoice.dueDate).toLocaleDateString()}
-                          </p>
+                          <div>
+                            <p className={`text-sm ${isOverdue ? 'text-red-600 font-semibold' : 'text-slate-600'}`}>
+                              {new Date(invoice.dueDate).toLocaleDateString()}
+                            </p>
+                            {isOverdue && (
+                              <p className="text-xs text-red-500 font-medium">{daysOverdue} days overdue</p>
+                            )}
+                          </div>
                         </td>
                         <td className="px-4 py-3">
-                          <Badge className={InvoiceStatus[invoice.status]?.color || InvoiceStatus.draft.color}>
-                            {InvoiceStatus[invoice.status]?.label || invoice.status}
+                          <Badge className={
+                            isOverdue ? 'bg-red-100 text-red-700' :
+                            InvoiceStatus[invoice.status]?.color || InvoiceStatus.draft.color
+                          }>
+                            {isOverdue ? 'Overdue' : (InvoiceStatus[invoice.status]?.label || invoice.status)}
                           </Badge>
                         </td>
                         <td className="px-4 py-3">
+                          {invoice.crmSynced ? (
+                            <Badge className="bg-green-100 text-green-700 text-xs">
+                              <CheckCircle2 className="h-3 w-3 mr-1" /> Synced
+                            </Badge>
+                          ) : (
+                            <Badge variant="outline" className="text-xs text-slate-400">
+                              Not synced
+                            </Badge>
+                          )}
+                        </td>
+                        <td className="px-4 py-3">
                           <div className="flex items-center gap-1">
-                            <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'view_invoice', data: invoice })}>
+                            {/* View */}
+                            <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'view_invoice', data: invoice })} title="View Invoice">
                               <Eye className="h-4 w-4" />
                             </Button>
+                            
+                            {/* Status-based workflow actions */}
                             {invoice.status === 'draft' && (
-                              <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white" onClick={() => handleInvoiceAction(invoice.id, 'send')}>
-                                <Send className="h-4 w-4 mr-1" /> Send
+                              <>
+                                <Button 
+                                  size="sm" 
+                                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                                  onClick={() => handleInvoiceAction(invoice.id, 'send')}
+                                >
+                                  <Send className="h-4 w-4 mr-1" /> Send
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm"
+                                  className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                                  onClick={() => {
+                                    if (confirm('Delete this draft invoice?')) {
+                                      fetch(`/api/flooring/enhanced/invoices?id=${invoice.id}`, {
+                                        method: 'DELETE',
+                                        headers
+                                      }).then(() => {
+                                        toast.success('Invoice deleted')
+                                        fetchInvoices()
+                                      })
+                                    }
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </>
+                            )}
+                            
+                            {/* Sent - Can record payment or send reminder */}
+                            {invoice.status === 'sent' && (
+                              <>
+                                <Button 
+                                  size="sm" 
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                  onClick={() => setDialogOpen({ type: 'record_payment', data: invoice })}
+                                >
+                                  <CreditCard className="h-4 w-4 mr-1" /> Payment
+                                </Button>
+                                {isOverdue && (
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    className="text-amber-600 border-amber-300"
+                                    onClick={() => handleInvoiceAction(invoice.id, 'send_reminder')}
+                                  >
+                                    <Bell className="h-4 w-4 mr-1" /> Remind
+                                  </Button>
+                                )}
+                              </>
+                            )}
+                            
+                            {/* Partially Paid - Record more payment */}
+                            {invoice.status === 'partially_paid' && (
+                              <Button 
+                                size="sm" 
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                onClick={() => setDialogOpen({ type: 'record_payment', data: invoice })}
+                              >
+                                <CreditCard className="h-4 w-4 mr-1" /> Add Payment
                               </Button>
                             )}
-                            {invoice.status !== 'paid' && invoice.status !== 'cancelled' && (
-                              <Button size="sm" variant="outline" onClick={() => setDialogOpen({ type: 'record_payment', data: invoice })}>
-                                <CreditCard className="h-4 w-4 mr-1" /> Payment
-                              </Button>
-                            )}
-                            {/* Send for Installation - Only for B2C and when paid */}
+                            
+                            {/* Paid - Send for installation (B2C only) */}
                             {invoice.status === 'paid' && invoice.projectSegment !== 'b2b' && !invoice.installationCreated && (
                               <Button 
                                 size="sm" 
@@ -4319,6 +4543,49 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                               >
                                 <Wrench className="h-4 w-4 mr-1" /> Install
                               </Button>
+                            )}
+                            
+                            {/* More actions dropdown */}
+                            {!['cancelled'].includes(invoice.status) && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm">
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => handleInvoiceAction(invoice.id, 'sync_crm')}>
+                                    <RefreshCw className="h-4 w-4 mr-2" /> Sync to CRM
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => window.open(`/api/flooring/enhanced/invoices/pdf?id=${invoice.id}`, '_blank')}>
+                                    <Download className="h-4 w-4 mr-2" /> Download PDF
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => window.print()}>
+                                    <Printer className="h-4 w-4 mr-2" /> Print
+                                  </DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  {invoice.status !== 'paid' && (
+                                    <DropdownMenuItem 
+                                      className="text-red-600"
+                                      onClick={() => {
+                                        if (confirm('Cancel this invoice? This cannot be undone.')) {
+                                          handleInvoiceAction(invoice.id, 'cancel', { reason: 'Cancelled by user' })
+                                        }
+                                      }}
+                                    >
+                                      <X className="h-4 w-4 mr-2" /> Cancel Invoice
+                                    </DropdownMenuItem>
+                                  )}
+                                  {invoice.status === 'paid' && invoice.paidAmount > 0 && (
+                                    <DropdownMenuItem 
+                                      className="text-orange-600"
+                                      onClick={() => setDialogOpen({ type: 'refund', data: invoice })}
+                                    >
+                                      <Banknote className="h-4 w-4 mr-2" /> Process Refund
+                                    </DropdownMenuItem>
+                                  )}
+                                </DropdownMenuContent>
+                              </DropdownMenu>
                             )}
                           </div>
                         </td>
@@ -4332,8 +4599,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         ) : (
           <EmptyState
             icon={Receipt}
-            title="No invoices found"
-            description="Invoices are created from approved quotes."
+            title={invoiceStatusFilter === 'all' ? "No invoices found" : `No ${invoiceStatusFilter} invoices`}
+            description={invoiceStatusFilter === 'all' 
+              ? "Invoices are created from approved quotes or manually."
+              : "Try changing the filter or create a new invoice."
+            }
+            action={() => setDialogOpen({ type: 'invoice', data: null })}
+            actionLabel="Create Invoice"
           />
         )}
       </div>
