@@ -329,6 +329,46 @@ export function DoorsWindowsModule({ client, user }) {
   const [formData, setFormData] = useState({})
   const [openings, setOpenings] = useState([])
 
+  // Quote Builder states
+  const [quoteBuilderItems, setQuoteBuilderItems] = useState([
+    {
+      id: '1',
+      productType: 'Window',
+      category: 'Casement',
+      name: 'Casement & Fixed Window',
+      location: 'FF Front Right',
+      width: 4810,
+      height: 2888,
+      material: 'uPVC',
+      profile: 'KM01',
+      profileColor: 'black',
+      glassType: '12mm Reflective Toughened',
+      panels: [
+        { type: 'fixed', direction: '' },
+        { type: 'openable', direction: 'right' },
+        { type: 'openable', direction: 'left' },
+        { type: 'fixed', direction: '' }
+      ],
+      quantity: 1,
+      rate: 103788
+    }
+  ])
+  const [quoteCustomerInfo, setQuoteCustomerInfo] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    address: ''
+  })
+  const [selectedQuoteView, setSelectedQuoteView] = useState(null)
+
+  // MEE AI states
+  const [aiChatMessages, setAiChatMessages] = useState([])
+  const [aiInput, setAiInput] = useState('')
+  const [aiLoading, setAiLoading] = useState(false)
+
+  // Projects state
+  const [projects, setProjects] = useState([])
+
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
   const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
 
