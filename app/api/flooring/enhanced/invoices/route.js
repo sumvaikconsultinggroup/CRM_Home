@@ -17,7 +17,115 @@ const generateInvoiceNumber = async (db) => {
   return `INV-${year}${month}-${String(count + 1).padStart(4, '0')}`
 }
 
-// GET - Fetch invoices
+// Helper function to sync invoice status to CRM (contacts/leads)
+const syncInvoiceToCRM = async (db, invoice, user) => {
+  const now = new Date().toISOString()
+  const syncResults = { contactUpdated: false, leadUpdated: false, projectUpdated: false }
+  
+  try {
+    // Update contact if customer has contactId
+    if (invoice.customer?.id || invoice.customer?.contactId) {
+      const contactId = invoice.customer?.contactId || invoice.customer?.id
+      const contacts = db.collection('contacts')
+      
+      const updateData = {
+        lastInvoiceId: invoice.id,
+        lastInvoiceNumber: invoice.invoiceNumber,
+        lastInvoiceStatus: invoice.status,
+        lastInvoiceAmount: invoice.grandTotal,
+        lastInvoiceDate: invoice.createdAt,
+        updatedAt: now
+      }
+      
+      // Add payment info if paid
+      if (invoice.status === 'paid') {
+        updateData.totalPaidAmount = (updateData.totalPaidAmount || 0) + (invoice.paidAmount || 0)
+        updateData.lastPaymentDate = invoice.lastPaymentDate || now
+      }
+      
+      await contacts.updateOne(
+        { id: contactId },
+        { 
+          $set: updateData,
+          $addToSet: { 
+            invoiceIds: invoice.id,
+            modules: 'flooring'
+          }
+        }
+      )
+      syncResults.contactUpdated = true
+    }
+    
+    // Update lead if leadId exists
+    if (invoice.leadId) {
+      const leads = db.collection('leads')
+      
+      const leadStatus = {
+        'draft': 'invoice_created',
+        'sent': 'invoice_sent',
+        'partially_paid': 'partial_payment',
+        'paid': 'payment_received',
+        'cancelled': 'invoice_cancelled',
+        'overdue': 'invoice_overdue'
+      }
+      
+      await leads.updateOne(
+        { id: invoice.leadId },
+        { 
+          $set: { 
+            flooringStatus: leadStatus[invoice.status] || 'invoice_created',
+            lastInvoiceId: invoice.id,
+            lastInvoiceStatus: invoice.status,
+            lastInvoiceAmount: invoice.grandTotal,
+            updatedAt: now
+          }
+        }
+      )
+      syncResults.leadUpdated = true
+    }
+    
+    // Update project if projectId exists
+    if (invoice.projectId) {
+      const projects = db.collection('flooring_projects')
+      
+      const projectStatus = {
+        'sent': 'invoice_sent',
+        'partially_paid': 'payment_received',
+        'paid': 'payment_received'
+      }
+      
+      if (projectStatus[invoice.status]) {
+        await projects.updateOne(
+          { id: invoice.projectId },
+          { 
+            $set: { 
+              status: projectStatus[invoice.status],
+              lastInvoiceId: invoice.id,
+              lastInvoiceStatus: invoice.status,
+              updatedAt: now
+            },
+            $push: {
+              statusHistory: {
+                status: projectStatus[invoice.status],
+                timestamp: now,
+                by: user.id,
+                notes: `Invoice ${invoice.invoiceNumber} - ${invoice.status}`
+              }
+            }
+          }
+        )
+        syncResults.projectUpdated = true
+      }
+    }
+    
+    return syncResults
+  } catch (error) {
+    console.error('CRM Sync Error:', error)
+    return syncResults
+  }
+}
+
+// GET - Fetch invoices with advanced filtering
 export async function GET(request) {
   try {
     const user = getAuthUser(request)
@@ -29,7 +137,13 @@ export async function GET(request) {
     const projectId = searchParams.get('projectId')
     const status = searchParams.get('status')
     const overdue = searchParams.get('overdue')
+    const search = searchParams.get('search')
+    const startDate = searchParams.get('startDate')
+    const endDate = searchParams.get('endDate')
+    const sortBy = searchParams.get('sortBy') || 'createdAt'
+    const sortOrder = searchParams.get('sortOrder') || 'desc'
     const limit = parseInt(searchParams.get('limit')) || 100
+    const page = parseInt(searchParams.get('page')) || 1
 
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
@@ -41,7 +155,7 @@ export async function GET(request) {
       if (!invoice) return errorResponse('Invoice not found', 404)
       
       // Get payments for this invoice
-      const invoicePayments = await payments.find({ invoiceId: id }).toArray()
+      const invoicePayments = await payments.find({ invoiceId: id }).sort({ createdAt: -1 }).toArray()
       
       return successResponse(sanitizeDocument({ ...invoice, payments: invoicePayments }))
     }
@@ -50,32 +164,117 @@ export async function GET(request) {
     const query = {}
     if (customerId) query['customer.id'] = customerId
     if (projectId) query.projectId = projectId
-    if (status) query.status = status
+    if (status && status !== 'all') {
+      if (status === 'overdue') {
+        query.dueDate = { $lt: new Date().toISOString() }
+        query.status = { $nin: ['paid', 'cancelled'] }
+      } else {
+        query.status = status
+      }
+    }
     if (overdue === 'true') {
       query.dueDate = { $lt: new Date().toISOString() }
-      query.status = { $ne: 'paid' }
+      query.status = { $nin: ['paid', 'cancelled'] }
+    }
+    if (search) {
+      query.$or = [
+        { invoiceNumber: { $regex: search, $options: 'i' } },
+        { 'customer.name': { $regex: search, $options: 'i' } },
+        { 'customer.email': { $regex: search, $options: 'i' } },
+        { quoteNumber: { $regex: search, $options: 'i' } }
+      ]
+    }
+    if (startDate) {
+      query.createdAt = { ...(query.createdAt || {}), $gte: startDate }
+    }
+    if (endDate) {
+      query.createdAt = { ...(query.createdAt || {}), $lte: endDate }
     }
 
-    const allInvoices = await invoices.find(query).sort({ createdAt: -1 }).limit(limit).toArray()
+    // Sort configuration
+    const sortConfig = {}
+    sortConfig[sortBy] = sortOrder === 'asc' ? 1 : -1
 
-    // Calculate summary
+    // Get all invoices for summary (before pagination)
+    const allInvoices = await invoices.find(query).toArray()
+    
+    // Get paginated invoices
+    const skip = (page - 1) * limit
+    const paginatedInvoices = await invoices.find(query).sort(sortConfig).skip(skip).limit(limit).toArray()
+
+    // Calculate comprehensive summary
+    const now = new Date()
     const summary = {
       total: allInvoices.length,
       totalValue: allInvoices.reduce((sum, i) => sum + (i.grandTotal || 0), 0),
       paidAmount: allInvoices.reduce((sum, i) => sum + (i.paidAmount || 0), 0),
       pendingAmount: allInvoices.reduce((sum, i) => sum + (i.balanceAmount || 0), 0),
-      overdueCount: allInvoices.filter(i => new Date(i.dueDate) < new Date() && i.status !== 'paid').length,
-      byStatus: {}
+      overdueCount: allInvoices.filter(i => new Date(i.dueDate) < now && !['paid', 'cancelled'].includes(i.status)).length,
+      overdueAmount: allInvoices
+        .filter(i => new Date(i.dueDate) < now && !['paid', 'cancelled'].includes(i.status))
+        .reduce((sum, i) => sum + (i.balanceAmount || 0), 0),
+      byStatus: {
+        draft: { count: 0, amount: 0 },
+        sent: { count: 0, amount: 0 },
+        partially_paid: { count: 0, amount: 0 },
+        paid: { count: 0, amount: 0 },
+        cancelled: { count: 0, amount: 0 },
+        overdue: { count: 0, amount: 0 }
+      },
+      thisMonth: {
+        count: 0,
+        totalValue: 0,
+        collected: 0
+      },
+      lastMonth: {
+        count: 0,
+        totalValue: 0,
+        collected: 0
+      }
     }
 
+    const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+    const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString()
+    const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0).toISOString()
+
     allInvoices.forEach(i => {
-      if (!summary.byStatus[i.status]) summary.byStatus[i.status] = 0
-      summary.byStatus[i.status]++
+      // By status
+      const statusKey = i.status || 'draft'
+      if (summary.byStatus[statusKey]) {
+        summary.byStatus[statusKey].count++
+        summary.byStatus[statusKey].amount += i.grandTotal || 0
+      }
+      
+      // Check if overdue
+      if (new Date(i.dueDate) < now && !['paid', 'cancelled'].includes(i.status)) {
+        summary.byStatus.overdue.count++
+        summary.byStatus.overdue.amount += i.balanceAmount || 0
+      }
+
+      // This month
+      if (i.createdAt >= thisMonthStart) {
+        summary.thisMonth.count++
+        summary.thisMonth.totalValue += i.grandTotal || 0
+        summary.thisMonth.collected += i.paidAmount || 0
+      }
+
+      // Last month
+      if (i.createdAt >= lastMonthStart && i.createdAt <= lastMonthEnd) {
+        summary.lastMonth.count++
+        summary.lastMonth.totalValue += i.grandTotal || 0
+        summary.lastMonth.collected += i.paidAmount || 0
+      }
     })
 
     return successResponse({
-      invoices: sanitizeDocuments(allInvoices),
-      summary
+      invoices: sanitizeDocuments(paginatedInvoices),
+      summary,
+      pagination: {
+        total: allInvoices.length,
+        page,
+        limit,
+        pages: Math.ceil(allInvoices.length / limit)
+      }
     })
   } catch (error) {
     console.error('Invoices GET Error:', error)
@@ -108,40 +307,46 @@ export async function POST(request) {
       const quote = await quotes.findOne({ id: body.quoteId })
       if (!quote) return errorResponse('Quote not found', 404)
 
+      // Check if quote already has an invoice
+      if (quote.invoiceId && !body.force) {
+        return errorResponse('Quote already has an invoice. Use force=true to create another.', 400)
+      }
+
       invoice = {
         id: invoiceId,
         invoiceNumber,
         quoteId: quote.id,
         quoteNumber: quote.quoteNumber,
         projectId: quote.projectId,
+        projectSegment: quote.projectSegment || 'b2c',
         leadId: quote.leadId,
         customer: quote.customer,
         site: quote.site,
         rooms: quote.rooms,
-        items: [], // Will be populated from quote items
+        items: quote.items || [],
         template: body.template || 'standard',
-        materialTotal: quote.materialTotal,
-        laborTotal: quote.laborTotal,
-        accessoryTotal: quote.accessoryTotal,
-        subtotal: quote.subtotal,
+        materialTotal: quote.materialTotal || 0,
+        laborTotal: quote.laborTotal || 0,
+        accessoryTotal: quote.accessoryTotal || 0,
+        subtotal: quote.subtotal || 0,
         discountType: quote.discountType,
         discountValue: quote.discountValue,
-        discountAmount: quote.discountAmount,
-        taxableAmount: quote.taxableAmount,
-        cgstRate: quote.cgstRate,
-        cgst: quote.cgst,
-        sgstRate: quote.sgstRate,
-        sgst: quote.sgst,
-        igstRate: quote.igstRate,
-        igst: quote.igst,
-        isInterstate: quote.isInterstate,
-        totalTax: quote.totalTax,
-        grandTotal: quote.grandTotal,
+        discountAmount: quote.discountAmount || 0,
+        taxableAmount: quote.taxableAmount || 0,
+        cgstRate: quote.cgstRate || 9,
+        cgst: quote.cgst || 0,
+        sgstRate: quote.sgstRate || 9,
+        sgst: quote.sgst || 0,
+        igstRate: quote.igstRate || 18,
+        igst: quote.igst || 0,
+        isInterstate: quote.isInterstate || false,
+        totalTax: quote.totalTax || 0,
+        grandTotal: quote.grandTotal || 0,
         currency: 'INR',
         dueDate: body.dueDate || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
         status: 'draft',
         paidAmount: 0,
-        balanceAmount: quote.grandTotal,
+        balanceAmount: quote.grandTotal || 0,
         paymentTerms: quote.paymentTerms || 'Net 30',
         bankDetails: body.bankDetails || {
           bankName: '',
@@ -151,24 +356,44 @@ export async function POST(request) {
           upiId: ''
         },
         notes: body.notes || quote.notes || '',
-        terms: quote.terms,
+        terms: quote.terms || '',
         statusHistory: [{
           status: 'draft',
           timestamp: now,
           by: user.id,
           notes: 'Invoice created from quote'
         }],
+        payments: [],
         sentAt: null,
         viewedAt: null,
+        paidAt: null,
+        crmSynced: false,
+        crmSyncedAt: null,
         createdBy: user.id,
         createdAt: now,
         updatedAt: now
       }
 
-      // Update quote with invoice reference
+      // Update quote with invoice reference and status
       await quotes.updateOne(
         { id: body.quoteId },
-        { $set: { invoiceId, invoiceCreatedAt: now, updatedAt: now } }
+        { 
+          $set: { 
+            invoiceId, 
+            invoiceNumber,
+            invoiceCreatedAt: now, 
+            status: 'invoiced',
+            updatedAt: now 
+          },
+          $push: {
+            statusHistory: {
+              status: 'invoiced',
+              timestamp: now,
+              by: user.id,
+              notes: `Invoice ${invoiceNumber} created`
+            }
+          }
+        }
       )
     } else {
       // Create invoice manually
@@ -193,6 +418,7 @@ export async function POST(request) {
         id: invoiceId,
         invoiceNumber,
         projectId: body.projectId,
+        projectSegment: body.projectSegment || 'b2c',
         leadId: body.leadId,
         customer: body.customer || {},
         site: body.site || {},
@@ -230,6 +456,8 @@ export async function POST(request) {
           by: user.id,
           notes: 'Invoice created'
         }],
+        payments: [],
+        crmSynced: false,
         createdBy: user.id,
         createdAt: now,
         updatedAt: now
@@ -269,6 +497,7 @@ export async function PUT(request) {
     const invoices = db.collection('flooring_invoices')
     const payments = db.collection('flooring_payments')
     const leads = db.collection('leads')
+    const quotes = db.collection('flooring_quotes_v2')
 
     const invoice = await invoices.findOne({ id })
     if (!invoice) return errorResponse('Invoice not found', 404)
@@ -279,29 +508,36 @@ export async function PUT(request) {
       case 'send':
         await invoices.updateOne({ id }, {
           $set: { status: 'sent', sentAt: now, updatedAt: now },
-          $push: { statusHistory: { status: 'sent', timestamp: now, by: user.id } }
+          $push: { statusHistory: { status: 'sent', timestamp: now, by: user.id, notes: 'Invoice sent to customer' } }
         })
-        if (invoice.leadId) {
-          await leads.updateOne({ id: invoice.leadId }, { $set: { flooringStatus: 'invoice_sent' } })
-        }
-        return successResponse({ message: 'Invoice sent' })
+        
+        // Sync to CRM
+        const sentInvoice = { ...invoice, status: 'sent' }
+        await syncInvoiceToCRM(db, sentInvoice, user)
+        
+        return successResponse({ message: 'Invoice sent successfully', syncedToCRM: true })
 
       case 'record_payment':
         const paymentAmount = parseFloat(body.amount)
         if (!paymentAmount || paymentAmount <= 0) {
           return errorResponse('Valid payment amount required', 400)
         }
+        if (paymentAmount > (invoice.balanceAmount || invoice.grandTotal)) {
+          return errorResponse('Payment amount exceeds balance', 400)
+        }
 
         const paymentId = uuidv4()
         const payment = {
           id: paymentId,
           invoiceId: id,
+          invoiceNumber: invoice.invoiceNumber,
           amount: paymentAmount,
-          method: body.method || 'bank_transfer', // bank_transfer, upi, cash, cheque, card
+          method: body.method || 'bank_transfer',
           reference: body.reference || '',
+          transactionId: body.transactionId || '',
           receivedDate: body.receivedDate || now,
           notes: body.paymentNotes || '',
-          createdBy: user.id,
+          recordedBy: user.id,
           createdAt: now
         }
 
@@ -311,29 +547,43 @@ export async function PUT(request) {
         const newBalance = invoice.grandTotal - newPaidAmount
         const newStatus = newBalance <= 0 ? 'paid' : 'partially_paid'
 
+        const paymentUpdateData = {
+          paidAmount: newPaidAmount,
+          balanceAmount: Math.max(0, newBalance),
+          status: newStatus,
+          lastPaymentDate: now,
+          lastPaymentAmount: paymentAmount,
+          updatedAt: now
+        }
+        
+        if (newStatus === 'paid') {
+          paymentUpdateData.paidAt = now
+        }
+
         await invoices.updateOne({ id }, {
-          $set: {
-            paidAmount: newPaidAmount,
-            balanceAmount: Math.max(0, newBalance),
-            status: newStatus,
-            lastPaymentDate: now,
-            updatedAt: now
-          },
+          $set: paymentUpdateData,
           $push: {
+            payments: payment,
             statusHistory: {
               status: newStatus,
               timestamp: now,
               by: user.id,
-              notes: `Payment of ₹${paymentAmount.toLocaleString()} received`
+              notes: `Payment of ₹${paymentAmount.toLocaleString()} received via ${body.method || 'bank_transfer'}`
             }
           }
         })
 
-        if (invoice.leadId && newStatus === 'paid') {
-          await leads.updateOne({ id: invoice.leadId }, { $set: { flooringStatus: 'payment_received' } })
-        }
+        // Sync to CRM
+        const paidInvoice = { ...invoice, ...paymentUpdateData }
+        const syncResult = await syncInvoiceToCRM(db, paidInvoice, user)
 
-        return successResponse({ message: 'Payment recorded', payment, newStatus, newBalance })
+        return successResponse({ 
+          message: 'Payment recorded successfully', 
+          payment, 
+          newStatus, 
+          newBalance: Math.max(0, newBalance),
+          syncedToCRM: syncResult
+        })
 
       case 'mark_viewed':
         await invoices.updateOne({ id }, {
@@ -342,16 +592,39 @@ export async function PUT(request) {
         })
         return successResponse({ message: 'Invoice marked as viewed' })
 
-      case 'cancel':
-        // Cancel invoice and revert quote status if this invoice was created from a quote
+      case 'sync_crm':
+        // Manual CRM sync
+        const syncResults = await syncInvoiceToCRM(db, invoice, user)
         await invoices.updateOne({ id }, {
-          $set: { status: 'cancelled', cancelledAt: now, cancelReason: body.reason, updatedAt: now },
-          $push: { statusHistory: { status: 'cancelled', timestamp: now, by: user.id, reason: body.reason } }
+          $set: { crmSynced: true, crmSyncedAt: now, updatedAt: now }
+        })
+        return successResponse({ message: 'Invoice synced to CRM', results: syncResults })
+
+      case 'cancel':
+        // Validate - cannot cancel if payments exist
+        if ((invoice.paidAmount || 0) > 0 && !body.force) {
+          return errorResponse('Cannot cancel invoice with payments. Use force=true or refund payments first.', 400)
+        }
+
+        await invoices.updateOne({ id }, {
+          $set: { 
+            status: 'cancelled', 
+            cancelledAt: now, 
+            cancelReason: body.reason || 'Cancelled by user',
+            updatedAt: now 
+          },
+          $push: { 
+            statusHistory: { 
+              status: 'cancelled', 
+              timestamp: now, 
+              by: user.id, 
+              reason: body.reason || 'Cancelled by user'
+            } 
+          }
         })
         
         // If this invoice was created from a quote, revert the quote status back to 'approved'
         if (invoice.quoteId) {
-          const quotes = db.collection('flooring_quotes_v2')
           await quotes.updateOne(
             { id: invoice.quoteId },
             {
@@ -368,7 +641,112 @@ export async function PUT(request) {
           )
         }
         
+        // Sync cancelled status to CRM
+        const cancelledInvoice = { ...invoice, status: 'cancelled' }
+        await syncInvoiceToCRM(db, cancelledInvoice, user)
+        
         return successResponse({ message: 'Invoice cancelled', quoteReverted: !!invoice.quoteId })
+
+      case 'refund':
+        const refundAmount = parseFloat(body.refundAmount)
+        if (!refundAmount || refundAmount <= 0 || refundAmount > (invoice.paidAmount || 0)) {
+          return errorResponse('Invalid refund amount', 400)
+        }
+
+        const refundId = uuidv4()
+        const refund = {
+          id: refundId,
+          invoiceId: id,
+          invoiceNumber: invoice.invoiceNumber,
+          amount: -refundAmount, // Negative for refund
+          method: body.method || 'bank_transfer',
+          reference: body.reference || '',
+          reason: body.reason || 'Refund',
+          processedBy: user.id,
+          createdAt: now
+        }
+
+        await payments.insertOne(refund)
+
+        const refundedPaidAmount = Math.max(0, (invoice.paidAmount || 0) - refundAmount)
+        const refundedBalance = invoice.grandTotal - refundedPaidAmount
+        const refundedStatus = refundedPaidAmount === 0 ? 'sent' : 'partially_paid'
+
+        await invoices.updateOne({ id }, {
+          $set: {
+            paidAmount: refundedPaidAmount,
+            balanceAmount: refundedBalance,
+            status: refundedStatus,
+            lastRefundDate: now,
+            lastRefundAmount: refundAmount,
+            updatedAt: now
+          },
+          $push: {
+            payments: refund,
+            statusHistory: {
+              status: refundedStatus,
+              timestamp: now,
+              by: user.id,
+              notes: `Refund of ₹${refundAmount.toLocaleString()} processed`
+            }
+          }
+        })
+
+        return successResponse({ 
+          message: 'Refund processed successfully', 
+          refund,
+          newStatus: refundedStatus,
+          newBalance: refundedBalance
+        })
+
+      case 'send_reminder':
+        // Update reminder sent timestamp
+        await invoices.updateOne({ id }, {
+          $set: { lastReminderSent: now, updatedAt: now },
+          $inc: { reminderCount: 1 },
+          $push: {
+            statusHistory: {
+              status: invoice.status,
+              timestamp: now,
+              by: user.id,
+              notes: 'Payment reminder sent'
+            }
+          }
+        })
+        return successResponse({ message: 'Reminder sent successfully' })
+
+      case 'update_due_date':
+        if (!body.newDueDate) {
+          return errorResponse('New due date required', 400)
+        }
+        await invoices.updateOne({ id }, {
+          $set: { dueDate: body.newDueDate, updatedAt: now },
+          $push: {
+            statusHistory: {
+              status: invoice.status,
+              timestamp: now,
+              by: user.id,
+              notes: `Due date updated to ${new Date(body.newDueDate).toLocaleDateString()}`
+            }
+          }
+        })
+        return successResponse({ message: 'Due date updated' })
+
+      case 'add_note':
+        if (!body.note) {
+          return errorResponse('Note content required', 400)
+        }
+        await invoices.updateOne({ id }, {
+          $push: { 
+            internalNotes: {
+              note: body.note,
+              addedBy: user.id,
+              addedAt: now
+            }
+          },
+          $set: { updatedAt: now }
+        })
+        return successResponse({ message: 'Note added' })
 
       default:
         // Regular update
@@ -385,5 +763,52 @@ export async function PUT(request) {
   } catch (error) {
     console.error('Invoices PUT Error:', error)
     return errorResponse('Failed to update invoice', 500, error.message)
+  }
+}
+
+// DELETE - Delete invoice (only if draft)
+export async function DELETE(request) {
+  try {
+    const user = getAuthUser(request)
+    requireClientAccess(user)
+
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) return errorResponse('Invoice ID required', 400)
+
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const invoices = db.collection('flooring_invoices')
+    const quotes = db.collection('flooring_quotes_v2')
+
+    const invoice = await invoices.findOne({ id })
+    if (!invoice) return errorResponse('Invoice not found', 404)
+
+    // Only allow deletion of draft invoices
+    if (invoice.status !== 'draft') {
+      return errorResponse('Only draft invoices can be deleted. Cancel the invoice instead.', 400)
+    }
+
+    // If linked to quote, revert quote status
+    if (invoice.quoteId) {
+      await quotes.updateOne(
+        { id: invoice.quoteId },
+        { 
+          $set: { 
+            invoiceId: null, 
+            status: 'approved',
+            updatedAt: new Date().toISOString()
+          }
+        }
+      )
+    }
+
+    await invoices.deleteOne({ id })
+
+    return successResponse({ message: 'Invoice deleted successfully' })
+  } catch (error) {
+    console.error('Invoices DELETE Error:', error)
+    return errorResponse('Failed to delete invoice', 500, error.message)
   }
 }
