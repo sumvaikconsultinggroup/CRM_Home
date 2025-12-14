@@ -542,6 +542,7 @@ export function FurnitureModule({ user, client, token, onBack }) {
     if (activeTab === 'production') fetchProductionData()
     if (activeTab === 'invoices') fetchInvoices()
     if (activeTab === 'settings') fetchModuleSettings()
+    if (activeTab === 'media-gallery') fetchMediaGallery()
   }, [activeTab])
 
   // Phase 3: Production fetch functions
