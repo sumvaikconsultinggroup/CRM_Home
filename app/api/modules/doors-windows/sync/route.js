@@ -12,7 +12,7 @@ export async function OPTIONS() {
 export async function POST(request) {
   try {
     const user = getAuthUser(request)
-    requireClientAccess(user)
+    requireAuth(user)
 
     const body = await request.json()
     const { action, entityType, entityId, data } = body
