@@ -390,10 +390,10 @@ export async function PUT(request) {
 
         await invoices.insertOne(invoice)
 
-        // Update quote with invoice reference
+        // Update quote with invoice reference - use 'invoiced' status for consistency
         await quotes.updateOne({ id }, {
-          $set: { status: 'converted', invoiceId, invoiceCreatedAt: now, updatedAt: now },
-          $push: { statusHistory: { status: 'converted', timestamp: now, by: user.id } }
+          $set: { status: 'invoiced', invoiceId, invoiceCreatedAt: now, updatedAt: now },
+          $push: { statusHistory: { status: 'invoiced', timestamp: now, by: user.id, notes: `Invoice ${invoiceNumber} created` } }
         })
 
         if (quote.leadId) {
