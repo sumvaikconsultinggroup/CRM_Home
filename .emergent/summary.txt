@@ -1,177 +1,253 @@
 <analysis>
 
 **original_problem_statement:**
-The user wants to build a complete, enterprise-level workflow for a Wooden Flooring Module with distinct processes for B2B (dealer) and B2C (consumer) segments.
+The user wants to build a new, comprehensive, enterprise-level Furniture Manufacturer Module. This module should be highly dynamic, API-first, and feature a modern Glassmorphism UI. It needs to integrate with the existing core application entities (Projects, Leads, etc.) without duplicating them.
 
-PRODUCT REQUIREMENTS:
-1.  **Project Tab Workflow**: Implement separate B2B and B2C workflows with segment-specific actions and statuses.
-2.  **Measurements Tab (B2C)**: Make the tab functional, allowing users to add rooms with advanced details (dimensions, shape, drawing) and eventually generate a quote. Implement inventory checking and blocking for selected materials.
-3.  **Materials Tab (B2B)**: Create a new tab for B2B material requisitions, allowing product selection, quantity input, inventory reservation, and processing the order to create a quote.
-4.  **Quotes & Invoices**: Implement a fully functional Quotes tab with CRUD operations, status management (Approved, Rejected), and actions to download or send for invoicing. Fix the basic quote templates in the Settings tab to be more professional.
-5.  **CRM & Contacts**: Enhance the main CRM contacts and ensure the flooring module correctly pulls customer data.
-6.  **Workflow Logic**: Ensure the UI updates in real-time as a project moves through the workflow without requiring manual refreshes. Add logic for editing/reverting steps (e.g., releasing blocked inventory to edit a material list).
+The implementation is planned in 7 distinct phases:
+- **Phase 1: Module Foundation:** Build the dynamic configuration layer (schemas, pipelines, templates, permissions) and the master data management for products, materials, and warehouses.
+- **Phase 2: Intake:** Implement the workflow for capturing customer requirements, site measurements, and creating a design brief with an approval flow.
+- **Phase 3: Quotation & Estimation:** Develop a versioned quoting system with a rule-driven estimation engine and margin/discount approval workflows.
+- **Phase 4: Orders & Production Planning:** Convert quotes to orders, generate Bills of Materials (BOM), manage production routing, and plan capacity.
+- **Phase 5: Execution:** Manage shop floor work orders, quality control (QC), packing, dispatch, and installation, with extensive automation triggers.
+- **Phase 6: Finance:** Track expenses, perform actual vs. estimated costing, analyze profitability, and provide hooks for accounting integration.
+- **Phase 7: Dashboards & AI:** Create dynamic dashboards, a report builder, and introduce an AI intelligence layer for suggestions and predictions.
+
+The user has requested to start by building the foundation (Phase 1) and then immediately implementing the Intake workflow (Phase 2), using the existing sidebar for navigation.
 
 **User's preferred language**: English
 
 **what currently exists?**
-The agent has implemented a significant portion of the requested workflows within a single massive component, .
-- **Materials Tab (B2B)**: This tab is now highly functional. It allows selecting a B2B project, viewing products with real-time inventory levels, adding them to a requisition list, and processing the order. Processing the order correctly reserves inventory and updates the project status. Action buttons are state-aware, allowing for editing the requisition (which releases inventory) or creating a quote.
-- **Measurements Tab (B2C)**: This tab has been heavily refactored but has outstanding issues. It includes a project selector, a dialog for adding rooms with a simple canvas for sketching, and an interface for selecting products with inventory display. However, it was the source of a runtime error which was recently fixed. It is intended to have similar inventory-blocking and quote-creation logic as the Materials tab.
-- **Quotes Tab**: The UI has been completely redesigned with summary cards, status filters, and a detailed table. It includes a dropdown menu with actions like View, Edit, Delete, Download, and Send for Invoice. However, the user reports that the core View and Edit functionalities are not working.
-- **Settings Tab**: The agent began implementing new, professional, visual HTML templates for quotes, replacing the previous basic text. This work is in progress.
-- **State Management**: The agent has fixed several real-time update issues by ensuring that after an action (e.g., processing an order), the local project state is updated to force a re-render of the UI.
+- The agent has completed a significant, unsolicited enhancement of the **Wooden Flooring Module's Invoice Tab and Reports Tab**. This includes a full enterprise-grade invoice lifecycle (Draft -> Sent -> Paid), CRM sync functionality, and dynamic, data-driven reports. This work is complete and tested.
+- The agent has begun implementing the new **Furniture Manufacturer Module**. It has created the folder structure and placeholder API route files for Phase 1 (Config, Masters) and Phase 2 (Intake). It has also created a main UI component () and attempted to integrate it into the application's main page () by adding a sidebar link.
+- The application is currently in a **broken state** due to a syntax error in the newly created .
 
 **Last working item**:
-    - Last item agent was working: The agent was fulfilling the user's explicit request to improve the Quote templates. It started replacing the basic text previews in the  function with more professional, visual HTML templates. The next step was intended to be fixing the non-functional View and Edit actions in the Quotes tab.
+    - Last item agent was working: Integrating the newly created  into the main application. The agent added the necessary code to  to render the module and add it to the sidebar, but the application failed to load due to an error in the new component file.
     - Status: IN PROGRESS
     - Agent Testing Done: N
-    - Which testing method agent to use? both
+    - Which testing method agent to use? screenshot tool
     - User Testing Done: N
 
 **All Pending/In progress Issue list**:
-  - Issue 1: The Quotes tab is not fully functional. (P0)
-  - Issue 2: The Materials tab UI does not always update in real-time after an action. (P1)
-  - Issue 3: The Measurements tab is missing the Material to be decided later feature. (P2)
-  - Issue 4: The application suffers from recurring MongoDB connection drops. (P3)
-
+  - Issue 1: Application is crashing due to a syntax error in the new Furniture Module component. (P0)
+  - Issue 2: Frequent MongoDB connection errors cause UI instability and interrupt development. (P1)
+  
   Issues Detail:
   - Issue 1: 
-     - **Description**: The user explicitly stated that the View and Edit actions in the newly designed Quotes tab are not working. Although the UI has been built, the dialogs or functionality behind these critical actions are broken or incomplete. This prevents the entire workflow from being validated.
-     - **Attempted fixes**: The agent created the UI for the quotes list with action buttons and dropdowns, and created placeholder handlers (, ). The agent was starting to work on the templates as a prerequisite.
+     - **Description**: After creating  and integrating it into , the application is failing to render. The agent's last thought identified a syntax error in  as the cause.
+     - **Attempted fixes**: None. The agent identified the problem but was terminated before it could fix it.
      - **Next debug checklist**:
-        1.  Locate the View Quote and Edit Quote dialog components or rendering logic. They are likely within .
-        2.  Ensure that clicking the View or Edit buttons in the  function correctly sets the state to open the corresponding dialog ().
-        3.  Verify the dialogs are being passed the correct quote data to display.
-        4.  Implement the  logic for the edit functionality and ensure the API call works.
-        5.  Implement the PDF generation/download logic for the Download button.
-     - **Why fix this issue and what will be achieved with the fix?**: This is the highest priority as it's a major blocker for both B2B and B2C workflows. Fixing it will make the module's core purpose (generating and managing quotes) functional.
-     - **Status**:  NOT STARTED
-     - **Is recurring issue?**: Y (User has mentioned it multiple times)
-     - **Should Test frontend/backend/both after fix?**: both
-     - **Blocked on other issue**: None.
-  - Issue 2: 
-     - **Description**: The user reported that after performing an action in the Materials tab (e.g., Process Order), the UI does not update to reflect the new state (e.g., showing the Mark Ready button) without a manual page refresh.
-     - **Attempted fixes**: The agent added logic to , , and other handlers to manually update the  state variable after a successful API call ().
-     - **Next debug checklist**:
-        1.  Thoroughly test the entire B2B Materials workflow: Select Project -> Add Items -> Process Order -> Mark Ready -> Create Quote.
-        2.  At each step, verify that the action buttons and status display update instantly without a refresh.
-        3.  If the issue persists, ensure the API response from the PUT request to  returns the complete and updated project object.
-        4.  Confirm the  call is correctly triggering a re-render of the  component.
-     - **Why fix this issue and what will be achieved with the fix?**: It will provide a smooth, modern user experience and remove user frustration, making the workflow usable.
-     - **Status**:  TESTING PENDING
-     - **Is recurring issue?**: Y
-     - **Should Test frontend/backend/both after fix?**: frontend
-     - **Blocked on other issue**: None.
-  - Issue 3:
-     - **Description**: User requested a feature in the Measurements tab to allow a user to proceed with measurements *without* selecting materials, for cases where the Material to be decided later. In this scenario, inventory should not be blocked.
-     - **Attempted fixes**: None.
-     - **Next debug checklist**:
-        1.  In , add a checkbox or button labeled Material to be decided later.
-        2.  If checked, the product selection and inventory check section should be disabled or hidden.
-        3.  The Save Measurement or Send for Quote action should proceed without material data and without calling the inventory reservation API.
-        4.  The project status should reflect this state (e.g., ).
-     - **Why fix this issue and what will be achieved with the fix?**: This adds flexibility to the B2C workflow, accommodating a real-world use case.
+        1. View the contents of .
+        2. Identify and fix the syntax error(s) (e.g., missing imports, unclosed tags, incorrect hooks usage).
+        3. View the Next.js server logs ( [2m1093[0m |           <h3 className="font-semibold text-slate-900 mb-2">Coming Soon</h3>
+      `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/modules/furniture/FurnitureModule.js
+./app/page.js
+ GET / 500 in 588ms
+yarn run v1.22.22
+$ NODE_OPTIONS='--max-old-space-size=1024' next dev --hostname 0.0.0.0 --port 3000
+  ▲ Next.js 14.2.3
+  - Local:        http://localhost:3000
+  - Network:      http://0.0.0.0:3000
+  - Environments: .env
+
+ ✓ Starting...
+ ✓ Ready in 1902ms
+ ○ Compiling / ...
+Browserslist: browsers data (caniuse-lite) is 6 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+ ⨯ ./components/modules/furniture/FurnitureModule.js
+Error: 
+  [31mx[0m Unexpected token `(`. Expected jsx identifier
+      ,-[[36;1;4m/app/components/modules/furniture/FurnitureModule.js[0m:1087:1]
+ [2m1087[0m |         <GlassCard className="p-8 text-center">
+ [2m1088[0m |           <div className="text-slate-400 mb-4">
+ [2m1089[0m |             {navItems.find(n => n.id === activeTab)?.icon && 
+ [2m1090[0m |               <navItems.find(n => n.id === activeTab).icon className="h-12 w-12 mx-auto" />
+      : [31;1m                            ^[0m
+ [2m1091[0m |             }
+ [2m1092[0m |           </div>
+ [2m1093[0m |           <h3 className="font-semibold text-slate-900 mb-2">Coming Soon</h3>
+      `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/modules/furniture/FurnitureModule.js
+./app/page.js
+ ⨯ ./components/modules/furniture/FurnitureModule.js
+Error: 
+  [31mx[0m Unexpected token `(`. Expected jsx identifier
+      ,-[[36;1;4m/app/components/modules/furniture/FurnitureModule.js[0m:1087:1]
+ [2m1087[0m |         <GlassCard className="p-8 text-center">
+ [2m1088[0m |           <div className="text-slate-400 mb-4">
+ [2m1089[0m |             {navItems.find(n => n.id === activeTab)?.icon && 
+ [2m1090[0m |               <navItems.find(n => n.id === activeTab).icon className="h-12 w-12 mx-auto" />
+      : [31;1m                            ^[0m
+ [2m1091[0m |             }
+ [2m1092[0m |           </div>
+ [2m1093[0m |           <h3 className="font-semibold text-slate-900 mb-2">Coming Soon</h3>
+      `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/modules/furniture/FurnitureModule.js
+./app/page.js
+ ⨯ ./components/modules/furniture/FurnitureModule.js
+Error: 
+  [31mx[0m Unexpected token `(`. Expected jsx identifier
+      ,-[[36;1;4m/app/components/modules/furniture/FurnitureModule.js[0m:1087:1]
+ [2m1087[0m |         <GlassCard className="p-8 text-center">
+ [2m1088[0m |           <div className="text-slate-400 mb-4">
+ [2m1089[0m |             {navItems.find(n => n.id === activeTab)?.icon && 
+ [2m1090[0m |               <navItems.find(n => n.id === activeTab).icon className="h-12 w-12 mx-auto" />
+      : [31;1m                            ^[0m
+ [2m1091[0m |             }
+ [2m1092[0m |           </div>
+ [2m1093[0m |           <h3 className="font-semibold text-slate-900 mb-2">Coming Soon</h3>
+      `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/modules/furniture/FurnitureModule.js
+./app/page.js
+ GET / 500 in 3778ms
+ GET / 500 in 18ms
+ GET / 500 in 14ms
+ GET / 500 in 10ms
+ GET / 500 in 12ms
+ GET / 500 in 10ms
+ GET / 500 in 10ms
+ GET / 500 in 12ms
+ GET /?x_request_source=preview 500 in 12ms
+yarn run v1.22.22
+$ NODE_OPTIONS='--max-old-space-size=1024' next dev --hostname 0.0.0.0 --port 3000
+  ▲ Next.js 14.2.3
+  - Local:        http://localhost:3000
+  - Network:      http://0.0.0.0:3000
+  - Environments: .env
+
+ ✓ Starting...) to confirm the error is resolved after the fix.
+        4. Use the  to verify that the main page loads correctly and the Furniture module appears in the sidebar.
+     - **Why fix this issue and what will be achieved with the fix?**: This is a critical blocker. Fixing it will restore the application's basic functionality and allow the development of the new Furniture Module to proceed.
      - **Status**:  NOT STARTED
      - **Is recurring issue?**: N
-     - **Should Test frontend/backend/both after fix?**: both
+     - **Should Test frontend/backend/both after fix?**: frontend
      - **Blocked on other issue**: None.
-  - Issue 4:
-     - **Description**: The MongoDB connection has dropped multiple times during the session, causing  and forcing the agent to restart services. This leads to login failures and other data access errors.
-     - **Attempted fixes**: The agent has been restarting  and  services via code-server                      STOPPED   Not started
-mongodb                          RUNNING   pid 28, uptime 0:00:04
-nextjs                           STOPPED   Dec 13 08:51 PM
-nginx-code-proxy                 RUNNING   pid 26, uptime 0:00:04
-supervisor>  as a temporary workaround.
+  - Issue 2: 
+     - **Description**: The MongoDB connection is unstable, leading to  and timeouts. This was observed in this session (requiring a service restart at message 138) and was also noted as a recurring problem in the previous session's summary.
+     - **Attempted fixes**: Restarting supervisor services (nginx-code-proxy: stopped
+mongodb: stopped
+mongodb: started
+nextjs: started
+nginx-code-proxy: started
+code-server: started) temporarily resolves the issue.
      - **Next debug checklist**:
-        1.  Review the MongoDB connection logic in .
-        2.  Ensure connection options like , , and  are set to reasonable values for a more resilient connection.
-     - **Why fix this issue and what will be achieved with the fix?**: It will improve application stability and reduce interruptions during development.
+        1. Investigate the MongoDB connection logic in  (or equivalent).
+        2. Check for long-running queries in the newly created API routes.
+        3. Review server logs for patterns around the time of the errors.
+     - **Why fix this issue and what will be achieved with the fix?**: A stable DB connection is essential for reliable development and application performance.
      - **Status**:  NOT STARTED
      - **Is recurring issue?**: Y
      - **Should Test frontend/backend/both after fix?**: backend
      - **Blocked on other issue**: None.
 
 **In progress Task List**:
-  - Task 1:  Enhance Quote Templates in Settings.
-     - **Where to resume**: In the  function within . The agent has already started replacing the basic text with styled HTML for the templates.
-     - **What will be achieved with this?**: This will provide visually appealing, professional quote templates that can be selected in settings and later used for generating actual quotes.
+  - Task 1: Implement the Furniture Manufacturer Module (Phases 1 & 2). (P0)
+     - **Description**: The task is to build the foundational components and APIs for the new module as per the user's detailed request.
+     - **Where to resume**: The immediate next step is to fix the syntax error in . After that, the agent needs to implement the actual logic within the placeholder API files created in  and build out the UI for the Config Studio and Masters sections within .
+     - **What will be achieved with this?**: This will deliver the first functional version of the new module, covering the configuration and master data management required for subsequent phases.
      - **Status**:  IN PROGRESS
-     - **Should Test frontend/backend/both after fix?**: frontend
-     - **Blocked on something**: None.
+     - **Should Test frontend/backend/both after fix?**: both
+     - **Blocked on something**: Blocked by Issue 1: Application is crashing.
 
 **Upcoming and Future Tasks**
     Upcoming Tasks:
-    - **P0**: Implement the drawing/canvas data saving and loading for the . The canvas exists, but the drawing data is not being saved with the room.
-    - **P1**: Implement the Installations tab workflow, allowing a project to be marked as Completed.
-    - **P2**: Implement a functional Invoices tab, allowing invoice creation from approved quotes.
+    - **P1**: Complete Furniture Module Phase 2 (Intake: Requirements, Measurements, Design Brief). The API files exist but are empty. UI needs to be built.
     
     Future Tasks:
-    - **P2**: Implement backend logic for the Enterprise Super Admin Panel (Analytics, Billing, Security).
-    - **P3**: Add images to the Feature Preview section on the main landing page.
+    - **P2**: Implement Furniture Module Phase 3 (Quotation + Estimation Engine).
+    - **P2**: Implement Furniture Module Phase 4 (Orders + BOM + Production Planning).
+    - **P3**: Implement Furniture Module Phase 5 (Execution: Shopfloor, QC, Dispatch).
+    - **P3**: Implement Furniture Module Phase 6 (Finance: Costing & Profitability).
+    - **P3**: Implement Furniture Module Phase 7 (Dashboards, Reporting, AI Extensions).
 
 **Completed work in this session**
-- **Materials Tab Overhaul (B2B)**:
-  - Completely rewrote the Materials tab to be stateful and interactive.
-  - Integrated real-time inventory display for each product.
-  - Implemented inventory reservation/blocking logic when an order is processed, calling the  endpoint with a  action.
-  - Added a state-aware action button flow: Process Order -> Mark Ready -> Create Quote.
-  - Added an Edit Materials button that releases blocked inventory and allows modification.
-- **Measurements Tab Refactor (B2C)**:
-  - Added a simple  component for sketching room layouts.
-  - Refactored the tab to include product selection with inventory display, similar to the Materials tab.
-  - Added state to track the technician's name.
-  - Fixed a critical runtime error caused by placing a  hook inside the render function.
-  - Fixed a UI scrolling issue.
-- **Quotes Tab UI Redesign**:
-  - Replaced the basic list with a professional UI including summary cards for statuses (Draft, Approved, etc.), a search filter, and a detailed table.
-  - Added a  with actions for View, Edit, Delete, Download, and Send for Invoice.
-- **Real-time State Updates**:
-  - Improved several action handlers (, ) to update the local  state, forcing the UI to refresh instantly without a manual reload.
+- **Wooden Flooring - Enterprise Invoice Tab**: A full-featured invoice management system was implemented.
+  - Files Modified: , .
+  - Features: Full invoice lifecycle (Draft, Sent, Paid, etc.), status-based actions, payment recording dialog, CRM sync capability.
+- **Wooden Flooring - Dynamic Reports Tab**: The reports tab was updated to use real data from the backend.
+  - Files Modified: , .
+- **Wooden Flooring - CRM Sync**: Backend logic for syncing invoice data to a CRM was added.
+  - Files Modified: .
 
 **Earlier issues found/mentioned but not fixed**
-   - **Issue 1**: The Feature Preview section on the public landing page is still missing images.
-   - **Issue 2**: The core MEE AI  in  was not investigated.
+   - **Issue 1**: The monolithic component  is still over 8,000 lines, creating technical debt. Refactoring was started in a previous session but not continued in this one.
+   - **Issue 2**: The B2C feature to include measurement drawings in the quote PDF for the flooring module is still not implemented.
 
 **Known issue recurrence from previous fork**
-  - **Issue recurrence in previous fork**: Component Integration Hell. The  file has grown significantly and is now over 6000 lines. Its complexity led directly to a runtime crash (hook rule violation) and multiple syntax errors during the session, making development slow and risky.
-  - **Recurrence count**: 3
-  - **Status**: IN PROGRESS (The problem is getting worse with each new feature).
+  - **Issue recurrence in previous fork**: MongoDB connection instability ().
+  - **Recurrence count**: 2+
+  - **Status**: NOT STARTED
 
 **Code Architecture**
 
 
 **Key Technical Concepts**
-- **Complex Single-Component State Management**: All state for all tabs (Projects, Materials, Measurements, Quotes, Inventory, etc.) is managed within the single  component. This includes local UI state, fetched data, and complex objects for material requisitions and measurements.
-- **API-Driven Inventory Reservation**: The frontend now interacts with the backend inventory API () to  stock when a B2B order is processed and  stock if the order is edited.
-- **Forced State Synchronization**: To fix the lack of real-time UI updates, the agent implemented a pattern of fetching the updated parent object (the project) after a child action and setting it in the local state () to trigger a re-render.
+- **API-First Development**: The agent started by creating a comprehensive set of API endpoints for the new module before building the UI.
+- **Domain-Driven Structure**: A new directory structure under  was created to separate concerns by domain (config, masters, requirements, etc.).
+- **Dynamic Module Integration**: The agent modified  to dynamically add the new Furniture Module to the sidebar and render it based on the active state, similar to how the existing Flooring Module is handled.
+- **Glassmorphism UI**: This was a specific user requirement for the new module's design, which the agent intended to implement in .
 
 **key DB schema**
-  - ****: Implicitly expanded to store complex objects for  and .
-  - ****: The schema supports  and .
+- The new API routes imply the creation of several new MongoDB collections, likely including: , , , , , . The schemas for these are not yet defined.
 
 **changes in tech stack**
   - None.
 
 **All files of reference**
-- : **CRITICAL**. This monolithic file now contains the entire logic and UI for every single feature of the flooring module. It has become extremely fragile and difficult to maintain. All recent work has been concentrated here.
-- : The backend route used to save all updates to a project, including material requisitions, measurement details, and status changes.
-- : The backend route used to reserve and release inventory stock.
-- : The backend route used to create and manage quotes.
+- : **CRITICAL & NEW**. The main UI component for the new module. It currently contains a syntax error causing the app to crash.
+- : **CRITICAL & MODIFIED**. Updated to include the  in the sidebar navigation and main content area.
+- : **NEW**. A set of placeholder API files for the new module's Phase 1 and 2 functionality.
+- : **MODIFIED**. Significantly updated to add the enhanced Invoice and Reports tabs for the *old* flooring module.
+- : **MODIFIED**. Backend logic for the enhanced flooring module features.
 
 **Areas that need refactoring**:
-- ** MUST BE REFACTORED**. It is unmaintainably large. The introduction of complex, tab-specific state and logic (e.g.,  vs ) within the same top-level component caused bugs and confusion. The file should be broken down into child components for each tab (e.g., , , ) and their respective dialogs.
+-  remains a monolithic component that is difficult to maintain.
 
 **key api endpoints**
-- : Heavily used to update project status and save complex data structures like material lists and measurement details.
-- : Used to reserve and release inventory. The body includes , , and .
-- : Used to create new quotes from either the Materials or Measurements tab.
+- **New (Furniture Module)**:
+  - 
+  - 
+  - 
+  - 
+  - 
+  - 
+- **Modified (Flooring Module)**:
+  -  (handles new status updates like 'send', 'pay')
+  -  (provides dynamic report data)
+  -  (handles invoice-to-CRM sync)
 
 **Critical Info for New Agent**
-- **Priority 1: Fix the Quotes Tab**: Your immediate task is to fix the View and Edit functionality in the Quotes tab. The user is blocked until this is working. Start by investigating the dialog rendering logic tied to the action buttons in .
-- **Monolithic File Warning**: You will be working almost exclusively in . Be extremely careful. The file is over 6000 lines long. A small syntax error can break the entire module. Do not add more top-level state; try to encapsulate logic within the respective  functions or, ideally, plan to refactor a small piece out.
-- **Verify Real-Time Updates**: The user has repeatedly complained about the UI not updating. After fixing the Quotes tab, thoroughly test the Materials tab workflow to confirm the state refresh fixes are working reliably.
-- **Database Instability**: The  is a known environmental issue. If you encounter unexpected 500 errors or login failures, your first action should be to run nginx-code-proxy: stopped
+- **Immediate Priority**: The application is **broken**. You must first fix the syntax error in  to get the app running again.
+- **Focus on the Furniture Module**: The user's primary request is the new Furniture Manufacturer Module. Do not get distracted by the Wooden Flooring module. The extensive work done on the Flooring Invoice tab in this session was a diversion, but it is complete.
+- **Follow the User's Plan**: The user provided a very detailed 7-phase plan (Message 113). Adhere to it closely. The current task is to finish Phase 1 (Config & Masters) and Phase 2 (Intake).
+- **Review Created Files**: The previous agent created many empty API route files for the Furniture Module. You need to review these files and implement the actual database logic and functionality within them.
+- **DB Instability**: Be aware of the recurring MongoDB connection errors. If the UI fails to load data or you see network errors in the logs, you may need to restart services with nginx-code-proxy: stopped
+code-server: stopped
 mongodb: stopped
+nextjs: stopped
 mongodb: started
 nextjs: started
 nginx-code-proxy: started
@@ -181,22 +257,15 @@ code-server: started.
   - None.
 
 **Last 10 User Messages and any pending user messages**
-- **User (Msg 221):** Reported a scrolling bug in the Measurements tab and requested a complete overhaul of the Quotes tab, citing non-working CRUD and basic templates. (Status: **PARTIALLY ADDRESSED**, UI fixed, Quotes work started).
-- **User (Msg 256):** Pointed out that the Measurements tab lacks the inventory features from the Materials tab, needs technician tracking, and isn't creating quotes correctly. (Status: **IN PROGRESS**, agent started a major refactor).
-- **User (Msg 303):** Reported a crash in the Measurement tab ( error) and re-stated that the Materials tab is not updating in real-time. (Status: **ADDRESSED**, agent fixed the crash and improved real-time updates).
-- **User (Msg 332):** Provided the latest set of tasks.
-    1.  Add a Material to be decided later option to the Measurements tab.
-    2.  Re-iterated that the **Quotes Tab is the priority**: Lets solve Quotes Tab now, Quotes View is still not working, not even Edit working... First Fix the templates then Quotes tab. (Status: **IN PROGRESS - Last working item**).
+- **User (Msg 113):** Provided a very large and detailed 7-phase specification for building a new Furniture Manufacturer Module. (Status: **IN PROGRESS**)
+- **Agent (Msg 114, 115, 117):** Acknowledged the request and asked for clarification.
+- **User (Msg 118):** Confirmed to proceed with the Furniture module, specifying to use the existing sidebar, add sample products, and Directly continue for phase 2. (Status: **IN PROGRESS**)
+- All subsequent messages are from the agent attempting to implement this request.
 
 **Project Health Check:**
-- **Broken:**
-  - Quotes Tab: Core functionality like View and Edit is non-functional, blocking the main workflow.
-- **Mocked:**
-  - Quote/Invoice Templates: The templates in Settings are visual but not yet connected to a dynamic PDF generation engine.
-- **Incomplete:**
-  - The B2C workflow in the Measurements tab is not fully implemented; quote creation and inventory logic need to be verified.
-  - The Installations and Invoices tabs are placeholders.
-  - The drawing canvas in the Measurement dialog does not save the drawing.
+- **Broken:** The entire application is currently non-functional due to a syntax error in a newly added component ().
+- **Mocked:** None.
+- **Incomplete:** The new Furniture Manufacturer Module is in the very early stages of development. API files and a UI component have been created, but they lack logic and the UI component is broken.
 
 **3rd Party Integrations**
 - No new integrations were added.
@@ -205,17 +274,12 @@ code-server: started.
   - Testing agent used after significant changes: NO
   - Troubleshoot agent used after agent stuck in loop: NO
   - Test files created: []
-  - Known regressions:
-    - Recurring  requiring service restarts.
-    - UI not updating in real-time was a recurring complaint, though fixes have been attempted.
-    - The complexity of  has led to new bugs being introduced while fixing others (e.g., the  crash).
+  - Known regressions: The entire application is currently down.
 
 **Credentials to test flow:**
-- **Super Admin:**  / 
 - **Enterprise Client:**  / 
 
 **What agent forgot to execute**
-- The agent has not yet implemented the logic to save the actual drawing from the canvas in the . The canvas UI was created, but the data part was missed.
-- While the agent redesigned the Quotes tab UI, it failed to ensure the core View and Edit functionalities worked, which was the user's primary concern.
+- The agent initially ignored the user's primary request for the Furniture Module (Message 113) and instead worked on the Wooden Flooring Module. After being prompted again, the agent started the correct task but left it in a broken, incomplete state. The agent did not implement any of the actual logic inside the newly created API files for the furniture module.
 
 </analysis>
