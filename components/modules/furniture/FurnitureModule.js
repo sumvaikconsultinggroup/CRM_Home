@@ -1083,17 +1083,19 @@ export function FurnitureModule({ user, client, token, onBack }) {
       case 'products': return renderProducts()
       case 'materials': return renderMaterials()
       case 'config': return renderConfigStudio()
-      default: return (
-        <GlassCard className="p-8 text-center">
-          <div className="text-slate-400 mb-4">
-            {navItems.find(n => n.id === activeTab)?.icon && 
-              <navItems.find(n => n.id === activeTab).icon className="h-12 w-12 mx-auto" />
-            }
-          </div>
-          <h3 className="font-semibold text-slate-900 mb-2">Coming Soon</h3>
-          <p className="text-sm text-slate-500">This section is under development</p>
-        </GlassCard>
-      )
+      default: {
+        const activeNavItem = navItems.find(n => n.id === activeTab)
+        const IconComponent = activeNavItem?.icon || Package
+        return (
+          <GlassCard className="p-8 text-center">
+            <div className="text-slate-400 mb-4">
+              <IconComponent className="h-12 w-12 mx-auto" />
+            </div>
+            <h3 className="font-semibold text-slate-900 mb-2">Coming Soon</h3>
+            <p className="text-sm text-slate-500">This section is under development</p>
+          </GlassCard>
+        )
+      }
     }
   }
 
