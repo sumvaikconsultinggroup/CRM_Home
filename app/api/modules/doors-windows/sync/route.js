@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
 import { getClientDb } from '@/lib/db/multitenancy'
-import { getAuthUser, requireClientAccess, getUserDatabaseName } from '@/lib/utils/auth'
+import { getAuthUser, requireAuth, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 
 export async function OPTIONS() {
