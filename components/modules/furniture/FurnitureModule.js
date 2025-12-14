@@ -306,6 +306,175 @@ export function FurnitureModule({ user, client, token, onBack }) {
     }
   }, [token])
 
+  // Additional fetch functions for enterprise features
+  const fetchQuotations = useCallback(async () => {
+    try {
+      const res = await fetch('/api/module/furniture/quotations', { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setQuotations(data.quotations || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch quotations:', error)
+    }
+  }, [token])
+
+  const fetchOrders = useCallback(async () => {
+    try {
+      const res = await fetch('/api/module/furniture/orders', { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setOrders(data.orders || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch orders:', error)
+    }
+  }, [token])
+
+  const fetchSuppliers = useCallback(async () => {
+    try {
+      const res = await fetch('/api/module/furniture/suppliers', { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setSuppliers(data.suppliers || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch suppliers:', error)
+    }
+  }, [token])
+
+  const fetchPurchaseOrders = useCallback(async () => {
+    try {
+      const res = await fetch('/api/module/furniture/purchase-orders', { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setPurchaseOrders(data.purchaseOrders || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch purchase orders:', error)
+    }
+  }, [token])
+
+  const fetchInventory = useCallback(async () => {
+    try {
+      const res = await fetch('/api/module/furniture/inventory', { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setInventory(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch inventory:', error)
+    }
+  }, [token])
+
+  const fetchInstallations = useCallback(async () => {
+    try {
+      const res = await fetch('/api/module/furniture/installations', { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setInstallations(data.installations || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch installations:', error)
+    }
+  }, [token])
+
+  const fetchServiceTickets = useCallback(async () => {
+    try {
+      const res = await fetch('/api/module/furniture/service-tickets', { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setServiceTickets(data.tickets || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch service tickets:', error)
+    }
+  }, [token])
+
+  const fetchShowroom = useCallback(async () => {
+    try {
+      const res = await fetch('/api/module/furniture/showroom', { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setShowroomDisplays(data.displays || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch showroom:', error)
+    }
+  }, [token])
+
+  const fetchAnalytics = useCallback(async (type = 'overview') => {
+    try {
+      const res = await fetch(`/api/module/furniture/analytics?type=${type}`, { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setAnalytics(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch analytics:', error)
+    }
+  }, [token])
+
+  // CRM Sync Functions
+  const fetchCrmSyncStatus = useCallback(async () => {
+    try {
+      const res = await fetch('/api/module/furniture/sync', { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setCrmSyncStatus(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch CRM sync status:', error)
+    }
+  }, [token])
+
+  const handleSyncFromCRM = async (syncType) => {
+    try {
+      setSyncing(true)
+      const res = await fetch('/api/module/furniture/sync', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ action: `sync_${syncType}` })
+      })
+      if (res.ok) {
+        const data = await res.json()
+        toast.success(data.message || `Synced ${syncType} from CRM`)
+        fetchRequirements()
+        fetchCrmSyncStatus()
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Sync failed')
+      }
+    } catch (error) {
+      toast.error('Failed to sync from CRM')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  const handlePushToCRM = async (requirementId) => {
+    try {
+      setSyncing(true)
+      const res = await fetch('/api/module/furniture/sync', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ action: 'push_to_crm', entityId: requirementId })
+      })
+      if (res.ok) {
+        const data = await res.json()
+        toast.success(`Created project ${data.project?.projectNumber} in CRM`)
+        fetchRequirements()
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to push to CRM')
+      }
+    } catch (error) {
+      toast.error('Failed to push to CRM')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
   // Initialize
   useEffect(() => {
     const init = async () => {
@@ -318,7 +487,8 @@ export function FurnitureModule({ user, client, token, onBack }) {
         fetchWarehouses(),
         fetchRequirements(),
         fetchMeasurements(),
-        fetchDesignBriefs()
+        fetchDesignBriefs(),
+        fetchCrmSyncStatus()
       ])
       setLoading(false)
     }
@@ -330,10 +500,18 @@ export function FurnitureModule({ user, client, token, onBack }) {
     if (activeTab === 'products') fetchProducts()
     if (activeTab === 'materials') fetchMaterials()
     if (activeTab === 'hardware') fetchHardware()
-    if (activeTab === 'inventory') fetchWarehouses()
-    if (activeTab === 'requirements') fetchRequirements()
+    if (activeTab === 'inventory') { fetchWarehouses(); fetchInventory() }
+    if (activeTab === 'requirements') { fetchRequirements(); fetchCrmSyncStatus() }
     if (activeTab === 'measurements') fetchMeasurements()
     if (activeTab === 'design-briefs') fetchDesignBriefs()
+    if (activeTab === 'quotations') fetchQuotations()
+    if (activeTab === 'orders') fetchOrders()
+    if (activeTab === 'suppliers') fetchSuppliers()
+    if (activeTab === 'purchase-orders') fetchPurchaseOrders()
+    if (activeTab === 'installations') fetchInstallations()
+    if (activeTab === 'service-tickets') fetchServiceTickets()
+    if (activeTab === 'showroom') fetchShowroom()
+    if (activeTab === 'reports') fetchAnalytics()
   }, [activeTab])
 
   // Seed sample data
