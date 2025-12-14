@@ -406,7 +406,7 @@ export function SiteSurvey({ surveys, projects, selectedProject, onRefresh, head
                             </div>
                             <div>
                               <span className="text-slate-500">Size (WxH):</span>
-                              <p className="font-medium">{opening.width}" x {opening.height}"</p>
+                              <p className="font-medium">{opening.width}&quot; x {opening.height}&quot;</p>
                             </div>
                             <div>
                               <span className="text-slate-500">Area:</span>
