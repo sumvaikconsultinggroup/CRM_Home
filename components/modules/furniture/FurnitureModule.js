@@ -2843,13 +2843,6 @@ export function FurnitureModule({ user, client, token, onBack }) {
 
   // Render MEE AI Studio - Full AI Intelligence Layer
   const renderMeeAiStudio = () => {
-    const [aiMode, setAiMode] = useState('chat')
-    const [selectedRequirement, setSelectedRequirement] = useState(null)
-    const [aiSuggestions, setAiSuggestions] = useState(null)
-    const [materialSuggestions, setMaterialSuggestions] = useState(null)
-    const [pricingSuggestions, setPricingSuggestions] = useState(null)
-    const [leadTimePrediction, setLeadTimePrediction] = useState(null)
-
     const quickActions = [
       { id: 'analyze', label: 'Analyze Requirement', icon: Sparkles, color: 'from-purple-500 to-indigo-600' },
       { id: 'materials', label: 'Material Suggestions', icon: Layers, color: 'from-emerald-500 to-teal-600' },
