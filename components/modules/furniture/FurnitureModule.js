@@ -294,6 +294,49 @@ export function FurnitureModule({ user, client, token, onBack }) {
     if (activeTab === 'design-briefs') fetchDesignBriefs()
   }, [activeTab])
 
+  // Seed sample data
+  const [seedStatus, setSeedStatus] = useState(null)
+  const [seeding, setSeeding] = useState(false)
+
+  const handleSeedData = async () => {
+    try {
+      setSeeding(true)
+      const res = await fetch('/api/module/furniture/seed?type=all', {
+        method: 'POST',
+        headers
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setSeedStatus(data.results)
+        toast.success(`Seeded ${data.results?.products || 0} products, ${data.results?.materials || 0} materials, ${data.results?.hardware || 0} hardware items`)
+        // Refresh data
+        fetchProducts()
+        fetchMaterials()
+        fetchHardware()
+        fetchWarehouses()
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to seed data')
+      }
+    } catch (error) {
+      toast.error('Failed to seed data')
+    } finally {
+      setSeeding(false)
+    }
+  }
+
+  const fetchSeedStatus = async () => {
+    try {
+      const res = await fetch('/api/module/furniture/seed', { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setSeedStatus(data.status)
+      }
+    } catch (error) {
+      console.error('Failed to fetch seed status:', error)
+    }
+  }
+
   // CRUD handlers
   const handleCreateProduct = async (productData) => {
     try {
