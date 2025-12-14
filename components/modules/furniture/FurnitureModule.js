@@ -3288,7 +3288,7 @@ export function FurnitureModule({ user, client, token, onBack }) {
           {/* model-viewer web component placeholder - in production use actual model-viewer */}
           <div className="text-center">
             <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 mx-auto mb-4 flex items-center justify-center animate-pulse">
-              <Cube className="h-10 w-10 text-white" />
+              <Box className="h-10 w-10 text-white" />
             </div>
             <p className="text-sm font-medium text-slate-700">{media.fileName}</p>
             <p className="text-xs text-slate-500 mt-1">Click to view in 3D</p>
@@ -3352,7 +3352,7 @@ export function FurnitureModule({ user, client, token, onBack }) {
           <GlassCard className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20">
-                <Cube className="h-5 w-5 text-blue-600" />
+                <Box className="h-5 w-5 text-blue-600" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-slate-900">{mediaGallery.filter(m => m.mediaType === '3d_model').length}</p>
@@ -3427,7 +3427,7 @@ export function FurnitureModule({ user, client, token, onBack }) {
                   <div className="aspect-square bg-slate-100 relative">
                     {media.mediaType === '3d_model' ? (
                       <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100">
-                        <Cube className="h-12 w-12 text-indigo-500" />
+                        <Box className="h-12 w-12 text-indigo-500" />
                       </div>
                     ) : media.mediaType === 'video' ? (
                       <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-100 to-pink-100">
@@ -3508,7 +3508,7 @@ export function FurnitureModule({ user, client, token, onBack }) {
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-lg bg-slate-100 flex items-center justify-center">
-                          {media.mediaType === '3d_model' ? <Cube className="h-5 w-5 text-indigo-500" /> :
+                          {media.mediaType === '3d_model' ? <Box className="h-5 w-5 text-indigo-500" /> :
                            media.mediaType === 'video' ? <Video className="h-5 w-5 text-purple-500" /> :
                            <Image className="h-5 w-5 text-emerald-500" />}
                         </div>
