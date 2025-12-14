@@ -5764,8 +5764,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                         </Button>
                         <Button 
                           className="bg-cyan-600 hover:bg-cyan-700"
-                          disabled={!hasRooms || !technicianName.trim() || loading}
+                          disabled={!hasRooms || loading}
                           onClick={async () => {
+                            // Validate technician name first
+                            if (!technicianName.trim()) {
+                              toast.error('Please enter Technician/Visit Person name first')
+                              return
+                            }
                             const saved = await saveMeasurementDetails(true) // Block inventory
                             if (saved) {
                               await handleUpdateProjectStatus(selectedProject.id, 'measurement_done')
@@ -5779,7 +5784,10 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                         </Button>
                       </div>
                       {!technicianName.trim() && (
-                        <p className="text-sm text-red-500">Please enter technician/person name above.</p>
+                        <div className="bg-red-50 border border-red-200 rounded-lg p-3 flex items-center gap-2">
+                          <AlertTriangle className="h-4 w-4 text-red-500" />
+                          <p className="text-sm text-red-600 font-medium">Please enter Technician/Visit Person Name above to proceed.</p>
+                        </div>
                       )}
                       {!hasRooms && (
                         <p className="text-sm text-slate-500">Add at least one room measurement.</p>
