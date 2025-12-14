@@ -1470,6 +1470,657 @@ export function FurnitureModule({ user, client, token, onBack }) {
     </div>
   )
 
+  // Render Quotations Tab
+  const renderQuotations = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">Quotations</h2>
+          <p className="text-slate-500 mt-1">Manage customer quotes with versioning and approval workflow</p>
+        </div>
+        <Button className="bg-gradient-to-r from-indigo-500 to-purple-600" onClick={() => setDrawerOpen({ type: 'new_quotation', data: null })}>
+          <Plus className="h-4 w-4 mr-2" /> Create Quote
+        </Button>
+      </div>
+
+      {/* Quote Stats */}
+      <div className="grid grid-cols-5 gap-4">
+        {['draft', 'sent', 'accepted', 'rejected', 'converted'].map(status => {
+          const count = quotations.filter(q => q.status === status).length
+          const colors = {
+            draft: 'from-slate-50 to-gray-50 border-slate-200',
+            sent: 'from-blue-50 to-indigo-50 border-blue-200',
+            accepted: 'from-emerald-50 to-teal-50 border-emerald-200',
+            rejected: 'from-red-50 to-rose-50 border-red-200',
+            converted: 'from-purple-50 to-violet-50 border-purple-200'
+          }
+          return (
+            <GlassCard key={status} className={`p-4 bg-gradient-to-br ${colors[status]} border`}>
+              <p className="text-sm font-medium text-slate-600 capitalize">{status}</p>
+              <p className="text-2xl font-bold text-slate-900">{count}</p>
+            </GlassCard>
+          )
+        })}
+      </div>
+
+      {/* Quotations List */}
+      <GlassCard className="p-5">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200">
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Quote #</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Customer</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Items</th>
+                <th className="px-4 py-3 text-right font-semibold text-slate-600">Total</th>
+                <th className="px-4 py-3 text-center font-semibold text-slate-600">Status</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Valid Until</th>
+                <th className="px-4 py-3 text-center font-semibold text-slate-600">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {quotations.map(quote => (
+                <tr key={quote.id} className="hover:bg-slate-50/50">
+                  <td className="px-4 py-3">
+                    <span className="font-medium text-indigo-600">{quote.quoteNumber}</span>
+                    <span className="text-xs text-slate-400 ml-2">v{quote.version}</span>
+                  </td>
+                  <td className="px-4 py-3 text-slate-700">{quote.customer?.name || '-'}</td>
+                  <td className="px-4 py-3 text-slate-600">{quote.lineItems?.length || 0} items</td>
+                  <td className="px-4 py-3 text-right font-semibold text-slate-900">
+                    ₹{(quote.grandTotal || 0).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <Badge className={statusColors[quote.status] || statusColors.draft}>
+                      {quote.status?.replace(/_/g, ' ')}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {quote.validUntil ? new Date(quote.validUntil).toLocaleDateString() : '-'}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm"><MoreVertical className="h-4 w-4" /></Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => setDrawerOpen({ type: 'view_quotation', data: quote })}>
+                          <Eye className="h-4 w-4 mr-2" /> View
+                        </DropdownMenuItem>
+                        <DropdownMenuItem><Edit className="h-4 w-4 mr-2" /> Edit</DropdownMenuItem>
+                        <DropdownMenuItem><Send className="h-4 w-4 mr-2" /> Send to Customer</DropdownMenuItem>
+                        <DropdownMenuItem><Printer className="h-4 w-4 mr-2" /> Print PDF</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
+                </tr>
+              ))}
+              {quotations.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
+                    No quotations yet. Create your first quote!
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </GlassCard>
+    </div>
+  )
+
+  // Render Orders Tab
+  const renderOrders = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">Orders</h2>
+          <p className="text-slate-500 mt-1">Track manufacturing and trading orders end-to-end</p>
+        </div>
+        <div className="flex gap-2">
+          <Select defaultValue="all">
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Order Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All Orders</SelectItem>
+              <SelectItem value="manufacturing">Manufacturing</SelectItem>
+              <SelectItem value="trading">Trading</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button className="bg-gradient-to-r from-indigo-500 to-purple-600">
+            <Plus className="h-4 w-4 mr-2" /> New Order
+          </Button>
+        </div>
+      </div>
+
+      {/* Order Pipeline */}
+      <div className="grid grid-cols-6 gap-3">
+        {['created', 'confirmed', 'in_production', 'ready', 'dispatched', 'delivered'].map(status => {
+          const count = orders.filter(o => o.status === status).length
+          const value = orders.filter(o => o.status === status).reduce((sum, o) => sum + (o.grandTotal || 0), 0)
+          return (
+            <GlassCard key={status} className="p-4">
+              <p className="text-xs font-medium text-slate-500 uppercase">{status.replace(/_/g, ' ')}</p>
+              <p className="text-xl font-bold text-slate-900 mt-1">{count}</p>
+              <p className="text-xs text-indigo-600">₹{(value / 100000).toFixed(1)}L</p>
+            </GlassCard>
+          )
+        })}
+      </div>
+
+      {/* Orders Table */}
+      <GlassCard className="p-5">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200">
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Order #</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Customer</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Type</th>
+                <th className="px-4 py-3 text-right font-semibold text-slate-600">Total</th>
+                <th className="px-4 py-3 text-right font-semibold text-slate-600">Paid</th>
+                <th className="px-4 py-3 text-center font-semibold text-slate-600">Status</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Delivery</th>
+                <th className="px-4 py-3 text-center font-semibold text-slate-600">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {orders.map(order => (
+                <tr key={order.id} className="hover:bg-slate-50/50">
+                  <td className="px-4 py-3">
+                    <span className="font-medium text-indigo-600">{order.orderNumber}</span>
+                  </td>
+                  <td className="px-4 py-3 text-slate-700">{order.customer?.name || '-'}</td>
+                  <td className="px-4 py-3">
+                    <Badge variant="outline" className="capitalize">{order.orderType}</Badge>
+                  </td>
+                  <td className="px-4 py-3 text-right font-semibold text-slate-900">
+                    ₹{(order.grandTotal || 0).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    <span className={order.totalPaid >= order.grandTotal ? 'text-emerald-600' : 'text-amber-600'}>
+                      ₹{(order.totalPaid || 0).toLocaleString()}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <Badge className={statusColors[order.status] || statusColors.new}>
+                      {order.status?.replace(/_/g, ' ')}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {order.expectedDelivery ? new Date(order.expectedDelivery).toLocaleDateString() : '-'}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
+                  </td>
+                </tr>
+              ))}
+              {orders.length === 0 && (
+                <tr>
+                  <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
+                    No orders yet. Convert quotations to orders or create direct orders.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </GlassCard>
+    </div>
+  )
+
+  // Render Suppliers Tab
+  const renderSuppliers = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">Suppliers</h2>
+          <p className="text-slate-500 mt-1">Manage your material and hardware suppliers</p>
+        </div>
+        <Button className="bg-gradient-to-r from-indigo-500 to-purple-600">
+          <Plus className="h-4 w-4 mr-2" /> Add Supplier
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-3 gap-4">
+        {suppliers.map(supplier => (
+          <GlassCard key={supplier.id} className="p-5">
+            <div className="flex items-start justify-between">
+              <div>
+                <h3 className="font-semibold text-slate-900">{supplier.name}</h3>
+                <p className="text-sm text-slate-500">{supplier.code}</p>
+              </div>
+              <Badge className={supplier.isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}>
+                {supplier.isActive ? 'Active' : 'Inactive'}
+              </Badge>
+            </div>
+            <div className="mt-3 space-y-1 text-sm text-slate-600">
+              <p className="flex items-center gap-2">
+                <Building2 className="h-4 w-4" /> {supplier.type}
+              </p>
+              <p className="flex items-center gap-2">
+                <Phone className="h-4 w-4" /> {supplier.phone || 'N/A'}
+              </p>
+              <p className="flex items-center gap-2">
+                <Mail className="h-4 w-4" /> {supplier.email || 'N/A'}
+              </p>
+            </div>
+            <div className="mt-3 pt-3 border-t border-slate-200">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-slate-500">Total Orders</span>
+                <span className="font-semibold">{supplier.stats?.totalOrders || 0}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm mt-1">
+                <span className="text-slate-500">Total Value</span>
+                <span className="font-semibold">₹{((supplier.stats?.totalValue || 0) / 1000).toFixed(0)}K</span>
+              </div>
+            </div>
+          </GlassCard>
+        ))}
+        {suppliers.length === 0 && (
+          <div className="col-span-3 text-center py-12">
+            <Truck className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+            <p className="text-slate-500">No suppliers added yet</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+
+  // Render Purchase Orders Tab
+  const renderPurchaseOrders = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">Purchase Orders</h2>
+          <p className="text-slate-500 mt-1">Create and track material procurement</p>
+        </div>
+        <Button className="bg-gradient-to-r from-indigo-500 to-purple-600">
+          <Plus className="h-4 w-4 mr-2" /> Create PO
+        </Button>
+      </div>
+
+      <GlassCard className="p-5">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200">
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">PO #</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Supplier</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Items</th>
+                <th className="px-4 py-3 text-right font-semibold text-slate-600">Total</th>
+                <th className="px-4 py-3 text-center font-semibold text-slate-600">Status</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Expected</th>
+                <th className="px-4 py-3 text-center font-semibold text-slate-600">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {purchaseOrders.map(po => (
+                <tr key={po.id} className="hover:bg-slate-50/50">
+                  <td className="px-4 py-3">
+                    <span className="font-medium text-indigo-600">{po.poNumber}</span>
+                  </td>
+                  <td className="px-4 py-3 text-slate-700">{po.supplierName || '-'}</td>
+                  <td className="px-4 py-3 text-slate-600">{po.items?.length || 0} items</td>
+                  <td className="px-4 py-3 text-right font-semibold text-slate-900">
+                    ₹{(po.totalAmount || 0).toLocaleString()}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <Badge className={statusColors[po.status] || statusColors.draft}>
+                      {po.status?.replace(/_/g, ' ')}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3 text-slate-600">
+                    {po.expectedDelivery ? new Date(po.expectedDelivery).toLocaleDateString() : '-'}
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
+                  </td>
+                </tr>
+              ))}
+              {purchaseOrders.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
+                    No purchase orders yet.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </GlassCard>
+    </div>
+  )
+
+  // Render Inventory Tab
+  const renderInventory = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">Inventory Management</h2>
+          <p className="text-slate-500 mt-1">Track stock levels across warehouses</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline"><Upload className="h-4 w-4 mr-2" /> Import Stock</Button>
+          <Button className="bg-gradient-to-r from-indigo-500 to-purple-600">
+            <Plus className="h-4 w-4 mr-2" /> Stock Entry
+          </Button>
+        </div>
+      </div>
+
+      {/* Summary Stats */}
+      <div className="grid grid-cols-4 gap-4">
+        <GlassCard className="p-5 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200">
+          <div className="flex items-center gap-3">
+            <Boxes className="h-8 w-8 text-blue-600" />
+            <div>
+              <p className="text-sm text-blue-600">Total Items</p>
+              <p className="text-2xl font-bold text-blue-900">{inventory.summary?.totalItems || 0}</p>
+            </div>
+          </div>
+        </GlassCard>
+        <GlassCard className="p-5 bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200">
+          <div className="flex items-center gap-3">
+            <DollarSign className="h-8 w-8 text-emerald-600" />
+            <div>
+              <p className="text-sm text-emerald-600">Stock Value</p>
+              <p className="text-2xl font-bold text-emerald-900">₹{((inventory.summary?.totalValue || 0) / 100000).toFixed(1)}L</p>
+            </div>
+          </div>
+        </GlassCard>
+        <GlassCard className="p-5 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="h-8 w-8 text-amber-600" />
+            <div>
+              <p className="text-sm text-amber-600">Low Stock</p>
+              <p className="text-2xl font-bold text-amber-900">{inventory.lowStockCount || 0}</p>
+            </div>
+          </div>
+        </GlassCard>
+        <GlassCard className="p-5 bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200">
+          <div className="flex items-center gap-3">
+            <Warehouse className="h-8 w-8 text-purple-600" />
+            <div>
+              <p className="text-sm text-purple-600">Warehouses</p>
+              <p className="text-2xl font-bold text-purple-900">{warehouses.length}</p>
+            </div>
+          </div>
+        </GlassCard>
+      </div>
+
+      {/* Stock Table */}
+      <GlassCard className="p-5">
+        <h3 className="font-semibold text-slate-900 mb-4">Stock Ledger</h3>
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200">
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Material</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Category</th>
+                <th className="px-4 py-3 text-right font-semibold text-slate-600">Qty</th>
+                <th className="px-4 py-3 text-right font-semibold text-slate-600">Avg Cost</th>
+                <th className="px-4 py-3 text-right font-semibold text-slate-600">Value</th>
+                <th className="px-4 py-3 text-center font-semibold text-slate-600">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {(inventory.inventory || []).slice(0, 20).map(item => (
+                <tr key={item.id} className="hover:bg-slate-50/50">
+                  <td className="px-4 py-3">
+                    <p className="font-medium text-slate-900">{item.materialName}</p>
+                    <p className="text-xs text-slate-500">{item.materialCode}</p>
+                  </td>
+                  <td className="px-4 py-3">
+                    <Badge variant="outline" className="capitalize">{item.category}</Badge>
+                  </td>
+                  <td className="px-4 py-3 text-right font-medium">{item.quantity} {item.unitOfMeasure}</td>
+                  <td className="px-4 py-3 text-right">₹{(item.avgCost || 0).toLocaleString()}</td>
+                  <td className="px-4 py-3 text-right font-semibold">₹{((item.quantity || 0) * (item.avgCost || 0)).toLocaleString()}</td>
+                  <td className="px-4 py-3 text-center">
+                    <Badge className={item.isLowStock ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}>
+                      {item.isLowStock ? 'Low' : 'OK'}
+                    </Badge>
+                  </td>
+                </tr>
+              ))}
+              {(inventory.inventory || []).length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                    No inventory data. Record stock from purchase orders or manual entry.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </GlassCard>
+    </div>
+  )
+
+  // Render Installations & Delivery Tab
+  const renderInstallations = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">Delivery & Installation</h2>
+          <p className="text-slate-500 mt-1">Schedule and track deliveries and on-site installations</p>
+        </div>
+        <Button className="bg-gradient-to-r from-indigo-500 to-purple-600">
+          <Plus className="h-4 w-4 mr-2" /> Schedule
+        </Button>
+      </div>
+
+      {/* Calendar View would go here */}
+      <GlassCard className="p-5">
+        <h3 className="font-semibold text-slate-900 mb-4">Upcoming Installations</h3>
+        <div className="space-y-3">
+          {installations.map(inst => (
+            <div key={inst.id} className="p-4 rounded-xl bg-slate-50 border border-slate-200 flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-indigo-100 flex items-center justify-center">
+                  <Hammer className="h-6 w-6 text-indigo-600" />
+                </div>
+                <div>
+                  <p className="font-medium text-slate-900">{inst.installationNumber}</p>
+                  <p className="text-sm text-slate-500">{inst.customer?.name} - {inst.address?.city}</p>
+                </div>
+              </div>
+              <div className="text-right">
+                <p className="font-medium text-slate-900">{inst.scheduledDate ? new Date(inst.scheduledDate).toLocaleDateString() : 'TBD'}</p>
+                <Badge className={statusColors[inst.status] || statusColors.scheduled}>{inst.status}</Badge>
+              </div>
+            </div>
+          ))}
+          {installations.length === 0 && (
+            <div className="text-center py-8 text-slate-500">
+              <Truck className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+              <p>No scheduled deliveries or installations</p>
+            </div>
+          )}
+        </div>
+      </GlassCard>
+    </div>
+  )
+
+  // Render Service Tickets Tab
+  const renderServiceTickets = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">Service & Warranty</h2>
+          <p className="text-slate-500 mt-1">Handle customer service requests and warranty claims</p>
+        </div>
+        <Button className="bg-gradient-to-r from-indigo-500 to-purple-600">
+          <Plus className="h-4 w-4 mr-2" /> New Ticket
+        </Button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-4 gap-4">
+        {['open', 'in_progress', 'resolved', 'escalated'].map(status => {
+          const count = serviceTickets.filter(t => t.status === status).length
+          return (
+            <GlassCard key={status} className="p-4">
+              <p className="text-sm font-medium text-slate-500 capitalize">{status.replace(/_/g, ' ')}</p>
+              <p className="text-2xl font-bold text-slate-900 mt-1">{count}</p>
+            </GlassCard>
+          )
+        })}
+      </div>
+
+      <GlassCard className="p-5">
+        <div className="overflow-x-auto">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="border-b border-slate-200">
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Ticket #</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Subject</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Customer</th>
+                <th className="px-4 py-3 text-left font-semibold text-slate-600">Type</th>
+                <th className="px-4 py-3 text-center font-semibold text-slate-600">Priority</th>
+                <th className="px-4 py-3 text-center font-semibold text-slate-600">Status</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {serviceTickets.map(ticket => (
+                <tr key={ticket.id} className="hover:bg-slate-50/50">
+                  <td className="px-4 py-3">
+                    <span className="font-medium text-indigo-600">{ticket.ticketNumber}</span>
+                  </td>
+                  <td className="px-4 py-3 text-slate-700">{ticket.subject}</td>
+                  <td className="px-4 py-3 text-slate-600">{ticket.customer?.name || '-'}</td>
+                  <td className="px-4 py-3">
+                    <Badge variant="outline" className="capitalize">{ticket.ticketType}</Badge>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <Badge className={ticket.priority === 'urgent' ? 'bg-red-100 text-red-700' : 'bg-slate-100 text-slate-700'}>
+                      {ticket.priority}
+                    </Badge>
+                  </td>
+                  <td className="px-4 py-3 text-center">
+                    <Badge className={statusColors[ticket.status] || statusColors.new}>
+                      {ticket.status?.replace(/_/g, ' ')}
+                    </Badge>
+                  </td>
+                </tr>
+              ))}
+              {serviceTickets.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                    No service tickets.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </GlassCard>
+    </div>
+  )
+
+  // Render Showroom Tab (for Dealers)
+  const renderShowroom = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">Showroom Management</h2>
+          <p className="text-slate-500 mt-1">Manage display items and sample inventory for your showroom</p>
+        </div>
+        <Button className="bg-gradient-to-r from-indigo-500 to-purple-600">
+          <Plus className="h-4 w-4 mr-2" /> Add Display
+        </Button>
+      </div>
+
+      <div className="grid grid-cols-4 gap-4">
+        {showroomDisplays.slice(0, 8).map(display => (
+          <GlassCard key={display.id} className="p-4">
+            <div className="aspect-video bg-slate-100 rounded-lg mb-3 flex items-center justify-center">
+              <Package className="h-8 w-8 text-slate-300" />
+            </div>
+            <h4 className="font-medium text-slate-900">{display.productName}</h4>
+            <p className="text-sm text-slate-500">{display.displayCode}</p>
+            <div className="flex items-center justify-between mt-2">
+              <Badge className={display.isForSale ? 'bg-emerald-100 text-emerald-700' : 'bg-slate-100 text-slate-600'}>
+                {display.isForSale ? 'For Sale' : 'Display Only'}
+              </Badge>
+              <span className="font-semibold text-slate-900">₹{(display.displayValue || 0).toLocaleString()}</span>
+            </div>
+          </GlassCard>
+        ))}
+        {showroomDisplays.length === 0 && (
+          <div className="col-span-4 text-center py-12">
+            <Building2 className="h-12 w-12 text-slate-300 mx-auto mb-4" />
+            <p className="text-slate-500">No showroom displays. Add your first display item!</p>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+
+  // Render Reports Tab
+  const renderReports = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-slate-900">Reports & Analytics</h2>
+          <p className="text-slate-500 mt-1">Business insights and performance metrics</p>
+        </div>
+        <div className="flex gap-2">
+          <Select defaultValue="overview" onValueChange={(v) => fetchAnalytics(v)}>
+            <SelectTrigger className="w-40">
+              <SelectValue placeholder="Report Type" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="overview">Overview</SelectItem>
+              <SelectItem value="sales">Sales Report</SelectItem>
+              <SelectItem value="funnel">Conversion Funnel</SelectItem>
+              <SelectItem value="inventory">Inventory</SelectItem>
+              <SelectItem value="service">Service</SelectItem>
+              <SelectItem value="financial">Financial</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline"><Download className="h-4 w-4 mr-2" /> Export</Button>
+        </div>
+      </div>
+
+      {analytics && (
+        <div className="grid grid-cols-4 gap-4">
+          <GlassCard className="p-5 col-span-2">
+            <h3 className="font-semibold text-slate-900 mb-4">Revenue Overview</h3>
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600">Total Orders</span>
+                <span className="font-bold text-2xl">₹{((analytics.orders?.totalRevenue || 0) / 100000).toFixed(1)}L</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600">Collected</span>
+                <span className="font-bold text-emerald-600">₹{((analytics.orders?.totalCollected || 0) / 100000).toFixed(1)}L</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-slate-600">Outstanding</span>
+                <span className="font-bold text-amber-600">₹{((analytics.orders?.outstandingAmount || 0) / 100000).toFixed(1)}L</span>
+              </div>
+            </div>
+          </GlassCard>
+          <GlassCard className="p-5 col-span-2">
+            <h3 className="font-semibold text-slate-900 mb-4">Pipeline Value</h3>
+            <p className="text-3xl font-bold text-indigo-600">₹{((analytics.requirements?.totalPipeline || 0) / 100000).toFixed(1)}L</p>
+            <p className="text-sm text-slate-500 mt-1">Active requirements in pipeline</p>
+          </GlassCard>
+          <GlassCard className="p-5">
+            <h3 className="font-semibold text-slate-900 mb-2">Products</h3>
+            <p className="text-2xl font-bold">{analytics.products?.totalProducts || 0}</p>
+          </GlassCard>
+          <GlassCard className="p-5">
+            <h3 className="font-semibold text-slate-900 mb-2">Inventory Value</h3>
+            <p className="text-2xl font-bold">₹{((analytics.inventory?.totalValue || 0) / 100000).toFixed(1)}L</p>
+          </GlassCard>
+        </div>
+      )}
+    </div>
+  )
+
   // Main content renderer
   const renderContent = () => {
     switch (activeTab) {
@@ -1478,6 +2129,15 @@ export function FurnitureModule({ user, client, token, onBack }) {
       case 'products': return renderProducts()
       case 'materials': return renderMaterials()
       case 'config': return renderConfigStudio()
+      case 'quotations': return renderQuotations()
+      case 'orders': return renderOrders()
+      case 'suppliers': return renderSuppliers()
+      case 'purchase-orders': return renderPurchaseOrders()
+      case 'inventory': return renderInventory()
+      case 'installations': return renderInstallations()
+      case 'service-tickets': return renderServiceTickets()
+      case 'showroom': return renderShowroom()
+      case 'reports': return renderReports()
       default: {
         const activeNavItem = navItems.find(n => n.id === activeTab)
         const IconComponent = activeNavItem?.icon || Package
