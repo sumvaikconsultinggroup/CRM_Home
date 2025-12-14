@@ -23,11 +23,273 @@ import {
   ArrowRight, ArrowUpRight, ArrowDownRight, CheckCircle2, XCircle, Clock,
   AlertTriangle, Calendar, MapPin, Phone, Mail, User, Building2, Ruler,
   Layers, Grid3X3, Box, Palette, Cog, Hammer, Glasses, DoorOpen, Maximize2,
-  MoreHorizontal, Send, FileCheck, Loader2, TrendingUp, TrendingDown
+  MoreHorizontal, Send, FileCheck, Loader2, TrendingUp, TrendingDown,
+  Brain, MessageSquare, Sparkles, Zap, Save, Printer, FolderKanban
 } from 'lucide-react'
 import { toast } from 'sonner'
 
 const API_BASE = '/api/modules/doors-windows'
+
+// SVG Window/Door Drawing Component - Dynamic Technical Drawing
+const WindowDoorDrawing = ({ config, width = 280, height = 280, showDimensions = true }) => {
+  const {
+    width: itemWidth = 1200,
+    height: itemHeight = 1500,
+    type = 'casement',
+    panels = [],
+    viewDirection = 'inside',
+    frameThickness = 60,
+    profileColor = 'white'
+  } = config || {}
+
+  // Scale factor to fit in container
+  const padding = 50
+  const drawableWidth = width - padding * 2
+  const drawableHeight = height - padding * 2
+  const scale = Math.min(drawableWidth / itemWidth, drawableHeight / itemHeight)
+  
+  const scaledWidth = itemWidth * scale
+  const scaledHeight = itemHeight * scale
+  const scaledFrame = Math.max(frameThickness * scale, 4)
+  
+  const startX = (width - scaledWidth) / 2
+  const startY = (height - scaledHeight) / 2
+
+  // Colors based on profile
+  const frameColors = {
+    white: { fill: '#f8f9fa', stroke: '#dee2e6' },
+    black: { fill: '#343a40', stroke: '#212529' },
+    grey: { fill: '#6c757d', stroke: '#495057' },
+    brown: { fill: '#6d4c41', stroke: '#4e342e' },
+    Aluminium: { fill: '#c0c0c0', stroke: '#a0a0a0' },
+    uPVC: { fill: '#f5f5f5', stroke: '#e0e0e0' }
+  }
+  const colors = frameColors[profileColor] || frameColors.white
+  const glassColor = '#cce5ff'
+  const glassBorder = '#0056b3'
+
+  // Generate panel data if not provided
+  const panelData = panels.length > 0 ? panels : [{ type: 'openable', openingDirection: 'left' }]
+  const numPanels = panelData.length
+  const innerWidth = scaledWidth - scaledFrame * 2
+  const innerHeight = scaledHeight - scaledFrame * 2
+  const panelWidth = innerWidth / numPanels
+
+  return (
+    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} className="bg-slate-50 rounded-lg border">
+      {/* Background grid for technical look */}
+      <defs>
+        <pattern id="dwGrid" width="20" height="20" patternUnits="userSpaceOnUse">
+          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e9ecef" strokeWidth="0.5"/>
+        </pattern>
+      </defs>
+      <rect width="100%" height="100%" fill="url(#dwGrid)" />
+
+      {/* Outer Frame */}
+      <rect
+        x={startX}
+        y={startY}
+        width={scaledWidth}
+        height={scaledHeight}
+        fill={colors.fill}
+        stroke={colors.stroke}
+        strokeWidth="2"
+        rx="2"
+      />
+
+      {/* Inner Frame (Glass Area) */}
+      <rect
+        x={startX + scaledFrame}
+        y={startY + scaledFrame}
+        width={innerWidth}
+        height={innerHeight}
+        fill={glassColor}
+        stroke={glassBorder}
+        strokeWidth="1"
+        opacity="0.3"
+      />
+
+      {/* Panels / Sashes */}
+      {panelData.map((panel, idx) => {
+        const panelX = startX + scaledFrame + (panelWidth * idx)
+        const panelY = startY + scaledFrame
+        const isFixed = panel.type === 'fixed' || panel.type === 'Fixed'
+        const openDir = panel.openingDirection || panel.direction || 'left'
+
+        return (
+          <g key={idx}>
+            {/* Panel border */}
+            <rect
+              x={panelX + 2}
+              y={panelY + 2}
+              width={panelWidth - 4}
+              height={innerHeight - 4}
+              fill="transparent"
+              stroke={colors.stroke}
+              strokeWidth="1.5"
+            />
+
+            {/* Glass panel */}
+            <rect
+              x={panelX + 8}
+              y={panelY + 8}
+              width={panelWidth - 16}
+              height={innerHeight - 16}
+              fill={glassColor}
+              stroke={glassBorder}
+              strokeWidth="1"
+              opacity="0.4"
+            />
+
+            {/* Fixed indicator (cross pattern) */}
+            {isFixed && (
+              <g stroke="#6c757d" strokeWidth="1" opacity="0.5">
+                <line
+                  x1={panelX + 8}
+                  y1={panelY + 8}
+                  x2={panelX + panelWidth - 8}
+                  y2={panelY + innerHeight - 8}
+                />
+                <line
+                  x1={panelX + panelWidth - 8}
+                  y1={panelY + 8}
+                  x2={panelX + 8}
+                  y2={panelY + innerHeight - 8}
+                />
+              </g>
+            )}
+
+            {/* Opening indicator (triangle) for openable panels */}
+            {!isFixed && (
+              <g>
+                {openDir === 'left' || openDir === 'Left' ? (
+                  <polygon
+                    points={`
+                      ${panelX + panelWidth - 10},${panelY + 15}
+                      ${panelX + 15},${panelY + innerHeight / 2}
+                      ${panelX + panelWidth - 10},${panelY + innerHeight - 15}
+                    `}
+                    fill="none"
+                    stroke="#007bff"
+                    strokeWidth="1.5"
+                    strokeDasharray="4,2"
+                  />
+                ) : (
+                  <polygon
+                    points={`
+                      ${panelX + 10},${panelY + 15}
+                      ${panelX + panelWidth - 15},${panelY + innerHeight / 2}
+                      ${panelX + 10},${panelY + innerHeight - 15}
+                    `}
+                    fill="none"
+                    stroke="#007bff"
+                    strokeWidth="1.5"
+                    strokeDasharray="4,2"
+                  />
+                )}
+
+                {/* Handle indicator */}
+                <circle
+                  cx={openDir === 'left' || openDir === 'Left' ? panelX + panelWidth - 18 : panelX + 18}
+                  cy={panelY + innerHeight / 2}
+                  r="4"
+                  fill="#495057"
+                />
+              </g>
+            )}
+
+            {/* Panel label */}
+            <text
+              x={panelX + panelWidth / 2}
+              y={panelY + innerHeight + 18}
+              textAnchor="middle"
+              fontSize="9"
+              fill="#6c757d"
+              fontFamily="sans-serif"
+            >
+              {isFixed ? 'FIXED' : openDir === 'left' || openDir === 'Left' ? 'RDout' : 'LDout'}
+            </text>
+          </g>
+        )
+      })}
+
+      {/* Dimension lines */}
+      {showDimensions && (
+        <g>
+          {/* Width dimension - bottom */}
+          <line
+            x1={startX}
+            y1={startY + scaledHeight + 22}
+            x2={startX + scaledWidth}
+            y2={startY + scaledHeight + 22}
+            stroke="#495057"
+            strokeWidth="1"
+          />
+          <line x1={startX} y1={startY + scaledHeight + 17} x2={startX} y2={startY + scaledHeight + 27} stroke="#495057" strokeWidth="1" />
+          <line x1={startX + scaledWidth} y1={startY + scaledHeight + 17} x2={startX + scaledWidth} y2={startY + scaledHeight + 27} stroke="#495057" strokeWidth="1" />
+          <text
+            x={startX + scaledWidth / 2}
+            y={startY + scaledHeight + 36}
+            textAnchor="middle"
+            fontSize="10"
+            fill="#212529"
+            fontWeight="600"
+            fontFamily="sans-serif"
+          >
+            {itemWidth}w
+          </text>
+
+          {/* Height dimension - right */}
+          <line
+            x1={startX + scaledWidth + 22}
+            y1={startY}
+            x2={startX + scaledWidth + 22}
+            y2={startY + scaledHeight}
+            stroke="#495057"
+            strokeWidth="1"
+          />
+          <line x1={startX + scaledWidth + 17} y1={startY} x2={startX + scaledWidth + 27} y2={startY} stroke="#495057" strokeWidth="1" />
+          <line x1={startX + scaledWidth + 17} y1={startY + scaledHeight} x2={startX + scaledWidth + 27} y2={startY + scaledHeight} stroke="#495057" strokeWidth="1" />
+          <text
+            x={startX + scaledWidth + 36}
+            y={startY + scaledHeight / 2}
+            textAnchor="middle"
+            fontSize="10"
+            fill="#212529"
+            fontWeight="600"
+            fontFamily="sans-serif"
+            transform={`rotate(90, ${startX + scaledWidth + 36}, ${startY + scaledHeight / 2})`}
+          >
+            {itemHeight}h
+          </text>
+
+          {/* Area text */}
+          <text
+            x={startX + scaledWidth / 2}
+            y={height - 5}
+            textAnchor="middle"
+            fontSize="9"
+            fill="#6c757d"
+            fontFamily="sans-serif"
+          >
+            ({((itemWidth / 304.8) * (itemHeight / 304.8)).toFixed(2)} sqft)
+          </text>
+        </g>
+      )}
+
+      {/* View direction label */}
+      <text
+        x={8}
+        y={height - 5}
+        fontSize="8"
+        fill="#adb5bd"
+        fontFamily="sans-serif"
+      >
+        View: {viewDirection}
+      </text>
+    </svg>
+  )
+}
 
 // Product categories and types
 const PRODUCT_FAMILIES = ['Aluminium', 'uPVC', 'Wood', 'Steel']
