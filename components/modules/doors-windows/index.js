@@ -179,7 +179,7 @@ export function DoorsWindowsModule({ client, user }) {
                 <SelectValue placeholder="Select Project" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Projects</SelectItem>
+                <SelectItem value="__all__">All Projects</SelectItem>
                 {projects.map(project => (
                   <SelectItem key={project.id} value={project.id}>
                     {project.name || project.siteName}
