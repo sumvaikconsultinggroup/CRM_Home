@@ -2201,6 +2201,525 @@ export function FurnitureModule({ user, client, token, onBack }) {
     </div>
   )
 
+  // Render Bill of Materials Tab
+  const renderBOM = () => (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Bill of Materials</h2>
+          <p className="text-slate-500 mt-1 text-sm sm:text-base">Create and manage product BOMs with costing breakdown</p>
+        </div>
+        <Button className="bg-gradient-to-r from-indigo-500 to-purple-600 w-full sm:w-auto">
+          <Plus className="h-4 w-4 mr-2" /> Create BOM
+        </Button>
+      </div>
+
+      {/* BOM Stats - Responsive Grid */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        {['draft', 'approved', 'in_production', 'completed'].map(status => {
+          const count = boms.filter(b => b.status === status).length
+          const colors = {
+            draft: 'from-slate-50 to-gray-50 border-slate-200',
+            approved: 'from-emerald-50 to-teal-50 border-emerald-200',
+            in_production: 'from-blue-50 to-indigo-50 border-blue-200',
+            completed: 'from-purple-50 to-violet-50 border-purple-200'
+          }
+          return (
+            <GlassCard key={status} className={`p-3 sm:p-4 bg-gradient-to-br ${colors[status]} border`}>
+              <p className="text-xs sm:text-sm font-medium text-slate-600 capitalize">{status.replace(/_/g, ' ')}</p>
+              <p className="text-xl sm:text-2xl font-bold text-slate-900">{count}</p>
+            </GlassCard>
+          )
+        })}
+      </div>
+
+      {/* BOM List */}
+      <GlassCard className="p-4 sm:p-5">
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <table className="w-full text-sm min-w-[600px]">
+            <thead>
+              <tr className="border-b border-slate-200">
+                <th className="px-3 sm:px-4 py-3 text-left font-semibold text-slate-600">BOM #</th>
+                <th className="px-3 sm:px-4 py-3 text-left font-semibold text-slate-600">Product</th>
+                <th className="px-3 sm:px-4 py-3 text-right font-semibold text-slate-600">Material Cost</th>
+                <th className="px-3 sm:px-4 py-3 text-right font-semibold text-slate-600">Total Cost</th>
+                <th className="px-3 sm:px-4 py-3 text-center font-semibold text-slate-600">Status</th>
+                <th className="px-3 sm:px-4 py-3 text-center font-semibold text-slate-600">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {boms.map(bom => (
+                <tr key={bom.id} className="hover:bg-slate-50/50">
+                  <td className="px-3 sm:px-4 py-3">
+                    <span className="font-medium text-indigo-600">{bom.bomNumber}</span>
+                    <span className="text-xs text-slate-400 ml-2">v{bom.version}</span>
+                  </td>
+                  <td className="px-3 sm:px-4 py-3 text-slate-700">{bom.productName || '-'}</td>
+                  <td className="px-3 sm:px-4 py-3 text-right">₹{(bom.totalMaterialCost || 0).toLocaleString()}</td>
+                  <td className="px-3 sm:px-4 py-3 text-right font-semibold">₹{(bom.totalCost || 0).toLocaleString()}</td>
+                  <td className="px-3 sm:px-4 py-3 text-center">
+                    <Badge className={statusColors[bom.status] || statusColors.draft}>
+                      {bom.status?.replace(/_/g, ' ')}
+                    </Badge>
+                  </td>
+                  <td className="px-3 sm:px-4 py-3 text-center">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm"><MoreVertical className="h-4 w-4" /></Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem><Eye className="h-4 w-4 mr-2" /> View</DropdownMenuItem>
+                        <DropdownMenuItem><Edit className="h-4 w-4 mr-2" /> Edit</DropdownMenuItem>
+                        {bom.status === 'draft' && <DropdownMenuItem><CheckCircle2 className="h-4 w-4 mr-2" /> Approve</DropdownMenuItem>}
+                        {bom.status === 'approved' && <DropdownMenuItem><Hammer className="h-4 w-4 mr-2" /> Release to Production</DropdownMenuItem>}
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
+                </tr>
+              ))}
+              {boms.length === 0 && (
+                <tr>
+                  <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                    No BOMs created yet. Create from an order or product.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </GlassCard>
+    </div>
+  )
+
+  // Render Work Orders Tab (Kanban View)
+  const renderWorkOrders = () => {
+    const kanbanColumns = [
+      { id: 'pending', label: 'Pending', color: 'bg-slate-100' },
+      { id: 'scheduled', label: 'Scheduled', color: 'bg-blue-100' },
+      { id: 'in_progress', label: 'In Progress', color: 'bg-amber-100' },
+      { id: 'quality_check', label: 'QC', color: 'bg-purple-100' },
+      { id: 'completed', label: 'Completed', color: 'bg-emerald-100' }
+    ]
+
+    return (
+      <div className="space-y-6">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Work Orders</h2>
+            <p className="text-slate-500 mt-1 text-sm">Track production work orders through stages</p>
+          </div>
+          <div className="flex gap-2">
+            <Select defaultValue="kanban">
+              <SelectTrigger className="w-28">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="kanban">Kanban</SelectItem>
+                <SelectItem value="list">List</SelectItem>
+                <SelectItem value="calendar">Calendar</SelectItem>
+              </SelectContent>
+            </Select>
+            <Button className="bg-gradient-to-r from-indigo-500 to-purple-600">
+              <Plus className="h-4 w-4 mr-2" /> <span className="hidden sm:inline">New WO</span>
+            </Button>
+          </div>
+        </div>
+
+        {/* Kanban Board - Horizontal scroll on mobile */}
+        <div className="overflow-x-auto -mx-6 px-6 pb-4">
+          <div className="flex gap-4 min-w-max">
+            {kanbanColumns.map(col => {
+              const colOrders = workOrders.filter(wo => wo.status === col.id)
+              return (
+                <div key={col.id} className={`w-72 sm:w-80 ${col.color} rounded-xl p-3`}>
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-semibold text-slate-700">{col.label}</h3>
+                    <Badge variant="outline">{colOrders.length}</Badge>
+                  </div>
+                  <div className="space-y-2 max-h-[60vh] overflow-y-auto">
+                    {colOrders.map(wo => (
+                      <GlassCard key={wo.id} className="p-3 cursor-pointer hover:shadow-lg">
+                        <div className="flex items-start justify-between">
+                          <span className="font-medium text-sm text-indigo-600">{wo.woNumber}</span>
+                          <Badge variant="outline" className="text-xs capitalize">{wo.priority}</Badge>
+                        </div>
+                        <p className="text-sm text-slate-700 mt-1 line-clamp-1">{wo.operationName}</p>
+                        <p className="text-xs text-slate-500 mt-1">{wo.productName}</p>
+                        <div className="flex items-center justify-between mt-2 pt-2 border-t border-slate-200/50">
+                          <span className="text-xs text-slate-500">{wo.estimatedHours}h</span>
+                          <Progress value={wo.progressPercent || 0} className="w-16 h-1" />
+                        </div>
+                      </GlassCard>
+                    ))}
+                    {colOrders.length === 0 && (
+                      <p className="text-center py-4 text-sm text-slate-400">No work orders</p>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  // Render Production Planning Tab
+  const renderProduction = () => (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Production Planning</h2>
+          <p className="text-slate-500 mt-1 text-sm">Capacity planning and production scheduling</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline"><Calendar className="h-4 w-4 mr-2" /> Schedule</Button>
+          <Button className="bg-gradient-to-r from-indigo-500 to-purple-600">
+            <Zap className="h-4 w-4 mr-2" /> Auto-Schedule
+          </Button>
+        </div>
+      </div>
+
+      {/* Production Summary */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+        <GlassCard className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200">
+          <div className="flex items-center gap-3">
+            <Hammer className="h-8 w-8 text-blue-600" />
+            <div>
+              <p className="text-sm text-blue-600">In Progress</p>
+              <p className="text-2xl font-bold text-blue-900">{productionData?.summary?.workOrdersInProgress || 0}</p>
+            </div>
+          </div>
+        </GlassCard>
+        <GlassCard className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200">
+          <div className="flex items-center gap-3">
+            <Clock className="h-8 w-8 text-amber-600" />
+            <div>
+              <p className="text-sm text-amber-600">Pending</p>
+              <p className="text-2xl font-bold text-amber-900">{productionData?.summary?.workOrdersPending || 0}</p>
+            </div>
+          </div>
+        </GlassCard>
+        <GlassCard className="p-4 bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-200">
+          <div className="flex items-center gap-3">
+            <Target className="h-8 w-8 text-emerald-600" />
+            <div>
+              <p className="text-sm text-emerald-600">Hours Scheduled</p>
+              <p className="text-2xl font-bold text-emerald-900">{productionData?.summary?.hoursScheduled || 0}h</p>
+            </div>
+          </div>
+        </GlassCard>
+        <GlassCard className="p-4 bg-gradient-to-br from-purple-50 to-violet-50 border border-purple-200">
+          <div className="flex items-center gap-3">
+            <FileCheck className="h-8 w-8 text-purple-600" />
+            <div>
+              <p className="text-sm text-purple-600">BOMs Pending</p>
+              <p className="text-2xl font-bold text-purple-900">{productionData?.summary?.bomsPendingRelease || 0}</p>
+            </div>
+          </div>
+        </GlassCard>
+      </div>
+
+      {/* Work Center Capacity */}
+      <GlassCard className="p-4 sm:p-5">
+        <h3 className="font-semibold text-slate-900 mb-4">Work Center Utilization</h3>
+        <div className="space-y-3">
+          {Object.entries(productionData?.capacityByWorkCenter || {}).map(([center, data]) => (
+            <div key={center} className="flex items-center gap-4">
+              <span className="w-24 sm:w-32 text-sm font-medium text-slate-600 capitalize">{center.replace(/_/g, ' ')}</span>
+              <div className="flex-1">
+                <Progress value={Math.min(100, (data.scheduledHours / 16) * 100)} className="h-3" />
+              </div>
+              <span className="text-sm text-slate-500 w-20 text-right">{data.scheduledHours}h / {data.orderCount} WO</span>
+            </div>
+          ))}
+          {Object.keys(productionData?.capacityByWorkCenter || {}).length === 0 && (
+            <p className="text-center py-4 text-slate-500">No scheduled work this week</p>
+          )}
+        </div>
+      </GlassCard>
+    </div>
+  )
+
+  // Render Invoices Tab
+  const renderInvoices = () => (
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Invoices</h2>
+          <p className="text-slate-500 mt-1 text-sm">Manage billing and track payments</p>
+        </div>
+        <Button className="bg-gradient-to-r from-indigo-500 to-purple-600 w-full sm:w-auto">
+          <Plus className="h-4 w-4 mr-2" /> Create Invoice
+        </Button>
+      </div>
+
+      {/* Invoice Stats */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 sm:gap-4">
+        {['draft', 'sent', 'partial', 'paid'].map(status => {
+          const count = invoices.filter(i => i.status === status).length
+          const value = invoices.filter(i => i.status === status).reduce((sum, i) => sum + (i.grandTotal || 0), 0)
+          const colors = {
+            draft: 'from-slate-50 to-gray-50 border-slate-200 text-slate-600',
+            sent: 'from-blue-50 to-indigo-50 border-blue-200 text-blue-600',
+            partial: 'from-amber-50 to-orange-50 border-amber-200 text-amber-600',
+            paid: 'from-emerald-50 to-teal-50 border-emerald-200 text-emerald-600'
+          }
+          return (
+            <GlassCard key={status} className={`p-3 sm:p-4 bg-gradient-to-br ${colors[status]} border`}>
+              <p className="text-xs sm:text-sm font-medium capitalize">{status}</p>
+              <p className="text-xl sm:text-2xl font-bold text-slate-900">{count}</p>
+              <p className="text-xs mt-1">₹{(value / 100000).toFixed(1)}L</p>
+            </GlassCard>
+          )
+        })}
+      </div>
+
+      {/* Invoices Table */}
+      <GlassCard className="p-4 sm:p-5">
+        <div className="overflow-x-auto -mx-4 sm:mx-0">
+          <table className="w-full text-sm min-w-[700px]">
+            <thead>
+              <tr className="border-b border-slate-200">
+                <th className="px-3 sm:px-4 py-3 text-left font-semibold text-slate-600">Invoice #</th>
+                <th className="px-3 sm:px-4 py-3 text-left font-semibold text-slate-600">Customer</th>
+                <th className="px-3 sm:px-4 py-3 text-left font-semibold text-slate-600">Date</th>
+                <th className="px-3 sm:px-4 py-3 text-right font-semibold text-slate-600">Amount</th>
+                <th className="px-3 sm:px-4 py-3 text-right font-semibold text-slate-600">Paid</th>
+                <th className="px-3 sm:px-4 py-3 text-center font-semibold text-slate-600">Status</th>
+                <th className="px-3 sm:px-4 py-3 text-center font-semibold text-slate-600">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-100">
+              {invoices.map(inv => (
+                <tr key={inv.id} className="hover:bg-slate-50/50">
+                  <td className="px-3 sm:px-4 py-3">
+                    <span className="font-medium text-indigo-600">{inv.invoiceNumber}</span>
+                  </td>
+                  <td className="px-3 sm:px-4 py-3 text-slate-700">{inv.customer?.name || '-'}</td>
+                  <td className="px-3 sm:px-4 py-3 text-slate-600">{inv.invoiceDate}</td>
+                  <td className="px-3 sm:px-4 py-3 text-right font-semibold">₹{(inv.grandTotal || 0).toLocaleString()}</td>
+                  <td className="px-3 sm:px-4 py-3 text-right text-emerald-600">₹{(inv.paidAmount || 0).toLocaleString()}</td>
+                  <td className="px-3 sm:px-4 py-3 text-center">
+                    <Badge className={statusColors[inv.status] || statusColors.draft}>
+                      {inv.status}
+                    </Badge>
+                  </td>
+                  <td className="px-3 sm:px-4 py-3 text-center">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm"><MoreVertical className="h-4 w-4" /></Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem><Eye className="h-4 w-4 mr-2" /> View</DropdownMenuItem>
+                        <DropdownMenuItem><Printer className="h-4 w-4 mr-2" /> Print</DropdownMenuItem>
+                        <DropdownMenuItem><Send className="h-4 w-4 mr-2" /> Send</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem><DollarSign className="h-4 w-4 mr-2" /> Record Payment</DropdownMenuItem>
+                        <DropdownMenuItem><RefreshCw className="h-4 w-4 mr-2" /> Sync to CRM</DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </td>
+                </tr>
+              ))}
+              {invoices.length === 0 && (
+                <tr>
+                  <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
+                    No invoices yet. Create from an order.
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+      </GlassCard>
+    </div>
+  )
+
+  // Render Settings Tab
+  const renderSettings = () => (
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-xl sm:text-2xl font-bold text-slate-900">Module Settings</h2>
+        <p className="text-slate-500 mt-1 text-sm">Configure business rules, integrations, and preferences</p>
+      </div>
+
+      <Tabs defaultValue="general" className="w-full">
+        <TabsList className="bg-white/50 backdrop-blur-sm flex-wrap h-auto gap-1 p-1">
+          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="business">Business Rules</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="integrations">Integrations</TabsTrigger>
+          <TabsTrigger value="templates">Templates</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="general" className="mt-4 space-y-4">
+          <GlassCard className="p-5">
+            <h3 className="font-semibold text-slate-900 mb-4">Company Information</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label>Company Name</Label>
+                <Input placeholder="Your Company Name" defaultValue={moduleSettings?.general?.companyName} />
+              </div>
+              <div>
+                <Label>Business Type</Label>
+                <Select defaultValue={moduleSettings?.general?.businessType || 'manufacturer'}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="manufacturer">Manufacturer</SelectItem>
+                    <SelectItem value="dealer">Dealer / Retailer</SelectItem>
+                    <SelectItem value="both">Both</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>GST Number</Label>
+                <Input placeholder="Enter GST Number" defaultValue={moduleSettings?.general?.gstNumber} />
+              </div>
+              <div>
+                <Label>Contact Email</Label>
+                <Input type="email" placeholder="contact@company.com" defaultValue={moduleSettings?.general?.contactEmail} />
+              </div>
+            </div>
+          </GlassCard>
+
+          <GlassCard className="p-5">
+            <h3 className="font-semibold text-slate-900 mb-4">Bank Details</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label>Bank Name</Label>
+                <Input placeholder="Bank Name" defaultValue={moduleSettings?.bankDetails?.bankName} />
+              </div>
+              <div>
+                <Label>Account Number</Label>
+                <Input placeholder="Account Number" defaultValue={moduleSettings?.bankDetails?.accountNumber} />
+              </div>
+              <div>
+                <Label>IFSC Code</Label>
+                <Input placeholder="IFSC Code" defaultValue={moduleSettings?.bankDetails?.ifscCode} />
+              </div>
+              <div>
+                <Label>UPI ID</Label>
+                <Input placeholder="upi@bank" defaultValue={moduleSettings?.bankDetails?.upiId} />
+              </div>
+            </div>
+          </GlassCard>
+        </TabsContent>
+
+        <TabsContent value="business" className="mt-4 space-y-4">
+          <GlassCard className="p-5">
+            <h3 className="font-semibold text-slate-900 mb-4">Pricing Rules</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label>Default Markup %</Label>
+                <Input type="number" defaultValue={moduleSettings?.business?.defaultMarkup || 25} />
+              </div>
+              <div>
+                <Label>Default Tax Rate (GST) %</Label>
+                <Input type="number" defaultValue={moduleSettings?.business?.defaultTaxRate || 18} />
+              </div>
+              <div>
+                <Label>Max Discount Without Approval %</Label>
+                <Input type="number" defaultValue={moduleSettings?.business?.maxDiscountWithoutApproval || 10} />
+              </div>
+              <div>
+                <Label>Advance Payment %</Label>
+                <Input type="number" defaultValue={moduleSettings?.business?.advancePaymentPercent || 50} />
+              </div>
+            </div>
+          </GlassCard>
+
+          <GlassCard className="p-5">
+            <h3 className="font-semibold text-slate-900 mb-4">Lead Times & Production</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <Label>Default Lead Time (Days)</Label>
+                <Input type="number" defaultValue={moduleSettings?.business?.defaultLeadTimeDays || 21} />
+              </div>
+              <div>
+                <Label>Low Stock Threshold</Label>
+                <Input type="number" defaultValue={moduleSettings?.business?.lowStockThreshold || 10} />
+              </div>
+            </div>
+          </GlassCard>
+        </TabsContent>
+
+        <TabsContent value="notifications" className="mt-4">
+          <GlassCard className="p-5">
+            <h3 className="font-semibold text-slate-900 mb-4">Notification Preferences</h3>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                <span className="font-medium">Email Notifications</span>
+                <Badge className="bg-emerald-100 text-emerald-700">Enabled</Badge>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                <span className="font-medium">SMS Notifications</span>
+                <Badge className="bg-slate-100 text-slate-600">Disabled</Badge>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                <span className="font-medium">WhatsApp Notifications</span>
+                <Badge className="bg-slate-100 text-slate-600">Disabled</Badge>
+              </div>
+            </div>
+          </GlassCard>
+        </TabsContent>
+
+        <TabsContent value="integrations" className="mt-4">
+          <GlassCard className="p-5">
+            <h3 className="font-semibold text-slate-900 mb-4">External Integrations</h3>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="p-4 border rounded-xl">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium">Accounting Software</h4>
+                  <Badge variant="outline">Not Connected</Badge>
+                </div>
+                <p className="text-sm text-slate-500">Connect to Tally, Zoho Books, or QuickBooks</p>
+                <Button variant="outline" size="sm" className="mt-3">Configure</Button>
+              </div>
+              <div className="p-4 border rounded-xl">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-medium">Payment Gateway</h4>
+                  <Badge variant="outline">Not Connected</Badge>
+                </div>
+                <p className="text-sm text-slate-500">Accept online payments via Razorpay</p>
+                <Button variant="outline" size="sm" className="mt-3">Configure</Button>
+              </div>
+            </div>
+          </GlassCard>
+        </TabsContent>
+
+        <TabsContent value="templates" className="mt-4">
+          <GlassCard className="p-5">
+            <h3 className="font-semibold text-slate-900 mb-4">Document Templates</h3>
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <span className="font-medium">Quotation Template</span>
+                <Button variant="outline" size="sm">Edit</Button>
+              </div>
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <span className="font-medium">Invoice Template</span>
+                <Button variant="outline" size="sm">Edit</Button>
+              </div>
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <span className="font-medium">Delivery Note Template</span>
+                <Button variant="outline" size="sm">Edit</Button>
+              </div>
+              <div className="flex items-center justify-between p-3 border rounded-lg">
+                <span className="font-medium">Work Order Template</span>
+                <Button variant="outline" size="sm">Edit</Button>
+              </div>
+            </div>
+          </GlassCard>
+        </TabsContent>
+      </Tabs>
+
+      <div className="flex justify-end gap-2">
+        <Button variant="outline">Reset</Button>
+        <Button className="bg-gradient-to-r from-indigo-500 to-purple-600">Save Settings</Button>
+      </div>
+    </div>
+  )
+
   // Main content renderer
   const renderContent = () => {
     switch (activeTab) {
@@ -2218,6 +2737,11 @@ export function FurnitureModule({ user, client, token, onBack }) {
       case 'service-tickets': return renderServiceTickets()
       case 'showroom': return renderShowroom()
       case 'reports': return renderReports()
+      case 'bom': return renderBOM()
+      case 'work-orders': return renderWorkOrders()
+      case 'production': return renderProduction()
+      case 'invoices': return renderInvoices()
+      case 'settings': return renderSettings()
       default: {
         const activeNavItem = navItems.find(n => n.id === activeTab)
         const IconComponent = activeNavItem?.icon || Package
