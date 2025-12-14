@@ -5303,8 +5303,18 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               }
               const appType = appTypeIcons[room.applicationType] || appTypeIcons.flooring
               
+              // Check if editing is allowed (only in scheduling phase)
+              const isEditingAllowed = ['pending', 'measurement_scheduled'].includes(selectedProject.status)
+              const isLocked = !isEditingAllowed
+              
               return (
-                <Card key={room.id} className="overflow-hidden hover:shadow-lg transition-shadow">
+                <Card key={room.id} className={`overflow-hidden transition-shadow ${isLocked ? 'opacity-70 bg-slate-50' : 'hover:shadow-lg'}`}>
+                  {isLocked && (
+                    <div className="bg-amber-100 px-3 py-1 flex items-center gap-2 text-xs text-amber-700">
+                      <Lock className="h-3 w-3" />
+                      <span>Locked - Click "Edit Measurements" to modify</span>
+                    </div>
+                  )}
                   <CardContent className="p-4">
                     <div className="flex items-start justify-between mb-3">
                       <div className="flex items-center gap-3">
@@ -5337,13 +5347,23 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     <div className="flex items-center justify-between pt-2 border-t">
                       <span className="text-xs text-slate-500">{room.subfloorType || 'Concrete'}</span>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'room', data: room })}>
-                          <Edit className="h-4 w-4" />
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          disabled={isLocked}
+                          onClick={() => setDialogOpen({ type: 'room', data: room })}
+                        >
+                          <Edit className={`h-4 w-4 ${isLocked ? 'text-slate-300' : ''}`} />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => {
-                          if (confirm('Delete this room?')) handleDeleteRoom(room.id)
-                        }}>
-                          <Trash2 className="h-4 w-4 text-red-500" />
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          disabled={isLocked}
+                          onClick={() => {
+                            if (confirm('Delete this room?')) handleDeleteRoom(room.id)
+                          }}
+                        >
+                          <Trash2 className={`h-4 w-4 ${isLocked ? 'text-slate-300' : 'text-red-500'}`} />
                         </Button>
                       </div>
                     </div>
