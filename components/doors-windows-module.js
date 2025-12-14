@@ -1679,17 +1679,118 @@ export function DoorsWindowsModule({ client, user }) {
               transition={{ duration: 0.3 }}
             >
               <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold">Projects</h2>
-                <Button>
-                  <Plus className="h-4 w-4 mr-2" /> New Project
-                </Button>
+                <div>
+                  <h2 className="text-2xl font-bold">Projects</h2>
+                  <p className="text-muted-foreground">Manage doors & windows projects with CRM sync</p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <Button variant="outline" onClick={() => handleSyncFromCRM('projects')} disabled={syncing}>
+                    {syncing ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                    Sync from CRM
+                  </Button>
+                  <Button onClick={() => setShowNewQuote(true)}>
+                    <Plus className="h-4 w-4 mr-2" /> New Project
+                  </Button>
+                </div>
               </div>
-              <Card className="p-8 text-center">
-                <FolderKanban className="h-16 w-16 mx-auto mb-4 text-gray-300" />
-                <h3 className="font-semibold mb-2">Project Management</h3>
-                <p className="text-muted-foreground mb-4">Organize and track your doors & windows projects</p>
-                <Button variant="outline">Create First Project</Button>
+
+              {/* CRM Sync Status */}
+              <Card className="p-4 mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-100">
+                      <RefreshCw className="h-5 w-5 text-blue-600" />
+                    </div>
+                    <div>
+                      <h4 className="font-semibold">CRM Sync Status</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {crmSyncStatus?.alreadySynced || 0} projects synced | {crmSyncStatus?.availableToSync?.projects || 0} available to sync
+                      </p>
+                    </div>
+                  </div>
+                  <Button size="sm" variant="outline" onClick={() => handleSyncFromCRM('leads')} disabled={syncing}>
+                    <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+                    Sync Leads
+                  </Button>
+                </div>
               </Card>
+
+              {/* Projects List */}
+              {projects.length > 0 ? (
+                <Card>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>Project</TableHead>
+                        <TableHead>Client</TableHead>
+                        <TableHead>Value</TableHead>
+                        <TableHead>Status</TableHead>
+                        <TableHead>Source</TableHead>
+                        <TableHead>Actions</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {projects.map((project) => (
+                        <TableRow key={project.id}>
+                          <TableCell>
+                            <div>
+                              <p className="font-medium">{project.projectNumber || project.name}</p>
+                              <p className="text-xs text-muted-foreground">{project.name}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <div>
+                              <p className="text-sm">{project.clientName || project.customer?.name || '-'}</p>
+                              <p className="text-xs text-muted-foreground">{project.clientPhone || project.customer?.phone}</p>
+                            </div>
+                          </TableCell>
+                          <TableCell className="font-medium">₹{(project.value || project.budget || 0).toLocaleString()}</TableCell>
+                          <TableCell>
+                            <Badge className={getStatusColor(project.status)}>{project.status}</Badge>
+                          </TableCell>
+                          <TableCell>
+                            {project.source === 'crm_sync' ? (
+                              <Badge variant="outline" className="text-green-600 border-green-200">
+                                <CheckCircle2 className="h-3 w-3 mr-1" /> CRM
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline">Manual</Badge>
+                            )}
+                          </TableCell>
+                          <TableCell>
+                            <div className="flex items-center gap-1">
+                              <Button variant="ghost" size="sm" onClick={() => setActiveTab('surveys')}>
+                                <Ruler className="h-4 w-4" />
+                              </Button>
+                              <Button variant="ghost" size="sm" onClick={() => setActiveTab('quote-builder')}>
+                                <FileText className="h-4 w-4" />
+                              </Button>
+                              {!project.crmProjectId && (
+                                <Button variant="ghost" size="sm" onClick={() => handlePushToCRM(project.id)}>
+                                  <Send className="h-4 w-4" />
+                                </Button>
+                              )}
+                            </div>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </Card>
+              ) : (
+                <Card className="p-8 text-center">
+                  <FolderKanban className="h-16 w-16 mx-auto mb-4 text-gray-300" />
+                  <h3 className="font-semibold mb-2">No Projects Yet</h3>
+                  <p className="text-muted-foreground mb-4">Sync projects from CRM or create a new project</p>
+                  <div className="flex items-center justify-center gap-2">
+                    <Button variant="outline" onClick={() => handleSyncFromCRM('projects')} disabled={syncing}>
+                      <RefreshCw className={`h-4 w-4 mr-2 ${syncing ? 'animate-spin' : ''}`} />
+                      Sync from CRM
+                    </Button>
+                    <Button>Create Project</Button>
+                  </div>
+                </Card>
+              )}
             </motion.div>
           )}
 
