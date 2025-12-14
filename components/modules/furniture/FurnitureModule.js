@@ -187,6 +187,21 @@ export function FurnitureModule({ user, client, token, onBack }) {
   const [measurements, setMeasurements] = useState([])
   const [designBriefs, setDesignBriefs] = useState([])
   const [dashboardData, setDashboardData] = useState(null)
+  
+  // Additional data states for enterprise features
+  const [quotations, setQuotations] = useState([])
+  const [orders, setOrders] = useState([])
+  const [suppliers, setSuppliers] = useState([])
+  const [purchaseOrders, setPurchaseOrders] = useState([])
+  const [inventory, setInventory] = useState({ inventory: [], summary: {}, lowStockCount: 0 })
+  const [installations, setInstallations] = useState([])
+  const [serviceTickets, setServiceTickets] = useState([])
+  const [showroomDisplays, setShowroomDisplays] = useState([])
+  const [analytics, setAnalytics] = useState(null)
+  
+  // CRM Sync state
+  const [crmSyncStatus, setCrmSyncStatus] = useState(null)
+  const [syncing, setSyncing] = useState(false)
 
   // API headers
   const headers = {
