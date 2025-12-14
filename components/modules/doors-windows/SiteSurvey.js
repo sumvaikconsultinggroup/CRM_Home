@@ -569,7 +569,7 @@ export function SiteSurvey({ surveys, projects, selectedProject, onRefresh, head
                       <SelectValue placeholder="Select project (optional)" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">No Project</SelectItem>
+                      <SelectItem value="__none__">No Project</SelectItem>
                       {projects?.map(p => (
                         <SelectItem key={p.id} value={p.id}>{p.name || p.siteName}</SelectItem>
                       ))}
