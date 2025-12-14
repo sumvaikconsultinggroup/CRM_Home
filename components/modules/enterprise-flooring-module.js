@@ -962,142 +962,670 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }
 
-  // Top-level Download Quote (for dialogs)
-  const handleDownloadQuote = (quote) => {
+  // =============================================
+  // VALIDATION HELPER FUNCTIONS
+  // =============================================
+  
+  // Email validation
+  const isValidEmail = (email) => {
+    if (!email) return true // Optional field
+    const emailRegex = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/
+    return emailRegex.test(email.trim())
+  }
+  
+  // Phone validation (max 10 digits for Indian numbers)
+  const isValidPhone = (phone) => {
+    if (!phone) return true // Optional field
+    const cleanPhone = phone.replace(/[\s\-\(\)]/g, '')
+    return /^[6-9]\d{9}$/.test(cleanPhone) || /^\+91[6-9]\d{9}$/.test(cleanPhone)
+  }
+  
+  // Date validation (no backdates allowed for measurements)
+  const isValidMeasurementDate = (date) => {
+    if (!date) return false
+    const selectedDate = new Date(date)
+    const today = new Date()
+    today.setHours(0, 0, 0, 0)
+    return selectedDate >= today
+  }
+  
+  // GST validation
+  const isValidGSTIN = (gstin) => {
+    if (!gstin) return true // Optional
+    const gstRegex = /^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[1-9A-Z]{1}Z[0-9A-Z]{1}$/
+    return gstRegex.test(gstin.toUpperCase())
+  }
+  
+  // Pincode validation
+  const isValidPincode = (pincode) => {
+    if (!pincode) return true // Optional
+    return /^[1-9][0-9]{5}$/.test(pincode)
+  }
+
+  // Top-level Download Quote (for dialogs) - PROFESSIONAL TEMPLATE
+  const handleDownloadQuote = (quote, options = {}) => {
+    const isB2C = quote.segment === 'b2c' || quote.projectSegment === 'b2c'
+    const companyName = moduleSettings?.companyName || client?.name || 'FloorCraft Pro'
+    const companyAddress = moduleSettings?.address || client?.address || ''
+    const companyGSTIN = moduleSettings?.gstin || ''
+    const companyPhone = moduleSettings?.phone || client?.phone || ''
+    const companyEmail = moduleSettings?.email || client?.email || ''
+    const companyLogo = moduleSettings?.logo || ''
+    
     const QuoteStatusConfigLocal = {
-      draft: { label: 'Draft', color: 'bg-slate-100 text-slate-700' },
-      sent: { label: 'Sent', color: 'bg-blue-100 text-blue-700' },
-      approved: { label: 'Approved', color: 'bg-emerald-100 text-emerald-700' },
-      rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700' },
-      revised: { label: 'Needs Revision', color: 'bg-amber-100 text-amber-700' },
-      invoiced: { label: 'Invoiced', color: 'bg-purple-100 text-purple-700' },
-      expired: { label: 'Expired', color: 'bg-gray-100 text-gray-700' }
+      draft: { label: 'Draft', color: '#64748b', bg: '#f1f5f9' },
+      sent: { label: 'Sent', color: '#2563eb', bg: '#dbeafe' },
+      approved: { label: 'Approved', color: '#059669', bg: '#d1fae5' },
+      rejected: { label: 'Rejected', color: '#dc2626', bg: '#fee2e2' },
+      revised: { label: 'Needs Revision', color: '#d97706', bg: '#fef3c7' },
+      invoiced: { label: 'Invoiced', color: '#7c3aed', bg: '#ede9fe' },
+      expired: { label: 'Expired', color: '#6b7280', bg: '#f3f4f6' }
     }
+    
+    const statusConfig = QuoteStatusConfigLocal[quote.status] || QuoteStatusConfigLocal.draft
+    
+    // Format currency
+    const formatCurrency = (amount) => {
+      return new Intl.NumberFormat('en-IN', { 
+        style: 'currency', 
+        currency: 'INR',
+        minimumFractionDigits: 0,
+        maximumFractionDigits: 2 
+      }).format(amount || 0)
+    }
+    
+    // Number to words for Indian numbering
+    const numberToWords = (num) => {
+      const ones = ['', 'One', 'Two', 'Three', 'Four', 'Five', 'Six', 'Seven', 'Eight', 'Nine', 'Ten', 'Eleven', 'Twelve', 'Thirteen', 'Fourteen', 'Fifteen', 'Sixteen', 'Seventeen', 'Eighteen', 'Nineteen']
+      const tens = ['', '', 'Twenty', 'Thirty', 'Forty', 'Fifty', 'Sixty', 'Seventy', 'Eighty', 'Ninety']
+      
+      if (num === 0) return 'Zero'
+      if (num < 20) return ones[num]
+      if (num < 100) return tens[Math.floor(num / 10)] + (num % 10 ? ' ' + ones[num % 10] : '')
+      if (num < 1000) return ones[Math.floor(num / 100)] + ' Hundred' + (num % 100 ? ' ' + numberToWords(num % 100) : '')
+      if (num < 100000) return numberToWords(Math.floor(num / 1000)) + ' Thousand' + (num % 1000 ? ' ' + numberToWords(num % 1000) : '')
+      if (num < 10000000) return numberToWords(Math.floor(num / 100000)) + ' Lakh' + (num % 100000 ? ' ' + numberToWords(num % 100000) : '')
+      return numberToWords(Math.floor(num / 10000000)) + ' Crore' + (num % 10000000 ? ' ' + numberToWords(num % 10000000) : '')
+    }
+    
+    const grandTotalWords = numberToWords(Math.round(quote.grandTotal || 0)) + ' Rupees Only'
+    
+    // Generate measurement details section for B2C
+    const measurementSection = isB2C && quote.rooms?.length > 0 ? `
+      <div class="section measurement-section">
+        <h3 style="color: #0d9488; border-bottom: 2px solid #0d9488; padding-bottom: 8px; margin-bottom: 15px;">
+          📐 Measurement Details
+        </h3>
+        <table class="measurement-table">
+          <thead>
+            <tr>
+              <th>Room</th>
+              <th>Dimensions (L x W)</th>
+              <th>Area (Sq.ft)</th>
+              <th>Application</th>
+              <th>Floor</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${(quote.rooms || []).map(room => `
+              <tr>
+                <td><strong>${room.roomName || 'Room'}</strong></td>
+                <td>${room.dimensions?.length || 0}' x ${room.dimensions?.width || 0}'</td>
+                <td>${(room.netArea || 0).toFixed(0)}</td>
+                <td>${room.applicationType || 'Flooring'}</td>
+                <td>${room.floor || 'Ground'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        ${quote.technicianName ? `
+        <div style="margin-top: 15px; padding: 10px; background: #f0fdfa; border-radius: 8px;">
+          <p style="margin: 0; font-size: 12px;"><strong>Measured By:</strong> ${quote.technicianName}</p>
+          ${quote.measurementDate ? `<p style="margin: 5px 0 0 0; font-size: 12px;"><strong>Date:</strong> ${new Date(quote.measurementDate).toLocaleDateString()}</p>` : ''}
+        </div>
+        ` : ''}
+      </div>
+    ` : ''
     
     const quoteHtml = `
       <!DOCTYPE html>
       <html>
       <head>
-        <title>Quote ${quote.quoteNumber}</title>
+        <title>Quotation - ${quote.quoteNumber}</title>
         <style>
-          body { font-family: Arial, sans-serif; padding: 40px; max-width: 800px; margin: 0 auto; }
-          .header { display: flex; justify-content: space-between; border-bottom: 3px solid #2563eb; padding-bottom: 20px; margin-bottom: 20px; }
-          .logo { font-size: 24px; font-weight: bold; color: #2563eb; }
-          .quote-title { font-size: 28px; color: #1e40af; text-align: right; }
-          .quote-number { font-size: 14px; color: #666; }
-          .section { margin: 20px 0; }
-          .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
-          .info-box { background: #f8fafc; padding: 15px; border-radius: 8px; }
-          .info-label { font-size: 12px; color: #666; }
-          .info-value { font-size: 14px; font-weight: 500; color: #333; }
-          table { width: 100%; border-collapse: collapse; margin: 20px 0; }
-          th { background: #1e40af; color: white; padding: 12px; text-align: left; font-size: 12px; }
-          td { padding: 12px; border-bottom: 1px solid #e5e7eb; font-size: 13px; }
+          @page { margin: 20mm; }
+          * { box-sizing: border-box; }
+          body { 
+            font-family: 'Segoe UI', Arial, sans-serif; 
+            padding: 0; 
+            margin: 0;
+            max-width: 800px; 
+            margin: 0 auto; 
+            color: #1e293b;
+            font-size: 13px;
+            line-height: 1.5;
+            position: relative;
+          }
+          
+          /* Watermark Logo */
+          .watermark {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            opacity: 0.05;
+            font-size: 120px;
+            font-weight: bold;
+            color: #1e40af;
+            z-index: -1;
+            pointer-events: none;
+            white-space: nowrap;
+          }
+          
+          /* Header */
+          .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 20px 0;
+            border-bottom: 3px solid #0d9488;
+            margin-bottom: 20px;
+          }
+          .company-info {
+            max-width: 50%;
+          }
+          .company-name {
+            font-size: 26px;
+            font-weight: 700;
+            color: #0d9488;
+            margin-bottom: 5px;
+          }
+          .company-tagline {
+            font-size: 12px;
+            color: #64748b;
+            margin-bottom: 8px;
+          }
+          .company-details {
+            font-size: 11px;
+            color: #64748b;
+            line-height: 1.6;
+          }
+          .quote-header-right {
+            text-align: right;
+          }
+          .quote-title {
+            font-size: 32px;
+            font-weight: 700;
+            color: #0f172a;
+            letter-spacing: 2px;
+          }
+          .quote-number {
+            font-size: 14px;
+            color: #64748b;
+            margin: 5px 0;
+          }
+          .status-badge {
+            display: inline-block;
+            padding: 6px 16px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            background: ${statusConfig.bg};
+            color: ${statusConfig.color};
+          }
+          
+          /* Info Grid */
+          .info-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin: 20px 0;
+          }
+          .info-box {
+            background: #f8fafc;
+            padding: 16px;
+            border-radius: 10px;
+            border-left: 4px solid #0d9488;
+          }
+          .info-box-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: #0d9488;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 12px;
+          }
+          .info-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 6px 0;
+          }
+          .info-label {
+            font-size: 11px;
+            color: #64748b;
+          }
+          .info-value {
+            font-size: 12px;
+            font-weight: 500;
+            color: #1e293b;
+          }
+          .customer-name {
+            font-size: 16px;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 8px;
+          }
+          
+          /* Items Table */
+          .items-section {
+            margin: 25px 0;
+          }
+          .items-section h3 {
+            color: #0d9488;
+            border-bottom: 2px solid #0d9488;
+            padding-bottom: 8px;
+            margin-bottom: 0;
+          }
+          table {
+            width: 100%;
+            border-collapse: collapse;
+          }
+          th {
+            background: #0d9488;
+            color: white;
+            padding: 12px 10px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+          th:first-child { border-radius: 8px 0 0 0; }
+          th:last-child { border-radius: 0 8px 0 0; text-align: right; }
+          td {
+            padding: 12px 10px;
+            border-bottom: 1px solid #e2e8f0;
+            vertical-align: top;
+          }
+          tr:nth-child(even) { background: #f8fafc; }
+          tr:hover { background: #f1f5f9; }
           .text-right { text-align: right; }
-          .totals { margin-left: auto; width: 300px; }
-          .totals-row { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px solid #e5e7eb; }
-          .totals-row.grand { background: #1e40af; color: white; padding: 12px; margin: 0 -12px; font-size: 16px; font-weight: bold; }
-          .footer { margin-top: 40px; text-align: center; color: #666; font-size: 12px; border-top: 1px solid #ddd; padding-top: 20px; }
-          .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 500; }
-          .status-approved { background: #d1fae5; color: #059669; }
-          .status-sent { background: #dbeafe; color: #2563eb; }
-          .status-draft { background: #f1f5f9; color: #475569; }
-          .terms { background: #fef3c7; padding: 15px; border-radius: 8px; margin-top: 20px; font-size: 12px; }
+          .text-center { text-align: center; }
+          .item-name { font-weight: 600; color: #0f172a; }
+          .item-sku { font-size: 10px; color: #94a3b8; }
+          
+          /* Measurement Table */
+          .measurement-section { margin: 25px 0; }
+          .measurement-table th { background: #0d9488; }
+          .measurement-table td { font-size: 12px; }
+          
+          /* Totals */
+          .totals-section {
+            display: flex;
+            justify-content: flex-end;
+            margin: 25px 0;
+          }
+          .totals-box {
+            width: 320px;
+            background: #f8fafc;
+            border-radius: 10px;
+            overflow: hidden;
+          }
+          .totals-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px 16px;
+            border-bottom: 1px solid #e2e8f0;
+          }
+          .totals-row.discount { color: #059669; }
+          .totals-row.grand {
+            background: #0d9488;
+            color: white;
+            font-size: 16px;
+            font-weight: 700;
+            padding: 14px 16px;
+          }
+          .totals-label { font-size: 12px; }
+          .totals-value { font-weight: 600; }
+          
+          /* Amount in Words */
+          .amount-words {
+            background: #fef3c7;
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin: 15px 0;
+            font-style: italic;
+            font-size: 12px;
+            color: #92400e;
+          }
+          
+          /* Terms */
+          .terms-section {
+            margin: 25px 0;
+            padding: 16px;
+            background: #f8fafc;
+            border-radius: 10px;
+          }
+          .terms-section h4 {
+            color: #0d9488;
+            margin: 0 0 12px 0;
+            font-size: 13px;
+          }
+          .terms-list {
+            margin: 0;
+            padding-left: 20px;
+            font-size: 11px;
+            color: #64748b;
+          }
+          .terms-list li { margin: 6px 0; }
+          
+          /* Notes */
+          .notes-section {
+            background: #fef3c7;
+            padding: 14px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #f59e0b;
+          }
+          .notes-section h4 {
+            color: #92400e;
+            margin: 0 0 8px 0;
+            font-size: 12px;
+          }
+          .notes-section p {
+            margin: 0;
+            font-size: 11px;
+            color: #78350f;
+            white-space: pre-wrap;
+          }
+          
+          /* Bank Details */
+          .bank-section {
+            margin: 25px 0;
+            padding: 16px;
+            background: #eff6ff;
+            border-radius: 10px;
+            border-left: 4px solid #3b82f6;
+          }
+          .bank-section h4 {
+            color: #1e40af;
+            margin: 0 0 12px 0;
+          }
+          .bank-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            font-size: 12px;
+          }
+          
+          /* Signature */
+          .signature-section {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 40px;
+            padding-top: 20px;
+          }
+          .signature-box {
+            text-align: center;
+            width: 200px;
+          }
+          .signature-line {
+            border-top: 1px solid #94a3b8;
+            margin-bottom: 8px;
+            margin-top: 50px;
+          }
+          .signature-label {
+            font-size: 11px;
+            color: #64748b;
+          }
+          
+          /* Footer */
+          .footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 2px solid #e2e8f0;
+            text-align: center;
+            color: #64748b;
+            font-size: 11px;
+          }
+          .footer-contact {
+            margin-top: 10px;
+          }
+          
+          @media print {
+            body { padding: 0; }
+            .watermark { position: fixed; }
+          }
         </style>
       </head>
       <body>
+        <!-- Watermark Logo -->
+        <div class="watermark">🪵 ${companyName.split(' ')[0]}</div>
+        
+        <!-- Header -->
         <div class="header">
-          <div>
-            <div class="logo">🪵 ${moduleSettings?.companyName || client?.name || 'FloorCraft Pro'}</div>
-            <p style="color: #666; font-size: 12px;">Professional Flooring Solutions</p>
-            ${moduleSettings?.gstin ? `<p style="color: #666; font-size: 11px;">GSTIN: ${moduleSettings.gstin}</p>` : ''}
+          <div class="company-info">
+            <div class="company-name">🪵 ${companyName}</div>
+            <div class="company-tagline">Premium Flooring Solutions</div>
+            <div class="company-details">
+              ${companyAddress ? `<div>${companyAddress}</div>` : ''}
+              ${companyGSTIN ? `<div>GSTIN: ${companyGSTIN}</div>` : ''}
+              ${companyPhone ? `<div>📞 ${companyPhone}</div>` : ''}
+              ${companyEmail ? `<div>✉️ ${companyEmail}</div>` : ''}
+            </div>
           </div>
-          <div style="text-align: right;">
+          <div class="quote-header-right">
             <div class="quote-title">QUOTATION</div>
             <div class="quote-number">${quote.quoteNumber}</div>
-            <span class="status-badge status-${quote.status}">${QuoteStatusConfigLocal[quote.status]?.label || quote.status}</span>
+            <div style="margin-top: 10px;">
+              <span class="status-badge">${statusConfig.label}</span>
+            </div>
           </div>
         </div>
-
-        <div class="grid-2">
+        
+        <!-- Info Grid -->
+        <div class="info-grid">
           <div class="info-box">
-            <div class="info-label" style="font-weight: bold; margin-bottom: 8px;">Customer Details</div>
-            <div class="info-label">Name</div>
-            <div class="info-value">${quote.customer?.name || '-'}</div>
-            <div class="info-label" style="margin-top: 8px;">Email</div>
-            <div class="info-value">${quote.customer?.email || '-'}</div>
-            <div class="info-label" style="margin-top: 8px;">Phone</div>
-            <div class="info-value">${quote.customer?.phone || '-'}</div>
+            <div class="info-box-title">📋 Quotation To</div>
+            <div class="customer-name">${quote.customer?.name || 'Customer'}</div>
+            ${quote.customer?.company ? `<div style="font-size: 12px; color: #64748b; margin-bottom: 8px;">${quote.customer.company}</div>` : ''}
+            <div class="info-row">
+              <span class="info-label">Email</span>
+              <span class="info-value">${quote.customer?.email || '-'}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Phone</span>
+              <span class="info-value">${quote.customer?.phone || '-'}</span>
+            </div>
+            ${quote.site?.address ? `
+            <div style="margin-top: 10px; padding-top: 10px; border-top: 1px solid #e2e8f0;">
+              <div class="info-label">Site Address</div>
+              <div class="info-value">${quote.site.address}${quote.site.city ? ', ' + quote.site.city : ''}${quote.site.state ? ', ' + quote.site.state : ''} ${quote.site.pincode || ''}</div>
+            </div>
+            ` : ''}
           </div>
           <div class="info-box">
-            <div class="info-label" style="font-weight: bold; margin-bottom: 8px;">Quote Information</div>
-            <div class="info-label">Date</div>
-            <div class="info-value">${new Date(quote.createdAt).toLocaleDateString()}</div>
-            <div class="info-label" style="margin-top: 8px;">Valid Until</div>
-            <div class="info-value">${new Date(quote.validUntil).toLocaleDateString()}</div>
-            <div class="info-label" style="margin-top: 8px;">Project</div>
-            <div class="info-value">${quote.projectNumber || '-'}</div>
+            <div class="info-box-title">📄 Quote Details</div>
+            <div class="info-row">
+              <span class="info-label">Quote No.</span>
+              <span class="info-value">${quote.quoteNumber}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Date</span>
+              <span class="info-value">${new Date(quote.createdAt).toLocaleDateString('en-IN')}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Valid Until</span>
+              <span class="info-value" style="color: ${new Date(quote.validUntil) < new Date() ? '#dc2626' : '#059669'};">${new Date(quote.validUntil).toLocaleDateString('en-IN')}</span>
+            </div>
+            ${quote.projectNumber ? `
+            <div class="info-row">
+              <span class="info-label">Project Ref.</span>
+              <span class="info-value">${quote.projectNumber}</span>
+            </div>
+            ` : ''}
+            <div class="info-row">
+              <span class="info-label">Total Area</span>
+              <span class="info-value">${(quote.totalArea || 0).toFixed(0)} Sq.ft</span>
+            </div>
           </div>
         </div>
-
-        ${quote.site?.address ? `
-        <div class="section">
-          <div class="info-label" style="font-weight: bold;">Site Address</div>
-          <p>${quote.site.address}${quote.site.city ? ', ' + quote.site.city : ''}${quote.site.state ? ', ' + quote.site.state : ''}</p>
+        
+        <!-- Measurement Details (B2C Only) -->
+        ${measurementSection}
+        
+        <!-- Items Table -->
+        <div class="items-section">
+          <h3>📦 Materials & Services</h3>
+          <table>
+            <thead>
+              <tr>
+                <th style="width: 35px;">#</th>
+                <th>Description</th>
+                <th style="width: 70px;" class="text-center">Qty</th>
+                <th style="width: 50px;" class="text-center">Unit</th>
+                <th style="width: 90px;" class="text-right">Rate</th>
+                <th style="width: 100px;" class="text-right">Amount</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${(quote.items || []).map((item, idx) => `
+                <tr>
+                  <td class="text-center">${idx + 1}</td>
+                  <td>
+                    <div class="item-name">${item.name || item.description || '-'}</div>
+                    ${item.sku ? `<div class="item-sku">SKU: ${item.sku}</div>` : ''}
+                  </td>
+                  <td class="text-center">${(item.quantity || item.area || 0).toLocaleString()}</td>
+                  <td class="text-center">${item.unit || 'sqft'}</td>
+                  <td class="text-right">${formatCurrency(item.unitPrice || item.rate || 0)}</td>
+                  <td class="text-right"><strong>${formatCurrency(item.totalPrice || item.total || 0)}</strong></td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+        
+        <!-- Totals -->
+        <div class="totals-section">
+          <div class="totals-box">
+            <div class="totals-row">
+              <span class="totals-label">Sub Total</span>
+              <span class="totals-value">${formatCurrency(quote.subtotal)}</span>
+            </div>
+            ${(quote.discountAmount || 0) > 0 ? `
+            <div class="totals-row discount">
+              <span class="totals-label">Discount (${quote.discountType === 'percentage' || quote.discountType === 'percent' ? quote.discountValue + '%' : 'Fixed'})</span>
+              <span class="totals-value">-${formatCurrency(quote.discountAmount)}</span>
+            </div>
+            ` : ''}
+            ${(quote.cgst || quote.cgstAmount || 0) > 0 ? `
+            <div class="totals-row">
+              <span class="totals-label">CGST (${quote.cgstRate}%)</span>
+              <span class="totals-value">${formatCurrency(quote.cgst || quote.cgstAmount)}</span>
+            </div>
+            ` : ''}
+            ${(quote.sgst || quote.sgstAmount || 0) > 0 ? `
+            <div class="totals-row">
+              <span class="totals-label">SGST (${quote.sgstRate}%)</span>
+              <span class="totals-value">${formatCurrency(quote.sgst || quote.sgstAmount)}</span>
+            </div>
+            ` : ''}
+            ${(quote.igst || quote.igstAmount || 0) > 0 ? `
+            <div class="totals-row">
+              <span class="totals-label">IGST (${quote.igstRate}%)</span>
+              <span class="totals-value">${formatCurrency(quote.igst || quote.igstAmount)}</span>
+            </div>
+            ` : ''}
+            <div class="totals-row grand">
+              <span>GRAND TOTAL</span>
+              <span>${formatCurrency(quote.grandTotal)}</span>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Amount in Words -->
+        <div class="amount-words">
+          <strong>Amount in Words:</strong> ${grandTotalWords}
+        </div>
+        
+        ${quote.notes ? `
+        <!-- Notes -->
+        <div class="notes-section">
+          <h4>📝 Notes</h4>
+          <p>${quote.notes}</p>
         </div>
         ` : ''}
+        
+        <!-- Terms & Conditions -->
+        <div class="terms-section">
+          <h4>📜 Terms & Conditions</h4>
+          <ol class="terms-list">
+            <li>This quotation is valid for <strong>${Math.ceil((new Date(quote.validUntil) - new Date(quote.createdAt)) / (1000 * 60 * 60 * 24))}</strong> days from the date of issue.</li>
+            <li>Prices are inclusive of material and installation charges unless otherwise specified.</li>
+            <li>50% advance payment required at the time of order confirmation.</li>
+            <li>Balance payment due upon completion of work.</li>
+            <li>Warranty terms as per manufacturer specifications.</li>
+            <li>Any additional work will be charged separately with prior approval.</li>
+            ${quote.terms ? `<li>${quote.terms}</li>` : ''}
+          </ol>
+        </div>
+        
+        ${moduleSettings?.bankDetails?.bankName ? `
+        <!-- Bank Details -->
+        <div class="bank-section">
+          <h4>🏦 Bank Details for Payment</h4>
+          <div class="bank-grid">
+            <div>
+              <div class="info-label">Bank Name</div>
+              <div class="info-value">${moduleSettings.bankDetails.bankName}</div>
+            </div>
+            <div>
+              <div class="info-label">Account No.</div>
+              <div class="info-value">${moduleSettings.bankDetails.accountNumber}</div>
+            </div>
+            <div>
+              <div class="info-label">IFSC Code</div>
+              <div class="info-value">${moduleSettings.bankDetails.ifscCode}</div>
+            </div>
+            ${moduleSettings.bankDetails.upiId ? `
+            <div>
+              <div class="info-label">UPI ID</div>
+              <div class="info-value">${moduleSettings.bankDetails.upiId}</div>
+            </div>
+            ` : ''}
+          </div>
+        </div>
+        ` : ''}
+        
+        <!-- Signature -->
+        <div class="signature-section">
+          <div class="signature-box">
+            <div class="signature-line"></div>
+            <div class="signature-label">Customer Acceptance</div>
+          </div>
+          <div class="signature-box">
+            <div class="signature-line"></div>
+            <div class="signature-label">For ${companyName}</div>
+          </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+          <p>Thank you for your business! We look forward to serving you.</p>
+          <div class="footer-contact">
+            ${companyPhone ? `📞 ${companyPhone}` : ''} ${companyEmail ? `• ✉️ ${companyEmail}` : ''}
+          </div>
+          <p style="margin-top: 10px; font-size: 10px;">This is a computer-generated quotation.</p>
+        </div>
+      </body>
+      </html>
+    `
 
-        <table>
-          <thead>
-            <tr>
-              <th style="width: 40px;">#</th>
-              <th>Description</th>
-              <th style="width: 80px;">Qty</th>
-              <th style="width: 60px;">Unit</th>
-              <th style="width: 100px;" class="text-right">Rate</th>
-              <th style="width: 120px;" class="text-right">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${(quote.items || []).map((item, idx) => `
-              <tr>
-                <td>${idx + 1}</td>
-                <td>
-                  <strong>${item.name || item.description || '-'}</strong>
-                  ${item.sku ? `<br><span style="color: #666; font-size: 11px;">SKU: ${item.sku}</span>` : ''}
-                </td>
-                <td>${item.quantity || item.area || 0}</td>
-                <td>${item.unit || 'sqft'}</td>
-                <td class="text-right">₹${(item.unitPrice || item.rate || 0).toLocaleString()}</td>
-                <td class="text-right">₹${(item.totalPrice || item.total || 0).toLocaleString()}</td>
-              </tr>
-            `).join('')}
-          </tbody>
-        </table>
-
-        <div class="totals">
-          <div class="totals-row">
-            <span>Subtotal</span>
-            <span>₹${(quote.subtotal || 0).toLocaleString()}</span>
-          </div>
-          ${quote.discountAmount > 0 ? `
-          <div class="totals-row">
-            <span>Discount (${quote.discountType === 'percentage' ? quote.discountValue + '%' : 'Fixed'})</span>
-            <span>-₹${(quote.discountAmount || 0).toLocaleString()}</span>
-          </div>
-          ` : ''}
-          ${quote.cgstAmount > 0 ? `
-          <div class="totals-row">
-            <span>CGST (${quote.cgstRate}%)</span>
-            <span>₹${(quote.cgstAmount || 0).toLocaleString()}</span>
-          </div>
-          ` : ''}
-          ${quote.sgstAmount > 0 ? `
-          <div class="totals-row">
-            <span>SGST (${quote.sgstRate}%)</span>
-            <span>₹${(quote.sgstAmount || 0).toLocaleString()}</span>
-          </div>
-          ` : ''}
+    const printWindow = window.open('', '_blank')
+    printWindow.document.write(quoteHtml)
+    printWindow.document.close()
+    printWindow.print()
+  }
           ${quote.igstAmount > 0 ? `
           <div class="totals-row">
             <span>IGST (${quote.igstRate}%)</span>
