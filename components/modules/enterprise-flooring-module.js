@@ -5921,10 +5921,10 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         ) : (
           <EmptyState
             icon={Ruler}
-            title="No rooms measured"
-            description="Add room measurements for this project."
-            action={() => setDialogOpen({ type: 'room', data: { projectId: selectedProject.id } })}
-            actionLabel="Add Room"
+            title={['pending', 'measurement_scheduled'].includes(selectedProject.status) ? "No rooms measured" : "Measurement Locked"}
+            description={['pending', 'measurement_scheduled'].includes(selectedProject.status) ? "Add room measurements for this project." : "Click 'Edit Measurements' in workflow to add/modify rooms."}
+            action={['pending', 'measurement_scheduled'].includes(selectedProject.status) ? () => setDialogOpen({ type: 'room', data: { projectId: selectedProject.id } }) : null}
+            actionLabel={['pending', 'measurement_scheduled'].includes(selectedProject.status) ? "Add Room" : null}
           />
         )}
 
