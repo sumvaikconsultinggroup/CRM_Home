@@ -1,0 +1,799 @@
+'use client'
+
+import React, { useState, useEffect } from 'react'
+import { Card } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Textarea } from '@/components/ui/textarea'
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Separator } from '@/components/ui/separator'
+import { ScrollArea } from '@/components/ui/scroll-area'
+import {
+  FileText, Edit, Trash2, Eye, Download, CheckCircle2, Clock, Send,
+  Calendar, Package, X, Receipt, Users, Phone, Mail, MapPin, Plus, ClipboardList
+} from 'lucide-react'
+import { toast } from 'sonner'
+
+// Quote Status Configuration - shared across components
+export const QuoteStatusConfig = {
+  draft: { label: 'Draft', color: 'bg-slate-100 text-slate-700', icon: FileText },
+  sent: { label: 'Sent', color: 'bg-blue-100 text-blue-700', icon: Send },
+  approved: { label: 'Approved', color: 'bg-emerald-100 text-emerald-700', icon: CheckCircle2 },
+  rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700', icon: X },
+  revised: { label: 'Needs Revision', color: 'bg-amber-100 text-amber-700', icon: Edit },
+  invoiced: { label: 'Invoiced', color: 'bg-purple-100 text-purple-700', icon: Receipt },
+  converted: { label: 'Converted to Invoice', color: 'bg-green-100 text-green-700', icon: Receipt },
+  expired: { label: 'Expired', color: 'bg-gray-100 text-gray-700', icon: Clock }
+}
+
+// =============================================
+// VIEW QUOTE DIALOG
+// =============================================
+export function ViewQuoteDialog({ open, onClose, quote, moduleSettings, onDownload, onEdit, onApprove, onReject, onCreateInvoice }) {
+  if (!quote) return null
+
+  const isExpired = new Date(quote.validUntil) < new Date() && !['approved', 'invoiced', 'converted'].includes(quote.status)
+  const statusConfig = QuoteStatusConfig[isExpired ? 'expired' : quote.status] || QuoteStatusConfig.draft
+  const StatusIcon = statusConfig.icon
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="border-b pb-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-blue-100">
+                <FileText className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <DialogTitle className="text-xl">{quote.quoteNumber}</DialogTitle>
+                <DialogDescription>
+                  Created on {new Date(quote.createdAt).toLocaleDateString()}
+                  {quote.version > 1 && ` • Version ${quote.version}`}
+                </DialogDescription>
+              </div>
+            </div>
+            <Badge className={`${statusConfig.color} flex items-center gap-1 px-3 py-1`}>
+              <StatusIcon className="h-3.5 w-3.5" />
+              {statusConfig.label}
+              {isExpired && quote.status !== 'expired' && ' (Expired)'}
+            </Badge>
+          </div>
+        </DialogHeader>
+
+        <ScrollArea className="flex-1 pr-4">
+          <div className="space-y-6 py-4">
+            {/* Customer & Project Info */}
+            <div className="grid grid-cols-2 gap-4">
+              <Card className="p-4">
+                <h4 className="text-sm font-semibold text-slate-500 mb-3 flex items-center gap-2">
+                  <Users className="h-4 w-4" /> Customer Details
+                </h4>
+                <div className="space-y-2">
+                  <div>
+                    <p className="text-lg font-semibold">{quote.customer?.name || '-'}</p>
+                    {quote.customer?.company && <p className="text-sm text-slate-500">{quote.customer.company}</p>}
+                  </div>
+                  {quote.customer?.email && (
+                    <p className="text-sm flex items-center gap-2">
+                      <Mail className="h-3.5 w-3.5 text-slate-400" /> {quote.customer.email}
+                    </p>
+                  )}
+                  {quote.customer?.phone && (
+                    <p className="text-sm flex items-center gap-2">
+                      <Phone className="h-3.5 w-3.5 text-slate-400" /> {quote.customer.phone}
+                    </p>
+                  )}
+                </div>
+              </Card>
+
+              <Card className="p-4">
+                <h4 className="text-sm font-semibold text-slate-500 mb-3 flex items-center gap-2">
+                  <Calendar className="h-4 w-4" /> Quote Information
+                </h4>
+                <div className="grid grid-cols-2 gap-3 text-sm">
+                  <div>
+                    <p className="text-slate-500">Project</p>
+                    <p className="font-medium">{quote.projectNumber || '-'}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Valid Until</p>
+                    <p className={`font-medium ${isExpired ? 'text-red-600' : ''}`}>
+                      {new Date(quote.validUntil).toLocaleDateString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Total Area</p>
+                    <p className="font-medium">{quote.totalArea?.toFixed(0) || 0} sqft</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Items</p>
+                    <p className="font-medium">{quote.items?.length || 0} items</p>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Site Address */}
+            {quote.site?.address && (
+              <Card className="p-4">
+                <h4 className="text-sm font-semibold text-slate-500 mb-2 flex items-center gap-2">
+                  <MapPin className="h-4 w-4" /> Site Address
+                </h4>
+                <p className="text-sm">
+                  {quote.site.address}
+                  {quote.site.city && `, ${quote.site.city}`}
+                  {quote.site.state && `, ${quote.site.state}`}
+                  {quote.site.pincode && ` - ${quote.site.pincode}`}
+                </p>
+              </Card>
+            )}
+
+            {/* Line Items */}
+            <Card>
+              <div className="p-4 border-b">
+                <h4 className="font-semibold flex items-center gap-2">
+                  <Package className="h-4 w-4" /> Items
+                </h4>
+              </div>
+              <div className="overflow-x-auto">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="bg-slate-50">
+                      <th className="px-4 py-3 text-left font-semibold text-slate-600">#</th>
+                      <th className="px-4 py-3 text-left font-semibold text-slate-600">Description</th>
+                      <th className="px-4 py-3 text-right font-semibold text-slate-600">Qty</th>
+                      <th className="px-4 py-3 text-center font-semibold text-slate-600">Unit</th>
+                      <th className="px-4 py-3 text-right font-semibold text-slate-600">Rate</th>
+                      <th className="px-4 py-3 text-right font-semibold text-slate-600">Amount</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(quote.items || []).map((item, idx) => (
+                      <tr key={idx} className="border-b last:border-0 hover:bg-slate-50">
+                        <td className="px-4 py-3 text-slate-500">{idx + 1}</td>
+                        <td className="px-4 py-3">
+                          <p className="font-medium">{item.name || item.description || '-'}</p>
+                          {item.sku && <p className="text-xs text-slate-400">SKU: {item.sku}</p>}
+                        </td>
+                        <td className="px-4 py-3 text-right">{item.quantity || item.area || 0}</td>
+                        <td className="px-4 py-3 text-center">{item.unit || 'sqft'}</td>
+                        <td className="px-4 py-3 text-right">₹{(item.unitPrice || item.rate || 0).toLocaleString()}</td>
+                        <td className="px-4 py-3 text-right font-medium">₹{(item.totalPrice || item.total || 0).toLocaleString()}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+
+            {/* Totals */}
+            <Card className="p-4">
+              <div className="flex justify-end">
+                <div className="w-80 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-500">Subtotal</span>
+                    <span>₹{(quote.subtotal || 0).toLocaleString()}</span>
+                  </div>
+                  {quote.discountAmount > 0 && (
+                    <div className="flex justify-between text-sm text-emerald-600">
+                      <span>Discount ({quote.discountType === 'percentage' ? `${quote.discountValue}%` : 'Fixed'})</span>
+                      <span>-₹{(quote.discountAmount || 0).toLocaleString()}</span>
+                    </div>
+                  )}
+                  {quote.cgstAmount > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500">CGST ({quote.cgstRate}%)</span>
+                      <span>₹{(quote.cgstAmount || 0).toLocaleString()}</span>
+                    </div>
+                  )}
+                  {quote.sgstAmount > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500">SGST ({quote.sgstRate}%)</span>
+                      <span>₹{(quote.sgstAmount || 0).toLocaleString()}</span>
+                    </div>
+                  )}
+                  {quote.igstAmount > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-500">IGST ({quote.igstRate}%)</span>
+                      <span>₹{(quote.igstAmount || 0).toLocaleString()}</span>
+                    </div>
+                  )}
+                  <Separator />
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>Grand Total</span>
+                    <span className="text-emerald-600">₹{(quote.grandTotal || 0).toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            </Card>
+
+            {/* Notes */}
+            {quote.notes && (
+              <Card className="p-4 bg-amber-50 border-amber-200">
+                <h4 className="text-sm font-semibold text-amber-800 mb-2">Notes & Terms</h4>
+                <p className="text-sm text-amber-700 whitespace-pre-wrap">{quote.notes}</p>
+              </Card>
+            )}
+          </div>
+        </ScrollArea>
+
+        <DialogFooter className="border-t pt-4 flex justify-between">
+          <div className="flex gap-2">
+            {/* Status-based actions */}
+            {quote.status === 'sent' && (
+              <>
+                <Button variant="outline" className="text-emerald-600 border-emerald-200 hover:bg-emerald-50" onClick={() => onApprove(quote.id)}>
+                  <CheckCircle2 className="h-4 w-4 mr-2" /> Approve
+                </Button>
+                <Button variant="outline" className="text-red-600 border-red-200 hover:bg-red-50" onClick={() => onReject(quote.id)}>
+                  <X className="h-4 w-4 mr-2" /> Reject
+                </Button>
+              </>
+            )}
+            {quote.status === 'approved' && (
+              <Button variant="outline" className="text-purple-600 border-purple-200 hover:bg-purple-50" onClick={() => onCreateInvoice(quote)}>
+                <Receipt className="h-4 w-4 mr-2" /> Create Invoice
+              </Button>
+            )}
+          </div>
+          <div className="flex gap-2">
+            {['draft', 'revised'].includes(quote.status) && (
+              <Button variant="outline" onClick={() => onEdit(quote)}>
+                <Edit className="h-4 w-4 mr-2" /> Edit Quote
+              </Button>
+            )}
+            <Button variant="outline" onClick={() => onDownload(quote)}>
+              <Download className="h-4 w-4 mr-2" /> Download / Print
+            </Button>
+            <Button onClick={onClose}>Close</Button>
+          </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+// =============================================
+// QUOTE EDIT DIALOG
+// =============================================
+export function QuoteEditDialog({ open, onClose, quote, projects, products, moduleSettings, onSave, loading }) {
+  const [form, setForm] = useState({
+    projectId: '',
+    projectNumber: '',
+    customer: null,
+    site: null,
+    items: [],
+    notes: '',
+    validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+    discountType: 'percentage',
+    discountValue: 0,
+    cgstRate: 9,
+    sgstRate: 9,
+    igstRate: 0
+  })
+  const [selectedProject, setSelectedProject] = useState(null)
+  const [showProductSelector, setShowProductSelector] = useState(false)
+
+  // Initialize form when quote changes
+  useEffect(() => {
+    if (quote) {
+      setForm({
+        id: quote.id,
+        projectId: quote.projectId || '',
+        projectNumber: quote.projectNumber || '',
+        customer: quote.customer || null,
+        site: quote.site || null,
+        items: quote.items || [],
+        notes: quote.notes || '',
+        validUntil: quote.validUntil ? new Date(quote.validUntil).toISOString().split('T')[0] : new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        discountType: quote.discountType || 'percentage',
+        discountValue: quote.discountValue || 0,
+        cgstRate: quote.cgstRate || 9,
+        sgstRate: quote.sgstRate || 9,
+        igstRate: quote.igstRate || 0,
+        version: quote.version || 1
+      })
+      if (quote.projectId) {
+        const proj = projects.find(p => p.id === quote.projectId)
+        setSelectedProject(proj || null)
+      }
+    } else {
+      // Reset for new quote
+      setForm({
+        projectId: '',
+        projectNumber: '',
+        customer: null,
+        site: null,
+        items: [],
+        notes: moduleSettings?.defaultQuoteNotes || 'Thank you for considering our flooring solutions. This quote is valid for the period mentioned above.',
+        validUntil: new Date(Date.now() + (moduleSettings?.quoteValidityDays || 30) * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+        discountType: 'percentage',
+        discountValue: 0,
+        cgstRate: 9,
+        sgstRate: 9,
+        igstRate: 0
+      })
+      setSelectedProject(null)
+    }
+  }, [quote, projects, moduleSettings])
+
+  // Handle project selection
+  const handleProjectSelect = (projectId) => {
+    const proj = projects.find(p => p.id === projectId)
+    if (proj) {
+      setSelectedProject(proj)
+      // Build customer object from project's flat customer fields OR nested customer object
+      const customerData = proj.customer || {
+        name: proj.customerName || '',
+        email: proj.customerEmail || '',
+        phone: proj.customerPhone || '',
+        company: proj.customerCompany || '',
+        gstin: proj.customerGstin || ''
+      }
+      setForm(prev => ({
+        ...prev,
+        projectId: proj.id,
+        projectNumber: proj.projectNumber,
+        customer: customerData,
+        site: proj.site || null
+      }))
+    }
+  }
+
+  // Add product to items
+  const handleAddProduct = (product) => {
+    const newItem = {
+      productId: product.id,
+      sku: product.sku,
+      name: product.name,
+      description: product.name,
+      quantity: 1,
+      unit: product.unit || 'sqft',
+      unitPrice: product.sellingPrice || product.price || 0,
+      totalPrice: product.sellingPrice || product.price || 0
+    }
+    setForm(prev => ({
+      ...prev,
+      items: [...prev.items, newItem]
+    }))
+    setShowProductSelector(false)
+  }
+
+  // Update item quantity
+  const handleItemChange = (index, field, value) => {
+    setForm(prev => {
+      const newItems = [...prev.items]
+      newItems[index] = { ...newItems[index], [field]: value }
+      // Recalculate total
+      if (field === 'quantity' || field === 'unitPrice') {
+        newItems[index].totalPrice = (newItems[index].quantity || 0) * (newItems[index].unitPrice || 0)
+      }
+      return { ...prev, items: newItems }
+    })
+  }
+
+  // Remove item
+  const handleRemoveItem = (index) => {
+    setForm(prev => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index)
+    }))
+  }
+
+  // Calculate totals
+  const subtotal = form.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0)
+  const discountAmount = form.discountType === 'percentage' 
+    ? subtotal * (form.discountValue / 100) 
+    : form.discountValue
+  const taxableAmount = subtotal - discountAmount
+  const cgstAmount = taxableAmount * (form.cgstRate / 100)
+  const sgstAmount = taxableAmount * (form.sgstRate / 100)
+  const igstAmount = taxableAmount * (form.igstRate / 100)
+  const totalTax = cgstAmount + sgstAmount + igstAmount
+  const grandTotal = taxableAmount + totalTax
+
+  // Handle save
+  const handleSubmit = () => {
+    if (!form.customer?.name) {
+      toast.error('Please select a project or add customer details')
+      return
+    }
+    if (form.items.length === 0) {
+      toast.error('Please add at least one item')
+      return
+    }
+
+    const quoteData = {
+      ...form,
+      subtotal,
+      discountAmount,
+      taxableAmount,
+      cgstAmount,
+      sgstAmount,
+      igstAmount,
+      totalTax,
+      grandTotal,
+      totalArea: form.items.reduce((sum, item) => sum + (item.quantity || 0), 0),
+      status: form.id ? form.status : 'draft'
+    }
+
+    onSave(quoteData)
+  }
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileText className="h-5 w-5 text-blue-600" />
+            {quote?.id ? `Edit Quote ${quote.quoteNumber}` : 'Create New Quote'}
+          </DialogTitle>
+          <DialogDescription>
+            {quote?.id ? 'Update the quote details below' : 'Fill in the details to create a new quote'}
+          </DialogDescription>
+        </DialogHeader>
+
+        <ScrollArea className="flex-1 pr-4">
+          <div className="space-y-6 py-4">
+            {/* Project Selection */}
+            <Card className="p-4">
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <ClipboardList className="h-4 w-4" /> Link to Project
+              </h4>
+              <Select value={form.projectId} onValueChange={handleProjectSelect}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a project (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  {projects.filter(p => p.status !== 'completed' && p.status !== 'cancelled').map(proj => (
+                    <SelectItem key={proj.id} value={proj.id}>
+                      {proj.projectNumber} - {proj.customer?.name || proj.customerName || 'No Customer'}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </Card>
+
+            {/* Customer Details */}
+            <div className="grid grid-cols-2 gap-4">
+              <Card className="p-4">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <Users className="h-4 w-4" /> Customer Details
+                </h4>
+                <div className="space-y-3">
+                  <div>
+                    <Label>Customer Name *</Label>
+                    <Input 
+                      value={form.customer?.name || ''} 
+                      onChange={(e) => setForm(prev => ({ ...prev, customer: { ...prev.customer, name: e.target.value } }))}
+                      placeholder="Customer name"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label>Email</Label>
+                      <Input 
+                        type="email"
+                        value={form.customer?.email || ''} 
+                        onChange={(e) => {
+                          const email = e.target.value
+                          setForm(prev => ({ ...prev, customer: { ...prev.customer, email } }))
+                        }}
+                        onBlur={(e) => {
+                          const email = e.target.value
+                          if (email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+                            toast.error('Please enter a valid email address')
+                          }
+                        }}
+                        placeholder="customer@example.com"
+                      />
+                    </div>
+                    <div>
+                      <Label>Phone (10 digits)</Label>
+                      <Input 
+                        type="tel"
+                        value={form.customer?.phone || ''} 
+                        maxLength={10}
+                        onChange={(e) => {
+                          const phone = e.target.value.replace(/\D/g, '').slice(0, 10)
+                          setForm(prev => ({ ...prev, customer: { ...prev.customer, phone } }))
+                        }}
+                        onBlur={(e) => {
+                          const phone = e.target.value
+                          if (phone && !/^[6-9]\d{9}$/.test(phone)) {
+                            toast.error('Please enter a valid 10-digit phone number starting with 6-9')
+                          }
+                        }}
+                        placeholder="9876543210"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <MapPin className="h-4 w-4" /> Site Address
+                </h4>
+                <div className="space-y-3">
+                  <div>
+                    <Label>Address</Label>
+                    <Input 
+                      value={form.site?.address || ''} 
+                      onChange={(e) => setForm(prev => ({ ...prev, site: { ...prev.site, address: e.target.value } }))}
+                      placeholder="Street address"
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <Label>City</Label>
+                      <Input 
+                        value={form.site?.city || ''} 
+                        onChange={(e) => setForm(prev => ({ ...prev, site: { ...prev.site, city: e.target.value } }))}
+                      />
+                    </div>
+                    <div>
+                      <Label>State</Label>
+                      <Input 
+                        value={form.site?.state || ''} 
+                        onChange={(e) => setForm(prev => ({ ...prev, site: { ...prev.site, state: e.target.value } }))}
+                      />
+                    </div>
+                    <div>
+                      <Label>Pincode</Label>
+                      <Input 
+                        type="text"
+                        maxLength={6}
+                        value={form.site?.pincode || ''} 
+                        onChange={(e) => {
+                          const pincode = e.target.value.replace(/\D/g, '').slice(0, 6)
+                          setForm(prev => ({ ...prev, site: { ...prev.site, pincode } }))
+                        }}
+                        onBlur={(e) => {
+                          const pincode = e.target.value
+                          if (pincode && !/^[1-9][0-9]{5}$/.test(pincode)) {
+                            toast.error('Please enter a valid 6-digit pincode')
+                          }
+                        }}
+                        placeholder="400001"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Items */}
+            <Card>
+              <div className="p-4 border-b flex items-center justify-between">
+                <h4 className="font-semibold flex items-center gap-2">
+                  <Package className="h-4 w-4" /> Quote Items
+                </h4>
+                <Button size="sm" onClick={() => setShowProductSelector(true)}>
+                  <Plus className="h-4 w-4 mr-1" /> Add Product
+                </Button>
+              </div>
+              
+              {form.items.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="bg-slate-50">
+                        <th className="px-4 py-2 text-left">Product</th>
+                        <th className="px-4 py-2 text-right w-24">Qty</th>
+                        <th className="px-4 py-2 text-center w-20">Unit</th>
+                        <th className="px-4 py-2 text-right w-28">Rate (₹)</th>
+                        <th className="px-4 py-2 text-right w-28">Amount</th>
+                        <th className="px-4 py-2 w-16"></th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {form.items.map((item, idx) => (
+                        <tr key={idx} className="border-b">
+                          <td className="px-4 py-2">
+                            <p className="font-medium">{item.name}</p>
+                            {item.sku && <p className="text-xs text-slate-400">SKU: {item.sku}</p>}
+                          </td>
+                          <td className="px-4 py-2">
+                            <Input 
+                              type="number" 
+                              value={item.quantity} 
+                              onChange={(e) => handleItemChange(idx, 'quantity', parseFloat(e.target.value) || 0)}
+                              className="w-20 text-right"
+                            />
+                          </td>
+                          <td className="px-4 py-2 text-center">{item.unit}</td>
+                          <td className="px-4 py-2">
+                            <Input 
+                              type="number" 
+                              value={item.unitPrice} 
+                              onChange={(e) => handleItemChange(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
+                              className="w-24 text-right"
+                            />
+                          </td>
+                          <td className="px-4 py-2 text-right font-medium">₹{(item.totalPrice || 0).toLocaleString()}</td>
+                          <td className="px-4 py-2">
+                            <Button variant="ghost" size="sm" onClick={() => handleRemoveItem(idx)}>
+                              <Trash2 className="h-4 w-4 text-red-500" />
+                            </Button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="p-8 text-center text-slate-500">
+                  <Package className="h-8 w-8 mx-auto mb-2 text-slate-300" />
+                  <p>No items added yet</p>
+                  <Button variant="link" onClick={() => setShowProductSelector(true)}>
+                    Add your first product
+                  </Button>
+                </div>
+              )}
+            </Card>
+
+            {/* Pricing & Taxes */}
+            <div className="grid grid-cols-2 gap-4">
+              <Card className="p-4">
+                <h4 className="font-semibold mb-3">Discount & Taxes</h4>
+                <div className="space-y-3">
+                  <div className="flex gap-2">
+                    <div className="flex-1">
+                      <Label>Discount</Label>
+                      <Input 
+                        type="number" 
+                        value={form.discountValue} 
+                        onChange={(e) => setForm(prev => ({ ...prev, discountValue: parseFloat(e.target.value) || 0 }))}
+                      />
+                    </div>
+                    <div className="w-32">
+                      <Label>Type</Label>
+                      <Select value={form.discountType} onValueChange={(v) => setForm(prev => ({ ...prev, discountType: v }))}>
+                        <SelectTrigger>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="percentage">%</SelectItem>
+                          <SelectItem value="fixed">Fixed ₹</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <Label>CGST %</Label>
+                      <Input 
+                        type="number" 
+                        value={form.cgstRate} 
+                        onChange={(e) => setForm(prev => ({ ...prev, cgstRate: parseFloat(e.target.value) || 0 }))}
+                      />
+                    </div>
+                    <div>
+                      <Label>SGST %</Label>
+                      <Input 
+                        type="number" 
+                        value={form.sgstRate} 
+                        onChange={(e) => setForm(prev => ({ ...prev, sgstRate: parseFloat(e.target.value) || 0 }))}
+                      />
+                    </div>
+                    <div>
+                      <Label>IGST %</Label>
+                      <Input 
+                        type="number" 
+                        value={form.igstRate} 
+                        onChange={(e) => setForm(prev => ({ ...prev, igstRate: parseFloat(e.target.value) || 0 }))}
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <Label>Valid Until</Label>
+                    <Input 
+                      type="date" 
+                      value={form.validUntil} 
+                      onChange={(e) => setForm(prev => ({ ...prev, validUntil: e.target.value }))}
+                    />
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4 bg-slate-50">
+                <h4 className="font-semibold mb-3">Summary</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Subtotal</span>
+                    <span>₹{subtotal.toLocaleString()}</span>
+                  </div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between text-emerald-600">
+                      <span>Discount</span>
+                      <span>-₹{discountAmount.toLocaleString()}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span>Taxable Amount</span>
+                    <span>₹{taxableAmount.toLocaleString()}</span>
+                  </div>
+                  {cgstAmount > 0 && (
+                    <div className="flex justify-between text-slate-500">
+                      <span>CGST ({form.cgstRate}%)</span>
+                      <span>₹{cgstAmount.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {sgstAmount > 0 && (
+                    <div className="flex justify-between text-slate-500">
+                      <span>SGST ({form.sgstRate}%)</span>
+                      <span>₹{sgstAmount.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {igstAmount > 0 && (
+                    <div className="flex justify-between text-slate-500">
+                      <span>IGST ({form.igstRate}%)</span>
+                      <span>₹{igstAmount.toLocaleString()}</span>
+                    </div>
+                  )}
+                  <Separator />
+                  <div className="flex justify-between text-lg font-bold">
+                    <span>Grand Total</span>
+                    <span className="text-emerald-600">₹{grandTotal.toLocaleString()}</span>
+                  </div>
+                </div>
+              </Card>
+            </div>
+
+            {/* Notes */}
+            <Card className="p-4">
+              <h4 className="font-semibold mb-3">Notes & Terms</h4>
+              <Textarea 
+                value={form.notes} 
+                onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
+                placeholder="Add any notes or terms for this quote..."
+                rows={3}
+              />
+            </Card>
+          </div>
+        </ScrollArea>
+
+        <DialogFooter className="border-t pt-4">
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSubmit} disabled={loading}>
+            {loading ? 'Saving...' : quote?.id ? 'Update Quote' : 'Create Quote'}
+          </Button>
+        </DialogFooter>
+
+        {/* Product Selector Dialog */}
+        <Dialog open={showProductSelector} onOpenChange={setShowProductSelector}>
+          <DialogContent className="max-w-2xl">
+            <DialogHeader>
+              <DialogTitle>Select Product</DialogTitle>
+            </DialogHeader>
+            <ScrollArea className="max-h-96">
+              <div className="grid grid-cols-1 gap-2 p-2">
+                {products.map(product => (
+                  <div 
+                    key={product.id} 
+                    className="p-3 border rounded-lg hover:bg-slate-50 cursor-pointer flex items-center justify-between"
+                    onClick={() => handleAddProduct(product)}
+                  >
+                    <div>
+                      <p className="font-medium">{product.name}</p>
+                      <p className="text-xs text-slate-500">SKU: {product.sku} | {product.category}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold">₹{(product.sellingPrice || product.price || 0).toLocaleString()}</p>
+                      <p className="text-xs text-slate-500">per {product.unit || 'sqft'}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </ScrollArea>
+          </DialogContent>
+        </Dialog>
+      </DialogContent>
+    </Dialog>
+  )
+}
