@@ -5098,9 +5098,23 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           {moduleSettings?.quoteTemplate === 'professional' && <Badge className="bg-blue-600">Active</Badge>}
                         </div>
                       </div>
+
+                      {/* Detailed/Dark Template */}
+                      <div 
+                        className={`border-2 rounded-lg overflow-hidden cursor-pointer transition-all ${moduleSettings?.quoteTemplate === 'detailed' ? 'border-slate-500 ring-2 ring-slate-200' : 'hover:border-slate-300'}`}
+                        onClick={() => handleSaveModuleSettings({ quoteTemplate: 'detailed' })}
+                      >
+                        <div className="aspect-[3/4] bg-white p-3 text-[8px] leading-tight">
+                          {/* Header with full details */}
+                          <div className="bg-gradient-to-r from-slate-800 to-slate-700 text-white p-2 rounded-t -mx-3 -mt-3 mb-2">
+                            <div className="flex justify-between">
+                              <div>
+                                <div className="font-bold text-xs">🪵 FloorCraft Pro</div>
+                                <div className="text-[6px] text-slate-300">GSTIN: 22AAAAA0000A1Z5</div>
+                              </div>
                               <div className="text-right">
                                 <div className="font-bold">DETAILED QUOTE</div>
-                                <div className="text-[6px]">#QT-2025-001 | Dec 14, 2025</div>
+                                <div className="text-[6px]">#QT-2025-001</div>
                               </div>
                             </div>
                           </div>
@@ -5108,30 +5122,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           <div className="grid grid-cols-2 gap-2 mb-2">
                             <div className="border rounded p-1.5">
                               <div className="text-[6px] text-gray-400 font-bold">BILL TO</div>
-                              <div className="font-medium">ABC Interiors Pvt Ltd</div>
-                              <div className="text-gray-500">Plot 45, Andheri East</div>
-                              <div className="text-gray-500">Mumbai - 400069</div>
-                              <div className="text-[6px] text-gray-400 mt-1">GSTIN: 27BBBBB0000B2Y6</div>
+                              <div className="font-medium">ABC Interiors</div>
+                              <div className="text-gray-500 text-[6px]">GSTIN: 27BBBBB...</div>
                             </div>
                             <div className="border rounded p-1.5">
-                              <div className="text-[6px] text-gray-400 font-bold">SITE ADDRESS</div>
+                              <div className="text-[6px] text-gray-400 font-bold">SITE</div>
                               <div className="font-medium">Oberoi Gardens</div>
-                              <div className="text-gray-500">Tower A, Flat 1204</div>
-                              <div className="text-gray-500">Powai, Mumbai</div>
-                            </div>
-                          </div>
-                          {/* Product with specs */}
-                          <div className="border rounded p-1.5 mb-2">
-                            <div className="flex gap-2">
-                              <div className="w-8 h-8 bg-amber-100 rounded flex items-center justify-center text-lg">🪵</div>
-                              <div className="flex-1">
-                                <div className="font-medium">Premium Oak Wood Flooring</div>
-                                <div className="text-gray-500">SKU: OAK-123 | 12mm | Matte</div>
-                                <div className="flex justify-between mt-1 font-medium">
-                                  <span>450 sqft × ₹90</span>
-                                  <span>₹40,500</span>
-                                </div>
-                              </div>
+                              <div className="text-gray-500 text-[6px]">Mumbai</div>
                             </div>
                           </div>
                           {/* Tax breakdown */}
@@ -5139,45 +5136,17 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                             <div className="flex justify-between"><span>Subtotal</span><span>₹51,750</span></div>
                             <div className="flex justify-between text-gray-500"><span>CGST @9%</span><span>₹4,658</span></div>
                             <div className="flex justify-between text-gray-500"><span>SGST @9%</span><span>₹4,658</span></div>
-                            <div className="flex justify-between font-bold text-sm bg-slate-800 text-white p-1 rounded"><span>Grand Total</span><span>₹61,066</span></div>
+                            <div className="flex justify-between font-bold bg-slate-800 text-white p-1 rounded"><span>Grand Total</span><span>₹61,066</span></div>
                           </div>
                         </div>
-                        <div className="p-3 bg-gray-50 flex items-center justify-between">
+                        <div className="p-3 bg-slate-100 flex items-center justify-between">
                           <div>
-                            <h4 className="font-medium">Detailed</h4>
-                            <p className="text-xs text-slate-500">Full breakdown with GSTIN</p>
+                            <h4 className="font-medium text-slate-800">Detailed Dark</h4>
+                            <p className="text-xs text-slate-500">GST breakdown, Full details</p>
                           </div>
-                          {moduleSettings?.quoteTemplate === 'detailed' && <Badge className="bg-blue-600">Active</Badge>}
+                          {moduleSettings?.quoteTemplate === 'detailed' && <Badge className="bg-slate-700">Active</Badge>}
                         </div>
                       </div>
-
-                      {/* Luxury Template */}
-                      <div 
-                        className={`border-2 rounded-lg overflow-hidden cursor-pointer transition-all ${moduleSettings?.quoteTemplate === 'luxury' ? 'border-blue-500 ring-2 ring-blue-200' : 'hover:border-blue-300'}`}
-                        onClick={() => handleSaveModuleSettings({ quoteTemplate: 'luxury' })}
-                      >
-                        <div className="aspect-[3/4] bg-gradient-to-b from-amber-50 to-white p-3 text-[8px] leading-tight">
-                          {/* Luxury header */}
-                          <div className="text-center border-b-2 border-amber-400 pb-2 mb-3">
-                            <div className="text-amber-600 font-bold text-sm tracking-widest">✦ FLOORCRAFT LUXURY ✦</div>
-                            <div className="text-amber-800 text-[6px] tracking-wider">PREMIUM WOODEN FLOORING</div>
-                          </div>
-                          {/* Quote badge */}
-                          <div className="flex justify-center mb-2">
-                            <div className="bg-amber-600 text-white px-3 py-1 rounded-full text-xs font-bold">
-                              QUOTATION #QT-2025-001
-                            </div>
-                          </div>
-                          {/* Elegant customer section */}
-                          <div className="border border-amber-200 rounded-lg p-2 mb-2 bg-white/50">
-                            <div className="text-center">
-                              <div className="text-[6px] text-amber-600 tracking-wider">VALUED CLIENT</div>
-                              <div className="font-bold text-amber-900">Mr. Rajesh Sharma</div>
-                              <div className="text-gray-500">Luxury Villa, Juhu</div>
-                            </div>
-                          </div>
-                          {/* Product showcase */}
-                          <div className="bg-white rounded-lg p-2 mb-2 shadow-sm border border-amber-100">
                             <div className="text-center mb-1">
                               <span className="text-2xl">🪵</span>
                             </div>
