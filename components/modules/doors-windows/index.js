@@ -167,14 +167,24 @@ export function DoorsWindowsModule({ client, user }) {
       })
       const data = await res.json()
       if (data.success) {
-        toast.success('CRM sync completed successfully')
+        const { results } = data
+        const summary = []
+        if (results?.projects?.created > 0) summary.push(`${results.projects.created} projects`)
+        if (results?.leads?.created > 0) summary.push(`${results.leads.created} leads`)
+        if (results?.contacts?.created > 0) summary.push(`${results.contacts.created} contacts`)
+        if (results?.contacts?.updated > 0) summary.push(`${results.contacts.updated} updated`)
+        
+        toast.success(summary.length > 0 
+          ? `Synced: ${summary.join(', ')}` 
+          : 'Sync complete - everything up to date!')
         fetchCrmSyncStatus()
         fetchProjects()
       } else {
-        toast.error(data.error || 'Sync failed')
+        toast.error(data.error || data.details || 'Sync failed')
       }
     } catch (error) {
-      toast.error('Failed to sync with CRM')
+      console.error('CRM Sync Error:', error)
+      toast.error('Failed to sync with CRM - check connection')
     } finally {
       setSyncing(false)
     }
