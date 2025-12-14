@@ -20,12 +20,13 @@ import { toast } from 'sonner'
 // Quote Status Configuration - shared across components
 export const QuoteStatusConfig = {
   draft: { label: 'Draft', color: 'bg-slate-100 text-slate-700', icon: FileText },
-  sent: { label: 'Sent', color: 'bg-blue-100 text-blue-700', icon: Send },
-  approved: { label: 'Approved', color: 'bg-emerald-100 text-emerald-700', icon: CheckCircle2 },
+  sent: { label: 'Sent to Customer', color: 'bg-blue-100 text-blue-700', icon: Send },
+  approved: { label: 'Customer Approved', color: 'bg-emerald-100 text-emerald-700', icon: CheckCircle2 },
   rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700', icon: X },
   revised: { label: 'Needs Revision', color: 'bg-amber-100 text-amber-700', icon: Edit },
   invoiced: { label: 'Invoiced', color: 'bg-purple-100 text-purple-700', icon: Receipt },
-  converted: { label: 'Converted to Invoice', color: 'bg-green-100 text-green-700', icon: Receipt },
+  // Keep 'converted' as alias for backward compatibility - shows same as invoiced
+  converted: { label: 'Invoiced', color: 'bg-purple-100 text-purple-700', icon: Receipt },
   expired: { label: 'Expired', color: 'bg-gray-100 text-gray-700', icon: Clock }
 }
 
