@@ -4967,14 +4967,78 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
-                      <FileText className="h-5 w-5 text-blue-600" />
+                      <FileText className="h-5 w-5 text-teal-600" />
                       Quote Templates
                     </CardTitle>
                     <CardDescription>Choose how your quotations look - Professional templates for wooden flooring industry</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-3 gap-4">
-                      {/* Professional Template */}
+                      {/* Premium Teal Template (Default) */}
+                      <div 
+                        className={`border-2 rounded-lg overflow-hidden cursor-pointer transition-all ${moduleSettings?.quoteTemplate === 'premium' || !moduleSettings?.quoteTemplate ? 'border-teal-500 ring-2 ring-teal-200' : 'hover:border-teal-300'}`}
+                        onClick={() => handleSaveModuleSettings({ quoteTemplate: 'premium' })}
+                      >
+                        <div className="aspect-[3/4] bg-white p-3 text-[8px] leading-tight">
+                          {/* Header */}
+                          <div className="flex justify-between items-start border-b-2 border-teal-600 pb-2 mb-2">
+                            <div>
+                              <div className="text-teal-600 font-bold text-sm">🪵 FloorCraft Pro</div>
+                              <div className="text-gray-500 text-[6px]">Premium Flooring Solutions</div>
+                              <div className="text-gray-400 text-[5px]">GSTIN: 22AAAAA0000A1Z5</div>
+                            </div>
+                            <div className="text-right">
+                              <div className="font-bold text-xs">QUOTATION</div>
+                              <div className="text-gray-500 text-[6px]">#QT-2025-001</div>
+                              <span className="bg-green-100 text-green-700 px-1 rounded text-[5px]">Draft</span>
+                            </div>
+                          </div>
+                          {/* Customer */}
+                          <div className="grid grid-cols-2 gap-2 mb-2">
+                            <div className="bg-gray-50 p-1.5 rounded border-l-2 border-teal-500">
+                              <div className="text-teal-600 font-bold text-[5px]">📋 QUOTATION TO</div>
+                              <div className="font-medium">ABC Interiors</div>
+                              <div className="text-gray-500 text-[5px]">Mumbai, MH</div>
+                            </div>
+                            <div className="bg-gray-50 p-1.5 rounded border-l-2 border-teal-500">
+                              <div className="text-teal-600 font-bold text-[5px]">📄 QUOTE DETAILS</div>
+                              <div className="font-medium text-[6px]">Valid: 30 days</div>
+                              <div className="text-gray-500 text-[5px]">450 Sq.ft</div>
+                            </div>
+                          </div>
+                          {/* Table */}
+                          <table className="w-full mb-2">
+                            <thead>
+                              <tr className="bg-teal-600 text-white">
+                                <th className="p-0.5 text-left text-[6px]">Item</th>
+                                <th className="p-0.5 text-right text-[6px]">Qty</th>
+                                <th className="p-0.5 text-right text-[6px]">Rate</th>
+                                <th className="p-0.5 text-right text-[6px]">Total</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              <tr className="border-b"><td className="p-0.5 text-[6px]">Oak Wood</td><td className="p-0.5 text-right text-[6px]">450</td><td className="p-0.5 text-right text-[6px]">₹90</td><td className="p-0.5 text-right text-[6px]">₹40,500</td></tr>
+                            </tbody>
+                          </table>
+                          {/* Totals */}
+                          <div className="text-right space-y-0.5 text-[6px]">
+                            <div className="font-bold text-teal-600 bg-teal-50 p-1 rounded">₹61,065</div>
+                          </div>
+                          {/* Amount in words */}
+                          <div className="bg-amber-50 p-1 rounded text-[5px] italic text-amber-700 mt-1">
+                            Amount: Sixty One Thousand...
+                          </div>
+                        </div>
+                        <div className="p-3 bg-teal-50 flex items-center justify-between">
+                          <div>
+                            <h4 className="font-medium text-teal-800">Premium Teal</h4>
+                            <p className="text-xs text-teal-600">Watermark, Terms, Bank Details</p>
+                          </div>
+                          {(moduleSettings?.quoteTemplate === 'premium' || !moduleSettings?.quoteTemplate) && <Badge className="bg-teal-600">Active</Badge>}
+                        </div>
+                      </div>
+
+                      {/* Classic Blue Template */}
                       <div 
                         className={`border-2 rounded-lg overflow-hidden cursor-pointer transition-all ${moduleSettings?.quoteTemplate === 'professional' ? 'border-blue-500 ring-2 ring-blue-200' : 'hover:border-blue-300'}`}
                         onClick={() => handleSaveModuleSettings({ quoteTemplate: 'professional' })}
@@ -5028,26 +5092,12 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                         </div>
                         <div className="p-3 bg-gray-50 flex items-center justify-between">
                           <div>
-                            <h4 className="font-medium">Professional</h4>
+                            <h4 className="font-medium">Classic Blue</h4>
                             <p className="text-xs text-slate-500">Clean, modern design</p>
                           </div>
                           {moduleSettings?.quoteTemplate === 'professional' && <Badge className="bg-blue-600">Active</Badge>}
                         </div>
                       </div>
-
-                      {/* Detailed Template */}
-                      <div 
-                        className={`border-2 rounded-lg overflow-hidden cursor-pointer transition-all ${moduleSettings?.quoteTemplate === 'detailed' ? 'border-blue-500 ring-2 ring-blue-200' : 'hover:border-blue-300'}`}
-                        onClick={() => handleSaveModuleSettings({ quoteTemplate: 'detailed' })}
-                      >
-                        <div className="aspect-[3/4] bg-white p-3 text-[8px] leading-tight">
-                          {/* Header with full details */}
-                          <div className="bg-gradient-to-r from-slate-800 to-slate-700 text-white p-2 rounded-t -mx-3 -mt-3 mb-2">
-                            <div className="flex justify-between">
-                              <div>
-                                <div className="font-bold text-xs">🪵 FloorCraft Pro</div>
-                                <div className="text-[6px] text-slate-300">GSTIN: 22AAAAA0000A1Z5</div>
-                              </div>
                               <div className="text-right">
                                 <div className="font-bold">DETAILED QUOTE</div>
                                 <div className="text-[6px]">#QT-2025-001 | Dec 14, 2025</div>
