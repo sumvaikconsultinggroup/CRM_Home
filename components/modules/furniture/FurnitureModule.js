@@ -3608,7 +3608,25 @@ export function FurnitureModule({ user, client, token, onBack }) {
             </DialogHeader>
             <div className="py-4">
               {selectedMedia?.mediaType === '3d_model' ? (
-                <Model3DViewer media={selectedMedia} />
+                <div className="relative aspect-square bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl overflow-hidden">
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center">
+                      <div className="w-20 h-20 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 mx-auto mb-4 flex items-center justify-center animate-pulse">
+                        <Box className="h-10 w-10 text-white" />
+                      </div>
+                      <p className="text-sm font-medium text-slate-700">{selectedMedia?.fileName}</p>
+                      <p className="text-xs text-slate-500 mt-1">3D Model Preview</p>
+                    </div>
+                  </div>
+                  <div className="absolute bottom-3 left-3 right-3 flex justify-center gap-2">
+                    <Badge variant="outline" className="bg-white/80 backdrop-blur-sm text-xs">
+                      <RotateCcw className="h-3 w-3 mr-1" /> Rotate
+                    </Badge>
+                    <Badge variant="outline" className="bg-white/80 backdrop-blur-sm text-xs">
+                      <Maximize2 className="h-3 w-3 mr-1" /> Zoom
+                    </Badge>
+                  </div>
+                </div>
               ) : selectedMedia?.mediaType === 'video' ? (
                 <div className="aspect-video bg-black rounded-xl flex items-center justify-center">
                   <Video className="h-16 w-16 text-white/50" />
