@@ -224,6 +224,28 @@ export function FurnitureModule({ user, client, token, onBack }) {
   const [aiInput, setAiInput] = useState('')
   const [mediaGallery, setMediaGallery] = useState([])
   
+  // MEE AI Studio states (moved from render function)
+  const [aiMode, setAiMode] = useState('chat')
+  const [selectedRequirement, setSelectedRequirement] = useState(null)
+  const [aiSuggestions, setAiSuggestions] = useState(null)
+  const [materialSuggestions, setMaterialSuggestions] = useState(null)
+  const [pricingSuggestions, setPricingSuggestions] = useState(null)
+  const [leadTimePrediction, setLeadTimePrediction] = useState(null)
+  
+  // Media Gallery states (moved from render function)
+  const [mediaFilter, setMediaFilter] = useState('all')
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
+  const [selectedMedia, setSelectedMedia] = useState(null)
+  const [viewMode, setViewMode] = useState('grid')
+  const [uploadForm, setUploadForm] = useState({
+    fileName: '',
+    fileUrl: '',
+    mediaType: 'image',
+    category: 'general',
+    title: '',
+    description: ''
+  })
+  
   // CRM Sync state
   const [crmSyncStatus, setCrmSyncStatus] = useState(null)
   const [syncing, setSyncing] = useState(false)
