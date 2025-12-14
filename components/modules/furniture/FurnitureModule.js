@@ -1549,29 +1549,72 @@ export function FurnitureModule({ user, client, token, onBack }) {
             </div>
           </div>
 
-          {/* Navigation */}
+          {/* Navigation with Groups */}
           <ScrollArea className="flex-1 p-3">
             <nav className="space-y-1">
-              {navItems.map((item) => (
-                <motion.button
-                  key={item.id}
-                  whileHover={{ x: 4 }}
-                  onClick={() => setActiveTab(item.id)}
-                  className={`
-                    w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
-                    transition-all duration-200
-                    ${activeTab === item.id
-                      ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30'
-                      : 'text-slate-600 hover:bg-slate-100'
-                    }
-                  `}
-                >
-                  <item.icon className="h-5 w-5 flex-shrink-0" />
-                  {!sidebarCollapsed && (
-                    <span className="text-sm font-medium">{item.label}</span>
+              {/* CRM Sync Card */}
+              {!sidebarCollapsed && (
+                <div className="mb-4 p-3 rounded-xl bg-gradient-to-br from-indigo-50 to-purple-50 border border-indigo-200">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-semibold text-indigo-700">CRM SYNC</span>
+                    <Badge className="bg-emerald-100 text-emerald-700 text-xs">
+                      {crmSyncStatus?.alreadySynced || 0} synced
+                    </Badge>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button 
+                      size="sm" 
+                      variant="outline" 
+                      className="flex-1 text-xs h-7"
+                      onClick={() => handleSyncFromCRM('projects')}
+                      disabled={syncing}
+                    >
+                      {syncing ? <RefreshCw className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                      <span className="ml-1">Sync Now</span>
+                    </Button>
+                  </div>
+                  {crmSyncStatus?.availableToSync && (
+                    <p className="text-xs text-indigo-600 mt-2">
+                      {crmSyncStatus.availableToSync.projects} projects, {crmSyncStatus.availableToSync.leads} leads available
+                    </p>
                   )}
-                </motion.button>
-              ))}
+                </div>
+              )}
+
+              {Object.entries(navGroups).map(([groupKey, groupLabel]) => {
+                const groupItems = navItems.filter(item => item.group === groupKey)
+                if (groupItems.length === 0) return null
+                
+                return (
+                  <div key={groupKey} className="mb-2">
+                    {!sidebarCollapsed && groupLabel && (
+                      <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider px-3 py-2">
+                        {groupLabel}
+                      </p>
+                    )}
+                    {groupItems.map((item) => (
+                      <motion.button
+                        key={item.id}
+                        whileHover={{ x: 4 }}
+                        onClick={() => setActiveTab(item.id)}
+                        className={`
+                          w-full flex items-center gap-3 px-3 py-2.5 rounded-xl
+                          transition-all duration-200
+                          ${activeTab === item.id
+                            ? 'bg-gradient-to-r from-indigo-500 to-purple-600 text-white shadow-lg shadow-indigo-500/30'
+                            : 'text-slate-600 hover:bg-slate-100'
+                          }
+                        `}
+                      >
+                        <item.icon className="h-5 w-5 flex-shrink-0" />
+                        {!sidebarCollapsed && (
+                          <span className="text-sm font-medium">{item.label}</span>
+                        )}
+                      </motion.button>
+                    ))}
+                  </div>
+                )
+              })}
             </nav>
           </ScrollArea>
 
