@@ -5147,27 +5147,14 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           {moduleSettings?.quoteTemplate === 'detailed' && <Badge className="bg-slate-700">Active</Badge>}
                         </div>
                       </div>
-                            <div className="text-center mb-1">
-                              <span className="text-2xl">🪵</span>
-                            </div>
-                            <div className="text-center">
-                              <div className="font-bold text-amber-900">Italian Walnut Premium</div>
-                              <div className="text-amber-600 text-[6px]">Hand-Selected • Imported • 15mm</div>
-                            </div>
-                          </div>
-                          {/* Elegant total */}
-                          <div className="text-center border-t border-amber-200 pt-2">
-                            <div className="text-[6px] text-amber-600">EXCLUSIVE PRICING</div>
-                            <div className="text-amber-900 font-bold text-lg">₹2,45,000</div>
-                            <div className="text-[6px] text-gray-500">*Including premium installation</div>
-                          </div>
-                        </div>
-                        <div className="p-3 bg-amber-50 flex items-center justify-between">
-                          <div>
-                            <h4 className="font-medium text-amber-900">Luxury</h4>
-                            <p className="text-xs text-amber-700">High-end presentation</p>
-                          </div>
-                          {moduleSettings?.quoteTemplate === 'luxury' && <Badge className="bg-amber-600">Active</Badge>}
+                    </div>
+                    
+                    <p className="text-sm text-slate-500 mt-4">
+                      <Info className="h-4 w-4 inline mr-1" />
+                      Click a template to set it as your default. The selected template will be used when downloading/printing quotations.
+                    </p>
+                  </CardContent>
+                </Card>
                         </div>
                       </div>
                     </div>
