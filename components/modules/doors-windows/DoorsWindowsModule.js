@@ -1418,6 +1418,68 @@ export default function DoorsWindowsModule({ clientId, user }) {
   }
 
   // Render MEE AI Studio
+  // AI Analysis states
+  const [aiAnalysis, setAiAnalysis] = useState(null)
+  const [aiConfigSuggestion, setAiConfigSuggestion] = useState(null)
+
+  // AI Quick Action handlers
+  const handleAiQuickAction = async (actionType) => {
+    setAiLoading(true)
+    try {
+      let response
+      switch(actionType) {
+        case 'analyze':
+          // Get first requirement for analysis
+          if (requirements.length === 0) {
+            toast.info('No requirements to analyze. Create a requirement first.')
+            setAiLoading(false)
+            return
+          }
+          response = await fetch('/api/module/doors-windows/ai', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              action: 'analyze_requirement',
+              requirementId: requirements[0].id
+            })
+          })
+          if (response.ok) {
+            const data = await response.json()
+            setAiAnalysis(data.result)
+            toast.success('Requirement analyzed!')
+          }
+          break
+        case 'config':
+          response = await fetch('/api/module/doors-windows/ai', {
+            method: 'POST',
+            headers,
+            body: JSON.stringify({
+              action: 'suggest_configuration',
+              dimensions: { width: 1500, height: 1800 },
+              location: 'Living Room - South Facing',
+              requirements: 'Need good ventilation and natural light, moderate noise reduction'
+            })
+          })
+          if (response.ok) {
+            const data = await response.json()
+            setAiConfigSuggestion(data.result)
+            toast.success('Configuration suggestions ready!')
+          }
+          break
+        case 'material':
+          setAiInput('What are the best glass options for a south-facing window that needs good thermal insulation and UV protection?')
+          break
+        case 'price':
+          setAiInput('Give me a price estimate for 5 casement windows (4x5 feet each) in uPVC with double glazed glass and multi-point locking system.')
+          break
+      }
+    } catch (error) {
+      toast.error('AI request failed')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
   const renderMeeAi = () => (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
@@ -1428,6 +1490,9 @@ export default function DoorsWindowsModule({ clientId, user }) {
           <h2 className="text-2xl font-bold text-slate-900">MEE AI Studio</h2>
           <p className="text-slate-500">Intelligent assistant for doors & windows</p>
         </div>
+        <Badge className="bg-gradient-to-r from-violet-100 to-purple-100 text-purple-700 border-purple-200 ml-auto">
+          <Sparkles className="h-3 w-3 mr-1" /> Powered by GPT-4
+        </Badge>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -1435,14 +1500,21 @@ export default function DoorsWindowsModule({ clientId, user }) {
         <GlassCard className="lg:col-span-2 p-0 overflow-hidden">
           <div className="h-[600px] flex flex-col">
             <div className="p-4 border-b border-slate-200/50 bg-gradient-to-r from-violet-50 to-purple-50">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
-                  <Brain className="h-5 w-5 text-white" />
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 flex items-center justify-center">
+                    <Brain className="h-5 w-5 text-white" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-slate-900">MEE AI</p>
+                    <p className="text-xs text-emerald-600 flex items-center gap-1">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" /> Online
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold text-slate-900">MEE AI</p>
-                  <p className="text-xs text-emerald-600">Online</p>
-                </div>
+                <Button variant="ghost" size="sm" onClick={() => setAiChatMessages([])}>
+                  <RotateCcw className="h-4 w-4 mr-2" /> Clear
+                </Button>
               </div>
             </div>
 
@@ -1454,7 +1526,12 @@ export default function DoorsWindowsModule({ clientId, user }) {
                     <h3 className="font-semibold text-slate-900 mb-2">How can I help you today?</h3>
                     <p className="text-sm text-slate-500 mb-4">Ask about products, pricing, materials, or get recommendations</p>
                     <div className="flex flex-wrap justify-center gap-2">
-                      {['Best glass for south-facing windows?', 'uPVC vs Aluminum for coastal areas', 'Suggest hardware for sliding doors'].map(q => (
+                      {[
+                        'Best glass for south-facing windows?', 
+                        'uPVC vs Aluminum for coastal areas', 
+                        'Suggest hardware for sliding doors',
+                        'Energy efficient window options'
+                      ].map(q => (
                         <Button key={q} variant="outline" size="sm" onClick={() => setAiInput(q)}>
                           {q}
                         </Button>
@@ -1463,7 +1540,12 @@ export default function DoorsWindowsModule({ clientId, user }) {
                   </div>
                 )}
                 {aiChatMessages.map((msg, idx) => (
-                  <div key={idx} className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <motion.div 
+                    key={idx} 
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                  >
                     <div className={`max-w-[80%] p-4 rounded-2xl ${
                       msg.role === 'user' 
                         ? 'bg-gradient-to-br from-indigo-500 to-purple-600 text-white rounded-tr-none'
@@ -1471,12 +1553,15 @@ export default function DoorsWindowsModule({ clientId, user }) {
                     }`}>
                       <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                     </div>
-                  </div>
+                  </motion.div>
                 ))}
                 {aiLoading && (
                   <div className="flex justify-start">
                     <div className="bg-white border border-slate-200 shadow-sm rounded-2xl rounded-tl-none p-4">
-                      <RefreshCw className="h-4 w-4 animate-spin text-purple-600" />
+                      <div className="flex items-center gap-2">
+                        <RefreshCw className="h-4 w-4 animate-spin text-purple-600" />
+                        <span className="text-sm text-slate-500">Thinking...</span>
+                      </div>
                     </div>
                   </div>
                 )}
@@ -1486,10 +1571,11 @@ export default function DoorsWindowsModule({ clientId, user }) {
             <div className="p-4 border-t border-slate-200/50 bg-white/50">
               <div className="flex gap-2">
                 <Input 
-                  placeholder="Ask MEE AI..."
+                  placeholder="Ask MEE AI about products, materials, pricing..."
                   value={aiInput}
                   onChange={e => setAiInput(e.target.value)}
                   onKeyPress={e => e.key === 'Enter' && handleAIChat()}
+                  className="flex-1"
                 />
                 <Button onClick={handleAIChat} disabled={aiLoading || !aiInput.trim()} className="bg-gradient-to-r from-violet-500 to-purple-600">
                   <Send className="h-4 w-4" />
@@ -1499,18 +1585,26 @@ export default function DoorsWindowsModule({ clientId, user }) {
           </div>
         </GlassCard>
 
-        {/* Quick Actions */}
+        {/* Quick Actions & Results Panel */}
         <div className="space-y-4">
           <GlassCard className="p-4">
-            <h3 className="font-semibold text-slate-900 mb-3">Quick Actions</h3>
+            <h3 className="font-semibold text-slate-900 mb-3 flex items-center gap-2">
+              <Zap className="h-4 w-4 text-amber-500" /> Quick Actions
+            </h3>
             <div className="grid grid-cols-2 gap-2">
               {[
-                { label: 'Analyze Requirement', icon: Sparkles, color: 'from-purple-500 to-indigo-600' },
-                { label: 'Material Suggestion', icon: Layers, color: 'from-emerald-500 to-teal-600' },
-                { label: 'Price Estimate', icon: DollarSign, color: 'from-amber-500 to-orange-600' },
-                { label: 'Configuration Help', icon: SlidersHorizontal, color: 'from-blue-500 to-cyan-600' }
+                { id: 'analyze', label: 'Analyze Requirement', icon: Sparkles, color: 'from-purple-500 to-indigo-600' },
+                { id: 'material', label: 'Material Suggestion', icon: Layers, color: 'from-emerald-500 to-teal-600' },
+                { id: 'price', label: 'Price Estimate', icon: DollarSign, color: 'from-amber-500 to-orange-600' },
+                { id: 'config', label: 'Configuration Help', icon: SlidersHorizontal, color: 'from-blue-500 to-cyan-600' }
               ].map(action => (
-                <Button key={action.label} variant="outline" className="h-auto py-3 flex flex-col gap-1">
+                <Button 
+                  key={action.id} 
+                  variant="outline" 
+                  className="h-auto py-3 flex flex-col gap-1 hover:bg-slate-50"
+                  onClick={() => handleAiQuickAction(action.id)}
+                  disabled={aiLoading}
+                >
                   <div className={`p-2 rounded-lg bg-gradient-to-br ${action.color} text-white`}>
                     <action.icon className="h-4 w-4" />
                   </div>
@@ -1518,6 +1612,119 @@ export default function DoorsWindowsModule({ clientId, user }) {
                 </Button>
               ))}
             </div>
+          </GlassCard>
+
+          {/* AI Analysis Results */}
+          {aiAnalysis && (
+            <GlassCard className="p-4 bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200">
+              <h3 className="font-semibold text-purple-900 mb-3 flex items-center gap-2">
+                <Sparkles className="h-4 w-4" /> AI Analysis
+              </h3>
+              <div className="space-y-3 text-sm">
+                {aiAnalysis.estimatedCost && (
+                  <div>
+                    <p className="text-purple-600 font-medium">Estimated Cost</p>
+                    <p className="text-slate-700">
+                      {typeof aiAnalysis.estimatedCost === 'object' 
+                        ? `₹${aiAnalysis.estimatedCost.min?.toLocaleString()} - ₹${aiAnalysis.estimatedCost.max?.toLocaleString()}`
+                        : aiAnalysis.estimatedCost}
+                    </p>
+                  </div>
+                )}
+                {aiAnalysis.frameMaterialSuggestion && (
+                  <div>
+                    <p className="text-purple-600 font-medium">Recommended Material</p>
+                    <p className="text-slate-700">{aiAnalysis.frameMaterialSuggestion}</p>
+                  </div>
+                )}
+                {aiAnalysis.glassSuggestion && (
+                  <div>
+                    <p className="text-purple-600 font-medium">Glass Recommendation</p>
+                    <p className="text-slate-700">{aiAnalysis.glassSuggestion}</p>
+                  </div>
+                )}
+                {aiAnalysis.energyEfficiencyTips && (
+                  <div>
+                    <p className="text-purple-600 font-medium">Energy Tips</p>
+                    <ul className="text-slate-700 list-disc list-inside">
+                      {Array.isArray(aiAnalysis.energyEfficiencyTips) 
+                        ? aiAnalysis.energyEfficiencyTips.slice(0, 3).map((tip, i) => <li key={i}>{tip}</li>)
+                        : <li>{aiAnalysis.energyEfficiencyTips}</li>}
+                    </ul>
+                  </div>
+                )}
+              </div>
+              <Button variant="ghost" size="sm" className="mt-2 text-purple-600" onClick={() => setAiAnalysis(null)}>
+                <X className="h-3 w-3 mr-1" /> Dismiss
+              </Button>
+            </GlassCard>
+          )}
+
+          {/* Configuration Suggestion Results */}
+          {aiConfigSuggestion && (
+            <GlassCard className="p-4 bg-gradient-to-br from-blue-50 to-cyan-50 border-blue-200">
+              <h3 className="font-semibold text-blue-900 mb-3 flex items-center gap-2">
+                <SlidersHorizontal className="h-4 w-4" /> Configuration Suggestion
+              </h3>
+              <div className="space-y-3 text-sm">
+                {aiConfigSuggestion.recommendedType && (
+                  <div>
+                    <p className="text-blue-600 font-medium">Recommended Type</p>
+                    <p className="text-slate-700 capitalize">{aiConfigSuggestion.recommendedType}</p>
+                  </div>
+                )}
+                {aiConfigSuggestion.glassRecommendation && (
+                  <div>
+                    <p className="text-blue-600 font-medium">Glass</p>
+                    <p className="text-slate-700">{aiConfigSuggestion.glassRecommendation}</p>
+                  </div>
+                )}
+                {aiConfigSuggestion.hardwareRecommendation && (
+                  <div>
+                    <p className="text-blue-600 font-medium">Hardware</p>
+                    <p className="text-slate-700">{aiConfigSuggestion.hardwareRecommendation}</p>
+                  </div>
+                )}
+                {(aiConfigSuggestion.ventilationScore || aiConfigSuggestion.securityScore) && (
+                  <div className="flex gap-4">
+                    {aiConfigSuggestion.ventilationScore && (
+                      <div>
+                        <p className="text-blue-600 font-medium text-xs">Ventilation</p>
+                        <p className="text-lg font-bold text-slate-900">{aiConfigSuggestion.ventilationScore}/10</p>
+                      </div>
+                    )}
+                    {aiConfigSuggestion.securityScore && (
+                      <div>
+                        <p className="text-blue-600 font-medium text-xs">Security</p>
+                        <p className="text-lg font-bold text-slate-900">{aiConfigSuggestion.securityScore}/10</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+                {aiConfigSuggestion.reasoning && (
+                  <div>
+                    <p className="text-blue-600 font-medium">Reasoning</p>
+                    <p className="text-slate-700 text-xs">{aiConfigSuggestion.reasoning}</p>
+                  </div>
+                )}
+              </div>
+              <Button variant="ghost" size="sm" className="mt-2 text-blue-600" onClick={() => setAiConfigSuggestion(null)}>
+                <X className="h-3 w-3 mr-1" /> Dismiss
+              </Button>
+            </GlassCard>
+          )}
+
+          {/* Tips Card */}
+          <GlassCard className="p-4 bg-gradient-to-br from-amber-50 to-orange-50 border-amber-200">
+            <h3 className="font-semibold text-amber-900 mb-2 flex items-center gap-2">
+              <Star className="h-4 w-4" /> Pro Tips
+            </h3>
+            <ul className="text-xs text-slate-600 space-y-1">
+              <li>• Ask about specific product comparisons</li>
+              <li>• Request installation recommendations</li>
+              <li>• Get maintenance schedules</li>
+              <li>• Calculate energy savings</li>
+            </ul>
           </GlassCard>
         </div>
       </div>
