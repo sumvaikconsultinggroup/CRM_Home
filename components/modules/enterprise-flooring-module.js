@@ -811,6 +811,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     try {
       setLoading(true)
       const method = quoteData.id ? 'PUT' : 'POST'
+      
+      // If editing a rejected quote, automatically change status to 'revised' so it can be sent again
+      if (quoteData.id && quoteData.status === 'rejected') {
+        quoteData.status = 'revised'
+        quoteData.revisionNote = 'Quote revised after rejection'
+      }
+      
       const res = await fetch('/api/flooring/enhanced/quotes', {
         method,
         headers,
@@ -818,7 +825,10 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       })
       
       if (res.ok) {
-        toast.success(quoteData.id ? 'Quote updated' : 'Quote created')
+        const successMessage = quoteData.status === 'revised' 
+          ? 'Quote revised! You can now send it for approval again.' 
+          : (quoteData.id ? 'Quote updated' : 'Quote created')
+        toast.success(successMessage)
         fetchQuotes()
         setDialogOpen({ type: null, data: null })
       } else {
