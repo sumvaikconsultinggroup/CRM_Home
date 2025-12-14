@@ -5786,9 +5786,18 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                 <Input 
                   type="date"
                   value={measurementDate}
-                  onChange={(e) => setMeasurementDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  onChange={(e) => {
+                    const selectedDate = e.target.value
+                    if (new Date(selectedDate) < new Date(new Date().toISOString().split('T')[0])) {
+                      toast.error('Backdate measurement is not allowed')
+                      return
+                    }
+                    setMeasurementDate(selectedDate)
+                  }}
                   className="bg-white"
                 />
+                <p className="text-xs text-slate-500">* Backdates not allowed</p>
               </div>
               <div className="col-span-2 space-y-1">
                 <Label className="text-xs text-purple-700">Notes</Label>
