@@ -843,13 +843,14 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       if (res.ok) {
         const result = await res.json()
         toast.success(result.message || 'Action completed')
-        fetchQuotes()
-        if (action === 'create_invoice') fetchInvoices()
+        await fetchQuotes() // Await the fetch
+        if (action === 'create_invoice') await fetchInvoices()
       } else {
         const error = await res.json()
         toast.error(error.error || 'Action failed')
       }
     } catch (error) {
+      console.error('Quote action error:', error)
       toast.error('An error occurred')
     } finally {
       setLoading(false)
