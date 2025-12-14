@@ -102,6 +102,8 @@ const StatCard = ({ title, value, subtitle, icon: Icon, trend, trendValue, color
 // Navigation items - Enterprise level with all features for Manufacturers & Dealers
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, group: 'main' },
+  // AI Assistant
+  { id: 'mee-ai', label: 'MEE AI', icon: Brain, group: 'ai', badge: 'new' },
   // Intake & CRM
   { id: 'requirements', label: 'Requirements', icon: ClipboardList, group: 'intake', badge: 'intake' },
   { id: 'measurements', label: 'Measurements', icon: Ruler, group: 'intake' },
@@ -114,6 +116,7 @@ const navItems = [
   { id: 'products', label: 'Product Catalog', icon: Package, group: 'products' },
   { id: 'materials', label: 'Materials', icon: Layers, group: 'products' },
   { id: 'hardware', label: 'Hardware', icon: Cog, group: 'products' },
+  { id: 'media-gallery', label: 'Media Gallery', icon: ImagePlus, group: 'products' },
   // Procurement & Inventory
   { id: 'suppliers', label: 'Suppliers', icon: Truck, group: 'procurement' },
   { id: 'purchase-orders', label: 'Purchase Orders', icon: FileCheck, group: 'procurement' },
@@ -136,6 +139,7 @@ const navItems = [
 // Navigation group labels
 const navGroups = {
   main: null,
+  ai: 'AI Assistant',
   intake: 'CRM & Intake',
   sales: 'Sales & Finance',
   products: 'Catalog',
