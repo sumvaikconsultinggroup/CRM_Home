@@ -526,7 +526,73 @@ export function FurnitureModule({ user, client, token, onBack }) {
     if (activeTab === 'service-tickets') fetchServiceTickets()
     if (activeTab === 'showroom') fetchShowroom()
     if (activeTab === 'reports') fetchAnalytics()
+    if (activeTab === 'bom') fetchBOMs()
+    if (activeTab === 'work-orders') fetchWorkOrders()
+    if (activeTab === 'production') fetchProductionData()
+    if (activeTab === 'invoices') fetchInvoices()
+    if (activeTab === 'settings') fetchModuleSettings()
   }, [activeTab])
+
+  // Phase 3: Production fetch functions
+  const fetchBOMs = useCallback(async () => {
+    try {
+      const res = await fetch('/api/module/furniture/bom', { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setBoms(data.boms || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch BOMs:', error)
+    }
+  }, [token])
+
+  const fetchWorkOrders = useCallback(async () => {
+    try {
+      const res = await fetch('/api/module/furniture/work-orders?view=kanban', { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setWorkOrders(data.workOrders || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch work orders:', error)
+    }
+  }, [token])
+
+  const fetchProductionData = useCallback(async () => {
+    try {
+      const res = await fetch('/api/module/furniture/production?view=overview', { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setProductionData(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch production data:', error)
+    }
+  }, [token])
+
+  const fetchInvoices = useCallback(async () => {
+    try {
+      const res = await fetch('/api/module/furniture/invoices', { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setInvoices(data.invoices || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch invoices:', error)
+    }
+  }, [token])
+
+  const fetchModuleSettings = useCallback(async () => {
+    try {
+      const res = await fetch('/api/module/furniture/settings', { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setModuleSettings(data.settings)
+      }
+    } catch (error) {
+      console.error('Failed to fetch settings:', error)
+    }
+  }, [token])
 
   // Seed sample data
   const [seedStatus, setSeedStatus] = useState(null)
