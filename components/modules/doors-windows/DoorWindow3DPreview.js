@@ -1,296 +1,404 @@
 'use client'
 
-import { useRef, useState, useEffect, Suspense } from 'react'
-import { Canvas, useFrame, useThree } from '@react-three/fiber'
-import { OrbitControls, Environment, Text, Box, RoundedBox, useHelper } from '@react-three/drei'
-import * as THREE from 'three'
+import { useState, useEffect, useRef } from 'react'
 
-// Glass material for realistic window effect
-const glassMaterial = new THREE.MeshPhysicalMaterial({
-  color: 0x88ccff,
-  transparent: true,
-  opacity: 0.3,
-  roughness: 0,
-  metalness: 0,
-  transmission: 0.9,
-  thickness: 0.5,
-  envMapIntensity: 1,
-})
-
-// Frame materials based on color
-const frameMaterials = {
-  white: new THREE.MeshStandardMaterial({ color: 0xf5f5f5, roughness: 0.3, metalness: 0.1 }),
-  black: new THREE.MeshStandardMaterial({ color: 0x1a1a1a, roughness: 0.4, metalness: 0.2 }),
-  grey: new THREE.MeshStandardMaterial({ color: 0x808080, roughness: 0.3, metalness: 0.3 }),
-  brown: new THREE.MeshStandardMaterial({ color: 0x8B4513, roughness: 0.5, metalness: 0.1 }),
-  silver: new THREE.MeshStandardMaterial({ color: 0xC0C0C0, roughness: 0.2, metalness: 0.7 }),
-  bronze: new THREE.MeshStandardMaterial({ color: 0xCD7F32, roughness: 0.3, metalness: 0.5 }),
-}
-
-// Window Component
-function Window3D({ config, position = [0, 0, 0] }) {
-  const groupRef = useRef()
-  const {
-    width = 1.2,
-    height = 1.5,
-    panels = 2,
-    category = 'Sliding',
-    frameColor = 'white',
-    frameThickness = 0.05
-  } = config || {}
-
-  // Convert mm to meters (scale)
-  const w = width / 1000
-  const h = height / 1000
-  const ft = frameThickness
-  const panelWidth = (w - ft * (panels + 1)) / panels
-  const frameMat = frameMaterials[frameColor] || frameMaterials.white
-
-  // Animate subtle movement
-  useFrame((state) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.05
-    }
-  })
-
-  return (
-    <group ref={groupRef} position={position}>
-      {/* Outer Frame */}
-      {/* Top */}
-      <Box args={[w, ft, ft]} position={[0, h / 2 - ft / 2, 0]}>
-        <primitive object={frameMat} attach="material" />
-      </Box>
-      {/* Bottom */}
-      <Box args={[w, ft, ft]} position={[0, -h / 2 + ft / 2, 0]}>
-        <primitive object={frameMat} attach="material" />
-      </Box>
-      {/* Left */}
-      <Box args={[ft, h, ft]} position={[-w / 2 + ft / 2, 0, 0]}>
-        <primitive object={frameMat} attach="material" />
-      </Box>
-      {/* Right */}
-      <Box args={[ft, h, ft]} position={[w / 2 - ft / 2, 0, 0]}>
-        <primitive object={frameMat} attach="material" />
-      </Box>
-
-      {/* Glass Panels */}
-      {Array.from({ length: panels }).map((_, i) => {
-        const panelX = -w / 2 + ft + panelWidth / 2 + i * (panelWidth + ft)
-        return (
-          <group key={i}>
-            {/* Glass */}
-            <Box 
-              args={[panelWidth - 0.02, h - ft * 2 - 0.02, 0.01]} 
-              position={[panelX, 0, 0]}
-            >
-              <meshPhysicalMaterial
-                color={0x88ccff}
-                transparent
-                opacity={0.25}
-                roughness={0}
-                metalness={0}
-                transmission={0.9}
-              />
-            </Box>
-            {/* Panel Frame */}
-            <Box args={[panelWidth, ft / 2, ft / 2]} position={[panelX, h / 2 - ft - ft / 4, ft / 4]}>
-              <primitive object={frameMat} attach="material" />
-            </Box>
-            <Box args={[panelWidth, ft / 2, ft / 2]} position={[panelX, -h / 2 + ft + ft / 4, ft / 4]}>
-              <primitive object={frameMat} attach="material" />
-            </Box>
-            {/* Divider frames between panels */}
-            {i > 0 && (
-              <Box args={[ft / 2, h - ft * 2, ft]} position={[panelX - panelWidth / 2 - ft / 4, 0, 0]}>
-                <primitive object={frameMat} attach="material" />
-              </Box>
-            )}
-          </group>
-        )
-      })}
-
-      {/* Handle for sliding windows */}
-      {category === 'Sliding' && (
-        <Box args={[0.08, 0.02, 0.02]} position={[w / 4, 0, ft / 2 + 0.015]}>
-          <meshStandardMaterial color={0x333333} metalness={0.8} roughness={0.2} />
-        </Box>
-      )}
-    </group>
-  )
-}
-
-// Door Component
-function Door3D({ config, position = [0, 0, 0] }) {
-  const groupRef = useRef()
-  const {
-    width = 900,
-    height = 2100,
-    panels = 1,
-    category = 'French',
-    frameColor = 'brown',
-    frameThickness = 0.06
-  } = config || {}
-
-  const w = width / 1000
-  const h = height / 1000
-  const ft = frameThickness
-  const panelWidth = (w - ft * (panels + 1)) / panels
-  const frameMat = frameMaterials[frameColor] || frameMaterials.brown
-
-  useFrame((state) => {
-    if (groupRef.current) {
-      groupRef.current.rotation.y = Math.sin(state.clock.elapsedTime * 0.5) * 0.03
-    }
-  })
-
-  return (
-    <group ref={groupRef} position={position}>
-      {/* Door Frame */}
-      {/* Top */}
-      <Box args={[w + ft * 2, ft, ft * 2]} position={[0, h / 2 + ft / 2, 0]}>
-        <primitive object={frameMat} attach="material" />
-      </Box>
-      {/* Left */}
-      <Box args={[ft, h + ft, ft * 2]} position={[-w / 2 - ft / 2, 0, 0]}>
-        <primitive object={frameMat} attach="material" />
-      </Box>
-      {/* Right */}
-      <Box args={[ft, h + ft, ft * 2]} position={[w / 2 + ft / 2, 0, 0]}>
-        <primitive object={frameMat} attach="material" />
-      </Box>
-
-      {/* Door Panels */}
-      {Array.from({ length: panels }).map((_, i) => {
-        const panelX = -w / 2 + ft / 2 + panelWidth / 2 + i * (panelWidth + ft)
-        const hasGlass = category === 'French' || category === 'Sliding' || category === 'Bi-Fold'
-        
-        return (
-          <group key={i}>
-            {/* Door panel body */}
-            <Box args={[panelWidth, h - 0.02, ft]} position={[panelX, 0, 0]}>
-              <meshStandardMaterial 
-                color={frameColor === 'brown' ? 0x654321 : frameMat.color} 
-                roughness={0.6} 
-                metalness={0.1} 
-              />
-            </Box>
-            
-            {/* Glass insert for French/Glass doors */}
-            {hasGlass && (
-              <Box 
-                args={[panelWidth * 0.7, h * 0.5, 0.015]} 
-                position={[panelX, h * 0.15, ft / 2 + 0.01]}
-              >
-                <meshPhysicalMaterial
-                  color={0x88ccff}
-                  transparent
-                  opacity={0.2}
-                  roughness={0}
-                  metalness={0}
-                  transmission={0.9}
-                />
-              </Box>
-            )}
-
-            {/* Handle */}
-            <Box args={[0.015, 0.12, 0.025]} position={[
-              i === 0 ? panelX + panelWidth / 2 - 0.05 : panelX - panelWidth / 2 + 0.05, 
-              0, 
-              ft / 2 + 0.02
-            ]}>
-              <meshStandardMaterial color={0xc0c0c0} metalness={0.9} roughness={0.1} />
-            </Box>
-          </group>
-        )
-      })}
-
-      {/* Threshold */}
-      <Box args={[w + ft, 0.02, ft * 3]} position={[0, -h / 2, 0]}>
-        <meshStandardMaterial color={0x444444} roughness={0.5} metalness={0.3} />
-      </Box>
-    </group>
-  )
-}
-
-// Scene setup component
-function Scene({ config }) {
-  const { type = 'Window' } = config || {}
-
-  return (
-    <>
-      <ambientLight intensity={0.5} />
-      <directionalLight position={[5, 5, 5]} intensity={1} castShadow />
-      <directionalLight position={[-5, 5, -5]} intensity={0.5} />
-      
-      {type === 'Door' ? (
-        <Door3D config={config} position={[0, 0, 0]} />
-      ) : (
-        <Window3D config={config} position={[0, 0, 0]} />
-      )}
-
-      {/* Floor reflection plane */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, -1.2, 0]} receiveShadow>
-        <planeGeometry args={[10, 10]} />
-        <meshStandardMaterial color={0xeeeeee} roughness={0.8} />
-      </mesh>
-
-      <OrbitControls 
-        enablePan={false} 
-        minDistance={1} 
-        maxDistance={5}
-        minPolarAngle={Math.PI / 4}
-        maxPolarAngle={Math.PI / 2}
-      />
-      <Environment preset="city" />
-    </>
-  )
-}
-
-// Fallback loading component
-function LoadingFallback() {
-  return (
-    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
-      <div className="text-center">
-        <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-        <p className="text-sm text-slate-600">Loading 3D Preview...</p>
-      </div>
-    </div>
-  )
-}
-
-// Main export component
+// Dynamic SVG-based 3D-like preview with enhanced visuals
 export function DoorWindow3DPreview({ config, className = '' }) {
   const [isClient, setIsClient] = useState(false)
+  const containerRef = useRef(null)
 
   useEffect(() => {
     setIsClient(true)
   }, [])
 
+  const {
+    type = 'Window',
+    category = 'Sliding',
+    width = 1200,
+    height = 1500,
+    panels = 2,
+    frameColor = 'white',
+    material = 'Aluminium'
+  } = config || {}
+
+  // Frame colors mapping
+  const frameColors = {
+    white: { fill: '#f5f5f5', stroke: '#e0e0e0', shadow: '#d0d0d0' },
+    black: { fill: '#2a2a2a', stroke: '#1a1a1a', shadow: '#0a0a0a' },
+    grey: { fill: '#808080', stroke: '#606060', shadow: '#404040' },
+    brown: { fill: '#8B4513', stroke: '#654321', shadow: '#4a3015' },
+    silver: { fill: '#C0C0C0', stroke: '#a0a0a0', shadow: '#808080' },
+    bronze: { fill: '#CD7F32', stroke: '#a06020', shadow: '#805010' },
+    champagne: { fill: '#F7E7CE', stroke: '#d7c7ae', shadow: '#b7a78e' },
+    woodgrain: { fill: '#DEB887', stroke: '#be9867', shadow: '#9e7847' }
+  }
+
+  const colors = frameColors[frameColor] || frameColors.white
+  const glassColor = type === 'Door' ? '#9ec5fe' : '#b8d4fe'
+  const glassBorder = '#4a90d9'
+
+  // SVG dimensions
+  const svgWidth = 280
+  const svgHeight = 320
+  const padding = 40
+  
+  // Calculate scale to fit
+  const maxDrawWidth = svgWidth - padding * 2
+  const maxDrawHeight = svgHeight - padding * 2 - 30 // Leave room for label
+  const scale = Math.min(maxDrawWidth / width, maxDrawHeight / height)
+  
+  const drawWidth = width * scale
+  const drawHeight = height * scale
+  const frameThickness = Math.max(8, 50 * scale)
+  
+  const startX = (svgWidth - drawWidth) / 2
+  const startY = (svgHeight - drawHeight) / 2 - 10
+
+  // Generate panel positions
+  const innerWidth = drawWidth - frameThickness * 2
+  const innerHeight = drawHeight - frameThickness * 2
+  const panelWidth = innerWidth / panels
+  const panelGap = 3
+
+  // Door specific adjustments
+  const isDoor = type === 'Door'
+
   if (!isClient) {
-    return <LoadingFallback />
+    return (
+      <div className={`relative w-full h-full min-h-[280px] rounded-xl overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 flex items-center justify-center ${className}`}>
+        <div className="text-center">
+          <div className="w-10 h-10 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+          <p className="text-xs text-slate-500">Loading preview...</p>
+        </div>
+      </div>
+    )
   }
 
   return (
-    <div className={`relative w-full h-full min-h-[300px] rounded-xl overflow-hidden bg-gradient-to-br from-slate-100 to-slate-200 ${className}`}>
-      <Suspense fallback={<LoadingFallback />}>
-        <Canvas
-          shadows
-          camera={{ position: [0, 0, 3], fov: 50 }}
-          gl={{ antialias: true, alpha: true }}
+    <div ref={containerRef} className={`relative w-full h-full min-h-[280px] rounded-xl overflow-hidden ${className}`}>
+      <svg 
+        width="100%" 
+        height="100%" 
+        viewBox={`0 0 ${svgWidth} ${svgHeight}`} 
+        className="bg-gradient-to-br from-slate-100 via-blue-50 to-indigo-100"
+        preserveAspectRatio="xMidYMid meet"
+      >
+        {/* Definitions */}
+        <defs>
+          {/* Grid pattern */}
+          <pattern id="grid3d" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e0e4e8" strokeWidth="0.5"/>
+          </pattern>
+          
+          {/* Glass gradient */}
+          <linearGradient id="glassGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#cce5ff" stopOpacity="0.6"/>
+            <stop offset="50%" stopColor="#e6f2ff" stopOpacity="0.3"/>
+            <stop offset="100%" stopColor="#b8d4fe" stopOpacity="0.5"/>
+          </linearGradient>
+          
+          {/* Frame gradient for 3D effect */}
+          <linearGradient id="frameGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor={colors.fill}/>
+            <stop offset="50%" stopColor={colors.stroke}/>
+            <stop offset="100%" stopColor={colors.shadow}/>
+          </linearGradient>
+          
+          {/* Drop shadow */}
+          <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
+            <feDropShadow dx="3" dy="5" stdDeviation="4" floodColor="#000" floodOpacity="0.2"/>
+          </filter>
+          
+          {/* Inner shadow for depth */}
+          <filter id="innerShadow" x="-50%" y="-50%" width="200%" height="200%">
+            <feComponentTransfer in="SourceAlpha">
+              <feFuncA type="table" tableValues="1 0"/>
+            </feComponentTransfer>
+            <feGaussianBlur stdDeviation="3"/>
+            <feOffset dx="2" dy="2" result="offsetblur"/>
+            <feFlood floodColor="#000" floodOpacity="0.3" result="color"/>
+            <feComposite in2="offsetblur" operator="in"/>
+            <feComposite in2="SourceAlpha" operator="in"/>
+            <feMerge>
+              <feMergeNode in="SourceGraphic"/>
+              <feMergeNode/>
+            </feMerge>
+          </filter>
+        </defs>
+
+        {/* Background grid */}
+        <rect width="100%" height="100%" fill="url(#grid3d)" />
+
+        {/* Main frame group with shadow */}
+        <g filter="url(#dropShadow)">
+          {/* Outer frame - 3D effect with multiple layers */}
+          <rect
+            x={startX - 3}
+            y={startY - 3}
+            width={drawWidth + 6}
+            height={drawHeight + 6}
+            fill={colors.shadow}
+            rx="3"
+          />
+          <rect
+            x={startX}
+            y={startY}
+            width={drawWidth}
+            height={drawHeight}
+            fill="url(#frameGradient)"
+            stroke={colors.stroke}
+            strokeWidth="2"
+            rx="2"
+          />
+          
+          {/* Frame highlight for 3D depth */}
+          <rect
+            x={startX + 2}
+            y={startY + 2}
+            width={drawWidth - 4}
+            height={2}
+            fill="rgba(255,255,255,0.5)"
+          />
+          <rect
+            x={startX + 2}
+            y={startY + 2}
+            width={2}
+            height={drawHeight - 4}
+            fill="rgba(255,255,255,0.3)"
+          />
+
+          {/* Inner frame area */}
+          <rect
+            x={startX + frameThickness}
+            y={startY + frameThickness}
+            width={innerWidth}
+            height={innerHeight}
+            fill="#1a365d"
+            opacity="0.1"
+          />
+
+          {/* Glass Panels */}
+          {Array.from({ length: panels }).map((_, i) => {
+            const panelX = startX + frameThickness + (panelWidth * i) + panelGap / 2
+            const panelY = startY + frameThickness + panelGap / 2
+            const pWidth = panelWidth - panelGap
+            const pHeight = innerHeight - panelGap
+            
+            const isOpenable = category !== 'Fixed' && (i === 0 || i === panels - 1)
+            const openDirection = i === 0 ? 'left' : 'right'
+
+            return (
+              <g key={i}>
+                {/* Panel frame */}
+                <rect
+                  x={panelX}
+                  y={panelY}
+                  width={pWidth}
+                  height={pHeight}
+                  fill={colors.fill}
+                  stroke={colors.stroke}
+                  strokeWidth="1.5"
+                  rx="1"
+                />
+                
+                {/* Glass */}
+                <rect
+                  x={panelX + 6}
+                  y={panelY + 6}
+                  width={pWidth - 12}
+                  height={pHeight - 12}
+                  fill="url(#glassGradient)"
+                  stroke={glassBorder}
+                  strokeWidth="1"
+                  filter="url(#innerShadow)"
+                />
+                
+                {/* Glass reflection */}
+                <rect
+                  x={panelX + 8}
+                  y={panelY + 8}
+                  width={(pWidth - 16) * 0.3}
+                  height={(pHeight - 16) * 0.6}
+                  fill="rgba(255,255,255,0.3)"
+                  rx="2"
+                />
+
+                {/* Opening direction indicator for openable panels */}
+                {isOpenable && category !== 'Fixed' && (
+                  <>
+                    {/* Opening arc */}
+                    <path
+                      d={openDirection === 'left' 
+                        ? `M ${panelX + pWidth - 8} ${panelY + 15} Q ${panelX + 10} ${panelY + pHeight/2} ${panelX + pWidth - 8} ${panelY + pHeight - 15}`
+                        : `M ${panelX + 8} ${panelY + 15} Q ${panelX + pWidth - 10} ${panelY + pHeight/2} ${panelX + 8} ${panelY + pHeight - 15}`
+                      }
+                      fill="none"
+                      stroke="#3b82f6"
+                      strokeWidth="1.5"
+                      strokeDasharray="4,3"
+                      opacity="0.7"
+                    />
+                    
+                    {/* Handle */}
+                    <rect
+                      x={openDirection === 'left' ? panelX + pWidth - 14 : panelX + 6}
+                      y={panelY + pHeight / 2 - 15}
+                      width={8}
+                      height={30}
+                      fill="#4b5563"
+                      rx="2"
+                    />
+                  </>
+                )}
+
+                {/* Fixed panel indicator */}
+                {(category === 'Fixed' || (!isOpenable && panels > 2)) && (
+                  <g stroke="#9ca3af" strokeWidth="1" opacity="0.4">
+                    <line
+                      x1={panelX + 10}
+                      y1={panelY + 10}
+                      x2={panelX + pWidth - 10}
+                      y2={panelY + pHeight - 10}
+                    />
+                    <line
+                      x1={panelX + pWidth - 10}
+                      y1={panelY + 10}
+                      x2={panelX + 10}
+                      y2={panelY + pHeight - 10}
+                    />
+                  </g>
+                )}
+              </g>
+            )
+          })}
+
+          {/* Door specific elements */}
+          {isDoor && (
+            <>
+              {/* Door threshold */}
+              <rect
+                x={startX - 5}
+                y={startY + drawHeight}
+                width={drawWidth + 10}
+                height={6}
+                fill="#4b5563"
+                rx="1"
+              />
+              
+              {/* Door handle (if single panel) */}
+              {panels === 1 && (
+                <g>
+                  <rect
+                    x={startX + drawWidth - frameThickness - 20}
+                    y={startY + drawHeight / 2 - 25}
+                    width={10}
+                    height={50}
+                    fill="#71717a"
+                    rx="2"
+                  />
+                  <circle
+                    cx={startX + drawWidth - frameThickness - 15}
+                    cy={startY + drawHeight / 2}
+                    r={6}
+                    fill="#52525b"
+                  />
+                </g>
+              )}
+            </>
+          )}
+
+          {/* Sliding track indicator for sliding type */}
+          {category === 'Sliding' && (
+            <>
+              <line
+                x1={startX + frameThickness}
+                y1={startY + drawHeight - frameThickness + 3}
+                x2={startX + drawWidth - frameThickness}
+                y2={startY + drawHeight - frameThickness + 3}
+                stroke="#64748b"
+                strokeWidth="2"
+              />
+              <line
+                x1={startX + frameThickness}
+                y1={startY + frameThickness - 3}
+                x2={startX + drawWidth - frameThickness}
+                y2={startY + frameThickness - 3}
+                stroke="#64748b"
+                strokeWidth="2"
+              />
+            </>
+          )}
+        </g>
+
+        {/* Dimension lines */}
+        <g>
+          {/* Width dimension */}
+          <line
+            x1={startX}
+            y1={startY + drawHeight + 20}
+            x2={startX + drawWidth}
+            y2={startY + drawHeight + 20}
+            stroke="#64748b"
+            strokeWidth="1"
+          />
+          <line x1={startX} y1={startY + drawHeight + 15} x2={startX} y2={startY + drawHeight + 25} stroke="#64748b" strokeWidth="1" />
+          <line x1={startX + drawWidth} y1={startY + drawHeight + 15} x2={startX + drawWidth} y2={startY + drawHeight + 25} stroke="#64748b" strokeWidth="1" />
+          <text
+            x={startX + drawWidth / 2}
+            y={startY + drawHeight + 35}
+            textAnchor="middle"
+            fontSize="10"
+            fill="#475569"
+            fontWeight="600"
+          >
+            {width}mm
+          </text>
+
+          {/* Height dimension */}
+          <line
+            x1={startX + drawWidth + 15}
+            y1={startY}
+            x2={startX + drawWidth + 15}
+            y2={startY + drawHeight}
+            stroke="#64748b"
+            strokeWidth="1"
+          />
+          <line x1={startX + drawWidth + 10} y1={startY} x2={startX + drawWidth + 20} y2={startY} stroke="#64748b" strokeWidth="1" />
+          <line x1={startX + drawWidth + 10} y1={startY + drawHeight} x2={startX + drawWidth + 20} y2={startY + drawHeight} stroke="#64748b" strokeWidth="1" />
+          <text
+            x={startX + drawWidth + 28}
+            y={startY + drawHeight / 2}
+            textAnchor="middle"
+            fontSize="10"
+            fill="#475569"
+            fontWeight="600"
+            transform={`rotate(90, ${startX + drawWidth + 28}, ${startY + drawHeight / 2})`}
+          >
+            {height}mm
+          </text>
+        </g>
+
+        {/* Area text */}
+        <text
+          x={svgWidth / 2}
+          y={svgHeight - 8}
+          textAnchor="middle"
+          fontSize="9"
+          fill="#64748b"
         >
-          <Scene config={config} />
-        </Canvas>
-      </Suspense>
-      
+          Area: {((width / 304.8) * (height / 304.8)).toFixed(2)} sq.ft
+        </text>
+      </svg>
+
       {/* Info overlay */}
-      <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-xs text-slate-600 bg-white/80 backdrop-blur-sm rounded-lg px-3 py-2">
-        <span>{config?.type || 'Window'} • {config?.category || 'Sliding'}</span>
-        <span>{config?.width || 1200}mm x {config?.height || 1500}mm</span>
+      <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-xs text-slate-600 bg-white/80 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow-sm">
+        <span className="font-medium">{type} • {category}</span>
+        <span className="text-slate-500">{material}</span>
       </div>
       
       {/* Interaction hint */}
-      <div className="absolute top-3 right-3 text-xs text-slate-500 bg-white/80 backdrop-blur-sm rounded-full px-3 py-1">
-        🔄 Drag to rotate
+      <div className="absolute top-2 right-2 text-xs text-indigo-600 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 shadow-sm">
+        ✨ 3D-Like Preview
       </div>
     </div>
   )
