@@ -435,6 +435,230 @@ export function DoorsWindowsModule({ client, user }) {
 
   const refresh = () => setRefreshKey(k => k + 1)
 
+  // Fetch Projects
+  const fetchProjects = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/projects`, { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setProjects(Array.isArray(data) ? data : data.projects || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch projects:', error)
+    }
+  }
+
+  // Fetch CRM Sync Status
+  const fetchCrmSyncStatus = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/sync`, { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setCrmSyncStatus(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch CRM sync status:', error)
+    }
+  }
+
+  // Sync from CRM
+  const handleSyncFromCRM = async (syncType) => {
+    try {
+      setSyncing(true)
+      const res = await fetch(`${API_BASE}/sync`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ action: `sync_${syncType}` })
+      })
+      if (res.ok) {
+        const data = await res.json()
+        toast.success(data.message || `Synced ${syncType} from CRM`)
+        fetchProjects()
+        fetchCrmSyncStatus()
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Sync failed')
+      }
+    } catch (error) {
+      toast.error('Failed to sync from CRM')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  // Push to CRM
+  const handlePushToCRM = async (projectId) => {
+    try {
+      setSyncing(true)
+      const res = await fetch(`${API_BASE}/sync`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ action: 'push_to_crm', entityId: projectId })
+      })
+      if (res.ok) {
+        const data = await res.json()
+        toast.success(`Created project ${data.project?.projectNumber} in CRM`)
+        fetchProjects()
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to push to CRM')
+      }
+    } catch (error) {
+      toast.error('Failed to push to CRM')
+    } finally {
+      setSyncing(false)
+    }
+  }
+
+  // Save Quote from Quote Builder
+  const saveQuote = async () => {
+    if (!quoteCustomerInfo.name) {
+      toast.error('Please enter customer name')
+      return
+    }
+    if (quoteBuilderItems.length === 0) {
+      toast.error('Please add at least one item')
+      return
+    }
+
+    try {
+      setSavingQuote(true)
+      const quoteData = {
+        customerName: quoteCustomerInfo.name,
+        customerPhone: quoteCustomerInfo.phone,
+        customerEmail: quoteCustomerInfo.email,
+        siteAddress: quoteCustomerInfo.address,
+        items: quoteBuilderItems,
+        subtotal: quoteBuilderItems.reduce((sum, i) => sum + (i.rate * i.quantity), 0),
+        taxRate: 18,
+        taxAmount: quoteBuilderItems.reduce((sum, i) => sum + (i.rate * i.quantity), 0) * 0.18,
+        grandTotal: quoteBuilderItems.reduce((sum, i) => sum + (i.rate * i.quantity), 0) * 1.18,
+        status: 'draft'
+      }
+
+      const res = await fetch(`${API_BASE}/quotations`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(quoteData)
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        toast.success(`Quote ${data.quotation?.quoteNumber || ''} saved successfully!`)
+        refresh()
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to save quote')
+      }
+    } catch (error) {
+      toast.error('Failed to save quote')
+    } finally {
+      setSavingQuote(false)
+    }
+  }
+
+  // Download Quote as PDF
+  const downloadQuotePDF = () => {
+    // Generate printable HTML
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Quotation - ${quoteCustomerInfo.name || 'Customer'}</title>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 40px; }
+          .header { text-align: center; margin-bottom: 30px; }
+          .header h1 { margin: 0; color: #1e40af; }
+          .customer-info { margin-bottom: 30px; }
+          .customer-info h3 { margin-bottom: 10px; }
+          table { width: 100%; border-collapse: collapse; margin-bottom: 30px; }
+          th, td { border: 1px solid #ddd; padding: 10px; text-align: left; }
+          th { background: #f5f5f5; }
+          .totals { float: right; width: 300px; }
+          .totals table { margin-bottom: 0; }
+          .total-row { font-weight: bold; background: #f0fdf4; }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <h1>DOORS & WINDOWS QUOTATION</h1>
+          <p>Date: ${new Date().toLocaleDateString()}</p>
+        </div>
+        <div class="customer-info">
+          <h3>Customer Details</h3>
+          <p><strong>Name:</strong> ${quoteCustomerInfo.name || '-'}</p>
+          <p><strong>Phone:</strong> ${quoteCustomerInfo.phone || '-'}</p>
+          <p><strong>Email:</strong> ${quoteCustomerInfo.email || '-'}</p>
+          <p><strong>Site Address:</strong> ${quoteCustomerInfo.address || '-'}</p>
+        </div>
+        <table>
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Description</th>
+              <th>Size (mm)</th>
+              <th>Material</th>
+              <th>Qty</th>
+              <th>Rate</th>
+              <th>Amount</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${quoteBuilderItems.map((item, idx) => `
+              <tr>
+                <td>${idx + 1}</td>
+                <td>${item.productType} - ${item.category}<br/><small>${item.location || ''}</small></td>
+                <td>${item.width} x ${item.height}</td>
+                <td>${item.material} - ${item.profileColor}</td>
+                <td>${item.quantity}</td>
+                <td>₹${item.rate.toLocaleString()}</td>
+                <td>₹${(item.rate * item.quantity).toLocaleString()}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+        <div class="totals">
+          <table>
+            <tr><td>Subtotal</td><td>₹${quoteBuilderItems.reduce((sum, i) => sum + (i.rate * i.quantity), 0).toLocaleString()}</td></tr>
+            <tr><td>SGST (9%)</td><td>₹${(quoteBuilderItems.reduce((sum, i) => sum + (i.rate * i.quantity), 0) * 0.09).toLocaleString()}</td></tr>
+            <tr><td>CGST (9%)</td><td>₹${(quoteBuilderItems.reduce((sum, i) => sum + (i.rate * i.quantity), 0) * 0.09).toLocaleString()}</td></tr>
+            <tr class="total-row"><td>Grand Total</td><td>₹${(quoteBuilderItems.reduce((sum, i) => sum + (i.rate * i.quantity), 0) * 1.18).toLocaleString()}</td></tr>
+          </table>
+        </div>
+      </body>
+      </html>
+    `
+    
+    const printWindow = window.open('', '_blank')
+    printWindow.document.write(printContent)
+    printWindow.document.close()
+    printWindow.print()
+    toast.success('Quote ready for download/print')
+  }
+
+  // Create Project
+  const createProject = async (projectData) => {
+    try {
+      const res = await fetch(`${API_BASE}/projects`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(projectData)
+      })
+      if (res.ok) {
+        toast.success('Project created successfully')
+        fetchProjects()
+        return true
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to create project')
+        return false
+      }
+    } catch (error) {
+      toast.error('Failed to create project')
+      return false
+    }
+  }
+
   // Create Survey
   const createSurvey = async () => {
     try {
