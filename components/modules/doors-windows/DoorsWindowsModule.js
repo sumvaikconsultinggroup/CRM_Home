@@ -1606,23 +1606,457 @@ export default function DoorsWindowsModule({ clientId, user }) {
     </div>
   )
 
-  const renderMediaGallery = () => (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">Media Gallery</h2>
-          <p className="text-slate-500">Images, 3D models and documents</p>
+  // Media Gallery state
+  const [mediaFilter, setMediaFilter] = useState('all')
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
+  const [selectedMedia, setSelectedMedia] = useState(null)
+  const [viewMode, setViewMode] = useState('grid')
+  const [uploadForm, setUploadForm] = useState({
+    fileName: '',
+    fileUrl: '',
+    mediaType: 'image',
+    category: 'general',
+    title: '',
+    description: ''
+  })
+
+  const handleUploadMedia = async () => {
+    try {
+      const res = await fetch('/api/module/doors-windows/media', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(uploadForm)
+      })
+      if (res.ok) {
+        toast.success('Media uploaded successfully!')
+        fetchMedia()
+        setUploadDialogOpen(false)
+        setUploadForm({ fileName: '', fileUrl: '', mediaType: 'image', category: 'general', title: '', description: '' })
+      } else {
+        toast.error('Failed to upload media')
+      }
+    } catch (error) {
+      toast.error('Upload failed')
+    }
+  }
+
+  const handleDeleteMedia = async (mediaId) => {
+    try {
+      const res = await fetch(`/api/module/doors-windows/media?id=${mediaId}`, {
+        method: 'DELETE',
+        headers
+      })
+      if (res.ok) {
+        toast.success('Media deleted')
+        fetchMedia()
+        setSelectedMedia(null)
+      }
+    } catch (error) {
+      toast.error('Delete failed')
+    }
+  }
+
+  const renderMediaGallery = () => {
+    const mediaCategories = [
+      { id: 'all', label: 'All Media', icon: Grid3X3 },
+      { id: '3d_model', label: '3D Models', icon: Box },
+      { id: 'image', label: 'Images', icon: FileImage },
+      { id: 'video', label: 'Videos', icon: Video },
+      { id: 'document', label: 'Documents', icon: FileText }
+    ]
+
+    const categoryLabels = {
+      design_render: 'Design Renders',
+      site_photo: 'Site Photos',
+      reference: 'Reference Images',
+      product_photo: 'Product Photos',
+      cad_drawing: 'CAD Drawings',
+      general: 'General'
+    }
+
+    const filteredMedia = mediaFilter === 'all' 
+      ? mediaGallery 
+      : mediaGallery.filter(m => m.mediaType === mediaFilter)
+
+    // Sample 3D models for demonstration
+    const sample3DModels = [
+      { id: 'sample-1', title: 'Casement Window', fileName: 'casement-window.glb', mediaType: '3d_model', category: 'product_photo', fileUrl: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb' },
+      { id: 'sample-2', title: 'French Door', fileName: 'french-door.glb', mediaType: '3d_model', category: 'product_photo', fileUrl: 'https://modelviewer.dev/shared-assets/models/NeilArmstrong.glb' }
+    ]
+
+    const allMedia = [...filteredMedia, ...(mediaGallery.length === 0 ? sample3DModels : [])]
+
+    return (
+      <div className="space-y-6">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div>
+            <div className="flex items-center gap-3">
+              <div className="p-3 rounded-2xl bg-gradient-to-br from-cyan-500 to-blue-600 shadow-lg shadow-blue-500/25">
+                <ImagePlus className="h-7 w-7 text-white" />
+              </div>
+              <div>
+                <h2 className="text-2xl font-bold text-slate-900">Media Gallery</h2>
+                <p className="text-slate-500">3D Models, Images, Videos & Design Assets</p>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex bg-white/50 rounded-lg p-1">
+              <Button 
+                variant={viewMode === 'grid' ? 'secondary' : 'ghost'} 
+                size="sm"
+                onClick={() => setViewMode('grid')}
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant={viewMode === 'list' ? 'secondary' : 'ghost'} 
+                size="sm"
+                onClick={() => setViewMode('list')}
+              >
+                <List className="h-4 w-4" />
+              </Button>
+            </div>
+            <Button 
+              onClick={() => setUploadDialogOpen(true)}
+              className="bg-gradient-to-r from-cyan-500 to-blue-600"
+            >
+              <Upload className="h-4 w-4 mr-2" /> Upload Media
+            </Button>
+          </div>
         </div>
-        <Button className="bg-gradient-to-r from-cyan-500 to-blue-600">
-          <Upload className="h-4 w-4 mr-2" /> Upload Media
-        </Button>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+          <GlassCard className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-blue-500/20 to-indigo-500/20">
+                <Box className="h-5 w-5 text-blue-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">{allMedia.filter(m => m.mediaType === '3d_model').length}</p>
+                <p className="text-xs text-slate-500">3D Models</p>
+              </div>
+            </div>
+          </GlassCard>
+          <GlassCard className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-emerald-500/20 to-teal-500/20">
+                <FileImage className="h-5 w-5 text-emerald-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">{allMedia.filter(m => m.mediaType === 'image').length}</p>
+                <p className="text-xs text-slate-500">Images</p>
+              </div>
+            </div>
+          </GlassCard>
+          <GlassCard className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-purple-500/20 to-violet-500/20">
+                <Video className="h-5 w-5 text-purple-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">{allMedia.filter(m => m.mediaType === 'video').length}</p>
+                <p className="text-xs text-slate-500">Videos</p>
+              </div>
+            </div>
+          </GlassCard>
+          <GlassCard className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-gradient-to-br from-amber-500/20 to-orange-500/20">
+                <FileText className="h-5 w-5 text-amber-600" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold text-slate-900">{allMedia.length}</p>
+                <p className="text-xs text-slate-500">Total Assets</p>
+              </div>
+            </div>
+          </GlassCard>
+        </div>
+
+        {/* Filter Tabs */}
+        <div className="flex gap-2 overflow-x-auto pb-2">
+          {mediaCategories.map(cat => (
+            <Button
+              key={cat.id}
+              variant={mediaFilter === cat.id ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setMediaFilter(cat.id)}
+              className={mediaFilter === cat.id ? 'bg-gradient-to-r from-cyan-500 to-blue-600' : ''}
+            >
+              <cat.icon className="h-4 w-4 mr-2" />
+              {cat.label}
+            </Button>
+          ))}
+        </div>
+
+        {/* Media Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+          {allMedia.map(media => (
+            <motion.div
+              key={media.id}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              whileHover={{ y: -4 }}
+              transition={{ duration: 0.2 }}
+            >
+              <GlassCard className="overflow-hidden group cursor-pointer" onClick={() => setSelectedMedia(media)}>
+                {/* Preview */}
+                <div className="aspect-square bg-slate-100 relative">
+                  {media.mediaType === '3d_model' ? (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-indigo-100 to-purple-100">
+                      <div className="text-center">
+                        <Box className="h-12 w-12 mx-auto text-indigo-500 mb-2" />
+                        <p className="text-xs text-indigo-600 font-medium">3D Model</p>
+                      </div>
+                    </div>
+                  ) : media.mediaType === 'video' ? (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-purple-100 to-pink-100">
+                      <Video className="h-12 w-12 text-purple-500" />
+                    </div>
+                  ) : media.fileUrl ? (
+                    <img 
+                      src={media.fileUrl} 
+                      alt={media.title || media.fileName}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-slate-100 to-slate-200">
+                      <FileImage className="h-12 w-12 text-slate-400" />
+                    </div>
+                  )}
+                  
+                  {/* Type Badge */}
+                  <div className="absolute top-2 left-2">
+                    <Badge className={`text-xs ${
+                      media.mediaType === '3d_model' ? 'bg-indigo-500' :
+                      media.mediaType === 'video' ? 'bg-purple-500' :
+                      media.mediaType === 'image' ? 'bg-emerald-500' : 'bg-slate-500'
+                    } text-white`}>
+                      {media.mediaType === '3d_model' ? '3D' : media.mediaType?.toUpperCase()}
+                    </Badge>
+                  </div>
+
+                  {/* Hover Actions */}
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                    <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); setSelectedMedia(media) }}>
+                      <Eye className="h-4 w-4" />
+                    </Button>
+                    {!media.id.startsWith('sample') && (
+                      <Button size="sm" variant="secondary" onClick={(e) => { e.stopPropagation(); handleDeleteMedia(media.id) }}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                </div>
+
+                {/* Info */}
+                <div className="p-3">
+                  <p className="font-medium text-sm text-slate-900 truncate">{media.title || media.fileName}</p>
+                  <p className="text-xs text-slate-500 truncate">{categoryLabels[media.category] || media.category}</p>
+                </div>
+              </GlassCard>
+            </motion.div>
+          ))}
+
+          {allMedia.length === 0 && (
+            <div className="col-span-full py-16 text-center">
+              <ImagePlus className="h-16 w-16 mx-auto mb-4 text-slate-300" />
+              <h3 className="font-semibold text-slate-900 mb-2">No media found</h3>
+              <p className="text-sm text-slate-500 mb-4">Upload your first media file to get started</p>
+              <Button onClick={() => setUploadDialogOpen(true)}>
+                <Upload className="h-4 w-4 mr-2" /> Upload Media
+              </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Upload Dialog */}
+        <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+          <DialogContent className="sm:max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Upload className="h-5 w-5 text-blue-600" /> Upload Media
+              </DialogTitle>
+              <DialogDescription>Add images, 3D models, videos or documents to your gallery</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Media Type</Label>
+                  <Select value={uploadForm.mediaType} onValueChange={(v) => setUploadForm(prev => ({ ...prev, mediaType: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="image">Image</SelectItem>
+                      <SelectItem value="3d_model">3D Model (.glb, .gltf)</SelectItem>
+                      <SelectItem value="video">Video</SelectItem>
+                      <SelectItem value="document">Document</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <Label>Category</Label>
+                  <Select value={uploadForm.category} onValueChange={(v) => setUploadForm(prev => ({ ...prev, category: v }))}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="general">General</SelectItem>
+                      <SelectItem value="design_render">Design Render</SelectItem>
+                      <SelectItem value="site_photo">Site Photo</SelectItem>
+                      <SelectItem value="reference">Reference</SelectItem>
+                      <SelectItem value="product_photo">Product Photo</SelectItem>
+                      <SelectItem value="cad_drawing">CAD Drawing</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <div>
+                <Label>File Name</Label>
+                <Input 
+                  placeholder="e.g., living-room-window.glb"
+                  value={uploadForm.fileName}
+                  onChange={(e) => setUploadForm(prev => ({ ...prev, fileName: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>File URL</Label>
+                <Input 
+                  placeholder="https://..."
+                  value={uploadForm.fileUrl}
+                  onChange={(e) => setUploadForm(prev => ({ ...prev, fileUrl: e.target.value }))}
+                />
+                <p className="text-xs text-slate-500 mt-1">Paste URL from cloud storage (AWS S3, Google Drive, Dropbox)</p>
+              </div>
+              <div>
+                <Label>Title (optional)</Label>
+                <Input 
+                  placeholder="Display name for the file"
+                  value={uploadForm.title}
+                  onChange={(e) => setUploadForm(prev => ({ ...prev, title: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>Description (optional)</Label>
+                <Textarea 
+                  placeholder="Add notes or description..."
+                  value={uploadForm.description}
+                  onChange={(e) => setUploadForm(prev => ({ ...prev, description: e.target.value }))}
+                  rows={2}
+                />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setUploadDialogOpen(false)}>Cancel</Button>
+              <Button onClick={handleUploadMedia} className="bg-gradient-to-r from-cyan-500 to-blue-600">
+                <Upload className="h-4 w-4 mr-2" /> Upload
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        {/* Media Preview Dialog with 3D Viewer */}
+        <Dialog open={!!selectedMedia} onOpenChange={() => setSelectedMedia(null)}>
+          <DialogContent className="sm:max-w-4xl max-h-[90vh]">
+            <DialogHeader>
+              <DialogTitle>{selectedMedia?.title || selectedMedia?.fileName}</DialogTitle>
+            </DialogHeader>
+            <div className="py-4">
+              {selectedMedia?.mediaType === '3d_model' ? (
+                <div className="relative aspect-square bg-gradient-to-br from-slate-100 to-slate-200 rounded-xl overflow-hidden">
+                  {/* 3D Model Viewer using model-viewer web component */}
+                  <div 
+                    className="w-full h-full"
+                    dangerouslySetInnerHTML={{
+                      __html: `
+                        <model-viewer
+                          src="${selectedMedia?.fileUrl || 'https://modelviewer.dev/shared-assets/models/Astronaut.glb'}"
+                          alt="${selectedMedia?.title || '3D Model'}"
+                          camera-controls
+                          auto-rotate
+                          shadow-intensity="1"
+                          exposure="0.75"
+                          style="width: 100%; height: 100%; min-height: 400px;"
+                        >
+                          <div class="progress-bar hide" slot="progress-bar">
+                            <div class="update-bar"></div>
+                          </div>
+                        </model-viewer>
+                      `
+                    }}
+                  />
+                  {/* Controls hint */}
+                  <div className="absolute bottom-3 left-3 right-3 flex justify-center gap-2">
+                    <Badge variant="outline" className="bg-white/80 backdrop-blur-sm text-xs">
+                      <RotateCcw className="h-3 w-3 mr-1" /> Drag to Rotate
+                    </Badge>
+                    <Badge variant="outline" className="bg-white/80 backdrop-blur-sm text-xs">
+                      <ZoomIn className="h-3 w-3 mr-1" /> Scroll to Zoom
+                    </Badge>
+                  </div>
+                </div>
+              ) : selectedMedia?.mediaType === 'video' ? (
+                <div className="aspect-video bg-black rounded-xl flex items-center justify-center">
+                  {selectedMedia?.fileUrl ? (
+                    <video controls className="w-full h-full rounded-xl">
+                      <source src={selectedMedia.fileUrl} />
+                    </video>
+                  ) : (
+                    <Video className="h-16 w-16 text-white/50" />
+                  )}
+                </div>
+              ) : (
+                <div className="aspect-video bg-slate-100 rounded-xl overflow-hidden">
+                  {selectedMedia?.fileUrl ? (
+                    <img src={selectedMedia.fileUrl} alt={selectedMedia?.title} className="w-full h-full object-contain" />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center">
+                      <FileImage className="h-16 w-16 text-slate-300" />
+                    </div>
+                  )}
+                </div>
+              )}
+              
+              {/* Media Info */}
+              <div className="mt-4 p-4 bg-slate-50 rounded-xl">
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-slate-500">Type</p>
+                    <p className="font-medium capitalize">{selectedMedia?.mediaType?.replace('_', ' ')}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Category</p>
+                    <p className="font-medium">{categoryLabels[selectedMedia?.category] || selectedMedia?.category}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">File Name</p>
+                    <p className="font-medium">{selectedMedia?.fileName}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Uploaded</p>
+                    <p className="font-medium">{selectedMedia?.createdAt ? new Date(selectedMedia.createdAt).toLocaleDateString() : 'Sample Data'}</p>
+                  </div>
+                </div>
+                {selectedMedia?.description && (
+                  <div className="mt-3 pt-3 border-t border-slate-200">
+                    <p className="text-slate-500 text-sm">Description</p>
+                    <p className="text-slate-700 mt-1">{selectedMedia.description}</p>
+                  </div>
+                )}
+              </div>
+            </div>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setSelectedMedia(null)}>Close</Button>
+              {selectedMedia?.fileUrl && (
+                <Button onClick={() => window.open(selectedMedia.fileUrl, '_blank')}>
+                  <Download className="h-4 w-4 mr-2" /> Download
+                </Button>
+              )}
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </div>
-      <GlassCard className="p-12 text-center">
-        <ImagePlus className="h-16 w-16 mx-auto mb-4 text-slate-300" />
-        <p className="text-slate-500">No media files yet</p>
-      </GlassCard>
-    </div>
-  )
+    )
+  }
 
   const renderSettings = () => (
     <div className="space-y-6">
