@@ -284,6 +284,7 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, modu
     if (quote) {
       setForm({
         id: quote.id,
+        status: quote.status, // Include status for workflow handling
         projectId: quote.projectId || '',
         projectNumber: quote.projectNumber || '',
         customer: quote.customer || null,
