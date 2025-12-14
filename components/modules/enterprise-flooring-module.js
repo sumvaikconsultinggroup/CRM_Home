@@ -3980,124 +3980,175 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           )}
                         </td>
                         
-                        {/* Actions */}
+                        {/* Actions - SAP/Zoho Style with Clear Workflow Buttons */}
                         <td className="px-4 py-3">
-                          <div className="flex items-center gap-1">
-                            {/* View - Always available */}
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => setDialogOpen({ type: 'view_quote', data: quote })} 
-                              title="View Quote"
-                              className="hover:bg-slate-100"
-                            >
-                              <Eye className="h-4 w-4 text-slate-600" />
-                            </Button>
-                            
-                            {/* Edit - Only for draft/revised and not locked */}
-                            {canEdit && (
+                          <div className="flex items-center gap-2">
+                            {/* Primary Action Button based on Status */}
+                            {quote.status === 'draft' && (
                               <Button 
-                                variant="ghost" 
                                 size="sm" 
-                                onClick={() => setDialogOpen({ type: 'quote', data: quote })} 
-                                title="Edit Quote"
-                                className="hover:bg-blue-100"
+                                onClick={() => handleQuoteAction(quote.id, 'send')}
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
                               >
-                                <Edit className="h-4 w-4 text-blue-600" />
+                                <Send className="h-3.5 w-3.5 mr-1" /> Send
                               </Button>
                             )}
                             
-                            {/* Download - Always available */}
-                            <Button 
-                              variant="ghost" 
-                              size="sm" 
-                              onClick={() => handleDownloadQuote(quote)} 
-                              title="Download/Print"
-                              className="hover:bg-emerald-100"
-                            >
-                              <Download className="h-4 w-4 text-emerald-600" />
-                            </Button>
-                            
-                            {/* Status Actions Dropdown - Context sensitive */}
-                            {!isLocked && (
-                              <DropdownMenu>
-                                <DropdownMenuTrigger asChild>
-                                  <Button variant="ghost" size="sm" className="hover:bg-slate-100">
-                                    <MoreVertical className="h-4 w-4" />
-                                  </Button>
-                                </DropdownMenuTrigger>
-                                <DropdownMenuContent align="end" className="w-48">
-                                  <DropdownMenuLabel className="text-xs text-slate-500">
-                                    Actions for {actualConfig.label}
-                                  </DropdownMenuLabel>
-                                  <DropdownMenuSeparator />
-                                  
-                                  {/* Draft actions */}
-                                  {quote.status === 'draft' && (
-                                    <>
-                                      <DropdownMenuItem onClick={() => handleQuoteAction(quote.id, 'send')}>
-                                        <Send className="h-4 w-4 mr-2 text-blue-600" /> Send to Customer
-                                      </DropdownMenuItem>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem onClick={() => handleDeleteQuote(quote.id)} className="text-red-600">
-                                        <Trash2 className="h-4 w-4 mr-2" /> Delete Quote
-                                      </DropdownMenuItem>
-                                    </>
-                                  )}
-                                  
-                                  {/* Sent actions */}
-                                  {quote.status === 'sent' && (
-                                    <>
-                                      <DropdownMenuItem onClick={() => handleQuoteStatusChange(quote.id, 'approved')}>
-                                        <CheckCircle2 className="h-4 w-4 mr-2 text-emerald-600" /> Mark Approved
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => handleQuoteStatusChange(quote.id, 'rejected')}>
-                                        <X className="h-4 w-4 mr-2 text-red-600" /> Mark Rejected
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => handleQuoteStatusChange(quote.id, 'revised')}>
-                                        <Edit className="h-4 w-4 mr-2 text-amber-600" /> Needs Revision
-                                      </DropdownMenuItem>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem onClick={() => handleQuoteAction(quote.id, 'send')}>
-                                        <RefreshCw className="h-4 w-4 mr-2" /> Resend Quote
-                                      </DropdownMenuItem>
-                                    </>
-                                  )}
-                                  
-                                  {/* Approved actions */}
-                                  {quote.status === 'approved' && (
-                                    <>
-                                      <DropdownMenuItem onClick={() => handleCreateInvoiceFromQuote(quote)}>
-                                        <Receipt className="h-4 w-4 mr-2 text-purple-600" /> Create Invoice
-                                      </DropdownMenuItem>
-                                    </>
-                                  )}
-                                  
-                                  {/* Rejected/Revised actions */}
-                                  {['rejected', 'revised'].includes(quote.status) && (
-                                    <>
-                                      <DropdownMenuItem onClick={() => {
-                                        // Create a revision
-                                        setDialogOpen({ type: 'quote', data: { ...quote, version: (quote.version || 1) + 1 } })
-                                      }}>
-                                        <Edit className="h-4 w-4 mr-2 text-blue-600" /> Create Revision
-                                      </DropdownMenuItem>
-                                      <DropdownMenuSeparator />
-                                      <DropdownMenuItem onClick={() => handleDeleteQuote(quote.id)} className="text-red-600">
-                                        <Trash2 className="h-4 w-4 mr-2" /> Delete Quote
-                                      </DropdownMenuItem>
-                                    </>
-                                  )}
-                                </DropdownMenuContent>
-                              </DropdownMenu>
-                            )}
-                            
-                            {/* Locked indicator for invoiced quotes */}
-                            {isLocked && (
-                              <div className="p-2" title="This quote is locked (Invoiced)">
-                                <Lock className="h-4 w-4 text-purple-400" />
+                            {quote.status === 'sent' && (
+                              <div className="flex gap-1">
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => handleQuoteStatusChange(quote.id, 'approved')}
+                                  className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                >
+                                  <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Approve
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handleQuoteStatusChange(quote.id, 'rejected')}
+                                  className="border-red-300 text-red-600 hover:bg-red-50"
+                                >
+                                  <X className="h-3.5 w-3.5" />
+                                </Button>
                               </div>
                             )}
+                            
+                            {quote.status === 'approved' && (
+                              <Button 
+                                size="sm" 
+                                onClick={() => handleCreateInvoiceFromQuote(quote)}
+                                className="bg-purple-600 hover:bg-purple-700 text-white"
+                              >
+                                <Receipt className="h-3.5 w-3.5 mr-1" /> Create Invoice
+                              </Button>
+                            )}
+                            
+                            {quote.status === 'rejected' && (
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => setDialogOpen({ type: 'quote', data: quote })}
+                                className="border-amber-300 text-amber-600 hover:bg-amber-50"
+                              >
+                                <Edit className="h-3.5 w-3.5 mr-1" /> Revise
+                              </Button>
+                            )}
+                            
+                            {quote.status === 'revised' && (
+                              <Button 
+                                size="sm" 
+                                onClick={() => handleQuoteAction(quote.id, 'send')}
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                              >
+                                <Send className="h-3.5 w-3.5 mr-1" /> Resend
+                              </Button>
+                            )}
+                            
+                            {/* Converted/Invoiced - Show View Invoice button */}
+                            {quote.status === 'converted' && quote.invoiceId && (
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => {
+                                  setActiveTab('invoices')
+                                  toast.info('Switched to Invoices tab')
+                                }}
+                                className="border-green-300 text-green-600 hover:bg-green-50"
+                              >
+                                <Receipt className="h-3.5 w-3.5 mr-1" /> View Invoice
+                              </Button>
+                            )}
+                            
+                            {/* More Actions Dropdown */}
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm" className="hover:bg-slate-100 h-8 w-8 p-0">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end" className="w-52">
+                                <DropdownMenuLabel className="text-xs text-slate-500 font-normal">
+                                  Quote: {quote.quoteNumber}
+                                </DropdownMenuLabel>
+                                <DropdownMenuSeparator />
+                                
+                                {/* View - Always available */}
+                                <DropdownMenuItem onClick={() => setDialogOpen({ type: 'view_quote', data: quote })}>
+                                  <Eye className="h-4 w-4 mr-2 text-slate-600" /> View Details
+                                </DropdownMenuItem>
+                                
+                                {/* Download - Always available */}
+                                <DropdownMenuItem onClick={() => handleDownloadQuote(quote)}>
+                                  <Download className="h-4 w-4 mr-2 text-emerald-600" /> Download PDF
+                                </DropdownMenuItem>
+                                
+                                {/* Edit - Only for draft/revised */}
+                                {canEdit && (
+                                  <DropdownMenuItem onClick={() => setDialogOpen({ type: 'quote', data: quote })}>
+                                    <Edit className="h-4 w-4 mr-2 text-blue-600" /> Edit Quote
+                                  </DropdownMenuItem>
+                                )}
+                                
+                                <DropdownMenuSeparator />
+                                
+                                {/* Status-specific secondary actions */}
+                                {quote.status === 'draft' && (
+                                  <>
+                                    <DropdownMenuItem onClick={() => {
+                                      // Duplicate quote
+                                      const duplicatedQuote = { ...quote, id: null, quoteNumber: null }
+                                      setDialogOpen({ type: 'quote', data: duplicatedQuote })
+                                      toast.info('Creating a copy of this quote...')
+                                    }}>
+                                      <Copy className="h-4 w-4 mr-2 text-slate-600" /> Duplicate Quote
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => handleDeleteQuote(quote.id)} className="text-red-600 focus:text-red-600">
+                                      <Trash2 className="h-4 w-4 mr-2" /> Delete Quote
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                                
+                                {quote.status === 'sent' && (
+                                  <>
+                                    <DropdownMenuItem onClick={() => handleQuoteStatusChange(quote.id, 'revised')}>
+                                      <Edit className="h-4 w-4 mr-2 text-amber-600" /> Request Revision
+                                    </DropdownMenuItem>
+                                    <DropdownMenuItem onClick={() => handleQuoteAction(quote.id, 'send')}>
+                                      <RefreshCw className="h-4 w-4 mr-2 text-blue-600" /> Resend Quote
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                                
+                                {quote.status === 'approved' && (
+                                  <DropdownMenuItem onClick={() => handleDownloadQuote(quote)}>
+                                    <Printer className="h-4 w-4 mr-2 text-slate-600" /> Print for Records
+                                  </DropdownMenuItem>
+                                )}
+                                
+                                {['rejected', 'revised'].includes(quote.status) && (
+                                  <>
+                                    <DropdownMenuItem onClick={() => {
+                                      const duplicatedQuote = { ...quote, id: null, quoteNumber: null }
+                                      setDialogOpen({ type: 'quote', data: duplicatedQuote })
+                                    }}>
+                                      <Copy className="h-4 w-4 mr-2 text-slate-600" /> Create New Version
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => handleDeleteQuote(quote.id)} className="text-red-600 focus:text-red-600">
+                                      <Trash2 className="h-4 w-4 mr-2" /> Delete Quote
+                                    </DropdownMenuItem>
+                                  </>
+                                )}
+                                
+                                {quote.status === 'converted' && (
+                                  <DropdownMenuItem disabled className="text-slate-400">
+                                    <Lock className="h-4 w-4 mr-2" /> Quote is Locked (Invoiced)
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
                           </div>
                         </td>
                       </tr>
