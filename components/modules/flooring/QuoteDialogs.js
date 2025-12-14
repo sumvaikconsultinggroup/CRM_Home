@@ -398,15 +398,24 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, modu
   const totalTax = cgstAmount + sgstAmount + igstAmount
   const grandTotal = taxableAmount + totalTax
 
-  // Handle save
-  const handleSubmit = () => {
-    if (!form.customer?.name) {
-      toast.error('Please select a project or add customer details')
-      return
-    }
-    if (form.items.length === 0) {
-      toast.error('Please add at least one item')
-      return
+  // Handle save - supports both regular save and save as draft
+  const handleSubmit = (saveAsDraft = false) => {
+    // For Save as Draft, only customer name is required (less strict validation)
+    if (!saveAsDraft) {
+      if (!form.customer?.name) {
+        toast.error('Please select a project or add customer details')
+        return
+      }
+      if (form.items.length === 0) {
+        toast.error('Please add at least one item')
+        return
+      }
+    } else {
+      // Minimal validation for draft - just need some identifier
+      if (!form.customer?.name && !form.projectId) {
+        toast.error('Please add customer name or select a project')
+        return
+      }
     }
 
     const quoteData = {
@@ -420,7 +429,9 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, modu
       totalTax,
       grandTotal,
       totalArea: form.items.reduce((sum, item) => sum + (item.quantity || 0), 0),
-      status: form.id ? form.status : 'draft'
+      // Force status to 'draft' if Save as Draft is clicked
+      status: saveAsDraft ? 'draft' : (form.id ? form.status : 'draft'),
+      savedAsDraft: saveAsDraft
     }
 
     onSave(quoteData)
