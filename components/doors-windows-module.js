@@ -368,6 +368,13 @@ export function DoorsWindowsModule({ client, user }) {
 
   // Projects state
   const [projects, setProjects] = useState([])
+  
+  // CRM Sync states
+  const [crmSyncStatus, setCrmSyncStatus] = useState(null)
+  const [syncing, setSyncing] = useState(false)
+  
+  // Quote saving states
+  const [savingQuote, setSavingQuote] = useState(false)
 
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
   const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
@@ -375,6 +382,8 @@ export function DoorsWindowsModule({ client, user }) {
   // Fetch all data
   useEffect(() => {
     fetchAllData()
+    fetchProjects()
+    fetchCrmSyncStatus()
   }, [refreshKey])
 
   const fetchAllData = async () => {
