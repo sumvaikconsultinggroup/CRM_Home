@@ -3664,6 +3664,15 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         locked: true,
         priority: 6
       },
+      converted: { 
+        label: 'Converted to Invoice', 
+        color: 'bg-green-100 text-green-700 border-green-300', 
+        icon: Receipt,
+        actions: ['view_invoice', 'download'],
+        canEdit: false,
+        locked: true,
+        priority: 6
+      },
       expired: { 
         label: 'Expired', 
         color: 'bg-gray-100 text-gray-500 border-gray-300', 
