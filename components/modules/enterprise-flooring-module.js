@@ -5756,9 +5756,17 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   <p className="text-xs text-amber-600 mt-1"><Lock className="h-3 w-3 inline" /> Stock Blocked</p>
                 )}
               </div>
-              <Button onClick={() => setDialogOpen({ type: 'room', data: { projectId: selectedProject.id } })}>
-                <Plus className="h-4 w-4 mr-2" /> Add Room
-              </Button>
+              {/* Only show Add Room when editing is allowed */}
+              {['pending', 'measurement_scheduled'].includes(selectedProject.status) && (
+                <Button onClick={() => setDialogOpen({ type: 'room', data: { projectId: selectedProject.id } })}>
+                  <Plus className="h-4 w-4 mr-2" /> Add Room
+                </Button>
+              )}
+              {!['pending', 'measurement_scheduled'].includes(selectedProject.status) && (
+                <Badge variant="outline" className="text-amber-600 border-amber-300">
+                  <Lock className="h-3 w-3 mr-1" /> Locked
+                </Badge>
+              )}
             </div>
           </div>
         </Card>
