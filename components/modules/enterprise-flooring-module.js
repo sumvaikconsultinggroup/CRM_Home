@@ -3589,7 +3589,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     )
   }
 
-  // Quotes Tab
+  // Quotes Tab - Enterprise Level
   const renderQuotes = () => {
     const filteredQuotes = quotes.filter(q => {
       const matchesSearch = !searchTerm || 
@@ -3609,18 +3609,69 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       if (q.status === 'approved') { acc.approved++; acc.approvedValue += q.grandTotal || 0 }
       if (q.status === 'rejected') acc.rejected++
       if (q.status === 'revised') acc.revised++
+      if (q.status === 'invoiced') { acc.invoiced++; acc.invoicedValue += q.grandTotal || 0 }
       return acc
-    }, { total: 0, totalValue: 0, draft: 0, sent: 0, approved: 0, rejected: 0, revised: 0, approvedValue: 0 })
+    }, { total: 0, totalValue: 0, draft: 0, sent: 0, approved: 0, rejected: 0, revised: 0, invoiced: 0, approvedValue: 0, invoicedValue: 0 })
 
-    // Quote status definitions with actions
+    // Quote status definitions with actions - SAP/Zoho style
     const QuoteStatusConfig = {
-      draft: { label: 'Draft', color: 'bg-slate-100 text-slate-700', actions: ['edit', 'send', 'delete'] },
-      sent: { label: 'Sent', color: 'bg-blue-100 text-blue-700', actions: ['approve', 'reject', 'revise', 'resend'] },
-      approved: { label: 'Approved', color: 'bg-emerald-100 text-emerald-700', actions: ['create_invoice', 'download'] },
-      rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700', actions: ['revise', 'delete'] },
-      revised: { label: 'Needs Revision', color: 'bg-amber-100 text-amber-700', actions: ['edit', 'send'] },
-      invoiced: { label: 'Invoiced', color: 'bg-purple-100 text-purple-700', actions: ['download', 'view_invoice'] },
-      expired: { label: 'Expired', color: 'bg-gray-100 text-gray-700', actions: ['revise', 'delete'] }
+      draft: { 
+        label: 'Draft', 
+        color: 'bg-slate-100 text-slate-700 border-slate-300', 
+        icon: FileText,
+        actions: ['edit', 'send', 'delete'],
+        canEdit: true,
+        priority: 1
+      },
+      sent: { 
+        label: 'Sent to Customer', 
+        color: 'bg-blue-100 text-blue-700 border-blue-300', 
+        icon: Send,
+        actions: ['approve', 'reject', 'revise', 'resend'],
+        canEdit: false,
+        priority: 2
+      },
+      approved: { 
+        label: 'Customer Approved', 
+        color: 'bg-emerald-100 text-emerald-700 border-emerald-300', 
+        icon: CheckCircle2,
+        actions: ['create_invoice', 'download'],
+        canEdit: false,
+        priority: 3
+      },
+      rejected: { 
+        label: 'Rejected', 
+        color: 'bg-red-100 text-red-700 border-red-300', 
+        icon: X,
+        actions: ['revise', 'delete'],
+        canEdit: false,
+        priority: 4
+      },
+      revised: { 
+        label: 'Revision Required', 
+        color: 'bg-amber-100 text-amber-700 border-amber-300', 
+        icon: Edit,
+        actions: ['edit', 'send'],
+        canEdit: true,
+        priority: 5
+      },
+      invoiced: { 
+        label: 'Invoiced', 
+        color: 'bg-purple-100 text-purple-700 border-purple-300', 
+        icon: Receipt,
+        actions: ['view_invoice', 'download'],
+        canEdit: false,
+        locked: true,
+        priority: 6
+      },
+      expired: { 
+        label: 'Expired', 
+        color: 'bg-gray-100 text-gray-500 border-gray-300', 
+        icon: Clock,
+        actions: ['revise', 'delete'],
+        canEdit: false,
+        priority: 7
+      }
     }
 
     // Handle quote actions
