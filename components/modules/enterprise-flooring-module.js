@@ -8651,17 +8651,38 @@ function QuoteEditDialog({ open, onClose, quote, projects, products, moduleSetti
                     <div>
                       <Label>Email</Label>
                       <Input 
+                        type="email"
                         value={form.customer?.email || ''} 
-                        onChange={(e) => setForm(prev => ({ ...prev, customer: { ...prev.customer, email: e.target.value } }))}
-                        placeholder="Email"
+                        onChange={(e) => {
+                          const email = e.target.value
+                          setForm(prev => ({ ...prev, customer: { ...prev.customer, email } }))
+                        }}
+                        onBlur={(e) => {
+                          const email = e.target.value
+                          if (email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
+                            toast.error('Please enter a valid email address')
+                          }
+                        }}
+                        placeholder="customer@example.com"
                       />
                     </div>
                     <div>
-                      <Label>Phone</Label>
+                      <Label>Phone (10 digits)</Label>
                       <Input 
+                        type="tel"
                         value={form.customer?.phone || ''} 
-                        onChange={(e) => setForm(prev => ({ ...prev, customer: { ...prev.customer, phone: e.target.value } }))}
-                        placeholder="Phone"
+                        maxLength={10}
+                        onChange={(e) => {
+                          const phone = e.target.value.replace(/\D/g, '').slice(0, 10)
+                          setForm(prev => ({ ...prev, customer: { ...prev.customer, phone } }))
+                        }}
+                        onBlur={(e) => {
+                          const phone = e.target.value
+                          if (phone && !/^[6-9]\d{9}$/.test(phone)) {
+                            toast.error('Please enter a valid 10-digit phone number starting with 6-9')
+                          }
+                        }}
+                        placeholder="9876543210"
                       />
                     </div>
                   </div>
