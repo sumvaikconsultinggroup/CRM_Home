@@ -28,7 +28,7 @@ import {
   ShieldCheck, History, ExternalLink, Tags, X, ChevronDown, ArrowRight, Star,
   Sparkles, Zap, Grid3X3, List, Kanban, GanttChart, Activity, Bell,
   Command, Save, Copy, Archive, Bookmark, Share2, Link2, PanelLeftClose,
-  Brain, MessageSquare, Wand2, ImagePlus, Video, FileImage, Cube, RotateCcw, Maximize2
+  Brain, MessageSquare, Wand2, ImagePlus, Video, FileImage, RotateCcw, Maximize2
 } from 'lucide-react'
 
 // Glassmorphism Components
