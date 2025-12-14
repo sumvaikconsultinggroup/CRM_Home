@@ -6632,8 +6632,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           loading={loading}
         />
 
-        {/* View Quote Dialog */}
-        <ViewQuoteDialog
+        {/* View Quote Dialog - Using Refactored Component */}
+        <ViewQuoteDialogNew
           open={type === 'view_quote'}
           onClose={() => setDialogOpen({ type: null, data: null })}
           quote={data}
@@ -6645,8 +6645,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           onCreateInvoice={handleCreateInvoiceFromQuote}
         />
 
-        {/* Quote Edit Dialog */}
-        <QuoteEditDialog
+        {/* Quote Edit Dialog - Using Refactored Component */}
+        <QuoteEditDialogNew
           open={type === 'quote'}
           onClose={() => setDialogOpen({ type: null, data: null })}
           quote={data}
