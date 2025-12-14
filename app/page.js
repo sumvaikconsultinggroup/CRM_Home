@@ -32,6 +32,7 @@ import {
   CalendarDays, Plug
 } from 'lucide-react'
 import { EnterpriseFlooringModule } from '@/components/modules/enterprise-flooring-module'
+import { FurnitureModule } from '@/components/modules/furniture/FurnitureModule'
 import { LeadForm, ProjectForm, TaskForm, ExpenseForm, UserForm, QuickContactForm } from '@/components/client-forms'
 import { AdvancedReports } from '@/components/advanced-reports'
 import { EnterpriseLeads } from '@/components/enterprise-leads'
