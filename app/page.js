@@ -659,6 +659,7 @@ function ClientDashboard({ user, client, onLogout }) {
 
   // Check if wooden flooring module is enabled
   const hasFlooringModule = modules.some(m => m.id === 'wooden-flooring' && m.enabled)
+  const hasFurnitureModule = modules.some(m => m.id === 'furniture' && m.enabled) || true // Always show for now
 
   const menuItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -673,6 +674,8 @@ function ClientDashboard({ user, client, onLogout }) {
     { id: 'reports', icon: BarChart3, label: 'Reports' },
     // Add Wooden Flooring module link if enabled
     ...(hasFlooringModule ? [{ id: 'flooring-module', icon: Layers, label: 'Wooden Flooring', isModule: true }] : []),
+    // Add Furniture module link
+    ...(hasFurnitureModule ? [{ id: 'furniture-module', icon: Sofa, label: 'Furniture', isModule: true }] : []),
     { id: 'modules', icon: Package, label: 'Modules' },
     { id: 'integrations', icon: Plug, label: 'Integrations' },
     { id: 'whitelabel', icon: Palette, label: 'White Label' },
