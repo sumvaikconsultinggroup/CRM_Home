@@ -3943,6 +3943,11 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           )}
                         </td>
                         
+                        {/* Created Date */}
+                        <td className="px-4 py-3 text-sm text-slate-600">
+                          {new Date(quote.createdAt).toLocaleDateString('en-IN')}
+                        </td>
+                        
                         {/* Valid Until */}
                         <td className="px-4 py-3 text-sm">
                           <span className={isExpired ? 'text-red-600 font-medium' : 'text-slate-500'}>
