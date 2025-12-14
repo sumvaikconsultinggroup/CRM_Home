@@ -1150,29 +1150,6 @@ export default function DoorsWindowsModule({ clientId, user }) {
 
   // Render Quote Builder
   const renderQuoteBuilder = () => {
-    const [builderItems, setBuilderItems] = useState([
-      {
-        id: '1',
-        productType: 'window',
-        category: 'casement',
-        name: 'Casement & Fixed',
-        location: 'FF Front Right',
-        width: 4810,
-        height: 2888,
-        frameMaterial: 'upvc',
-        frameProfile: 'KM01',
-        profileColor: 'black',
-        glassType: '12mm Reflective T',
-        configuration: {
-          panels: 4,
-          panelTypes: ['fixed', 'openable', 'openable', 'fixed'],
-          openingDirections: ['', 'right', 'left', '']
-        },
-        quantity: 1,
-        rate: 103788.33
-      }
-    ])
-
     const addItem = () => {
       setBuilderItems(prev => [...prev, {
         id: Date.now().toString(),
