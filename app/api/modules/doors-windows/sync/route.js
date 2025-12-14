@@ -331,7 +331,7 @@ export async function POST(request) {
 export async function GET(request) {
   try {
     const user = getAuthUser(request)
-    requireClientAccess(user)
+    requireAuth(user)
 
     const { searchParams } = new URL(request.url)
     const type = searchParams.get('type') || 'status'
