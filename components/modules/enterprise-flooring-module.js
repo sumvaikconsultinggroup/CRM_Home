@@ -1019,6 +1019,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       rejected: { label: 'Rejected', color: '#dc2626', bg: '#fee2e2' },
       revised: { label: 'Needs Revision', color: '#d97706', bg: '#fef3c7' },
       invoiced: { label: 'Invoiced', color: '#7c3aed', bg: '#ede9fe' },
+      converted: { label: 'Converted to Invoice', color: '#16a34a', bg: '#dcfce7' },
       expired: { label: 'Expired', color: '#6b7280', bg: '#f3f4f6' }
     }
     
