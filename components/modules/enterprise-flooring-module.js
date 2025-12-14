@@ -1626,48 +1626,6 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     printWindow.document.close()
     printWindow.print()
   }
-          ${quote.igstAmount > 0 ? `
-          <div class="totals-row">
-            <span>IGST (${quote.igstRate}%)</span>
-            <span>₹${(quote.igstAmount || 0).toLocaleString()}</span>
-          </div>
-          ` : ''}
-          <div class="totals-row grand">
-            <span>Grand Total</span>
-            <span>₹${(quote.grandTotal || 0).toLocaleString()}</span>
-          </div>
-        </div>
-
-        ${quote.notes ? `
-        <div class="terms">
-          <strong>Notes & Terms:</strong><br>
-          ${quote.notes}
-        </div>
-        ` : ''}
-
-        ${moduleSettings?.bankDetails?.bankName ? `
-        <div class="section" style="margin-top: 30px;">
-          <div class="info-label" style="font-weight: bold;">Bank Details</div>
-          <p style="margin: 5px 0;">Bank: ${moduleSettings.bankDetails.bankName}</p>
-          <p style="margin: 5px 0;">Account: ${moduleSettings.bankDetails.accountNumber}</p>
-          <p style="margin: 5px 0;">IFSC: ${moduleSettings.bankDetails.ifscCode}</p>
-          ${moduleSettings.bankDetails.upiId ? `<p style="margin: 5px 0;">UPI: ${moduleSettings.bankDetails.upiId}</p>` : ''}
-        </div>
-        ` : ''}
-
-        <div class="footer">
-          <p>Thank you for your business!</p>
-          <p>This is a computer-generated quotation.</p>
-        </div>
-      </body>
-      </html>
-    `
-
-    const printWindow = window.open('', '_blank')
-    printWindow.document.write(quoteHtml)
-    printWindow.document.close()
-    printWindow.print()
-  }
 
   // Delete quote
   const handleDeleteQuote = async (quoteId) => {
