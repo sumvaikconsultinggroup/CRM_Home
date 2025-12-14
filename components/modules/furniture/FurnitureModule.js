@@ -218,6 +218,12 @@ export function FurnitureModule({ user, client, token, onBack }) {
   const [invoices, setInvoices] = useState([])
   const [moduleSettings, setModuleSettings] = useState(null)
   
+  // Phase 4: MEE AI states
+  const [aiChatMessages, setAiChatMessages] = useState([])
+  const [aiLoading, setAiLoading] = useState(false)
+  const [aiInput, setAiInput] = useState('')
+  const [mediaGallery, setMediaGallery] = useState([])
+  
   // CRM Sync state
   const [crmSyncStatus, setCrmSyncStatus] = useState(null)
   const [syncing, setSyncing] = useState(false)
