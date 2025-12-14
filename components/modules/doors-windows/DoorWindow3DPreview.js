@@ -2,12 +2,11 @@
 
 import { useState, useRef, useLayoutEffect } from 'react'
 
-// Dynamic SVG-based 3D-like preview with enhanced visuals
+// Dynamic SVG-based 3D-like preview with enhanced visuals and glass type support
 export function DoorWindow3DPreview({ config, className = '' }) {
   const [isClient, setIsClient] = useState(false)
   const containerRef = useRef(null)
 
-  // Use layoutEffect to set client-side flag safely
   useLayoutEffect(() => {
     setIsClient(true)
   }, [])
@@ -19,7 +18,9 @@ export function DoorWindow3DPreview({ config, className = '' }) {
     height = 1500,
     panels = 2,
     frameColor = 'white',
-    material = 'Aluminium'
+    material = 'Aluminium',
+    glassType = 'single',
+    panelConfig = []
   } = config || {}
 
   // Frame colors mapping
@@ -34,18 +35,30 @@ export function DoorWindow3DPreview({ config, className = '' }) {
     woodgrain: { fill: '#DEB887', stroke: '#be9867', shadow: '#9e7847' }
   }
 
+  // Glass colors and opacity based on glass type
+  const glassStyles = {
+    'single': { color: '#b8d4fe', opacity: 0.35, pattern: null },
+    'double': { color: '#93c5fd', opacity: 0.3, pattern: 'double-line' },
+    'triple': { color: '#60a5fa', opacity: 0.28, pattern: 'triple-line' },
+    'laminated': { color: '#fef3c7', opacity: 0.4, pattern: 'laminated' },
+    'tinted': { color: '#1e3a5f', opacity: 0.6, pattern: null },
+    'reflective': { color: '#94a3b8', opacity: 0.5, pattern: 'reflective' },
+    'low-e': { color: '#a5f3fc', opacity: 0.32, pattern: 'lowe' },
+    'acoustic': { color: '#c4b5fd', opacity: 0.35, pattern: 'acoustic' },
+    'toughened': { color: '#bbf7d0', opacity: 0.32, pattern: null },
+    'frosted': { color: '#e2e8f0', opacity: 0.75, pattern: 'frosted' }
+  }
+
   const colors = frameColors[frameColor] || frameColors.white
-  const glassColor = type === 'Door' ? '#9ec5fe' : '#b8d4fe'
-  const glassBorder = '#4a90d9'
+  const glassStyle = glassStyles[glassType] || glassStyles['single']
 
   // SVG dimensions
   const svgWidth = 280
   const svgHeight = 320
   const padding = 40
   
-  // Calculate scale to fit
   const maxDrawWidth = svgWidth - padding * 2
-  const maxDrawHeight = svgHeight - padding * 2 - 30 // Leave room for label
+  const maxDrawHeight = svgHeight - padding * 2 - 30
   const scale = Math.min(maxDrawWidth / width, maxDrawHeight / height)
   
   const drawWidth = width * scale
@@ -55,14 +68,24 @@ export function DoorWindow3DPreview({ config, className = '' }) {
   const startX = (svgWidth - drawWidth) / 2
   const startY = (svgHeight - drawHeight) / 2 - 10
 
-  // Generate panel positions
   const innerWidth = drawWidth - frameThickness * 2
   const innerHeight = drawHeight - frameThickness * 2
   const panelWidth = innerWidth / panels
   const panelGap = 3
 
-  // Door specific adjustments
   const isDoor = type === 'Door'
+
+  // Get panel config for specific panel
+  const getPanelConfig = (index) => {
+    return panelConfig[index] || { type: 'fixed', openDirection: 'left', glassType: glassType }
+  }
+
+  // Glass type label
+  const glassLabel = {
+    'single': 'Single', 'double': 'DGU', 'triple': 'Triple', 'laminated': 'Lam',
+    'tinted': 'Tint', 'reflective': 'Refl', 'low-e': 'Low-E', 'acoustic': 'Acst',
+    'toughened': 'Temp', 'frosted': 'Frost'
+  }
 
   if (!isClient) {
     return (
@@ -91,11 +114,43 @@ export function DoorWindow3DPreview({ config, className = '' }) {
             <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#e0e4e8" strokeWidth="0.5"/>
           </pattern>
           
-          {/* Glass gradient */}
-          <linearGradient id="glassGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-            <stop offset="0%" stopColor="#cce5ff" stopOpacity="0.6"/>
-            <stop offset="50%" stopColor="#e6f2ff" stopOpacity="0.3"/>
-            <stop offset="100%" stopColor="#b8d4fe" stopOpacity="0.5"/>
+          {/* Glass patterns based on type */}
+          <pattern id="pattern-double-line" width="10" height="10" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="5" x2="10" y2="5" stroke="#3b82f6" strokeWidth="0.5" opacity="0.4"/>
+          </pattern>
+          <pattern id="pattern-triple-line" width="10" height="10" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="3" x2="10" y2="3" stroke="#2563eb" strokeWidth="0.5" opacity="0.4"/>
+            <line x1="0" y1="7" x2="10" y2="7" stroke="#2563eb" strokeWidth="0.5" opacity="0.4"/>
+          </pattern>
+          <pattern id="pattern-laminated" width="8" height="8" patternUnits="userSpaceOnUse">
+            <rect width="8" height="8" fill="#fef3c7" opacity="0.3"/>
+            <line x1="0" y1="4" x2="8" y2="4" stroke="#f59e0b" strokeWidth="1" opacity="0.5"/>
+          </pattern>
+          <pattern id="pattern-reflective" width="8" height="8" patternUnits="userSpaceOnUse">
+            <rect width="8" height="8" fill="#cbd5e1"/>
+            <line x1="0" y1="0" x2="8" y2="8" stroke="#fff" strokeWidth="0.8" opacity="0.5"/>
+          </pattern>
+          <pattern id="pattern-frosted" width="6" height="6" patternUnits="userSpaceOnUse">
+            <circle cx="1.5" cy="1.5" r="1" fill="#fff" opacity="0.6"/>
+            <circle cx="4.5" cy="4.5" r="1" fill="#fff" opacity="0.6"/>
+            <circle cx="4.5" cy="1.5" r="0.5" fill="#fff" opacity="0.4"/>
+            <circle cx="1.5" cy="4.5" r="0.5" fill="#fff" opacity="0.4"/>
+          </pattern>
+          <pattern id="pattern-acoustic" width="8" height="8" patternUnits="userSpaceOnUse">
+            <line x1="0" y1="2" x2="8" y2="2" stroke="#8b5cf6" strokeWidth="0.3" opacity="0.5"/>
+            <line x1="0" y1="4" x2="8" y2="4" stroke="#8b5cf6" strokeWidth="0.5" opacity="0.6"/>
+            <line x1="0" y1="6" x2="8" y2="6" stroke="#8b5cf6" strokeWidth="0.3" opacity="0.5"/>
+          </pattern>
+          <pattern id="pattern-lowe" width="10" height="10" patternUnits="userSpaceOnUse">
+            <rect width="10" height="10" fill="#a5f3fc" opacity="0.2"/>
+            <circle cx="5" cy="5" r="2" fill="#06b6d4" opacity="0.15"/>
+          </pattern>
+          
+          {/* Glass gradient for shine */}
+          <linearGradient id="glassShine" x1="0%" y1="0%" x2="100%" y2="100%">
+            <stop offset="0%" stopColor="#fff" stopOpacity="0.4"/>
+            <stop offset="50%" stopColor="#fff" stopOpacity="0.1"/>
+            <stop offset="100%" stopColor="#fff" stopOpacity="0.2"/>
           </linearGradient>
           
           {/* Frame gradient for 3D effect */}
@@ -109,22 +164,6 @@ export function DoorWindow3DPreview({ config, className = '' }) {
           <filter id="dropShadow" x="-20%" y="-20%" width="140%" height="140%">
             <feDropShadow dx="3" dy="5" stdDeviation="4" floodColor="#000" floodOpacity="0.2"/>
           </filter>
-          
-          {/* Inner shadow for depth */}
-          <filter id="innerShadow" x="-50%" y="-50%" width="200%" height="200%">
-            <feComponentTransfer in="SourceAlpha">
-              <feFuncA type="table" tableValues="1 0"/>
-            </feComponentTransfer>
-            <feGaussianBlur stdDeviation="3"/>
-            <feOffset dx="2" dy="2" result="offsetblur"/>
-            <feFlood floodColor="#000" floodOpacity="0.3" result="color"/>
-            <feComposite in2="offsetblur" operator="in"/>
-            <feComposite in2="SourceAlpha" operator="in"/>
-            <feMerge>
-              <feMergeNode in="SourceGraphic"/>
-              <feMergeNode/>
-            </feMerge>
-          </filter>
         </defs>
 
         {/* Background grid */}
@@ -132,7 +171,7 @@ export function DoorWindow3DPreview({ config, className = '' }) {
 
         {/* Main frame group with shadow */}
         <g filter="url(#dropShadow)">
-          {/* Outer frame - 3D effect with multiple layers */}
+          {/* Outer frame - 3D effect */}
           <rect
             x={startX - 3}
             y={startY - 3}
@@ -185,8 +224,12 @@ export function DoorWindow3DPreview({ config, className = '' }) {
             const pWidth = panelWidth - panelGap
             const pHeight = innerHeight - panelGap
             
-            const isOpenable = category !== 'Fixed' && (i === 0 || i === panels - 1)
-            const openDirection = i === 0 ? 'left' : 'right'
+            const pConfig = getPanelConfig(i)
+            const panelGlassType = pConfig.glassType || glassType
+            const panelGlassStyle = glassStyles[panelGlassType] || glassStyles['single']
+            const isOpenable = pConfig.type === 'openable' || (category !== 'Fixed' && (i === 0 || i === panels - 1))
+            const openDirection = pConfig.openDirection || (i === 0 ? 'left' : 'right')
+            const isFixed = pConfig.type === 'fixed' || category === 'Fixed'
 
             return (
               <g key={i}>
@@ -202,16 +245,34 @@ export function DoorWindow3DPreview({ config, className = '' }) {
                   rx="1"
                 />
                 
-                {/* Glass */}
+                {/* Glass base */}
                 <rect
                   x={panelX + 6}
                   y={panelY + 6}
                   width={pWidth - 12}
                   height={pHeight - 12}
-                  fill="url(#glassGradient)"
-                  stroke={glassBorder}
-                  strokeWidth="1"
-                  filter="url(#innerShadow)"
+                  fill={panelGlassStyle.color}
+                  opacity={panelGlassStyle.opacity}
+                />
+                
+                {/* Glass pattern overlay */}
+                {panelGlassStyle.pattern && (
+                  <rect
+                    x={panelX + 6}
+                    y={panelY + 6}
+                    width={pWidth - 12}
+                    height={pHeight - 12}
+                    fill={`url(#pattern-${panelGlassStyle.pattern})`}
+                  />
+                )}
+                
+                {/* Glass shine */}
+                <rect
+                  x={panelX + 6}
+                  y={panelY + 6}
+                  width={pWidth - 12}
+                  height={pHeight - 12}
+                  fill="url(#glassShine)"
                 />
                 
                 {/* Glass reflection */}
@@ -219,19 +280,22 @@ export function DoorWindow3DPreview({ config, className = '' }) {
                   x={panelX + 8}
                   y={panelY + 8}
                   width={(pWidth - 16) * 0.3}
-                  height={(pHeight - 16) * 0.6}
-                  fill="rgba(255,255,255,0.3)"
+                  height={(pHeight - 16) * 0.5}
+                  fill="rgba(255,255,255,0.25)"
                   rx="2"
                 />
 
                 {/* Opening direction indicator for openable panels */}
-                {isOpenable && category !== 'Fixed' && (
+                {isOpenable && !isFixed && (
                   <>
-                    {/* Opening arc */}
                     <path
                       d={openDirection === 'left' 
-                        ? `M ${panelX + pWidth - 8} ${panelY + 15} Q ${panelX + 10} ${panelY + pHeight/2} ${panelX + pWidth - 8} ${panelY + pHeight - 15}`
-                        : `M ${panelX + 8} ${panelY + 15} Q ${panelX + pWidth - 10} ${panelY + pHeight/2} ${panelX + 8} ${panelY + pHeight - 15}`
+                        ? `M ${panelX + pWidth - 8} ${panelY + 15} Q ${panelX + 12} ${panelY + pHeight/2} ${panelX + pWidth - 8} ${panelY + pHeight - 15}`
+                        : openDirection === 'right'
+                        ? `M ${panelX + 8} ${panelY + 15} Q ${panelX + pWidth - 12} ${panelY + pHeight/2} ${panelX + 8} ${panelY + pHeight - 15}`
+                        : openDirection === 'top'
+                        ? `M ${panelX + 15} ${panelY + pHeight - 8} Q ${panelX + pWidth/2} ${panelY + 12} ${panelX + pWidth - 15} ${panelY + pHeight - 8}`
+                        : `M ${panelX + 15} ${panelY + 8} Q ${panelX + pWidth/2} ${panelY + pHeight - 12} ${panelX + pWidth - 15} ${panelY + 8}`
                       }
                       fill="none"
                       stroke="#3b82f6"
@@ -252,23 +316,35 @@ export function DoorWindow3DPreview({ config, className = '' }) {
                   </>
                 )}
 
-                {/* Fixed panel indicator */}
-                {(category === 'Fixed' || (!isOpenable && panels > 2)) && (
-                  <g stroke="#9ca3af" strokeWidth="1" opacity="0.4">
+                {/* Fixed panel X indicator */}
+                {isFixed && (
+                  <g stroke="#9ca3af" strokeWidth="1" opacity="0.3">
                     <line
-                      x1={panelX + 10}
-                      y1={panelY + 10}
-                      x2={panelX + pWidth - 10}
-                      y2={panelY + pHeight - 10}
+                      x1={panelX + 12}
+                      y1={panelY + 12}
+                      x2={panelX + pWidth - 12}
+                      y2={panelY + pHeight - 12}
                     />
                     <line
-                      x1={panelX + pWidth - 10}
-                      y1={panelY + 10}
-                      x2={panelX + 10}
-                      y2={panelY + pHeight - 10}
+                      x1={panelX + pWidth - 12}
+                      y1={panelY + 12}
+                      x2={panelX + 12}
+                      y2={panelY + pHeight - 12}
                     />
                   </g>
                 )}
+
+                {/* Panel number label */}
+                <text
+                  x={panelX + pWidth / 2}
+                  y={panelY + pHeight - 8}
+                  textAnchor="middle"
+                  fontSize="8"
+                  fill="#64748b"
+                  fontWeight="500"
+                >
+                  P{i + 1}
+                </text>
               </g>
             )
           })}
@@ -276,7 +352,6 @@ export function DoorWindow3DPreview({ config, className = '' }) {
           {/* Door specific elements */}
           {isDoor && (
             <>
-              {/* Door threshold */}
               <rect
                 x={startX - 5}
                 y={startY + drawHeight}
@@ -286,7 +361,6 @@ export function DoorWindow3DPreview({ config, className = '' }) {
                 rx="1"
               />
               
-              {/* Door handle (if single panel) */}
               {panels === 1 && (
                 <g>
                   <rect
@@ -308,7 +382,7 @@ export function DoorWindow3DPreview({ config, className = '' }) {
             </>
           )}
 
-          {/* Sliding track indicator for sliding type */}
+          {/* Sliding track indicator */}
           {category === 'Sliding' && (
             <>
               <line
@@ -333,7 +407,6 @@ export function DoorWindow3DPreview({ config, className = '' }) {
 
         {/* Dimension lines */}
         <g>
-          {/* Width dimension */}
           <line
             x1={startX}
             y1={startY + drawHeight + 20}
@@ -355,7 +428,6 @@ export function DoorWindow3DPreview({ config, className = '' }) {
             {width}mm
           </text>
 
-          {/* Height dimension */}
           <line
             x1={startX + drawWidth + 15}
             y1={startY}
@@ -379,7 +451,7 @@ export function DoorWindow3DPreview({ config, className = '' }) {
           </text>
         </g>
 
-        {/* Area text */}
+        {/* Info text */}
         <text
           x={svgWidth / 2}
           y={svgHeight - 8}
@@ -387,19 +459,24 @@ export function DoorWindow3DPreview({ config, className = '' }) {
           fontSize="9"
           fill="#64748b"
         >
-          Area: {((width / 304.8) * (height / 304.8)).toFixed(2)} sq.ft
+          {((width / 304.8) * (height / 304.8)).toFixed(2)} sq.ft • {glassLabel[glassType] || 'Single'} Glass
         </text>
       </svg>
 
       {/* Info overlay */}
       <div className="absolute bottom-2 left-2 right-2 flex items-center justify-between text-xs text-slate-600 bg-white/80 backdrop-blur-sm rounded-lg px-3 py-1.5 shadow-sm">
         <span className="font-medium">{type} • {category}</span>
-        <span className="text-slate-500">{material}</span>
+        <span className="text-slate-500">{panels} Panels • {material}</span>
       </div>
       
-      {/* Interaction hint */}
-      <div className="absolute top-2 right-2 text-xs text-indigo-600 bg-white/90 backdrop-blur-sm rounded-full px-2 py-1 shadow-sm">
-        ✨ 3D-Like Preview
+      {/* Glass type badge */}
+      <div className={`absolute top-2 right-2 text-xs rounded-full px-2 py-1 shadow-sm ${
+        glassType === 'tinted' ? 'bg-slate-700 text-white' :
+        glassType === 'frosted' ? 'bg-slate-200 text-slate-700' :
+        glassType === 'reflective' ? 'bg-gradient-to-r from-slate-300 to-slate-400 text-slate-800' :
+        'bg-white/90 text-indigo-600'
+      }`}>
+        {glassLabel[glassType] || 'Single'} Glass
       </div>
     </div>
   )
