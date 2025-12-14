@@ -206,6 +206,13 @@ export function FurnitureModule({ user, client, token, onBack }) {
   const [showroomDisplays, setShowroomDisplays] = useState([])
   const [analytics, setAnalytics] = useState(null)
   
+  // Phase 3: Production states
+  const [boms, setBoms] = useState([])
+  const [workOrders, setWorkOrders] = useState([])
+  const [productionData, setProductionData] = useState(null)
+  const [invoices, setInvoices] = useState([])
+  const [moduleSettings, setModuleSettings] = useState(null)
+  
   // CRM Sync state
   const [crmSyncStatus, setCrmSyncStatus] = useState(null)
   const [syncing, setSyncing] = useState(false)
