@@ -172,8 +172,8 @@ export function DoorsWindowsModule({ client, user }) {
           <div className="flex items-center gap-3">
             {/* Project Selector */}
             <Select 
-              value={selectedProject?.id || ''} 
-              onValueChange={(id) => setSelectedProject(projects.find(p => p.id === id))}
+              value={selectedProject?.id || '__all__'} 
+              onValueChange={(id) => setSelectedProject(id === '__all__' ? null : projects.find(p => p.id === id))}
             >
               <SelectTrigger className="w-[220px] bg-white/20 border-white/30 text-white">
                 <SelectValue placeholder="Select Project" />
