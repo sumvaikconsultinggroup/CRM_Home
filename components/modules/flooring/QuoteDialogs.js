@@ -771,11 +771,22 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, modu
           </div>
         </ScrollArea>
 
-        <DialogFooter className="border-t pt-4">
+        <DialogFooter className="border-t pt-4 flex justify-between">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} disabled={loading}>
-            {loading ? 'Saving...' : quote?.id ? 'Update Quote' : 'Create Quote'}
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => handleSubmit(true)} 
+              disabled={loading}
+              className="border-slate-300"
+            >
+              <FileText className="h-4 w-4 mr-2" />
+              Save as Draft
+            </Button>
+            <Button onClick={() => handleSubmit(false)} disabled={loading}>
+              {loading ? 'Saving...' : quote?.id ? 'Update Quote' : 'Create Quote'}
+            </Button>
+          </div>
         </DialogFooter>
 
         {/* Product Selector Dialog */}
