@@ -739,6 +739,18 @@ function ClientDashboard({ user, client, onLogout }) {
     )
   }
 
+  // Render Furniture Module if active
+  if (activeModule === 'furniture') {
+    return (
+      <FurnitureModule 
+        client={client}
+        user={user}
+        token={authToken}
+        onBack={() => setActiveModule(null)}
+      />
+    )
+  }
+
   // Render Upgrade Flow if active
   if (showUpgradeFlow) {
     return (
