@@ -605,6 +605,93 @@ export function FurnitureModule({ user, client, token, onBack }) {
     }
   }, [token])
 
+  // Phase 4: MEE AI Functions
+  const fetchMediaGallery = useCallback(async () => {
+    try {
+      const res = await fetch('/api/module/furniture/media', { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setMediaGallery(data.media || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch media:', error)
+    }
+  }, [token])
+
+  const handleAIChat = async () => {
+    if (!aiInput.trim()) return
+    
+    const userMessage = { role: 'user', content: aiInput }
+    setAiChatMessages(prev => [...prev, userMessage])
+    setAiInput('')
+    setAiLoading(true)
+    
+    try {
+      const res = await fetch('/api/module/furniture/ai', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          action: 'chat',
+          messages: [...aiChatMessages, userMessage]
+        })
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        setAiChatMessages(prev => [...prev, { role: 'assistant', content: data.result }])
+      } else {
+        toast.error('AI request failed')
+      }
+    } catch (error) {
+      toast.error('Failed to get AI response')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
+  const handleAIAnalyzeRequirement = async (requirementId) => {
+    setAiLoading(true)
+    try {
+      const res = await fetch('/api/module/furniture/ai', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ action: 'analyze_requirement', requirementId })
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        toast.success('AI analysis complete')
+        fetchRequirements()
+        return data.result
+      }
+    } catch (error) {
+      toast.error('AI analysis failed')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
+  const handleAIGenerateQuoteNarrative = async (quoteId) => {
+    setAiLoading(true)
+    try {
+      const res = await fetch('/api/module/furniture/ai', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ action: 'generate_quote_narrative', quoteId })
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        toast.success('Quote narrative generated')
+        return data.result
+      }
+    } catch (error) {
+      toast.error('Failed to generate narrative')
+    } finally {
+      setAiLoading(false)
+    }
+  }
+
   // Seed sample data
   const [seedStatus, setSeedStatus] = useState(null)
   const [seeding, setSeeding] = useState(false)
