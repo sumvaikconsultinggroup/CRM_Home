@@ -812,8 +812,16 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       setLoading(true)
       const method = quoteData.id ? 'PUT' : 'POST'
       
-      // If editing a rejected quote, automatically change status to 'revised' so it can be sent again
-      if (quoteData.id && quoteData.status === 'rejected') {
+      // Check if this is a "Save as Draft" action
+      const isSavingAsDraft = quoteData.savedAsDraft === true
+      
+      // If saving as draft, force status to 'draft' regardless of current status
+      if (isSavingAsDraft) {
+        quoteData.status = 'draft'
+        delete quoteData.savedAsDraft // Remove flag before sending to API
+      }
+      // If editing a rejected quote (not saving as draft), change status to 'revised'
+      else if (quoteData.id && quoteData.status === 'rejected') {
         quoteData.status = 'revised'
         quoteData.revisionNote = 'Quote revised after rejection'
       }
@@ -825,9 +833,14 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       })
       
       if (res.ok) {
-        const successMessage = quoteData.status === 'revised' 
-          ? 'Quote revised! You can now send it for approval again.' 
-          : (quoteData.id ? 'Quote updated' : 'Quote created')
+        let successMessage
+        if (isSavingAsDraft) {
+          successMessage = 'Quote saved as draft'
+        } else if (quoteData.status === 'revised') {
+          successMessage = 'Quote revised! You can now send it for approval again.'
+        } else {
+          successMessage = quoteData.id ? 'Quote updated' : 'Quote created'
+        }
         toast.success(successMessage)
         fetchQuotes()
         setDialogOpen({ type: null, data: null })
