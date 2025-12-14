@@ -3883,92 +3883,161 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y">
-                  {filteredQuotes.map(quote => {
+                  {filteredQuotes.map((quote) => {
+                    const statusConfig = QuoteStatusConfig[quote.status] || QuoteStatusConfig.draft
                     const isExpired = new Date(quote.validUntil) < new Date() && !['approved', 'invoiced'].includes(quote.status)
-                    const statusConfig = QuoteStatusConfig[isExpired ? 'expired' : quote.status] || QuoteStatusConfig.draft
+                    const actualStatus = isExpired && quote.status === 'sent' ? 'expired' : quote.status
+                    const actualConfig = QuoteStatusConfig[actualStatus] || statusConfig
+                    const StatusIcon = actualConfig.icon || FileText
+                    const isLocked = actualConfig.locked || false
+                    const canEdit = actualConfig.canEdit && !isLocked
+                    
+                    // Find project name from projects list
+                    const linkedProject = projects.find(p => p.id === quote.projectId)
+                    const projectDisplay = quote.projectNumber || linkedProject?.projectNumber || '-'
                     
                     return (
-                      <tr key={quote.id} className={`hover:bg-slate-50 ${isExpired ? 'bg-red-50/50' : ''}`}>
+                      <tr key={quote.id} className={`hover:bg-slate-50 transition-colors ${isLocked ? 'bg-purple-50/30' : ''} ${isExpired ? 'bg-red-50/30' : ''}`}>
+                        {/* Quote Number */}
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-2">
-                            <p className="font-medium text-slate-900">{quote.quoteNumber}</p>
+                            <div className={`p-1.5 rounded ${actualConfig.color.split(' ')[0]}`}>
+                              <StatusIcon className={`h-4 w-4 ${actualConfig.color.split(' ')[1]}`} />
+                            </div>
+                            <div>
+                              <p className="font-semibold text-slate-900">{quote.quoteNumber}</p>
+                              <p className="text-xs text-slate-500">{new Date(quote.createdAt).toLocaleDateString('en-IN')}</p>
+                            </div>
                             {quote.version > 1 && <Badge variant="outline" className="text-xs">v{quote.version}</Badge>}
                           </div>
                         </td>
+                        
+                        {/* Customer */}
                         <td className="px-4 py-3">
-                          <p className="font-medium">{quote.customer?.name || '-'}</p>
-                          <p className="text-xs text-slate-500">{quote.customer?.phone || quote.customer?.email || ''}</p>
+                          <div>
+                            <p className="font-medium text-slate-900">{quote.customer?.name || '-'}</p>
+                            <p className="text-xs text-slate-500">{quote.customer?.phone || quote.customer?.email || ''}</p>
+                          </div>
                         </td>
+                        
+                        {/* Project */}
                         <td className="px-4 py-3">
-                          <Badge variant="outline">{quote.projectNumber || '-'}</Badge>
+                          <Badge variant="outline" className="font-mono text-xs">
+                            {projectDisplay}
+                          </Badge>
                         </td>
+                        
+                        {/* Items & Area */}
                         <td className="px-4 py-3">
-                          <p>{quote.items?.length || 0} items</p>
-                          <p className="text-xs text-slate-500">{quote.totalArea?.toFixed(0) || 0} sqft</p>
+                          <p className="font-medium">{quote.items?.length || 0} items</p>
+                          <p className="text-xs text-slate-500">{(quote.totalArea || 0).toFixed(0)} sqft</p>
                         </td>
+                        
+                        {/* Amount */}
                         <td className="px-4 py-3">
-                          <p className="font-semibold text-emerald-600">₹{(quote.grandTotal || 0).toLocaleString()}</p>
+                          <p className={`font-bold ${isLocked ? 'text-purple-600' : 'text-emerald-600'}`}>
+                            ₹{(quote.grandTotal || 0).toLocaleString('en-IN')}
+                          </p>
+                          {quote.discountAmount > 0 && (
+                            <p className="text-xs text-emerald-500">Disc: ₹{quote.discountAmount.toLocaleString()}</p>
+                          )}
                         </td>
-                        <td className="px-4 py-3 text-sm text-slate-500">
-                          {new Date(quote.createdAt).toLocaleDateString()}
-                        </td>
+                        
+                        {/* Valid Until */}
                         <td className="px-4 py-3 text-sm">
                           <span className={isExpired ? 'text-red-600 font-medium' : 'text-slate-500'}>
-                            {new Date(quote.validUntil).toLocaleDateString()}
-                            {isExpired && ' (Expired)'}
+                            {new Date(quote.validUntil).toLocaleDateString('en-IN')}
                           </span>
+                          {isExpired && <p className="text-xs text-red-500">Expired</p>}
                         </td>
+                        
+                        {/* Status */}
                         <td className="px-4 py-3">
-                          <Badge className={statusConfig.color}>{statusConfig.label}</Badge>
+                          <Badge className={`${actualConfig.color} border flex items-center gap-1 w-fit`}>
+                            <StatusIcon className="h-3 w-3" />
+                            {actualConfig.label}
+                          </Badge>
+                          {isLocked && (
+                            <p className="text-xs text-purple-600 mt-1 flex items-center gap-1">
+                              <Lock className="h-3 w-3" /> Locked
+                            </p>
+                          )}
                         </td>
+                        
+                        {/* Actions */}
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-1">
-                            {/* View */}
-                            <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'view_quote', data: quote })} title="View">
-                              <Eye className="h-4 w-4" />
+                            {/* View - Always available */}
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => setDialogOpen({ type: 'view_quote', data: quote })} 
+                              title="View Quote"
+                              className="hover:bg-slate-100"
+                            >
+                              <Eye className="h-4 w-4 text-slate-600" />
                             </Button>
                             
-                            {/* Edit - only for draft/revised */}
-                            {['draft', 'revised'].includes(quote.status) && (
-                              <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'quote', data: quote })} title="Edit">
-                                <Edit className="h-4 w-4" />
+                            {/* Edit - Only for draft/revised and not locked */}
+                            {canEdit && (
+                              <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => setDialogOpen({ type: 'quote', data: quote })} 
+                                title="Edit Quote"
+                                className="hover:bg-blue-100"
+                              >
+                                <Edit className="h-4 w-4 text-blue-600" />
                               </Button>
                             )}
                             
-                            {/* Download */}
-                            <Button variant="ghost" size="sm" onClick={() => handleDownloadQuote(quote)} title="Download/Print">
-                              <Download className="h-4 w-4" />
+                            {/* Download - Always available */}
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => handleDownloadQuote(quote)} 
+                              title="Download/Print"
+                              className="hover:bg-emerald-100"
+                            >
+                              <Download className="h-4 w-4 text-emerald-600" />
                             </Button>
                             
-                            {/* Status Actions Dropdown */}
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm">
-                                  <MoreVertical className="h-4 w-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                {/* Draft actions */}
-                                {quote.status === 'draft' && (
-                                  <>
-                                    <DropdownMenuItem onClick={() => handleQuoteAction(quote.id, 'send')}>
-                                      <Send className="h-4 w-4 mr-2 text-blue-600" /> Send to Customer
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleDeleteQuote(quote.id)} className="text-red-600">
-                                      <Trash2 className="h-4 w-4 mr-2" /> Delete
-                                    </DropdownMenuItem>
-                                  </>
-                                )}
-                                
-                                {/* Sent actions */}
-                                {quote.status === 'sent' && (
-                                  <>
-                                    <DropdownMenuItem onClick={() => handleQuoteStatusChange(quote.id, 'approved')}>
-                                      <CheckCircle2 className="h-4 w-4 mr-2 text-emerald-600" /> Mark Approved
-                                    </DropdownMenuItem>
-                                    <DropdownMenuItem onClick={() => handleQuoteStatusChange(quote.id, 'rejected')}>
-                                      <X className="h-4 w-4 mr-2 text-red-600" /> Mark Rejected
-                                    </DropdownMenuItem>
+                            {/* Status Actions Dropdown - Context sensitive */}
+                            {!isLocked && (
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="hover:bg-slate-100">
+                                    <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end" className="w-48">
+                                  <DropdownMenuLabel className="text-xs text-slate-500">
+                                    Actions for {actualConfig.label}
+                                  </DropdownMenuLabel>
+                                  <DropdownMenuSeparator />
+                                  
+                                  {/* Draft actions */}
+                                  {quote.status === 'draft' && (
+                                    <>
+                                      <DropdownMenuItem onClick={() => handleQuoteAction(quote.id, 'send')}>
+                                        <Send className="h-4 w-4 mr-2 text-blue-600" /> Send to Customer
+                                      </DropdownMenuItem>
+                                      <DropdownMenuSeparator />
+                                      <DropdownMenuItem onClick={() => handleDeleteQuote(quote.id)} className="text-red-600">
+                                        <Trash2 className="h-4 w-4 mr-2" /> Delete Quote
+                                      </DropdownMenuItem>
+                                    </>
+                                  )}
+                                  
+                                  {/* Sent actions */}
+                                  {quote.status === 'sent' && (
+                                    <>
+                                      <DropdownMenuItem onClick={() => handleQuoteStatusChange(quote.id, 'approved')}>
+                                        <CheckCircle2 className="h-4 w-4 mr-2 text-emerald-600" /> Mark Approved
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => handleQuoteStatusChange(quote.id, 'rejected')}>
+                                        <X className="h-4 w-4 mr-2 text-red-600" /> Mark Rejected
+                                      </DropdownMenuItem>
                                     <DropdownMenuItem onClick={() => handleQuoteStatusChange(quote.id, 'revised')}>
                                       <Edit className="h-4 w-4 mr-2 text-amber-600" /> Needs Revision
                                     </DropdownMenuItem>
