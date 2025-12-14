@@ -1726,8 +1726,16 @@ export function DoorsWindowsModule({ client, user }) {
                   }])}>
                     <Plus className="h-4 w-4 mr-2" /> Add Item
                   </Button>
-                  <Button className="bg-gradient-to-r from-blue-500 to-indigo-600">
-                    <Save className="h-4 w-4 mr-2" /> Save Quote
+                  <Button variant="outline" onClick={downloadQuotePDF}>
+                    <Download className="h-4 w-4 mr-2" /> Download PDF
+                  </Button>
+                  <Button 
+                    className="bg-gradient-to-r from-blue-500 to-indigo-600"
+                    onClick={saveQuote}
+                    disabled={savingQuote}
+                  >
+                    {savingQuote ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+                    Save Quote
                   </Button>
                 </div>
               </div>
