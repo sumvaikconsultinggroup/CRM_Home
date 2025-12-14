@@ -860,22 +860,43 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   const handleQuoteStatusChange = async (quoteId, newStatus, note = '') => {
     try {
       setLoading(true)
+      
+      // Map status to API action
+      const actionMap = {
+        'approved': 'approve',
+        'rejected': 'reject',
+        'revised': 'revise',
+        'sent': 'send'
+      }
+      
+      const action = actionMap[newStatus]
+      const body = action 
+        ? { id: quoteId, action, reason: note, notes: note }
+        : { id: quoteId, status: newStatus, statusNote: note, statusChangedAt: new Date().toISOString() }
+      
       const res = await fetch('/api/flooring/enhanced/quotes', {
         method: 'PUT',
         headers,
-        body: JSON.stringify({
-          id: quoteId,
-          status: newStatus,
-          statusNote: note,
-          statusChangedAt: new Date().toISOString()
-        })
+        body: JSON.stringify(body)
       })
+      
       if (res.ok) {
-        fetchQuotes()
+        await fetchQuotes()
         setDialogOpen({ type: null, data: null })
-        toast.success(`Quote ${newStatus === 'approved' ? 'approved' : newStatus === 'rejected' ? 'rejected' : 'updated'} successfully`)
+        const statusMessages = {
+          'approved': 'Quote approved successfully!',
+          'rejected': 'Quote rejected',
+          'revised': 'Quote marked for revision',
+          'sent': 'Quote sent to customer',
+          'invoiced': 'Quote converted to invoice'
+        }
+        toast.success(statusMessages[newStatus] || `Quote status updated to ${newStatus}`)
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to update quote')
       }
     } catch (error) {
+      console.error('Quote status change error:', error)
       toast.error('Failed to update quote status')
     } finally {
       setLoading(false)
