@@ -3225,19 +3225,6 @@ export function FurnitureModule({ user, client, token, onBack }) {
 
   // Render Media Gallery - 3D Models, Images, Videos
   const renderMediaGallery = () => {
-    const [mediaFilter, setMediaFilter] = useState('all')
-    const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
-    const [selectedMedia, setSelectedMedia] = useState(null)
-    const [viewMode, setViewMode] = useState('grid')
-    const [uploadForm, setUploadForm] = useState({
-      fileName: '',
-      fileUrl: '',
-      mediaType: 'image',
-      category: 'general',
-      title: '',
-      description: ''
-    })
-
     const mediaCategories = [
       { id: 'all', label: 'All Media', icon: Grid3X3 },
       { id: '3d_model', label: '3D Models', icon: Box },
