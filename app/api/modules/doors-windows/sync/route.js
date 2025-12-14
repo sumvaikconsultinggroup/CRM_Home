@@ -22,6 +22,192 @@ export async function POST(request) {
     const events = db.collection('dw_events')
     const now = new Date().toISOString()
 
+    // SYNC ALL - Run all sync operations
+    if (action === 'sync-all' || action === 'sync_all') {
+      const projects = db.collection('projects')
+      const leads = db.collection('leads')
+      const contacts = db.collection('contacts')
+      const dwProjects = db.collection('doors_windows_projects')
+      const dwContacts = db.collection('dw_contacts')
+
+      const results = {
+        projects: { created: 0, errors: [] },
+        leads: { created: 0, errors: [] },
+        contacts: { created: 0, updated: 0 }
+      }
+
+      // 1. Sync Projects
+      const syncedProjectIds = (await dwProjects.find({ crmProjectId: { $ne: null } }).toArray())
+        .map(r => r.crmProjectId)
+      
+      const unsyncedProjects = await projects.find({
+        id: { $nin: syncedProjectIds },
+        status: { $nin: ['completed', 'cancelled'] }
+      }).toArray()
+
+      for (const project of unsyncedProjects) {
+        try {
+          const projectNumber = `DWP-${new Date().getFullYear()}-${String(await dwProjects.countDocuments() + 1).padStart(5, '0')}`
+          
+          await dwProjects.insertOne({
+            id: uuidv4(),
+            projectNumber,
+            clientId: user.clientId,
+            name: project.name || `Project - ${project.id}`,
+            crmProjectId: project.id,
+            leadId: project.leadId || null,
+            accountId: project.clientId || null,
+            customer: {
+              name: project.clientName || '',
+              email: project.clientEmail || '',
+              phone: project.clientPhone || '',
+              address: project.siteAddress || project.address || ''
+            },
+            clientName: project.clientName || '',
+            clientEmail: project.clientEmail || '',
+            clientPhone: project.clientPhone || '',
+            siteAddress: project.siteAddress || project.address || '',
+            buildingType: project.buildingType || 'Residential - Independent',
+            value: project.budget || project.value || 0,
+            budget: project.budget || project.value || 0,
+            status: 'new',
+            priority: project.priority || 'medium',
+            source: 'crm_sync',
+            syncedFrom: { type: 'project', id: project.id, syncedAt: now },
+            assignedTo: project.assignedTo || user.id,
+            statusHistory: [{
+              status: 'new',
+              timestamp: now,
+              by: user.id,
+              notes: `Auto-created from CRM Project: ${project.name}`
+            }],
+            isActive: true,
+            createdBy: user.id,
+            createdAt: now,
+            updatedAt: now
+          })
+          results.projects.created++
+        } catch (err) {
+          results.projects.errors.push({ projectId: project.id, error: err.message })
+        }
+      }
+
+      // 2. Sync Leads
+      const syncedLeadIds = (await dwProjects.find({ leadId: { $ne: null } }).toArray())
+        .map(r => r.leadId)
+
+      const unsyncedLeads = await leads.find({
+        id: { $nin: syncedLeadIds },
+        status: { $nin: ['converted', 'lost'] }
+      }).toArray()
+
+      for (const lead of unsyncedLeads) {
+        try {
+          const projectNumber = `DWP-${new Date().getFullYear()}-${String(await dwProjects.countDocuments() + 1).padStart(5, '0')}`
+
+          await dwProjects.insertOne({
+            id: uuidv4(),
+            projectNumber,
+            clientId: user.clientId,
+            name: lead.title || `Lead - ${lead.name}`,
+            leadId: lead.id,
+            customer: {
+              name: lead.name || lead.contactName || '',
+              email: lead.email || '',
+              phone: lead.phone || lead.mobile || '',
+              address: lead.address || ''
+            },
+            clientName: lead.name || lead.contactName || '',
+            clientPhone: lead.phone || lead.mobile || '',
+            clientEmail: lead.email || '',
+            siteAddress: lead.address || '',
+            value: lead.value || lead.budget || 0,
+            budget: lead.value || lead.budget || 0,
+            status: 'new',
+            priority: lead.priority || 'medium',
+            source: 'crm_sync',
+            syncedFrom: { type: 'lead', id: lead.id, syncedAt: now },
+            assignedTo: lead.assignedTo || user.id,
+            statusHistory: [{
+              status: 'new',
+              timestamp: now,
+              by: user.id,
+              notes: `Auto-created from CRM Lead: ${lead.name}`
+            }],
+            isActive: true,
+            createdBy: user.id,
+            createdAt: now,
+            updatedAt: now
+          })
+          results.leads.created++
+        } catch (err) {
+          results.leads.errors.push({ leadId: lead.id, error: err.message })
+        }
+      }
+
+      // 3. Sync Contacts
+      const allContacts = await contacts.find({ isActive: { $ne: false } }).toArray()
+      const existingContactIds = (await dwContacts.find({}).toArray()).map(c => c.crmContactId)
+
+      for (const contact of allContacts) {
+        if (existingContactIds.includes(contact.id)) {
+          await dwContacts.updateOne(
+            { crmContactId: contact.id },
+            {
+              $set: {
+                name: contact.name,
+                email: contact.email,
+                phone: contact.phone || contact.mobile,
+                company: contact.company,
+                designation: contact.designation,
+                address: contact.address,
+                lastSyncedAt: now,
+                updatedAt: now
+              }
+            }
+          )
+          results.contacts.updated++
+        } else {
+          await dwContacts.insertOne({
+            id: uuidv4(),
+            clientId: user.clientId,
+            crmContactId: contact.id,
+            name: contact.name,
+            email: contact.email,
+            phone: contact.phone || contact.mobile,
+            company: contact.company,
+            designation: contact.designation,
+            address: contact.address,
+            type: contact.type || 'customer',
+            tags: contact.tags || [],
+            lastSyncedAt: now,
+            isActive: true,
+            createdBy: user.id,
+            createdAt: now,
+            updatedAt: now
+          })
+          results.contacts.created++
+        }
+      }
+
+      // Log the sync event
+      await events.insertOne({
+        id: uuidv4(),
+        type: 'sync.all',
+        data: results,
+        userId: user.id,
+        timestamp: now
+      })
+
+      const totalSynced = results.projects.created + results.leads.created + results.contacts.created + results.contacts.updated
+      
+      return successResponse({ 
+        success: true,
+        message: `Synced ${totalSynced} items (${results.projects.created} projects, ${results.leads.created} leads, ${results.contacts.created} new + ${results.contacts.updated} updated contacts)`, 
+        results
+      })
+    }
+
     // Sync Projects from CRM to Doors & Windows Module
     if (action === 'sync_projects') {
       const projects = db.collection('projects')
