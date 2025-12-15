@@ -1295,7 +1295,7 @@ function ClientDashboard({ user, client, onLogout }) {
                                     <Button 
                                       size="sm" 
                                       className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
-                                      onClick={() => window.location.href = '/doors-windows'}
+                                      onClick={() => setActiveModule('doors-windows')}
                                     >
                                       <ExternalLink className="h-4 w-4 mr-1" /> Open Module
                                     </Button>
