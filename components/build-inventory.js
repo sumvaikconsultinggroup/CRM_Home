@@ -95,6 +95,10 @@ export function BuildInventory({ token, user, clientModules = [] }) {
   const [syncingInvoices, setSyncingInvoices] = useState(false)
   const autoSyncIntervalRef = useRef(null)
 
+  // Dynamic Module Fields State
+  const [moduleFields, setModuleFields] = useState([])
+  const [moduleConfig, setModuleConfig] = useState(null)
+
   // File input ref for image upload
   const fileInputRef = useRef(null)
 
