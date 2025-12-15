@@ -1673,22 +1673,29 @@ const CreateTaskDialog = ({ open, onClose, onCreate, defaultStatus, users, proje
     labels: []
   })
 
-  useEffect(() => {
-    if (open) {
-      setFormData({
-        title: '',
-        description: '',
-        taskType: 'task',
-        status: defaultStatus || 'todo',
-        priority: 'medium',
-        projectId: '',
-        assignees: [],
-        dueDate: '',
-        estimatedHours: '',
-        labels: []
-      })
+  // Compute initial form data based on dialog state
+  const initialFormData = useMemo(() => ({
+    title: '',
+    description: '',
+    taskType: 'task',
+    status: defaultStatus || 'todo',
+    priority: 'medium',
+    projectId: '',
+    assignees: [],
+    dueDate: '',
+    estimatedHours: '',
+    labels: []
+  }), [defaultStatus])
+
+  // Handle dialog open/close
+  const handleOpenChange = (isOpen) => {
+    if (isOpen) {
+      setFormData(initialFormData)
     }
-  }, [open, defaultStatus])
+    if (!isOpen) {
+      onClose()
+    }
+  }
 
   const handleSubmit = () => {
     if (!formData.title.trim()) {
