@@ -2091,6 +2091,7 @@ export function JiraTaskManager({ token, currentUser }) {
   const [bulkActionOpen, setBulkActionOpen] = useState(false)
   const [templateDialogOpen, setTemplateDialogOpen] = useState(false)
   const [selectedTemplate, setSelectedTemplate] = useState(null)
+  const [showAnalytics, setShowAnalytics] = useState(false)
 
   const headers = useMemo(() => ({
     'Content-Type': 'application/json',
