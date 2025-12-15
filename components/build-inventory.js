@@ -2846,6 +2846,538 @@ export function BuildInventory({ token, user, clientModules = [] }) {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Start Dispatch Dialog */}
+      <Dialog open={showStartDispatchDialog} onOpenChange={setShowStartDispatchDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5 text-amber-500" />
+              Start Dispatch
+            </DialogTitle>
+            <DialogDescription>
+              Enter transporter details to start the dispatch process
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {selectedDispatch && (
+              <div className="p-3 bg-slate-50 rounded-lg">
+                <p className="font-medium">{selectedDispatch.dispatchNumber}</p>
+                <p className="text-sm text-slate-500">{selectedDispatch.customerName}</p>
+                {selectedDispatch.invoiceNumber && (
+                  <p className="text-xs text-blue-600">Invoice: {selectedDispatch.invoiceNumber}</p>
+                )}
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Transporter Name</Label>
+                <Input
+                  placeholder="Enter transporter name"
+                  value={dispatchWorkflowData.transporterName || ''}
+                  onChange={(e) => setDispatchWorkflowData(prev => ({ ...prev, transporterName: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Vehicle Number *</Label>
+                <Input
+                  placeholder="e.g., MH-01-AB-1234"
+                  value={dispatchWorkflowData.vehicleNumber || ''}
+                  onChange={(e) => setDispatchWorkflowData(prev => ({ ...prev, vehicleNumber: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Driver Name</Label>
+                <Input
+                  placeholder="Enter driver name"
+                  value={dispatchWorkflowData.driverName || ''}
+                  onChange={(e) => setDispatchWorkflowData(prev => ({ ...prev, driverName: e.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Driver Phone</Label>
+                <Input
+                  placeholder="Enter driver phone"
+                  value={dispatchWorkflowData.driverPhone || ''}
+                  onChange={(e) => setDispatchWorkflowData(prev => ({ ...prev, driverPhone: e.target.value }))}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Estimated Delivery Date</Label>
+              <Input
+                type="date"
+                value={dispatchWorkflowData.estimatedDeliveryDate || ''}
+                onChange={(e) => setDispatchWorkflowData(prev => ({ ...prev, estimatedDeliveryDate: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowStartDispatchDialog(false)}>
+              Cancel
+            </Button>
+            <Button className="bg-amber-500 hover:bg-amber-600" onClick={handleStartDispatchSubmit} disabled={loading}>
+              {loading ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Truck className="h-4 w-4 mr-2" />}
+              Start Dispatch
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Load Goods Dialog */}
+      <Dialog open={showLoadDispatchDialog} onOpenChange={setShowLoadDispatchDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5 text-blue-500" />
+              Load Goods
+            </DialogTitle>
+            <DialogDescription>
+              Upload loading image and package details. A Delivery Challan will be auto-generated.
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            {selectedDispatch && (
+              <div className="p-3 bg-slate-50 rounded-lg">
+                <p className="font-medium">{selectedDispatch.dispatchNumber}</p>
+                <p className="text-sm text-slate-500">Vehicle: {selectedDispatch.transporter?.vehicleNumber}</p>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <Label>Loading Image *</Label>
+              <div className="border-2 border-dashed rounded-lg p-4 text-center">
+                {loadingImagePreview ? (
+                  <div className="relative">
+                    <img src={loadingImagePreview} alt="Loading" className="max-h-48 mx-auto rounded" />
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="absolute top-2 right-2"
+                      onClick={() => setLoadingImagePreview(null)}
+                    >
+                      <XCircle className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      ref={loadingImageRef}
+                      onChange={handleLoadingImageUpload}
+                    />
+                    <Button variant="outline" onClick={() => loadingImageRef.current?.click()}>
+                      <Camera className="h-4 w-4 mr-2" />
+                      Upload or Take Photo
+                    </Button>
+                    <p className="text-xs text-slate-500 mt-2">Take a photo of loaded goods in vehicle</p>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Package Count</Label>
+                <Input
+                  type="number"
+                  placeholder="e.g., 5"
+                  value={dispatchWorkflowData.packageCount || ''}
+                  onChange={(e) => setDispatchWorkflowData(prev => ({ ...prev, packageCount: parseInt(e.target.value) || '' }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Total Weight (kg)</Label>
+                <Input
+                  type="number"
+                  placeholder="e.g., 250"
+                  value={dispatchWorkflowData.totalWeight || ''}
+                  onChange={(e) => setDispatchWorkflowData(prev => ({ ...prev, totalWeight: parseFloat(e.target.value) || '' }))}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Loading Notes</Label>
+              <Textarea
+                placeholder="Any special notes about loading..."
+                value={dispatchWorkflowData.loadingNotes || ''}
+                onChange={(e) => setDispatchWorkflowData(prev => ({ ...prev, loadingNotes: e.target.value }))}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowLoadDispatchDialog(false)}>
+              Cancel
+            </Button>
+            <Button className="bg-blue-500 hover:bg-blue-600" onClick={handleLoadGoodsSubmit} disabled={loading || !loadingImagePreview}>
+              {loading ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <Package className="h-4 w-4 mr-2" />}
+              Confirm Loading
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delivery Receipt Dialog */}
+      <Dialog open={showDeliveryReceiptDialog} onOpenChange={setShowDeliveryReceiptDialog}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-emerald-500" />
+              {dispatchWorkflowData.receipt ? 'Delivery Receipt' : 'Confirm Delivery'}
+            </DialogTitle>
+            <DialogDescription>
+              {dispatchWorkflowData.receipt 
+                ? 'View delivery receipt details' 
+                : 'Upload signed delivery receipt to confirm delivery'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {dispatchWorkflowData.receipt ? (
+            // View Receipt Mode
+            <div className="space-y-4 py-4">
+              <div className="bg-gradient-to-r from-emerald-50 to-teal-50 border border-emerald-200 rounded-xl p-6">
+                <div className="text-center mb-4">
+                  <h3 className="text-xl font-bold text-emerald-800">DELIVERY RECEIPT</h3>
+                  <p className="text-emerald-600 font-mono">{dispatchWorkflowData.receipt.receiptNumber}</p>
+                </div>
+                
+                <Separator className="my-4" />
+                
+                <div className="grid grid-cols-2 gap-4 text-sm">
+                  <div>
+                    <p className="text-slate-500">Delivered To</p>
+                    <p className="font-medium">{dispatchWorkflowData.receipt.customerName}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Delivered At</p>
+                    <p className="font-medium">{new Date(dispatchWorkflowData.receipt.deliveredAt).toLocaleString()}</p>
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Received By</p>
+                    <p className="font-medium">{dispatchWorkflowData.receipt.receiverName}</p>
+                    {dispatchWorkflowData.receipt.receiverDesignation && (
+                      <p className="text-xs text-slate-500">{dispatchWorkflowData.receipt.receiverDesignation}</p>
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-slate-500">Condition</p>
+                    <Badge className={
+                      dispatchWorkflowData.receipt.deliveryCondition === 'good' ? 'bg-emerald-100 text-emerald-700' :
+                      dispatchWorkflowData.receipt.deliveryCondition === 'damaged' ? 'bg-red-100 text-red-700' :
+                      'bg-amber-100 text-amber-700'
+                    }>
+                      {dispatchWorkflowData.receipt.deliveryCondition}
+                    </Badge>
+                  </div>
+                </div>
+
+                <Separator className="my-4" />
+
+                <div>
+                  <p className="text-sm text-slate-500 mb-2">Items Delivered</p>
+                  <div className="space-y-1">
+                    {dispatchWorkflowData.receipt.items?.map((item, i) => (
+                      <div key={i} className="flex justify-between text-sm bg-white p-2 rounded">
+                        <span>{item.productName}</span>
+                        <span className="font-medium">{item.quantity} {item.unit}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {dispatchWorkflowData.receipt.signedReceiptImage && (
+                  <div className="mt-4">
+                    <p className="text-sm text-slate-500 mb-2">Signed Receipt</p>
+                    <img 
+                      src={dispatchWorkflowData.receipt.signedReceiptImage} 
+                      alt="Signed Receipt" 
+                      className="w-full rounded border"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+          ) : (
+            // Enter Receipt Mode
+            <div className="space-y-4 py-4">
+              {selectedDispatch && (
+                <div className="p-3 bg-slate-50 rounded-lg">
+                  <p className="font-medium">{selectedDispatch.dispatchNumber}</p>
+                  <p className="text-sm text-slate-500">{selectedDispatch.customerName}</p>
+                </div>
+              )}
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label>Receiver Name *</Label>
+                  <Input
+                    placeholder="Who received the delivery?"
+                    value={dispatchWorkflowData.receiverName || ''}
+                    onChange={(e) => setDispatchWorkflowData(prev => ({ ...prev, receiverName: e.target.value }))}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Receiver Phone</Label>
+                  <Input
+                    placeholder="Receiver phone number"
+                    value={dispatchWorkflowData.receiverPhone || ''}
+                    onChange={(e) => setDispatchWorkflowData(prev => ({ ...prev, receiverPhone: e.target.value }))}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Designation</Label>
+                <Input
+                  placeholder="e.g., Store Manager, Owner"
+                  value={dispatchWorkflowData.receiverDesignation || ''}
+                  onChange={(e) => setDispatchWorkflowData(prev => ({ ...prev, receiverDesignation: e.target.value }))}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label>Delivery Condition</Label>
+                <Select
+                  value={dispatchWorkflowData.deliveryCondition || 'good'}
+                  onValueChange={(value) => setDispatchWorkflowData(prev => ({ ...prev, deliveryCondition: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="good">Good Condition</SelectItem>
+                    <SelectItem value="partial">Partial Delivery</SelectItem>
+                    <SelectItem value="damaged">Damaged</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Signed Delivery Receipt *</Label>
+                <div className="border-2 border-dashed rounded-lg p-4 text-center">
+                  {deliveryReceiptPreview ? (
+                    <div className="relative">
+                      <img src={deliveryReceiptPreview} alt="Receipt" className="max-h-48 mx-auto rounded" />
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="absolute top-2 right-2"
+                        onClick={() => setDeliveryReceiptPreview(null)}
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        ref={deliveryReceiptRef}
+                        onChange={handleDeliveryReceiptUpload}
+                      />
+                      <Button variant="outline" onClick={() => deliveryReceiptRef.current?.click()}>
+                        <Upload className="h-4 w-4 mr-2" />
+                        Upload Signed Receipt
+                      </Button>
+                      <p className="text-xs text-slate-500 mt-2">Upload the delivery receipt signed by the customer/dealer</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Delivery Notes</Label>
+                <Textarea
+                  placeholder="Any additional notes..."
+                  value={dispatchWorkflowData.deliveryNotes || ''}
+                  onChange={(e) => setDispatchWorkflowData(prev => ({ ...prev, deliveryNotes: e.target.value }))}
+                />
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowDeliveryReceiptDialog(false)
+              setDispatchWorkflowData({})
+            }}>
+              {dispatchWorkflowData.receipt ? 'Close' : 'Cancel'}
+            </Button>
+            {!dispatchWorkflowData.receipt && (
+              <Button 
+                className="bg-emerald-500 hover:bg-emerald-600" 
+                onClick={handleMarkDeliveredSubmit} 
+                disabled={loading || !deliveryReceiptPreview || !dispatchWorkflowData.receiverName}
+              >
+                {loading ? <RefreshCw className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                Confirm Delivery
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Delivery Challan Dialog */}
+      <Dialog open={showChallanDialog} onOpenChange={setShowChallanDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-blue-500" />
+              Delivery Challan
+            </DialogTitle>
+          </DialogHeader>
+          
+          {dispatchWorkflowData.challan && (
+            <div className="space-y-4 py-4">
+              {/* Professional Challan Design */}
+              <div className="bg-white border-2 border-slate-200 rounded-xl p-6 shadow-lg" id="challan-print">
+                {/* Header */}
+                <div className="flex justify-between items-start mb-6">
+                  <div>
+                    <h2 className="text-2xl font-bold text-slate-800">{user?.businessName || 'Company Name'}</h2>
+                    <p className="text-sm text-slate-500">Enterprise Solutions</p>
+                  </div>
+                  <div className="text-right">
+                    <h3 className="text-xl font-bold text-blue-600">DELIVERY CHALLAN</h3>
+                    <p className="font-mono text-lg">{dispatchWorkflowData.challan.challanNumber}</p>
+                  </div>
+                </div>
+
+                <Separator />
+
+                {/* Details Grid */}
+                <div className="grid grid-cols-2 gap-6 my-6">
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs text-slate-500 uppercase">Dispatch Number</p>
+                      <p className="font-medium">{dispatchWorkflowData.challan.dispatchNumber}</p>
+                    </div>
+                    {dispatchWorkflowData.challan.invoiceNumber && (
+                      <div>
+                        <p className="text-xs text-slate-500 uppercase">Invoice Reference</p>
+                        <p className="font-medium text-blue-600">{dispatchWorkflowData.challan.invoiceNumber}</p>
+                      </div>
+                    )}
+                    <div>
+                      <p className="text-xs text-slate-500 uppercase">Loaded At</p>
+                      <p className="font-medium">{new Date(dispatchWorkflowData.challan.loadedAt).toLocaleString()}</p>
+                    </div>
+                  </div>
+                  <div className="space-y-3">
+                    <div>
+                      <p className="text-xs text-slate-500 uppercase">Deliver To</p>
+                      <p className="font-medium">{dispatchWorkflowData.challan.customerName}</p>
+                      {dispatchWorkflowData.challan.customerPhone && (
+                        <p className="text-sm text-slate-600">{dispatchWorkflowData.challan.customerPhone}</p>
+                      )}
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500 uppercase">Delivery Address</p>
+                      <p className="text-sm">{dispatchWorkflowData.challan.deliveryAddress || 'N/A'}</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Vehicle Details */}
+                <div className="bg-slate-50 rounded-lg p-4 mb-6">
+                  <h4 className="font-medium mb-2">Transport Details</h4>
+                  <div className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <p className="text-slate-500">Vehicle No.</p>
+                      <p className="font-mono font-medium">{dispatchWorkflowData.challan.vehicleNumber || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500">Driver</p>
+                      <p className="font-medium">{dispatchWorkflowData.challan.driverName || 'N/A'}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500">Packages</p>
+                      <p className="font-medium">{dispatchWorkflowData.challan.packageCount || 1} pkg(s)</p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Items Table */}
+                <div className="mb-6">
+                  <h4 className="font-medium mb-2">Items</h4>
+                  <Table>
+                    <TableHeader>
+                      <TableRow>
+                        <TableHead>S.No</TableHead>
+                        <TableHead>Description</TableHead>
+                        <TableHead className="text-right">Quantity</TableHead>
+                        <TableHead className="text-right">Unit Price</TableHead>
+                        <TableHead className="text-right">Amount</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {dispatchWorkflowData.challan.items?.map((item, i) => (
+                        <TableRow key={i}>
+                          <TableCell>{i + 1}</TableCell>
+                          <TableCell>{item.productName}</TableCell>
+                          <TableCell className="text-right">{item.quantity} {item.unit}</TableCell>
+                          <TableCell className="text-right">₹{(item.unitPrice || 0).toLocaleString()}</TableCell>
+                          <TableCell className="text-right font-medium">₹{(item.totalPrice || 0).toLocaleString()}</TableCell>
+                        </TableRow>
+                      ))}
+                      <TableRow className="bg-slate-50">
+                        <TableCell colSpan={4} className="text-right font-medium">Total Value</TableCell>
+                        <TableCell className="text-right font-bold">₹{(dispatchWorkflowData.challan.totalValue || 0).toLocaleString()}</TableCell>
+                      </TableRow>
+                    </TableBody>
+                  </Table>
+                </div>
+
+                {/* Signatures */}
+                <div className="grid grid-cols-2 gap-6 mt-8 pt-6 border-t">
+                  <div className="text-center">
+                    <div className="h-16 border-b border-dashed"></div>
+                    <p className="text-xs text-slate-500 mt-2">Authorized Signature</p>
+                  </div>
+                  <div className="text-center">
+                    <div className="h-16 border-b border-dashed"></div>
+                    <p className="text-xs text-slate-500 mt-2">Receiver Signature & Stamp</p>
+                  </div>
+                </div>
+
+                {/* Footer */}
+                <div className="text-center mt-6 text-xs text-slate-400">
+                  <p>This is a computer-generated document. Generated on {new Date().toLocaleString()}</p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowChallanDialog(false)
+              setDispatchWorkflowData({})
+            }}>
+              Close
+            </Button>
+            <Button onClick={() => {
+              // Print or download challan
+              window.print()
+            }}>
+              <Download className="h-4 w-4 mr-2" />
+              Download / Print
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
