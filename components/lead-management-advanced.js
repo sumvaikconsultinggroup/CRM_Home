@@ -28,7 +28,8 @@ import {
   ThumbsDown, PhoneCall, MessageCircle, Video, Send, Mic, Clock4, CalendarClock,
   Brain, Lightbulb, TrendingDown, Activity, PieChart, BarChart2, LineChart,
   Briefcase, IndianRupee, ArrowRightCircle, ChevronUp, Timer, Rocket, Award,
-  AlertTriangle, Info, Play, Pause, SkipForward, CheckCircle, Circle, X
+  AlertTriangle, Info, Play, Pause, SkipForward, CheckCircle, Circle, X,
+  ArrowUpDown
 } from 'lucide-react'
 import { api } from '@/lib/api'
 import { toast } from 'sonner'
