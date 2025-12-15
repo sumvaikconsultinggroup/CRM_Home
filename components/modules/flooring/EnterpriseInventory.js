@@ -22,9 +22,25 @@ import {
   ArrowDownRight, ArrowLeftRight, MoreVertical, MapPin, Phone, Mail, Building2, Box, Boxes,
   Truck, Settings, BarChart3, X, Lock, Unlock, History, Calendar, FileSpreadsheet, Bell,
   ChevronRight, ChevronDown, Send, RotateCcw, Minus, ShoppingCart, PackageCheck, PackageX,
-  ArrowUp, ArrowDown, Layers, Archive, Timer, AlertCircle, Info
+  ArrowUp, ArrowDown, Layers, Archive, Timer, AlertCircle, Info, FileText, Scan, ClipboardList,
+  UserCheck, Bookmark, Receipt
 } from 'lucide-react'
 import { toast } from 'sonner'
+
+// GRN Status Configuration
+const GRN_STATUS = {
+  draft: { label: 'Draft', color: 'bg-slate-100 text-slate-700' },
+  received: { label: 'Received', color: 'bg-green-100 text-green-700' },
+  cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-700' }
+}
+
+// Challan Status Configuration
+const CHALLAN_STATUS = {
+  draft: { label: 'Draft', color: 'bg-slate-100 text-slate-700' },
+  dispatched: { label: 'Dispatched', color: 'bg-blue-100 text-blue-700' },
+  delivered: { label: 'Delivered', color: 'bg-green-100 text-green-700' },
+  cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-700' }
+}
 
 // Movement Type Configuration
 const MOVEMENT_TYPES = {
