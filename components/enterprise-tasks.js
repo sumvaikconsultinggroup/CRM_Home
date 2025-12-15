@@ -568,12 +568,27 @@ const TaskDetailSheet = ({ task, open, onClose, onUpdate, onDelete, users, proje
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('details')
 
+  // Initialize form data when task changes
+  const taskFormData = useMemo(() => {
+    if (task) {
+      return { ...task }
+    }
+    return {}
+  }, [task])
+
   useEffect(() => {
     if (task) {
-      setFormData({ ...task })
       setEditMode(false)
     }
   }, [task])
+
+  // Use taskFormData as initial state, but track local edits
+  const currentFormData = editMode ? formData : taskFormData
+
+  const handleStartEdit = () => {
+    setFormData({ ...taskFormData })
+    setEditMode(true)
+  }
 
   const handleSave = async () => {
     setLoading(true)
