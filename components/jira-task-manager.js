@@ -1710,7 +1710,7 @@ const CreateTaskDialog = ({ open, onClose, onCreate, defaultStatus, users, proje
   }
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>Create New Task</DialogTitle>
