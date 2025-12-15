@@ -20,8 +20,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuCheckboxItem } from '@/components/ui/dropdown-menu'
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { Switch } from '@/components/ui/switch'
 import { toast } from 'sonner'
-import { format, formatDistanceToNow, isToday, isTomorrow, isPast, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, addDays } from 'date-fns'
+import { format, formatDistanceToNow, isToday, isTomorrow, isPast, startOfWeek, endOfWeek, eachDayOfInterval, isSameDay, addDays, subDays, startOfMonth, endOfMonth, differenceInDays } from 'date-fns'
 import {
   Search, Plus, Filter, MoreVertical, Edit, Trash2, Calendar as CalendarIcon, Clock, User, Users,
   Tag, Flag, AlertCircle, CheckCircle2, Circle, ArrowUp, ArrowDown, Minus,
@@ -32,7 +33,8 @@ import {
   ListTodo, GitBranch, Activity, History, PlusCircle, UserPlus, AtSign,
   Maximize2, Link, Unlink, AlertTriangle, PlayCircle, PauseCircle, StopCircle,
   CalendarDays, ArrowUpDown, CheckSquare, Square, Zap, GripVertical, FileDown,
-  ClipboardCopy, LayoutTemplate, TrendingUp, Target, BarChart3
+  ClipboardCopy, LayoutTemplate, TrendingUp, Target, BarChart3, Repeat, Bell,
+  Settings, PieChart, TrendingDown, Gauge, Award, Flame, Coffee
 } from 'lucide-react'
 
 // =============================================
