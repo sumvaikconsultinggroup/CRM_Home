@@ -354,31 +354,32 @@ export async function POST(request) {
       })
     }
 
-    // Get sync status
+    // Get sync status (Projects and Contacts only - NO Leads)
     if (action === 'status') {
       const projects = db.collection('projects')
-      const leads = db.collection('leads')
       const contacts = db.collection('contacts')
       const dwProjects = db.collection('doors_windows_projects')
       const dwContacts = db.collection('dw_contacts')
 
-      const [totalProjects, totalLeads, totalContacts, syncedProjects, syncedContacts] = await Promise.all([
+      const [totalProjects, totalContacts, syncedProjects, syncedContacts] = await Promise.all([
         projects.countDocuments({ status: { $nin: ['completed', 'cancelled'] } }),
-        leads.countDocuments({ status: { $nin: ['converted', 'lost'] } }),
         contacts.countDocuments({ isActive: { $ne: false } }),
-        dwProjects.countDocuments({ source: 'crm_sync' }),
+        dwProjects.countDocuments({ crmProjectId: { $ne: null } }),
         dwContacts.countDocuments({})
       ])
 
       return successResponse({
         crm: {
           projects: totalProjects,
-          leads: totalLeads,
           contacts: totalContacts
         },
         doorsWindows: {
           syncedProjects,
           syncedContacts
+        },
+        availableToSync: {
+          projects: Math.max(0, totalProjects - syncedProjects),
+          contacts: Math.max(0, totalContacts - syncedContacts)
         },
         lastSync: await events.findOne(
           { type: { $regex: /^sync\./ } },
