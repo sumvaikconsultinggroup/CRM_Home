@@ -129,7 +129,7 @@ export function ProductAssignment({ token }) {
       setLoading(true)
       const res = await fetch('/api/admin/products', {
         method: 'POST',
-        headers,
+        headers: getHeaders(),
         body: JSON.stringify({
           clientId: selectedClient.clientId || selectedClient.id,
           productId: assignForm.productId,
