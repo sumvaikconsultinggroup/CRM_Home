@@ -80,11 +80,11 @@ export function BuildInventory({ token, user, clientModules = [] }) {
   // File input ref for image upload
   const fileInputRef = useRef(null)
 
-  // Create headers function for fresh token
-  const getHeaders = () => ({
+  // Memoize headers to avoid dependency issues
+  const getHeaders = useCallback(() => ({
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`
-  })
+  }), [token])
 
   // Fetch sync status and configuration
   const fetchSyncStatus = useCallback(async () => {
