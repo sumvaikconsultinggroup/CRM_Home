@@ -1027,11 +1027,15 @@ const TaskDialog = ({ open, onClose, task, onSave, users, projects, loading }) =
     }
   }, [task])
 
-  useEffect(() => {
-    if (open) {
+  // Handle dialog open - reset form data
+  const handleDialogOpen = (isOpen) => {
+    if (isOpen) {
       setFormData(initialFormData)
     }
-  }, [open, initialFormData])
+    if (!isOpen) {
+      onClose()
+    }
+  }
 
   const handleSubmit = () => {
     if (!formData.title.trim()) {
