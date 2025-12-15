@@ -477,6 +477,42 @@ export function PaintsCoatingsModule({ token, user }) {
     }
   }, [token, filters, searchTerm])
   
+  const fetchLeads = useCallback(async () => {
+    try {
+      const params = new URLSearchParams()
+      if (filters.leadType) params.append('leadType', filters.leadType)
+      if (filters.status) params.append('status', filters.status)
+      if (searchTerm) params.append('search', searchTerm)
+      
+      const res = await fetch(`/api/modules/paints-coatings/leads?${params}`, { headers })
+      const data = await res.json()
+      if (data.leads) setLeads(data.leads)
+      if (data.stats) setLeadStats(data.stats)
+    } catch (error) {
+      console.error('Leads fetch error:', error)
+    }
+  }, [token, filters, searchTerm])
+  
+  const fetchSurveys = useCallback(async () => {
+    try {
+      const res = await fetch('/api/modules/paints-coatings/surveys', { headers })
+      const data = await res.json()
+      if (data.surveys) setSurveys(data.surveys)
+    } catch (error) {
+      console.error('Surveys fetch error:', error)
+    }
+  }, [token])
+  
+  const fetchSpecifications = useCallback(async () => {
+    try {
+      const res = await fetch('/api/modules/paints-coatings/specifications', { headers })
+      const data = await res.json()
+      if (data.specifications) setSpecifications(data.specifications)
+    } catch (error) {
+      console.error('Specifications fetch error:', error)
+    }
+  }, [token])
+  
   const fetchRateCards = useCallback(async () => {
     try {
       const res = await fetch('/api/modules/paints-coatings/rate-cards', { headers })
