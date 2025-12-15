@@ -424,8 +424,8 @@ function PhotoGallery({ photos, onUpload, onDelete, onAnnotate }) {
 // Measurement Checklist Component  
 function MeasurementChecklist({ opening, onChange }) {
   const checks = [
-    { id: 'width', label: 'Width measured', icon: Straighten },
-    { id: 'height', label: 'Height measured', icon: Straighten },
+    { id: 'width', label: 'Width measured', icon: Ruler },
+    { id: 'height', label: 'Height measured', icon: Ruler },
     { id: 'sillHeight', label: 'Sill height checked', icon: RulerIcon },
     { id: 'levelPlumb', label: 'Level & plumb verified', icon: Focus },
     { id: 'wallThickness', label: 'Wall thickness recorded', icon: Layers },
