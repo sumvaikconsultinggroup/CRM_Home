@@ -1066,6 +1066,8 @@ export function UltimateTeamsHub({ authToken, users = [], currentUser }) {
   const [threadInput, setThreadInput] = useState('')
   const [searchQuery, setSearchQuery] = useState('')
   const [editingMessage, setEditingMessage] = useState(null)
+  const [pendingAttachments, setPendingAttachments] = useState([])
+  const [uploadingFile, setUploadingFile] = useState(false)
   
   // Dialog State
   const [showCreateTeam, setShowCreateTeam] = useState(false)
