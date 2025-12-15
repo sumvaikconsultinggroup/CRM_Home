@@ -407,6 +407,30 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
     }
   }, [token, selectedWarehouse])
 
+  const fetchAccessRecords = useCallback(async () => {
+    try {
+      const res = await fetch('/api/modules/wooden-flooring/inventory/access?listAll=true', { headers })
+      const data = await res.json()
+      if (data.accessRecords) {
+        setAccessRecords(data.accessRecords)
+      }
+    } catch (error) {
+      console.error('Access records fetch error:', error)
+    }
+  }, [token])
+
+  const fetchUsers = useCallback(async () => {
+    try {
+      const res = await fetch('/api/users', { headers })
+      const data = await res.json()
+      if (data.users) {
+        setUsers(data.users)
+      }
+    } catch (error) {
+      console.error('Users fetch error:', error)
+    }
+  }, [token])
+
   const handleQuickLookup = async (searchValue) => {
     if (!searchValue || searchValue.length < 2) return
     try {
