@@ -1990,11 +1990,86 @@ export function JiraTaskManager({ token, currentUser }) {
           <Button variant="outline" size="sm" onClick={() => setRefreshKey(prev => prev + 1)}>
             <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
           </Button>
-          <Button onClick={() => { setQuickCreateStatus(null); setCreateDialogOpen(true); }}>
+          
+          {/* Export Button */}
+          <Button variant="outline" size="sm" onClick={handleExportCSV}>
+            <FileDown className="h-4 w-4 mr-1" />
+            Export{selectedTasks.length > 0 ? ` (${selectedTasks.length})` : ''}
+          </Button>
+
+          {/* Templates Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline">
+                <LayoutTemplate className="h-4 w-4 mr-2" />
+                Templates
+                <ChevronDown className="h-4 w-4 ml-1" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {TASK_TEMPLATES.map((template) => {
+                const Icon = template.icon
+                return (
+                  <DropdownMenuItem 
+                    key={template.id}
+                    onClick={() => handleCreateFromTemplate(template)}
+                  >
+                    <div className={`p-1 rounded mr-2 ${template.color} text-white`}>
+                      <Icon className="h-3 w-3" />
+                    </div>
+                    {template.name}
+                  </DropdownMenuItem>
+                )
+              })}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button onClick={() => { setQuickCreateStatus(null); setSelectedTemplate(null); setCreateDialogOpen(true); }}>
             <Plus className="h-4 w-4 mr-2" />Create Task
           </Button>
         </div>
       </div>
+
+      {/* My Workload Summary (when My Tasks filter is active) */}
+      {quickFilter === 'my_tasks' && currentUser && (
+        <Card className="p-4 bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-3 rounded-full bg-blue-100">
+                <Target className="h-6 w-6 text-blue-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-lg">My Workload</h3>
+                <p className="text-sm text-muted-foreground">{currentUser.name || currentUser.email}</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-6">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-blue-600">{getFilteredTasks.length}</p>
+                <p className="text-xs text-muted-foreground">Total Tasks</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-amber-600">
+                  {getFilteredTasks.filter(t => t.status === 'in_progress').length}
+                </p>
+                <p className="text-xs text-muted-foreground">In Progress</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-red-600">
+                  {getFilteredTasks.filter(t => t.dueDate && isPast(new Date(t.dueDate)) && !isToday(new Date(t.dueDate)) && t.status !== 'completed').length}
+                </p>
+                <p className="text-xs text-muted-foreground">Overdue</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-emerald-600">
+                  {getFilteredTasks.filter(t => t.status === 'completed').length}
+                </p>
+                <p className="text-xs text-muted-foreground">Completed</p>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
 
       {/* Stats */}
       {stats && (
