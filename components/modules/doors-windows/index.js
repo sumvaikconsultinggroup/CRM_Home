@@ -327,6 +327,53 @@ export function DoorsWindowsModule({ client, user }) {
         </div>
       </div>
 
+      {/* NEW: Sync Notification Bar */}
+      {pendingSyncNotification && showSyncNotification && (
+        <div className="mx-6 mb-4">
+          <div className="bg-gradient-to-r from-amber-500 to-orange-500 text-white p-4 rounded-2xl shadow-lg flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="p-2 bg-white/20 rounded-xl">
+                <Bell className="h-6 w-6 animate-bounce" />
+              </div>
+              <div>
+                <p className="font-semibold">New Data Available for Sync!</p>
+                <p className="text-sm text-white/90">
+                  {pendingSyncNotification.projects > 0 && `${pendingSyncNotification.projects} new project${pendingSyncNotification.projects > 1 ? 's' : ''}`}
+                  {pendingSyncNotification.projects > 0 && pendingSyncNotification.leads > 0 && ', '}
+                  {pendingSyncNotification.leads > 0 && `${pendingSyncNotification.leads} lead${pendingSyncNotification.leads > 1 ? 's' : ''}`}
+                  {(pendingSyncNotification.projects > 0 || pendingSyncNotification.leads > 0) && pendingSyncNotification.contacts > 0 && ', '}
+                  {pendingSyncNotification.contacts > 0 && `${pendingSyncNotification.contacts} contact${pendingSyncNotification.contacts > 1 ? 's' : ''}`}
+                  {' '}ready to sync from CRM
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button 
+                variant="secondary" 
+                size="sm" 
+                className="bg-white text-orange-600 hover:bg-white/90"
+                onClick={() => { handleCrmSync(); setShowSyncNotification(false); }}
+                disabled={syncing}
+              >
+                {syncing ? (
+                  <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Syncing...</>
+                ) : (
+                  <><RefreshCw className="h-4 w-4 mr-2" /> Sync Now</>
+                )}
+              </Button>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                className="text-white hover:bg-white/20"
+                onClick={() => setShowSyncNotification(false)}
+              >
+                <XCircle className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="px-6 pb-6">
         {/* Tabs Navigation - Multi-row for all tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
