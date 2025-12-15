@@ -77,87 +77,303 @@ const MATERIAL_PROFILES = {
   }
 }
 
-// Interactive Floor Plan Component
-function InteractiveFloorPlan({ openings, onOpeningClick, onAddOpening, selectedFloor }) {
-  const canvasRef = useRef(null)
+// Interactive Floor Plan Component - Isometric 3D View
+function InteractiveFloorPlan({ openings, onOpeningClick, onAddOpening, selectedFloor, buildingType }) {
   const [zoom, setZoom] = useState(1)
-  const [pan, setPan] = useState({ x: 0, y: 0 })
-  const [selectedOpening, setSelectedOpening] = useState(null)
+  const [selectedRoom, setSelectedRoom] = useState(null)
+  const [viewAngle, setViewAngle] = useState('isometric') // isometric, top, front
   
-  // Group openings by room
+  // Group openings by room with counts
   const openingsByRoom = openings.reduce((acc, opening) => {
     const room = opening.room || 'Unassigned'
-    if (!acc[room]) acc[room] = []
-    acc[room].push(opening)
+    if (!acc[room]) acc[room] = { windows: [], doors: [], total: 0, area: 0 }
+    if (opening.type === 'Window') acc[room].windows.push(opening)
+    else acc[room].doors.push(opening)
+    acc[room].total++
+    acc[room].area += ((parseFloat(opening.width) || 0) * (parseFloat(opening.height) || 0)) / 92903.04
     return acc
   }, {})
 
   const rooms = Object.keys(openingsByRoom)
 
+  // Room icons based on type
+  const getRoomIcon = (room) => {
+    const roomLower = room.toLowerCase()
+    if (roomLower.includes('bed')) return '🛏️'
+    if (roomLower.includes('living')) return '🛋️'
+    if (roomLower.includes('kitchen')) return '🍳'
+    if (roomLower.includes('bath') || roomLower.includes('toilet')) return '🚿'
+    if (roomLower.includes('balcony')) return '🌅'
+    if (roomLower.includes('dining')) return '🍽️'
+    if (roomLower.includes('study') || roomLower.includes('office')) return '💼'
+    if (roomLower.includes('puja') || roomLower.includes('prayer')) return '🪔'
+    if (roomLower.includes('store') || roomLower.includes('utility')) return '📦'
+    if (roomLower.includes('entrance') || roomLower.includes('lobby')) return '🚪'
+    return '🏠'
+  }
+
+  // Room color based on type
+  const getRoomColor = (room) => {
+    const roomLower = room.toLowerCase()
+    if (roomLower.includes('bed')) return { bg: 'from-purple-100 to-purple-200', border: 'border-purple-400', accent: 'purple' }
+    if (roomLower.includes('living')) return { bg: 'from-blue-100 to-blue-200', border: 'border-blue-400', accent: 'blue' }
+    if (roomLower.includes('kitchen')) return { bg: 'from-orange-100 to-orange-200', border: 'border-orange-400', accent: 'orange' }
+    if (roomLower.includes('bath') || roomLower.includes('toilet')) return { bg: 'from-cyan-100 to-cyan-200', border: 'border-cyan-400', accent: 'cyan' }
+    if (roomLower.includes('balcony')) return { bg: 'from-green-100 to-green-200', border: 'border-green-400', accent: 'green' }
+    if (roomLower.includes('dining')) return { bg: 'from-amber-100 to-amber-200', border: 'border-amber-400', accent: 'amber' }
+    return { bg: 'from-slate-100 to-slate-200', border: 'border-slate-400', accent: 'slate' }
+  }
+
   return (
-    <div className="relative bg-gradient-to-br from-slate-100 to-slate-200 rounded-2xl overflow-hidden" style={{ minHeight: '400px' }}>
+    <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-900 rounded-2xl overflow-hidden" style={{ minHeight: '500px' }}>
+      {/* Grid Background */}
+      <div 
+        className="absolute inset-0 opacity-10"
+        style={{
+          backgroundImage: 'linear-gradient(rgba(255,255,255,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.1) 1px, transparent 1px)',
+          backgroundSize: '40px 40px'
+        }}
+      />
+
       {/* Toolbar */}
       <div className="absolute top-4 left-4 z-10 flex gap-2">
-        <Button variant="secondary" size="sm" onClick={() => setZoom(z => Math.min(z + 0.2, 2))}>
+        <div className="flex bg-white/10 backdrop-blur-sm rounded-lg p-1">
+          <button
+            onClick={() => setViewAngle('isometric')}
+            className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${
+              viewAngle === 'isometric' ? 'bg-white text-indigo-600' : 'text-white/70 hover:text-white'
+            }`}
+          >
+            3D View
+          </button>
+          <button
+            onClick={() => setViewAngle('top')}
+            className={`px-3 py-1.5 rounded text-xs font-medium transition-all ${
+              viewAngle === 'top' ? 'bg-white text-indigo-600' : 'text-white/70 hover:text-white'
+            }`}
+          >
+            Floor Plan
+          </button>
+        </div>
+        <Button variant="secondary" size="sm" className="bg-white/10 border-white/20 text-white hover:bg-white/20" onClick={() => setZoom(z => Math.min(z + 0.2, 2))}>
           <ZoomIn className="h-4 w-4" />
         </Button>
-        <Button variant="secondary" size="sm" onClick={() => setZoom(z => Math.max(z - 0.2, 0.5))}>
+        <Button variant="secondary" size="sm" className="bg-white/10 border-white/20 text-white hover:bg-white/20" onClick={() => setZoom(z => Math.max(z - 0.2, 0.5))}>
           <ZoomOut className="h-4 w-4" />
         </Button>
-        <Button variant="secondary" size="sm" onClick={() => { setZoom(1); setPan({ x: 0, y: 0 }); }}>
-          <Maximize className="h-4 w-4" />
-        </Button>
       </div>
 
-      {/* Floor indicator */}
-      <div className="absolute top-4 right-4 z-10">
-        <Badge className="bg-indigo-600 text-white px-3 py-1">{selectedFloor || 'Ground Floor'}</Badge>
+      {/* Floor & Stats */}
+      <div className="absolute top-4 right-4 z-10 flex flex-col gap-2 items-end">
+        <Badge className="bg-indigo-500 text-white px-3 py-1 shadow-lg">
+          {selectedFloor || 'Ground Floor'}
+        </Badge>
+        <div className="bg-white/10 backdrop-blur-sm rounded-lg p-2 text-white text-xs">
+          <div>{openings.length} Openings</div>
+          <div>{rooms.length} Rooms</div>
+        </div>
       </div>
 
-      {/* Interactive Floor Plan */}
+      {/* 3D Isometric Floor Plan */}
       <div 
-        className="w-full h-full p-8"
-        style={{ transform: `scale(${zoom}) translate(${pan.x}px, ${pan.y}px)` }}
+        className="w-full h-full p-8 flex items-center justify-center"
+        style={{ 
+          transform: `scale(${zoom})`,
+          perspective: viewAngle === 'isometric' ? '1000px' : 'none'
+        }}
       >
         {rooms.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64">
-            <Layout className="h-16 w-16 text-slate-300 mb-4" />
-            <p className="text-slate-500 text-center">No openings recorded yet</p>
-            <p className="text-sm text-slate-400">Add openings to see them visualized here</p>
+          <div className="flex flex-col items-center justify-center text-white/80">
+            <div className="w-32 h-32 mb-6 relative">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-2xl border-2 border-dashed border-white/30 flex items-center justify-center"
+                style={{ transform: viewAngle === 'isometric' ? 'rotateX(60deg) rotateZ(-45deg)' : 'none' }}
+              >
+                <Layout className="h-12 w-12 text-white/40" />
+              </div>
+            </div>
+            <p className="text-lg font-medium">No Openings Recorded</p>
+            <p className="text-sm text-white/60 mt-1">Add openings to see them visualized here</p>
+            <Button 
+              variant="secondary" 
+              className="mt-4 bg-white/10 border-white/30 text-white hover:bg-white/20"
+              onClick={() => onAddOpening?.()}
+            >
+              <Plus className="h-4 w-4 mr-2" /> Add First Opening
+            </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-3 gap-4">
-            {rooms.map(room => (
-              <div 
-                key={room}
-                className="bg-white/80 backdrop-blur-sm rounded-xl p-4 border-2 border-dashed border-slate-300 hover:border-indigo-400 transition-all"
-              >
-                <h4 className="font-semibold text-slate-700 mb-3 flex items-center gap-2">
-                  <Home className="h-4 w-4" />
-                  {room}
-                </h4>
-                <div className="grid grid-cols-2 gap-2">
-                  {openingsByRoom[room].map((opening, idx) => (
-                    <div
-                      key={opening.id || idx}
-                      className={`relative bg-gradient-to-br cursor-pointer rounded-lg p-2 transition-all hover:scale-105 ${
-                        opening.type === 'Window' 
-                          ? 'from-blue-100 to-cyan-100 border-2 border-blue-300' 
-                          : 'from-amber-100 to-orange-100 border-2 border-amber-300'
-                      }`}
-                      onClick={() => onOpeningClick?.(opening)}
-                    >
-                      <div className="text-center">
-                        <span className="text-2xl">{opening.type === 'Window' ? '🪟' : '🚪'}</span>
-                        <p className="text-xs font-mono mt-1">{opening.openingRef}</p>
-                        <p className="text-xs text-slate-600">{opening.width}×{opening.height}</p>
+          <div 
+            className="relative"
+            style={{ 
+              transform: viewAngle === 'isometric' ? 'rotateX(60deg) rotateZ(-45deg)' : 'none',
+              transformStyle: 'preserve-3d'
+            }}
+          >
+            {/* Room Grid */}
+            <div className="grid gap-4" style={{ 
+              gridTemplateColumns: `repeat(${Math.min(3, rooms.length)}, minmax(180px, 1fr))` 
+            }}>
+              {rooms.map((room, idx) => {
+                const roomData = openingsByRoom[room]
+                const colors = getRoomColor(room)
+                const isSelected = selectedRoom === room
+                
+                return (
+                  <div
+                    key={room}
+                    className={`relative bg-gradient-to-br ${colors.bg} rounded-xl p-4 cursor-pointer transition-all duration-300 ${colors.border} border-2 ${
+                      isSelected ? 'ring-4 ring-white/50 scale-105 shadow-2xl' : 'hover:scale-102 shadow-lg'
+                    }`}
+                    style={{
+                      transformStyle: 'preserve-3d',
+                      transform: viewAngle === 'isometric' ? `translateZ(${isSelected ? '20px' : '0px'})` : 'none'
+                    }}
+                    onClick={() => setSelectedRoom(isSelected ? null : room)}
+                  >
+                    {/* Room 3D Effect - Side */}
+                    {viewAngle === 'isometric' && (
+                      <>
+                        <div 
+                          className={`absolute top-0 -right-4 w-4 h-full bg-gradient-to-r from-${colors.accent}-300 to-${colors.accent}-400 rounded-r-lg`}
+                          style={{ transform: 'skewY(-45deg)', transformOrigin: 'top left' }}
+                        />
+                        <div 
+                          className={`absolute -bottom-4 left-0 w-full h-4 bg-gradient-to-b from-${colors.accent}-300 to-${colors.accent}-400 rounded-b-lg`}
+                          style={{ transform: 'skewX(-45deg)', transformOrigin: 'top left' }}
+                        />
+                      </>
+                    )}
+                    
+                    {/* Room Header */}
+                    <div className="flex items-center gap-2 mb-3">
+                      <span className="text-2xl">{getRoomIcon(room)}</span>
+                      <div>
+                        <h4 className="font-semibold text-slate-800 text-sm">{room}</h4>
+                        <p className="text-xs text-slate-500">{roomData.area.toFixed(1)} sq.ft</p>
                       </div>
                     </div>
-                  ))}
-                </div>
-                <Button 
-                  variant="ghost" 
-                  size="sm" 
+                    
+                    {/* Openings Display */}
+                    <div className="space-y-2">
+                      {/* Windows */}
+                      {roomData.windows.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {roomData.windows.map((w, i) => (
+                            <div
+                              key={w.id || i}
+                              className="relative w-10 h-10 bg-gradient-to-br from-sky-300 to-blue-400 rounded border-2 border-sky-500 flex items-center justify-center shadow-inner cursor-pointer hover:scale-110 transition-transform"
+                              onClick={(e) => { e.stopPropagation(); onOpeningClick?.(w); }}
+                              title={`${w.openingRef}: ${w.width}×${w.height}mm`}
+                            >
+                              <span className="text-xs font-mono text-white font-bold">{w.openingRef}</span>
+                              {/* Glass reflection effect */}
+                              <div className="absolute inset-1 bg-gradient-to-br from-white/40 to-transparent rounded-sm" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {/* Doors */}
+                      {roomData.doors.length > 0 && (
+                        <div className="flex flex-wrap gap-1">
+                          {roomData.doors.map((d, i) => (
+                            <div
+                              key={d.id || i}
+                              className="relative w-8 h-12 bg-gradient-to-br from-amber-600 to-amber-800 rounded-t border-2 border-amber-900 flex items-end justify-center pb-1 shadow-lg cursor-pointer hover:scale-110 transition-transform"
+                              onClick={(e) => { e.stopPropagation(); onOpeningClick?.(d); }}
+                              title={`${d.openingRef}: ${d.width}×${d.height}mm`}
+                            >
+                              <span className="text-xs font-mono text-amber-200 font-bold">{d.openingRef}</span>
+                              {/* Door handle */}
+                              <div className="absolute right-1 top-1/2 w-1.5 h-1.5 bg-amber-300 rounded-full" />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Add Opening Button */}
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      className="w-full mt-3 text-xs h-7 bg-white/50 hover:bg-white"
+                      onClick={(e) => { e.stopPropagation(); onAddOpening?.(room); }}
+                    >
+                      <Plus className="h-3 w-3 mr-1" /> Add
+                    </Button>
+                    
+                    {/* Stats Badge */}
+                    <div className="absolute -top-2 -right-2 bg-indigo-600 text-white text-xs font-bold px-2 py-0.5 rounded-full shadow">
+                      {roomData.total}
+                    </div>
+                  </div>
+                )
+              })}
+              
+              {/* Add New Room Card */}
+              <div 
+                className="bg-white/10 backdrop-blur-sm rounded-xl p-4 border-2 border-dashed border-white/30 hover:border-white/50 cursor-pointer flex flex-col items-center justify-center min-h-[150px] transition-all hover:bg-white/20"
+                onClick={() => onAddOpening?.()}
+              >
+                <Plus className="h-10 w-10 text-white/50 mb-2" />
+                <p className="text-white/70 text-sm font-medium">Add Opening</p>
+                <p className="text-white/50 text-xs">New Room</p>
+              </div>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Legend */}
+      <div className="absolute bottom-4 left-4 flex gap-4 text-white/70 text-xs">
+        <div className="flex items-center gap-1">
+          <div className="w-4 h-4 bg-gradient-to-br from-sky-300 to-blue-400 rounded border border-sky-500" />
+          <span>Window</span>
+        </div>
+        <div className="flex items-center gap-1">
+          <div className="w-3 h-5 bg-gradient-to-br from-amber-600 to-amber-800 rounded-t border border-amber-900" />
+          <span>Door</span>
+        </div>
+      </div>
+
+      {/* Selected Room Detail Panel */}
+      {selectedRoom && (
+        <div className="absolute bottom-4 right-4 w-64 bg-white/95 backdrop-blur-sm rounded-xl p-4 shadow-2xl border border-white/50">
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="font-semibold text-slate-800 flex items-center gap-2">
+              <span className="text-xl">{getRoomIcon(selectedRoom)}</span>
+              {selectedRoom}
+            </h4>
+            <button onClick={() => setSelectedRoom(null)} className="text-slate-400 hover:text-slate-600">
+              <X className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-slate-500">Windows:</span>
+              <span className="font-medium">{openingsByRoom[selectedRoom].windows.length}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Doors:</span>
+              <span className="font-medium">{openingsByRoom[selectedRoom].doors.length}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-slate-500">Total Area:</span>
+              <span className="font-medium">{openingsByRoom[selectedRoom].area.toFixed(2)} sq.ft</span>
+            </div>
+          </div>
+          <Button 
+            size="sm" 
+            className="w-full mt-3 bg-indigo-600 hover:bg-indigo-700"
+            onClick={() => onAddOpening?.(selectedRoom)}
+          >
+            <Plus className="h-4 w-4 mr-1" /> Add Opening
+          </Button>
+        </div>
+      )}
+    </div>
+  )
+} 
                   className="w-full mt-2 text-xs"
                   onClick={() => onAddOpening?.(room)}
                 >
