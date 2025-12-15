@@ -969,51 +969,15 @@ function ClientDashboard({ user, client, onLogout }) {
               </motion.div>
             )}
 
-            {/* Projects Tab */}
+            {/* Projects Tab - Enterprise */}
             {activeTab === 'projects' && (
               <motion.div
                 key="projects"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="space-y-6"
               >
-                <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-bold">Projects</h2>
-                  <Button onClick={() => { setDialogType('project'); setEditingItem(null); setShowDialog(true); }}>
-                    <Plus className="h-4 w-4 mr-2" /> Add Project
-                  </Button>
-                </div>
-
-                <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {projects.map((project, i) => (
-                    <motion.div
-                      key={project.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.05 }}
-                    >
-                      <GlassCard className="p-6 hover:shadow-xl transition-shadow cursor-pointer" onClick={() => { setDialogType('project'); setEditingItem(project); setShowDialog(true); }}>
-                        <div className="flex justify-between items-start mb-4">
-                          <h3 className="font-semibold">{project.name}</h3>
-                          <Badge className={statusColors[project.status]}>{project.status?.replace('_', ' ')}</Badge>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-4">{project.description}</p>
-                        <div className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span>Progress</span>
-                            <span className="font-medium">{project.progress}%</span>
-                          </div>
-                          <Progress value={project.progress} className="h-2" />
-                        </div>
-                        <div className="flex justify-between mt-4 pt-4 border-t text-sm">
-                          <span className="text-muted-foreground">Budget</span>
-                          <span className="font-bold">₹{project.budget?.toLocaleString()}</span>
-                        </div>
-                      </GlassCard>
-                    </motion.div>
-                  ))}
-                </div>
+                <EnterpriseProjects authToken={authToken} />
               </motion.div>
             )}
 
