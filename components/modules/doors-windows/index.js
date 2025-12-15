@@ -172,14 +172,8 @@ export function DoorsWindowsModule({ client, user }) {
       const res = await fetch(`${API_BASE}/projects`, { headers })
       const data = await res.json()
       if (data.projects) {
-        // FIXED: Filter to show only actual projects, not leads
-        const actualProjects = data.projects.filter(p => 
-          // Include manually created projects OR projects synced from CRM projects (not leads)
-          p.source === 'manual' || 
-          p.crmProjectId || 
-          (p.source === 'crm_sync' && p.syncedFrom?.type === 'project')
-        )
-        setProjects(actualProjects)
+        // Show all projects, but flag lead-sourced ones differently for UI
+        setProjects(data.projects)
       }
     } catch (error) {
       console.error('Failed to fetch projects:', error)
