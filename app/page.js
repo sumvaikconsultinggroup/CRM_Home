@@ -602,7 +602,8 @@ function ClientDashboard({ user, client, onLogout }) {
       ])
       setStats(statsData)
       setLeads(leadsData)
-      setProjects(projectsData)
+      // Handle new projects API format { projects: [], stats: {} }
+      setProjects(Array.isArray(projectsData) ? projectsData : (projectsData?.projects || []))
       setTasks(tasksData)
       setExpenses(expensesData)
       setUsers(usersData)
