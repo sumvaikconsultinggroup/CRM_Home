@@ -58,6 +58,7 @@ import { SecurityCenter } from '@/components/super-admin/security-center'
 import { BillingCenter } from '@/components/super-admin/billing-center'
 import { EnterpriseProjects } from '@/components/enterprise-projects'
 import { EnterpriseTeams } from '@/components/enterprise-teams'
+import { EnterpriseTaskManager } from '@/components/enterprise-tasks'
 
 // Animation variants
 const fadeIn = {
