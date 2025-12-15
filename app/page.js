@@ -681,11 +681,11 @@ function ClientDashboard({ user, client, onLogout }) {
   }, [client, planId])
 
 
-  // Check if modules are enabled
+  // Check if modules are enabled - only show modules that are actually assigned to the client
   const hasFlooringModule = modules.some(m => m.id === 'wooden-flooring' && m.enabled)
-  const hasFurnitureModule = modules.some(m => m.id === 'furniture' && m.enabled) || true // Always show for now
-  const hasDoorsWindowsModule = modules.some(m => (m.id === 'doors-windows' || m.id === 'doors-and-windows') && m.enabled) || true // Always show for now
-  const hasPaintsModule = modules.some(m => m.id === 'paints-coatings' && m.enabled) || true // Always show for now
+  const hasFurnitureModule = modules.some(m => m.id === 'furniture' && m.enabled)
+  const hasDoorsWindowsModule = modules.some(m => (m.id === 'doors-windows' || m.id === 'doors-and-windows') && m.enabled)
+  const hasPaintsModule = modules.some(m => m.id === 'paints-coatings' && m.enabled)
 
   const menuItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
