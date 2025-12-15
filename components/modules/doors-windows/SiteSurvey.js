@@ -1716,36 +1716,166 @@ export function SiteSurvey({ surveys, projects, selectedProject, onRefresh, head
         </DialogContent>
       </Dialog>
 
-      {/* Quote Confirmation Dialog */}
+      {/* Enhanced Quote Generation Dialog */}
       <Dialog open={showQuoteConfirm} onOpenChange={setShowQuoteConfirm}>
-        <DialogContent className="max-w-md">
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Receipt className="h-5 w-5 text-emerald-600" />
-              Send Survey for Quotation
+              Generate Quote from Survey
+              <Badge className="bg-indigo-100 text-indigo-700 font-mono ml-2">
+                #{viewingSurvey?.siteCode}
+              </Badge>
             </DialogTitle>
+            <DialogDescription>
+              Review surveyed openings and generate quotation
+            </DialogDescription>
           </DialogHeader>
-          <div className="space-y-4 py-4">
-            <div className="p-4 bg-slate-50 rounded-lg space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-600">Site Code:</span>
-                <span className="font-mono font-medium">{viewingSurvey?.siteCode}</span>
+          
+          <div className="flex-1 overflow-hidden flex flex-col">
+            {/* Summary Cards */}
+            <div className="grid grid-cols-4 gap-3 mb-4">
+              <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-none">
+                <CardContent className="p-3 text-center">
+                  <p className="text-2xl font-bold text-blue-700">{surveyOpenings.length}</p>
+                  <p className="text-xs text-blue-600">Openings</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-purple-50 to-pink-50 border-none">
+                <CardContent className="p-3 text-center">
+                  <p className="text-2xl font-bold text-purple-700">
+                    {surveyOpenings.filter(o => o.type === 'Window').length}
+                  </p>
+                  <p className="text-xs text-purple-600">Windows</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-amber-50 to-orange-50 border-none">
+                <CardContent className="p-3 text-center">
+                  <p className="text-2xl font-bold text-amber-700">
+                    {surveyOpenings.filter(o => o.type !== 'Window').length}
+                  </p>
+                  <p className="text-xs text-amber-600">Doors</p>
+                </CardContent>
+              </Card>
+              <Card className="bg-gradient-to-br from-emerald-50 to-green-50 border-none">
+                <CardContent className="p-3 text-center">
+                  <p className="text-2xl font-bold text-emerald-700">{totalOpeningsArea.toFixed(1)}</p>
+                  <p className="text-xs text-emerald-600">Total Sq.Ft</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Openings to be Quoted */}
+            <div className="flex items-center justify-between mb-2">
+              <h4 className="font-semibold text-slate-700">Openings to be Quoted</h4>
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={() => { setShowQuoteConfirm(false); resetOpeningForm(); setShowOpeningDialog(true); }}
+              >
+                <Plus className="h-4 w-4 mr-1" /> Add More
+              </Button>
+            </div>
+
+            <ScrollArea className="flex-1 border rounded-lg">
+              <div className="p-4 space-y-3">
+                {surveyOpenings.map((opening, idx) => (
+                  <div 
+                    key={opening.id || idx}
+                    className="flex items-center gap-4 p-3 bg-slate-50 rounded-lg hover:bg-slate-100 transition-all"
+                  >
+                    {/* Icon */}
+                    <div className={`w-12 h-12 rounded-lg flex items-center justify-center text-2xl ${
+                      opening.type === 'Window' 
+                        ? 'bg-blue-100' 
+                        : 'bg-amber-100'
+                    }`}>
+                      {opening.type === 'Window' ? '🪟' : '🚪'}
+                    </div>
+                    
+                    {/* Details */}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono text-sm bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded">
+                          {opening.openingRef}
+                        </span>
+                        <span className="font-medium text-slate-800">
+                          {opening.type} - {opening.category}
+                        </span>
+                      </div>
+                      <p className="text-sm text-slate-500">
+                        {opening.room} • {opening.floor} • {opening.material}
+                      </p>
+                    </div>
+                    
+                    {/* Dimensions */}
+                    <div className="text-right">
+                      <p className="font-mono text-sm text-slate-700">
+                        {opening.width} × {opening.height} mm
+                      </p>
+                      <p className="text-xs text-slate-500">
+                        {(((parseFloat(opening.width) || 0) * (parseFloat(opening.height) || 0)) / 92903.04).toFixed(2)} sq.ft
+                      </p>
+                    </div>
+                    
+                    {/* Accessories */}
+                    <div className="flex gap-1">
+                      {opening.mesh && <Badge variant="secondary" className="text-xs">Mesh</Badge>}
+                      {opening.grill && <Badge variant="secondary" className="text-xs">Grill</Badge>}
+                    </div>
+                  </div>
+                ))}
+                
+                {surveyOpenings.length === 0 && (
+                  <div className="text-center py-8 text-slate-500">
+                    <Ruler className="h-12 w-12 mx-auto mb-3 text-slate-300" />
+                    <p>No openings in this survey</p>
+                    <Button 
+                      variant="outline" 
+                      className="mt-3"
+                      onClick={() => { setShowQuoteConfirm(false); resetOpeningForm(); setShowOpeningDialog(true); }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" /> Add Opening
+                    </Button>
+                  </div>
+                )}
               </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-600">Total Openings:</span>
-                <span className="font-medium">{surveyOpenings.length}</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-slate-600">Total Area:</span>
-                <span className="font-medium">{totalOpeningsArea.toFixed(2)} sq.ft</span>
+            </ScrollArea>
+
+            {/* Customer Info */}
+            <div className="mt-4 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="font-semibold text-blue-800 mb-2">Quote will be generated for:</h4>
+              <div className="grid grid-cols-2 gap-2 text-sm">
+                <div>
+                  <span className="text-blue-600">Customer:</span>{' '}
+                  <span className="font-medium text-blue-900">{viewingSurvey?.contactPerson}</span>
+                </div>
+                <div>
+                  <span className="text-blue-600">Phone:</span>{' '}
+                  <span className="font-medium text-blue-900">{viewingSurvey?.contactPhone}</span>
+                </div>
+                <div className="col-span-2">
+                  <span className="text-blue-600">Site:</span>{' '}
+                  <span className="font-medium text-blue-900">{viewingSurvey?.siteAddress}</span>
+                </div>
               </div>
             </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setShowQuoteConfirm(false)}>Cancel</Button>
-            <Button onClick={handleSendForQuote} disabled={creatingQuote} className="bg-emerald-600 hover:bg-emerald-700">
-              {creatingQuote ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <ArrowRight className="h-4 w-4 mr-2" />}
-              Create Quotation
+
+          <DialogFooter className="border-t pt-4 mt-4">
+            <Button variant="outline" onClick={() => setShowQuoteConfirm(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSendForQuote} 
+              disabled={creatingQuote || surveyOpenings.length === 0}
+              className="bg-gradient-to-r from-emerald-600 to-green-600 hover:from-emerald-700 hover:to-green-700"
+            >
+              {creatingQuote ? (
+                <><Loader2 className="h-4 w-4 animate-spin mr-2" /> Creating Quote...</>
+              ) : (
+                <><Sparkles className="h-4 w-4 mr-2" /> Generate Quote ({surveyOpenings.length} items)</>
+              )}
             </Button>
           </DialogFooter>
         </DialogContent>
