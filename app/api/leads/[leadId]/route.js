@@ -53,9 +53,36 @@ export async function PUT(request, { params }) {
 
     const now = new Date()
     let projectCreated = null
+    let contactUpdated = null
+
+    // Get contacts collection for status-based updates
+    const contactsCollection = db.collection('contacts')
+
+    // Check if status is changing to "lost" - Update contact to nurturing
+    if (body.status === 'lost' && existingLead.status !== 'lost') {
+      // Find contact associated with this lead
+      const leadContact = existingLead.contactId 
+        ? await contactsCollection.findOne({ id: existingLead.contactId })
+        : await contactsCollection.findOne({ leadId: leadId })
+      
+      if (leadContact) {
+        await contactsCollection.updateOne(
+          { id: leadContact.id },
+          { 
+            $set: { 
+              type: 'nurturing',
+              status: 'inactive',
+              tags: [...new Set([...(leadContact.tags || []).filter(t => t !== 'new-lead'), 'lost-lead', 'nurturing'])],
+              notes: `${leadContact.notes || ''}\n[${now.toISOString()}] Lead marked as lost - moved to nurturing.`,
+              updatedAt: now
+            }
+          }
+        )
+        contactUpdated = { id: leadContact.id, type: 'nurturing' }
+      }
+    }
 
     // Check if status is changing to "won" - Auto-create project
-    if (body.status === 'won' && existingLead.status !== 'won') {
       const projectsCollection = db.collection('projects')
       
       // Check if project already exists for this lead
