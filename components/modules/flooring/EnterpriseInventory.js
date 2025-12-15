@@ -503,7 +503,8 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
     if (activeSubTab === 'grn') fetchGrns()
     if (activeSubTab === 'challans') fetchChallans()
     if (activeSubTab === 'reservations') fetchReservations()
-  }, [activeSubTab, fetchTransfers, fetchReport, selectedReport, fetchCycleCounts, fetchGrns, fetchChallans, fetchReservations])
+    if (activeSubTab === 'access') { fetchAccessRecords(); fetchUsers() }
+  }, [activeSubTab, fetchTransfers, fetchReport, selectedReport, fetchCycleCounts, fetchGrns, fetchChallans, fetchReservations, fetchAccessRecords, fetchUsers])
 
   // Refresh all data
   const refreshAll = () => {
