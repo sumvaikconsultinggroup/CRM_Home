@@ -1567,10 +1567,15 @@ export function JiraTaskManager({ token, currentUser }) {
   const [sortField, setSortField] = useState('createdAt')
   const [sortDirection, setSortDirection] = useState('desc')
 
+  // Drag & Drop
+  const [draggingTaskId, setDraggingTaskId] = useState(null)
+
   // Dialogs
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [quickCreateStatus, setQuickCreateStatus] = useState(null)
   const [bulkActionOpen, setBulkActionOpen] = useState(false)
+  const [templateDialogOpen, setTemplateDialogOpen] = useState(false)
+  const [selectedTemplate, setSelectedTemplate] = useState(null)
 
   const headers = useMemo(() => ({
     'Content-Type': 'application/json',
