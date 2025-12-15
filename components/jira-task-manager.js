@@ -2425,6 +2425,7 @@ export function JiraTaskManager({ token, currentUser }) {
         onClose={() => { setDetailOpen(false); setSelectedTask(null); }}
         onUpdate={handleUpdateTask}
         onDelete={handleDeleteTask}
+        onDuplicate={handleDuplicateTask}
         users={users}
         projects={projects}
         token={token}
