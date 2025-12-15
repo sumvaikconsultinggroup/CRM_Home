@@ -947,6 +947,16 @@ function ClientDashboard({ user, client, onLogout }) {
           </div>
         )}
 
+        {/* Build Finance Product View */}
+        {activeProduct === 'build-finance' && (
+          <div className="p-6">
+            <BuildFinance 
+              token={authToken}
+              user={user}
+            />
+          </div>
+        )}
+
         {/* Build CRM (Default) */}
         {activeProduct === 'build-crm' && (
           <>
