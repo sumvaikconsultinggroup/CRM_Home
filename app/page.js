@@ -1086,7 +1086,7 @@ function ClientDashboard({ user, client, onLogout }) {
               </motion.div>
             )}
 
-            {/* Users Tab */}
+            {/* Users Tab - User Management */}
             {activeTab === 'users' && (
               <motion.div
                 key="users"
@@ -1096,7 +1096,10 @@ function ClientDashboard({ user, client, onLogout }) {
                 className="space-y-6"
               >
                 <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-bold">Team Members</h2>
+                  <div>
+                    <h2 className="text-2xl font-bold">User Management</h2>
+                    <p className="text-muted-foreground">Manage organization users and their roles</p>
+                  </div>
                   <Button onClick={() => { setDialogType('user'); setEditingItem(null); setShowDialog(true); }}>
                     <UserPlus className="h-4 w-4 mr-2" /> Add User
                   </Button>
@@ -1126,6 +1129,18 @@ function ClientDashboard({ user, client, onLogout }) {
                     ))}
                   </div>
                 </GlassCard>
+              </motion.div>
+            )}
+
+            {/* Teams Tab - Slack-like Collaboration */}
+            {activeTab === 'teams' && (
+              <motion.div
+                key="teams"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                <EnterpriseTeams authToken={authToken} users={users} />
               </motion.div>
             )}
 
