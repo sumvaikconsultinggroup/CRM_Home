@@ -3160,6 +3160,12 @@ const CreateTaskDialog = ({ open, onClose, onCreate, defaultStatus, template, us
               ))}
             </div>
           </div>
+          
+          {/* Recurring Task Settings */}
+          <RecurringTaskSettings 
+            value={formData.recurrence}
+            onChange={(recurrence) => setFormData(p => ({ ...p, recurrence }))}
+          />
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
