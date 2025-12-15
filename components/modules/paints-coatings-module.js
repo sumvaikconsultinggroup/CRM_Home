@@ -39,6 +39,9 @@ import {
 
 const MODULE_TABS = [
   { id: 'dashboard', label: 'Dashboard', icon: BarChart3 },
+  { id: 'leads', label: 'Leads', icon: Target },
+  { id: 'surveys', label: 'Surveys', icon: ClipboardList },
+  { id: 'specifications', label: 'Specifications', icon: FileCheck },
   { id: 'products', label: 'Products', icon: Package },
   { id: 'colors', label: 'Colors & Shades', icon: Palette },
   { id: 'categories', label: 'Categories', icon: FolderOpen },
@@ -46,6 +49,39 @@ const MODULE_TABS = [
   { id: 'rate-cards', label: 'Rate Cards', icon: Calculator },
   { id: 'settings', label: 'Settings', icon: Settings }
 ]
+
+const LEAD_TYPES = {
+  dealer_enquiry: { label: 'Dealer Enquiry', color: 'bg-blue-100 text-blue-700', icon: Building2 },
+  project_enquiry: { label: 'Project Enquiry', color: 'bg-purple-100 text-purple-700', icon: Layers },
+  service_job: { label: 'Service Job', color: 'bg-green-100 text-green-700', icon: Paintbrush },
+  product_inquiry: { label: 'Product Inquiry', color: 'bg-amber-100 text-amber-700', icon: Package }
+}
+
+const LEAD_STATUS = {
+  new: { label: 'New', color: 'bg-blue-100 text-blue-700' },
+  contacted: { label: 'Contacted', color: 'bg-slate-100 text-slate-700' },
+  site_visit_scheduled: { label: 'Visit Scheduled', color: 'bg-amber-100 text-amber-700' },
+  surveyed: { label: 'Surveyed', color: 'bg-purple-100 text-purple-700' },
+  spec_in_progress: { label: 'Spec in Progress', color: 'bg-indigo-100 text-indigo-700' },
+  spec_approved: { label: 'Spec Approved', color: 'bg-cyan-100 text-cyan-700' },
+  quoted: { label: 'Quoted', color: 'bg-orange-100 text-orange-700' },
+  won: { label: 'Won', color: 'bg-emerald-100 text-emerald-700' },
+  lost: { label: 'Lost', color: 'bg-red-100 text-red-700' }
+}
+
+const SURVEY_STATUS = {
+  draft: { label: 'Draft', color: 'bg-slate-100 text-slate-700' },
+  completed: { label: 'Completed', color: 'bg-emerald-100 text-emerald-700' },
+  approved: { label: 'Approved', color: 'bg-blue-100 text-blue-700' }
+}
+
+const SPEC_STATUS = {
+  draft: { label: 'Draft', color: 'bg-slate-100 text-slate-700' },
+  pending_internal: { label: 'Pending Internal', color: 'bg-amber-100 text-amber-700' },
+  pending_client: { label: 'Pending Client', color: 'bg-purple-100 text-purple-700' },
+  approved: { label: 'Approved', color: 'bg-emerald-100 text-emerald-700' },
+  rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700' }
+}
 
 const FINISH_TYPES = {
   matte: { label: 'Matte', sheen: 0, color: 'bg-slate-100 text-slate-700' },
