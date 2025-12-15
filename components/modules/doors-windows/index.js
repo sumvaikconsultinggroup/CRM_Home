@@ -459,7 +459,7 @@ export function DoorsWindowsModule({ client, user }) {
               surveys={surveys}
               projects={projects}
               selectedProject={selectedProject}
-              onRefresh={() => { fetchAllData(); fetchProjects(); }}
+              onRefresh={() => { fetchCriticalData(); fetchProjects(); }}
               headers={headers}
               user={user}
               glassStyles={glassStyles}
