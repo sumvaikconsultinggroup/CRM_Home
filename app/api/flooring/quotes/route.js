@@ -108,8 +108,7 @@ const reserveInventory = async (clientId, quoteId, quoteNumber, customerName, it
 // Release inventory reservation when quote is cancelled/deleted
 const releaseReservation = async (clientId, quoteId) => {
   try {
-    const dbName = `client_${clientId.replace(/-/g, '_')}`
-    const db = await getClientDb(dbName)
+    const db = await getClientDb(clientId)
     const reservationCollection = db.collection('inventory_reservations')
     const stockCollection = db.collection('wf_inventory_stock')
     
