@@ -1485,7 +1485,7 @@ function ClientDashboard({ user, client, onLogout }) {
             )}
           </AnimatePresence>
         </div>
-          </>
+        </>
         )}
       </main>
 
