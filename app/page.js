@@ -699,8 +699,7 @@ function ClientDashboard({ user, client, onLogout }) {
     { id: 'expenses', icon: Receipt, label: 'Expenses' },
     { id: 'calendar', icon: CalendarDays, label: 'Calendar & Notes' },
     { id: 'users', icon: Shield, label: 'User Management' },
-    { id: 'teams', icon: MessageSquare, label: 'Teams' },
-    { id: 'chat', icon: Send, label: 'Team Chat', isChat: true },
+    { id: 'teams', icon: MessageSquare, label: 'Teams Hub' },
     { id: 'reports', icon: BarChart3, label: 'Reports' },
     // Add Wooden Flooring module link if enabled
     ...(hasFlooringModule ? [{ id: 'flooring-module', icon: Layers, label: 'Wooden Flooring', isModule: true }] : []),
