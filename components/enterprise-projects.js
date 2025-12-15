@@ -1508,17 +1508,26 @@ export function EnterpriseProjects({ authToken, onProjectSelect }) {
                       <h4 className="font-medium flex items-center gap-2">
                         <FileText className="h-4 w-4" /> Project Tasks
                       </h4>
+                      <Button size="sm" onClick={() => setShowTaskDialog(true)}>
+                        <Plus className="h-4 w-4 mr-1" /> Add Task
+                      </Button>
                     </div>
                     {projectDetail.tasks?.length === 0 ? (
                       <div className="text-center py-8 text-slate-400">
                         <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
                         <p>No tasks linked to this project</p>
+                        <Button size="sm" variant="outline" className="mt-3" onClick={() => setShowTaskDialog(true)}>
+                          <Plus className="h-4 w-4 mr-1" /> Add First Task
+                        </Button>
                       </div>
                     ) : (
                       <div className="space-y-2">
                         {projectDetail.tasks?.map(task => (
                           <div key={task.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-                            <Checkbox checked={task.status === 'completed'} />
+                            <Checkbox 
+                              checked={task.status === 'completed'} 
+                              onCheckedChange={() => handleToggleTask(task.id, task.status)}
+                            />
                             <div className="flex-1">
                               <p className={`font-medium ${task.status === 'completed' ? 'line-through text-slate-400' : ''}`}>
                                 {task.title}
