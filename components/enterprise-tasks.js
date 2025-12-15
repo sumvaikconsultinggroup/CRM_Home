@@ -1038,7 +1038,12 @@ const TaskDialog = ({ open, onClose, task, onSave, users, projects, loading }) =
       toast.error('Title is required')
       return
     }
-    onSave(formData)
+    // Convert 'none' project back to null
+    const submitData = {
+      ...formData,
+      projectId: formData.projectId === 'none' ? null : formData.projectId
+    }
+    onSave(submitData)
   }
 
   const toggleLabel = (labelId) => {
