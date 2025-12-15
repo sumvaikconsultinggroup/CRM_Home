@@ -373,27 +373,6 @@ function InteractiveFloorPlan({ openings, onOpeningClick, onAddOpening, selected
       )}
     </div>
   )
-} 
-                  className="w-full mt-2 text-xs"
-                  onClick={() => onAddOpening?.(room)}
-                >
-                  <Plus className="h-3 w-3 mr-1" /> Add Opening
-                </Button>
-              </div>
-            ))}
-            {/* Add new room */}
-            <div 
-              className="bg-slate-50/50 rounded-xl p-4 border-2 border-dashed border-slate-200 hover:border-indigo-300 cursor-pointer flex flex-col items-center justify-center min-h-[150px] transition-all"
-              onClick={() => onAddOpening?.()}
-            >
-              <Plus className="h-8 w-8 text-slate-300 mb-2" />
-              <p className="text-sm text-slate-400">Add Opening</p>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
-  )
 }
 
 // Live Opening Visualization Component
