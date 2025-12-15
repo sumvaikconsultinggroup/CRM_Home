@@ -412,6 +412,17 @@ function SuperAdminDashboard({ user, onLogout }) {
               </motion.div>
             )}
 
+            {activeTab === 'products' && (
+              <motion.div
+                key="products"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                <ProductAssignment token={token} />
+              </motion.div>
+            )}
+
             {activeTab === 'modules' && (
               <motion.div
                 key="modules"
