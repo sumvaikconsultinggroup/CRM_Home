@@ -1706,6 +1706,110 @@ export function JiraTaskManager({ token, currentUser }) {
     setCreateDialogOpen(true)
   }
 
+  // Drag & Drop handlers
+  const handleDragDrop = async (taskId, newStatus) => {
+    const task = tasks.find(t => t.id === taskId)
+    if (!task || task.status === newStatus) {
+      setDraggingTaskId(null)
+      return
+    }
+    
+    // Optimistic update
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: newStatus } : t))
+    setDraggingTaskId(null)
+    
+    try {
+      const res = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ status: newStatus })
+      })
+      if (res.ok) {
+        toast.success(`Task moved to ${TASK_STATUSES[newStatus].label}`)
+      } else {
+        // Revert on error
+        setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: task.status } : t))
+        toast.error('Failed to move task')
+      }
+    } catch (error) {
+      // Revert on error
+      setTasks(prev => prev.map(t => t.id === taskId ? { ...t, status: task.status } : t))
+      toast.error('Failed to move task')
+    }
+  }
+
+  // Duplicate task
+  const handleDuplicateTask = async (task) => {
+    try {
+      const duplicateData = {
+        title: `${task.title} (Copy)`,
+        description: task.description,
+        taskType: task.taskType,
+        status: 'todo',
+        priority: task.priority,
+        projectId: task.projectId,
+        labels: task.labels,
+        estimatedHours: task.estimatedHours,
+        checklist: task.checklist?.map(c => ({ ...c, id: Date.now().toString() + Math.random(), completed: false }))
+      }
+      
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(duplicateData)
+      })
+      
+      if (res.ok) {
+        toast.success('Task duplicated')
+        setRefreshKey(prev => prev + 1)
+      }
+    } catch (error) {
+      toast.error('Failed to duplicate task')
+    }
+  }
+
+  // Export tasks to CSV
+  const handleExportCSV = () => {
+    const tasksToExport = selectedTasks.length > 0 
+      ? getFilteredTasks.filter(t => selectedTasks.includes(t.id))
+      : getFilteredTasks
+    
+    if (tasksToExport.length === 0) {
+      toast.error('No tasks to export')
+      return
+    }
+
+    const headers = ['Task Number', 'Title', 'Status', 'Priority', 'Type', 'Due Date', 'Assignees', 'Labels', 'Created At']
+    const rows = tasksToExport.map(task => [
+      task.taskNumber || '',
+      `"${(task.title || '').replace(/"/g, '""')}"`,
+      TASK_STATUSES[task.status]?.label || task.status,
+      TASK_PRIORITIES[task.priority]?.label || task.priority,
+      TASK_TYPES[task.taskType]?.label || task.taskType,
+      task.dueDate ? format(new Date(task.dueDate), 'yyyy-MM-dd') : '',
+      `"${(task.assigneeDetails || []).map(a => a.name || a.email).join(', ')}"`,
+      `"${(task.labels || []).join(', ')}"`,
+      task.createdAt ? format(new Date(task.createdAt), 'yyyy-MM-dd HH:mm') : ''
+    ])
+
+    const csvContent = [headers.join(','), ...rows.map(r => r.join(','))].join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement('a')
+    link.href = url
+    link.download = `tasks_export_${format(new Date(), 'yyyy-MM-dd_HHmm')}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+    
+    toast.success(`Exported ${tasksToExport.length} tasks`)
+  }
+
+  // Create from template
+  const handleCreateFromTemplate = (template) => {
+    setSelectedTemplate(template)
+    setTemplateDialogOpen(true)
+  }
+
   const clearFilters = () => {
     setSearchQuery('')
     setStatusFilter([])
