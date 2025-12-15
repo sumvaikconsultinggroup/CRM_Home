@@ -553,7 +553,10 @@ export function PaintsCoatingsModule({ token, user }) {
     if (activeTab === 'colors') fetchColors()
     if (activeTab === 'dealers') fetchDealers()
     if (activeTab === 'rate-cards') fetchRateCards()
-  }, [activeTab, refreshKey, fetchProducts, fetchColors, fetchDealers, fetchRateCards])
+    if (activeTab === 'leads') fetchLeads()
+    if (activeTab === 'surveys') fetchSurveys()
+    if (activeTab === 'specifications') fetchSpecifications()
+  }, [activeTab, refreshKey, fetchProducts, fetchColors, fetchDealers, fetchRateCards, fetchLeads, fetchSurveys, fetchSpecifications])
 
   // =============================================
   // HANDLERS
