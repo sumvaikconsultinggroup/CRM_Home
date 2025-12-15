@@ -606,6 +606,26 @@ export async function PUT(request) {
         })
         return successResponse({ message: 'Invoice marked as viewed' })
 
+      case 'mark_dispatched':
+        // B2B only - mark material as dispatched
+        await invoices.updateOne({ id }, {
+          $set: { 
+            dispatchedAt: now,
+            dispatchedBy: user.id,
+            dispatchStatus: 'dispatched',
+            updatedAt: now 
+          },
+          $push: {
+            statusHistory: {
+              status: 'dispatched',
+              timestamp: now,
+              by: user.id,
+              notes: 'Material dispatched for delivery'
+            }
+          }
+        })
+        return successResponse({ message: 'Invoice marked as dispatched' })
+
       case 'sync_crm':
         // Manual CRM sync
         const syncResults = await syncInvoiceToCRM(db, invoice, user)
