@@ -2405,7 +2405,9 @@ export function AdvancedLeadManagement({
                     <LeadScoreIndicator score={scoreData.score} size="sm" />
                   </td>
                   <td className="p-3">
-                    {lead.followUpDate ? (
+                    {['won', 'lost'].includes(lead.status) ? (
+                      <span className="text-xs text-muted-foreground">-</span>
+                    ) : lead.followUpDate ? (
                       <div className={`text-sm ${new Date(lead.followUpDate) < new Date() ? 'text-red-600 font-medium' : 'text-blue-600'}`}>
                         <CalendarClock className="h-3 w-3 inline mr-1" />
                         {new Date(lead.followUpDate).toLocaleDateString()}
@@ -2435,25 +2437,50 @@ export function AdvancedLeadManagement({
                         <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setSelectedLead(lead) }}>
                           <Eye className="h-4 w-4 mr-2" /> View Details
                         </DropdownMenuItem>
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setConversationDialogLead(lead) }}>
-                          <MessageSquare className="h-4 w-4 mr-2" /> Log Conversation
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setSetFollowUpLeadState(lead) }}>
-                          <CalendarClock className="h-4 w-4 mr-2" /> Set Follow-up
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem 
-                          onClick={(e) => { e.stopPropagation(); setMarkWonDialog(lead) }}
-                          className="text-green-600"
-                        >
-                          <Trophy className="h-4 w-4 mr-2" /> Mark as Won
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={(e) => { e.stopPropagation(); setMarkLostDialog(lead) }}
-                          className="text-red-600"
-                        >
-                          <ThumbsDown className="h-4 w-4 mr-2" /> Mark as Lost
-                        </DropdownMenuItem>
+                        {!['won', 'lost'].includes(lead.status) && (
+                          <>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setConversationDialogLead(lead) }}>
+                              <MessageSquare className="h-4 w-4 mr-2" /> Log Conversation
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setSetFollowUpLeadState(lead) }}>
+                              <CalendarClock className="h-4 w-4 mr-2" /> Set Follow-up
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem className="p-0">
+                              <Select onValueChange={(newStatus) => handleStatusChange(lead.id, newStatus)}>
+                                <SelectTrigger className="border-0 shadow-none h-8 px-2">
+                                  <div className="flex items-center gap-2">
+                                    <ArrowRightCircle className="h-4 w-4" />
+                                    <span>Change Stage</span>
+                                  </div>
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {PIPELINE_STAGES.filter(s => s.id !== lead.status).map(stage => (
+                                    <SelectItem key={stage.id} value={stage.id}>
+                                      <div className="flex items-center gap-2">
+                                        <stage.icon className="h-3 w-3" />
+                                        {stage.label}
+                                      </div>
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem 
+                              onClick={(e) => { e.stopPropagation(); setMarkWonDialog(lead) }}
+                              className="text-green-600"
+                            >
+                              <Trophy className="h-4 w-4 mr-2" /> Mark as Won
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={(e) => { e.stopPropagation(); setMarkLostDialog(lead) }}
+                              className="text-red-600"
+                            >
+                              <ThumbsDown className="h-4 w-4 mr-2" /> Mark as Lost
+                            </DropdownMenuItem>
+                          </>
+                        )}
                       </DropdownMenuContent>
                     </DropdownMenu>
                   </td>
