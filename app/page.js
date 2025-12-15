@@ -29,9 +29,10 @@ import {
   BarChart3, PieChart as PieChartIcon, ArrowUpRight, ArrowDownRight, Calendar, UserPlus, Package,
   Sparkles, Bell, Search, Filter, Download, RefreshCw, Send, MessageSquare, Palette,
   Globe, Image, FileText, Star, Crown, ChevronDown, ExternalLink, Lock, Square,
-  CalendarDays, Plug
+  CalendarDays, Plug, Paintbrush
 } from 'lucide-react'
 import { EnterpriseFlooringModule } from '@/components/modules/enterprise-flooring-module'
+import { PaintsCoatingsModule } from '@/components/modules/paints-coatings-module'
 import { FurnitureModule } from '@/components/modules/furniture/FurnitureModule'
 import { LeadForm, ProjectForm, TaskForm, ExpenseForm, UserForm, QuickContactForm } from '@/components/client-forms'
 import { AdvancedReports } from '@/components/advanced-reports'
