@@ -60,7 +60,7 @@ import { CommunicationHub } from '@/components/super-admin/communication-hub'
 import { SecurityCenter } from '@/components/super-admin/security-center'
 import { BillingCenter } from '@/components/super-admin/billing-center'
 import { EnterpriseProjects } from '@/components/enterprise-projects'
-import { EnterpriseTeams } from '@/components/enterprise-teams'
+// EnterpriseTeams replaced by UltimateTeamsHub
 import { JiraTaskManager } from '@/components/jira-task-manager'
 import { ProductSwitcher } from '@/components/product-switcher'
 import { BuildInventory } from '@/components/build-inventory'
