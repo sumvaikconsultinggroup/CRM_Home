@@ -4236,6 +4236,63 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
         </div>
 
         <div className="flex items-center gap-2">
+          {/* Quick SKU/Barcode Lookup */}
+          <div className="relative">
+            <Scan className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+            <Input
+              placeholder="SKU / Barcode lookup..."
+              value={lookupSearch}
+              onChange={(e) => setLookupSearch(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && lookupSearch.length >= 2) {
+                  handleQuickLookup(lookupSearch)
+                }
+              }}
+              className="pl-10 w-[180px]"
+            />
+            {lookupLoading && (
+              <RefreshCw className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400 animate-spin" />
+            )}
+          </div>
+          <Button variant="outline" size="sm" onClick={() => lookupSearch.length >= 2 && handleQuickLookup(lookupSearch)} disabled={lookupLoading || lookupSearch.length < 2}>
+            <Search className="h-4 w-4" />
+          </Button>
+          
+          <Separator orientation="vertical" className="h-8" />
+          
+          {/* Export Dropdown */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm">
+                <Download className="h-4 w-4 mr-2" /> Export
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuItem onClick={() => handleExport('stock')}>
+                <Package className="h-4 w-4 mr-2" /> Stock Report
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('movements')}>
+                <History className="h-4 w-4 mr-2" /> Movements
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('batches')}>
+                <Layers className="h-4 w-4 mr-2" /> Batches
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('warehouses')}>
+                <Warehouse className="h-4 w-4 mr-2" /> Warehouses
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={() => handleExport('valuation')}>
+                <DollarSign className="h-4 w-4 mr-2" /> Valuation Report
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('grn')}>
+                <Receipt className="h-4 w-4 mr-2" /> GRN Report
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport('challans')}>
+                <Truck className="h-4 w-4 mr-2" /> Challans Report
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+          
           {alertSummary.critical > 0 && (
             <Badge variant="destructive" className="animate-pulse">
               <AlertCircle className="h-3 w-3 mr-1" /> {alertSummary.critical} Critical
