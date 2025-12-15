@@ -988,15 +988,78 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
                   </div>
                 </div>
 
+                {/* Inventory Hold Badge */}
+                {quote.inventoryHeld && (
+                  <div className="mb-3 px-2 py-1 bg-amber-50 border border-amber-200 rounded-lg">
+                    <p className="text-xs text-amber-700 flex items-center gap-1">
+                      <Lock className="h-3 w-3" /> Inventory Held
+                    </p>
+                  </div>
+                )}
+
+                {/* Status Actions */}
+                <div className="flex flex-wrap gap-1 mb-3">
+                  {quote.status === 'draft' && (
+                    <>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="text-xs h-7 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                        onClick={(e) => { e.stopPropagation(); openStatusDialog(quote, 'send'); }}
+                      >
+                        <Send className="h-3 w-3 mr-1" /> Send Quote
+                      </Button>
+                    </>
+                  )}
+                  {quote.status === 'sent' && (
+                    <>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="text-xs h-7 bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-100"
+                        onClick={(e) => { e.stopPropagation(); openStatusDialog(quote, 'approve'); }}
+                      >
+                        <CheckCircle2 className="h-3 w-3 mr-1" /> Approve
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="text-xs h-7 bg-red-50 text-red-700 border-red-200 hover:bg-red-100"
+                        onClick={(e) => { e.stopPropagation(); openStatusDialog(quote, 'reject'); }}
+                      >
+                        <X className="h-3 w-3 mr-1" /> Reject
+                      </Button>
+                    </>
+                  )}
+                  {(quote.status === 'approved' || quote.status === 'rejected') && (
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="text-xs h-7"
+                      onClick={(e) => { e.stopPropagation(); openStatusDialog(quote, 'override'); }}
+                    >
+                      <RotateCcw className="h-3 w-3 mr-1" /> Override
+                    </Button>
+                  )}
+                </div>
+
                 <div className="flex items-center justify-between pt-3 border-t">
                   <p className="text-xs text-slate-500">
                     Valid: {new Date(quote.validUntil).toLocaleDateString()}
                   </p>
                   <div className="flex gap-1">
-                    <Button variant="ghost" size="sm" onClick={() => handleDownloadPDF(quote)}>
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={(e) => { e.stopPropagation(); handleEditQuote(quote); }}
+                      title="Edit Quote"
+                    >
+                      <Edit className="h-4 w-4 text-indigo-600" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDownloadPDF(quote); }}>
                       <Download className="h-4 w-4" />
                     </Button>
-                    <Button variant="ghost" size="sm">
+                    <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); setSelectedQuote(quote); }}>
                       <Eye className="h-4 w-4" />
                     </Button>
                   </div>
@@ -1006,6 +1069,107 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
           ))}
         </div>
       )}
+
+      {/* Status Update Dialog */}
+      <Dialog open={showStatusDialog} onOpenChange={setShowStatusDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {statusAction === 'send' && <Send className="h-5 w-5 text-blue-600" />}
+              {statusAction === 'approve' && <CheckCircle2 className="h-5 w-5 text-emerald-600" />}
+              {statusAction === 'reject' && <X className="h-5 w-5 text-red-600" />}
+              {statusAction === 'override' && <RotateCcw className="h-5 w-5 text-amber-600" />}
+              {statusAction === 'send' && 'Send Quote to Customer'}
+              {statusAction === 'approve' && 'Approve Quote'}
+              {statusAction === 'reject' && 'Reject Quote'}
+              {statusAction === 'override' && 'Manual Status Override'}
+            </DialogTitle>
+            <DialogDescription>
+              {statusQuote?.quoteNumber} - {statusQuote?.customerName}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            {statusAction === 'approve' && (
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-center gap-2">
+                  <Switch
+                    id="hold-inventory"
+                    checked={true}
+                    onCheckedChange={() => {}}
+                  />
+                  <Label htmlFor="hold-inventory" className="text-sm font-medium text-amber-800">
+                    Hold Inventory for this Quote
+                  </Label>
+                </div>
+                <p className="text-xs text-amber-600 mt-1">
+                  Materials will be reserved until order is placed or quote expires
+                </p>
+              </div>
+            )}
+
+            {statusAction === 'override' && (
+              <div className="space-y-2">
+                <Label>Change Status To</Label>
+                <Select value={statusNotes} onValueChange={setStatusNotes}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select new status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="sent">Sent</SelectItem>
+                    <SelectItem value="pending-approval">Pending Approval</SelectItem>
+                    <SelectItem value="approved">Approved</SelectItem>
+                    <SelectItem value="rejected">Rejected</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {statusAction !== 'override' && (
+              <div className="space-y-2">
+                <Label>Notes (Optional)</Label>
+                <Textarea
+                  value={statusNotes}
+                  onChange={(e) => setStatusNotes(e.target.value)}
+                  placeholder={
+                    statusAction === 'send' ? 'Message to customer...' :
+                    statusAction === 'approve' ? 'Approval notes...' :
+                    'Rejection reason...'
+                  }
+                  rows={3}
+                />
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowStatusDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => {
+                if (statusAction === 'send') handleUpdateStatus('sent')
+                else if (statusAction === 'approve') handleUpdateStatus('approved', true)
+                else if (statusAction === 'reject') handleUpdateStatus('rejected')
+                else if (statusAction === 'override' && statusNotes) handleUpdateStatus(statusNotes)
+              }}
+              disabled={updatingStatus || (statusAction === 'override' && !statusNotes)}
+              className={
+                statusAction === 'approve' ? 'bg-emerald-600 hover:bg-emerald-700' :
+                statusAction === 'reject' ? 'bg-red-600 hover:bg-red-700' :
+                'bg-blue-600 hover:bg-blue-700'
+              }
+            >
+              {updatingStatus ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              {statusAction === 'send' && 'Send Quote'}
+              {statusAction === 'approve' && 'Approve & Hold Inventory'}
+              {statusAction === 'reject' && 'Reject Quote'}
+              {statusAction === 'override' && 'Update Status'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Quote Builder Dialog */}
       <Dialog open={showNewQuote} onOpenChange={setShowNewQuote}>
