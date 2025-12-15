@@ -1108,7 +1108,7 @@ export function ContactsManager() {
       />
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
         <StatsCard
           title="Total Contacts"
           value={stats.total}
@@ -1132,6 +1132,14 @@ export function ContactsManager() {
           color="bg-blue-100 text-blue-600"
           onClick={() => setTypeFilter('lead')}
           active={typeFilter === 'lead'}
+        />
+        <StatsCard
+          title="Nurturing"
+          value={stats.nurturing || 0}
+          icon={RefreshCw}
+          color="bg-amber-100 text-amber-600"
+          onClick={() => setTypeFilter('nurturing')}
+          active={typeFilter === 'nurturing'}
         />
         <StatsCard
           title="Vendors"
