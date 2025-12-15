@@ -2436,6 +2436,54 @@ export function AdvancedLeadManagement({
               <ThumbsDown className="h-4 w-4 mr-2" /> Mark as Lost
             </Button>
           </DialogFooter>
+          <div className="mt-4 p-3 bg-slate-50 rounded-lg text-xs text-muted-foreground">
+            <Info className="h-4 w-4 inline mr-1" />
+            The associated contact will be automatically moved to &quot;Nurturing&quot; status for future re-engagement.
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Add Lead Dialog */}
+      <AddLeadDialog
+        open={showAddLeadDialog}
+        onClose={() => setShowAddLeadDialog(false)}
+        onSave={handleCreateLead}
+        users={users}
+      />
+
+      {/* Set Follow-up Dialog */}
+      <Dialog open={!!setFollowUpLead} onOpenChange={() => setSetFollowUpLeadState(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CalendarClock className="h-5 w-5 text-blue-600" />
+              Set Follow-up for {setFollowUpLead?.name}
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label className="text-sm font-medium">Follow-up Date</Label>
+              <Input 
+                type="date"
+                className="mt-1"
+                defaultValue={setFollowUpLead?.followUpDate?.split('T')[0] || ''}
+                onChange={(e) => {
+                  if (e.target.value && setFollowUpLead) {
+                    handleSetFollowUp(setFollowUpLead.id, `${e.target.value}T10:00:00`)
+                  }
+                }}
+              />
+            </div>
+            <div className="p-3 bg-blue-50 rounded-lg">
+              <p className="text-sm text-blue-700">
+                <Brain className="h-4 w-4 inline mr-1" />
+                <strong>Smart Suggestion:</strong> {setFollowUpLead ? getSmartFollowUpDate(setFollowUpLead).reason : ''}
+              </p>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setSetFollowUpLeadState(null)}>Close</Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
     </div>
