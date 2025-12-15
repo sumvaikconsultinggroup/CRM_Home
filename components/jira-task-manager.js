@@ -73,6 +73,70 @@ const DEFAULT_LABELS = [
   { id: 'blocked', name: 'Blocked', color: '#6B7280' }
 ]
 
+// Task Templates for quick creation
+const TASK_TEMPLATES = [
+  {
+    id: 'bug_report',
+    name: 'Bug Report',
+    icon: Bug,
+    color: 'bg-red-500',
+    defaults: {
+      taskType: 'bug',
+      priority: 'high',
+      labels: ['testing'],
+      description: '**Steps to Reproduce:**\n1. \n2. \n3. \n\n**Expected Behavior:**\n\n**Actual Behavior:**\n\n**Screenshots/Videos:**'
+    }
+  },
+  {
+    id: 'feature_request',
+    name: 'Feature Request',
+    icon: Lightbulb,
+    color: 'bg-green-500',
+    defaults: {
+      taskType: 'feature',
+      priority: 'medium',
+      labels: ['frontend'],
+      description: '**Feature Description:**\n\n**User Story:**\nAs a [user], I want [feature] so that [benefit].\n\n**Acceptance Criteria:**\n- [ ] \n- [ ] '
+    }
+  },
+  {
+    id: 'design_task',
+    name: 'Design Task',
+    icon: Layers,
+    color: 'bg-purple-500',
+    defaults: {
+      taskType: 'task',
+      priority: 'medium',
+      labels: ['design'],
+      description: '**Design Requirements:**\n\n**Deliverables:**\n- [ ] \n\n**References:**'
+    }
+  },
+  {
+    id: 'documentation',
+    name: 'Documentation',
+    icon: FileText,
+    color: 'bg-amber-500',
+    defaults: {
+      taskType: 'task',
+      priority: 'low',
+      labels: ['documentation'],
+      description: '**Documentation Scope:**\n\n**Sections to Cover:**\n- [ ] \n- [ ] '
+    }
+  },
+  {
+    id: 'meeting_followup',
+    name: 'Meeting Follow-up',
+    icon: Users,
+    color: 'bg-blue-500',
+    defaults: {
+      taskType: 'task',
+      priority: 'medium',
+      labels: [],
+      description: '**Meeting Date:**\n\n**Attendees:**\n\n**Action Items:**\n- [ ] \n- [ ] \n\n**Decisions Made:**'
+    }
+  }
+]
+
 // =============================================
 // UTILITY COMPONENTS
 // =============================================
