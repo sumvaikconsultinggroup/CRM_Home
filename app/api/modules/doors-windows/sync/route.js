@@ -416,26 +416,28 @@ export async function GET(request) {
       return successResponse({ history })
     }
 
-    // Default: return sync status
+    // Default: return sync status (Projects and Contacts only - NO Leads)
     const projects = db.collection('projects')
-    const leads = db.collection('leads')
     const contacts = db.collection('contacts')
     const dwProjects = db.collection('doors_windows_projects')
+    const dwContacts = db.collection('dw_contacts')
 
-    const [projectCount, leadCount, contactCount, syncedCount] = await Promise.all([
+    const [projectCount, contactCount, syncedProjectCount, syncedContactCount] = await Promise.all([
       projects.countDocuments({ status: { $nin: ['completed', 'cancelled'] } }),
-      leads.countDocuments({ status: { $nin: ['converted', 'lost'] } }),
       contacts.countDocuments({ isActive: { $ne: false } }),
-      dwProjects.countDocuments({ source: 'crm_sync' })
+      dwProjects.countDocuments({ crmProjectId: { $ne: null } }),
+      dwContacts.countDocuments({})
     ])
 
     return successResponse({
       availableToSync: {
-        projects: projectCount,
-        leads: leadCount,
-        contacts: contactCount
+        projects: Math.max(0, projectCount - syncedProjectCount),
+        contacts: Math.max(0, contactCount - syncedContactCount)
       },
-      alreadySynced: syncedCount
+      alreadySynced: {
+        projects: syncedProjectCount,
+        contacts: syncedContactCount
+      }
     })
   } catch (error) {
     console.error('D&W Sync GET Error:', error)
