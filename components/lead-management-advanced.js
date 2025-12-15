@@ -631,18 +631,6 @@ const AddConversationDialog = ({ open, onClose, lead, onSave }) => {
               </>
             )}
           </div>
-              </div>
-              <div>
-                <Label className="text-sm font-medium">Callback Time</Label>
-                <Input 
-                  type="time" 
-                  className="mt-1"
-                  value={formData.callbackTime}
-                  onChange={(e) => setFormData({ ...formData, callbackTime: e.target.value })}
-                />
-              </div>
-            </div>
-          )}
           
           {/* Duration */}
           <div>
