@@ -279,6 +279,13 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
   const [statusAction, setStatusAction] = useState('')
   const [statusNotes, setStatusNotes] = useState('')
   const [updatingStatus, setUpdatingStatus] = useState(false)
+  
+  // Filter and Sort states
+  const [statusFilter, setStatusFilter] = useState('all')
+  const [sortBy, setSortBy] = useState('newest')
+  const [showInvoiceDialog, setShowInvoiceDialog] = useState(false)
+  const [invoiceQuote, setInvoiceQuote] = useState(null)
+  const [creatingInvoice, setCreatingInvoice] = useState(false)
 
   // Quote form state
   const [quoteForm, setQuoteForm] = useState({
