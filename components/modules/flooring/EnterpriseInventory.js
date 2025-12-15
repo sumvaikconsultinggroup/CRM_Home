@@ -1582,7 +1582,7 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
               ))}
 
               {(!transferForm.items || transferForm.items.length === 0) && (
-                <p className="text-sm text-slate-500 text-center py-4">No items added. Click "Add Item" to start.</p>
+                <p className="text-sm text-slate-500 text-center py-4">No items added. Click &quot;Add Item&quot; to start.</p>
               )}
             </div>
 
