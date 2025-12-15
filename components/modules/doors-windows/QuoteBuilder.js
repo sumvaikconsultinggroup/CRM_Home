@@ -1401,7 +1401,7 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
               </p>
               <ul className="text-xs text-amber-700 mt-1 space-y-1">
                 <li>• Generate an invoice record</li>
-                <li>• Change quote status to "Invoiced"</li>
+                <li>• Change quote status to &quot;Invoiced&quot;</li>
                 <li>• Move to Orders & Invoices tab</li>
               </ul>
             </div>
