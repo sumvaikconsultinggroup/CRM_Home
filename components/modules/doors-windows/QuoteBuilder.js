@@ -1356,6 +1356,73 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
         </DialogContent>
       </Dialog>
 
+      {/* Send for Invoicing Dialog */}
+      <Dialog open={showInvoiceDialog} onOpenChange={setShowInvoiceDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-green-600" />
+              Create Invoice
+            </DialogTitle>
+            <DialogDescription>
+              {invoiceQuote?.quoteNumber} - {invoiceQuote?.customerName}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-4 py-4">
+            <div className="p-4 bg-slate-50 rounded-lg space-y-2">
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">Items Total:</span>
+                <span className="font-medium">₹{(invoiceQuote?.itemsTotal || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">Accessories:</span>
+                <span className="font-medium">₹{(invoiceQuote?.accessoriesTotal || 0).toLocaleString()}</span>
+              </div>
+              {invoiceQuote?.installationCharge > 0 && (
+                <div className="flex justify-between text-sm">
+                  <span className="text-slate-600">Installation:</span>
+                  <span className="font-medium">₹{invoiceQuote.installationCharge.toLocaleString()}</span>
+                </div>
+              )}
+              <div className="flex justify-between text-sm">
+                <span className="text-slate-600">Tax (18% GST):</span>
+                <span className="font-medium">₹{(invoiceQuote?.taxAmount || 0).toLocaleString()}</span>
+              </div>
+              <div className="flex justify-between text-base font-bold pt-2 border-t">
+                <span>Grand Total:</span>
+                <span className="text-green-600">₹{(invoiceQuote?.grandTotal || 0).toLocaleString()}</span>
+              </div>
+            </div>
+
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-lg">
+              <p className="text-sm text-amber-800">
+                <strong>Note:</strong> Creating an invoice will:
+              </p>
+              <ul className="text-xs text-amber-700 mt-1 space-y-1">
+                <li>• Generate an invoice record</li>
+                <li>• Change quote status to "Invoiced"</li>
+                <li>• Move to Orders & Invoices tab</li>
+              </ul>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowInvoiceDialog(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSendForInvoicing}
+              disabled={creatingInvoice}
+              className="bg-green-600 hover:bg-green-700"
+            >
+              {creatingInvoice ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Receipt className="h-4 w-4 mr-2" />}
+              Create Invoice
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Quote Builder Dialog */}
       <Dialog open={showNewQuote} onOpenChange={setShowNewQuote}>
         <DialogContent className="max-w-6xl max-h-[95vh] overflow-hidden flex flex-col">
