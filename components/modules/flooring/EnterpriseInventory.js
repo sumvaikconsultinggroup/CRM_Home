@@ -282,6 +282,40 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
     }
   }, [token, selectedWarehouse])
 
+  const fetchReport = useCallback(async (reportType) => {
+    try {
+      setReportLoading(true)
+      const params = new URLSearchParams()
+      params.set('type', reportType)
+      if (selectedWarehouse !== 'all') params.set('warehouseId', selectedWarehouse)
+      
+      const res = await fetch(`/api/modules/wooden-flooring/inventory/reports?${params}`, { headers })
+      const data = await res.json()
+      setReportData(data)
+    } catch (error) {
+      console.error('Report fetch error:', error)
+      toast.error('Failed to load report')
+    } finally {
+      setReportLoading(false)
+    }
+  }, [token, selectedWarehouse])
+
+  const fetchCycleCounts = useCallback(async () => {
+    try {
+      const params = new URLSearchParams()
+      if (selectedWarehouse !== 'all') params.set('warehouseId', selectedWarehouse)
+      
+      const res = await fetch(`/api/modules/wooden-flooring/inventory/cycle-count?${params}`, { headers })
+      const data = await res.json()
+      if (data.cycleCounts) {
+        setCycleCounts(data.cycleCounts)
+        setCycleCountSummary(data.summary || {})
+      }
+    } catch (error) {
+      console.error('Cycle counts fetch error:', error)
+    }
+  }, [token, selectedWarehouse])
+
   // Load data on mount
   useEffect(() => {
     fetchWarehouses()
