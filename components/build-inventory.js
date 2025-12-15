@@ -1173,9 +1173,17 @@ export function BuildInventory({ token, user, clientModules = [] }) {
                     <TableCell>
                       <div>
                         <p className="font-medium">{dispatch.dispatchNumber}</p>
-                        <p className="text-xs text-slate-500">
-                          {new Date(dispatch.dispatchDate).toLocaleDateString()}
-                        </p>
+                        <div className="flex items-center gap-1">
+                          <p className="text-xs text-slate-500">
+                            {new Date(dispatch.dispatchDate).toLocaleDateString()}
+                          </p>
+                          {dispatch.sourceType === 'invoice_sync' && (
+                            <Badge className="text-[10px] px-1 py-0 bg-blue-100 text-blue-700">Auto</Badge>
+                          )}
+                        </div>
+                        {dispatch.invoiceNumber && (
+                          <p className="text-xs text-blue-600">Invoice: {dispatch.invoiceNumber}</p>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>
