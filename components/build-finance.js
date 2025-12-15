@@ -59,17 +59,16 @@ export function BuildFinance({ token, user }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [dateRange, setDateRange] = useState('this_month')
 
-  // Create headers function for fresh token
-  const getHeaders = () => ({
-    'Content-Type': 'application/json',
-    'Authorization': `Bearer ${token}`
-  })
-
   // Fetch dashboard stats
   const fetchStats = useCallback(async () => {
     if (!token) return
     try {
-      const res = await fetch('/api/finance/stats', { headers: getHeaders() })
+      const res = await fetch('/api/finance/stats', { 
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      })
       const data = await res.json()
       if (data.stats) {
         setStats(data.stats)
@@ -83,7 +82,12 @@ export function BuildFinance({ token, user }) {
   const fetchInvoices = useCallback(async () => {
     if (!token) return
     try {
-      const res = await fetch('/api/finance/invoices', { headers: getHeaders() })
+      const res = await fetch('/api/finance/invoices', { 
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      })
       const data = await res.json()
       if (data.invoices) {
         setInvoices(data.invoices)
@@ -97,7 +101,12 @@ export function BuildFinance({ token, user }) {
   const fetchExpenses = useCallback(async () => {
     if (!token) return
     try {
-      const res = await fetch('/api/finance/expenses', { headers: getHeaders() })
+      const res = await fetch('/api/finance/expenses', { 
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      })
       const data = await res.json()
       if (data.expenses) {
         setExpenses(data.expenses)
