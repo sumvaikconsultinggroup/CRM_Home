@@ -374,45 +374,49 @@ const TaskDetailModal = ({ task, open, onClose, onUpdate, onDelete, users, proje
     'Authorization': `Bearer ${token}`
   }), [token])
 
+  // Extract task ID for stable dependencies
+  const taskId = task?.id
+
   // Fetch functions with useCallback
   const fetchSubtasks = useCallback(async () => {
-    if (!task?.id) return
+    if (!taskId) return
     setLoadingSubtasks(true)
     try {
-      const res = await fetch(`/api/tasks/subtasks?parentId=${task.id}`, { headers })
+      const res = await fetch(`/api/tasks/subtasks?parentId=${taskId}`, { headers })
       const data = await res.json()
       if (data.subtasks) setSubtasks(data.subtasks)
     } catch (error) {
       console.error('Failed to fetch subtasks:', error)
     }
     setLoadingSubtasks(false)
-  }, [task?.id, headers])
+  }, [taskId, headers])
 
   const fetchAttachments = useCallback(async () => {
-    if (!task?.id) return
+    if (!taskId) return
     try {
-      const res = await fetch(`/api/tasks/attachments?taskId=${task.id}`, { headers })
+      const res = await fetch(`/api/tasks/attachments?taskId=${taskId}`, { headers })
       const data = await res.json()
       if (Array.isArray(data)) setAttachments(data)
     } catch (error) {
       console.error('Failed to fetch attachments:', error)
     }
-  }, [task?.id, headers])
+  }, [taskId, headers])
 
   const fetchTimeEntries = useCallback(async () => {
-    if (!task?.id) return
+    if (!taskId) return
     try {
-      const res = await fetch(`/api/tasks/time-entries?taskId=${task.id}`, { headers })
+      const res = await fetch(`/api/tasks/time-entries?taskId=${taskId}`, { headers })
       const data = await res.json()
       if (data.timeEntries) setTimeEntries(data.timeEntries)
     } catch (error) {
       console.error('Failed to fetch time entries:', error)
     }
-  }, [task?.id, headers])
+  }, [taskId, headers])
 
-  // Initialize data
+  // Initialize data - using separate effect for fetch calls
   useEffect(() => {
     if (task && open) {
+      // Reset local state
       setTitle(task.title || '')
       setDescription(task.description || '')
       setStatus(task.status || 'todo')
@@ -425,13 +429,17 @@ const TaskDetailModal = ({ task, open, onClose, onUpdate, onDelete, users, proje
       setAttachments([])
       setSubtasks([])
       setTimeEntries([])
-      
-      // Fetch related data
+    }
+  }, [task, open])
+
+  // Separate effect for fetching data after initialization
+  useEffect(() => {
+    if (taskId && open) {
       fetchSubtasks()
       fetchAttachments()
       fetchTimeEntries()
     }
-  }, [task, open, fetchSubtasks, fetchAttachments, fetchTimeEntries])
+  }, [taskId, open, fetchSubtasks, fetchAttachments, fetchTimeEntries])
 
   // Handlers
   const handleUpdateField = async (field, value) => {
