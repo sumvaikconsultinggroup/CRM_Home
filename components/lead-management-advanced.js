@@ -2067,42 +2067,49 @@ export function AdvancedLeadManagement({
       </div>
 
       {/* Tabs */}
-      <div className="border-b bg-white px-4">
+      <div className="border-b bg-white px-4 overflow-x-auto">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="h-12">
+          <TabsList className="h-12 w-max">
             <TabsTrigger value="pipeline" className="gap-2">
               <Kanban className="h-4 w-4" />
               Pipeline
-              <Badge variant="secondary" className="h-5 w-5 p-0 flex items-center justify-center text-xs">
+              <Badge variant="secondary" className="h-5 min-w-5 p-0 px-1 flex items-center justify-center text-xs">
                 {tabStats.pipeline}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="today" className="gap-2">
+              <CalendarDays className="h-4 w-4 text-blue-600" />
+              Today&apos;s Follow-up
+              <Badge className={`h-5 min-w-5 p-0 px-1 flex items-center justify-center text-xs ${tabStats.today > 0 ? 'bg-blue-100 text-blue-700' : ''}`}>
+                {tabStats.today}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="overdue" className="gap-2">
+              <AlertTriangle className="h-4 w-4 text-red-600" />
+              Overdue
+              <Badge className={`h-5 min-w-5 p-0 px-1 flex items-center justify-center text-xs ${tabStats.overdue > 0 ? 'bg-red-100 text-red-700 animate-pulse' : ''}`}>
+                {tabStats.overdue}
+              </Badge>
+            </TabsTrigger>
+            <TabsTrigger value="hot" className="gap-2">
+              <Flame className="h-4 w-4 text-orange-600" />
+              Hot Leads
+              <Badge className="bg-orange-100 text-orange-700 h-5 min-w-5 p-0 px-1 flex items-center justify-center text-xs">
+                {tabStats.hot}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="won" className="gap-2">
               <Trophy className="h-4 w-4 text-green-600" />
               Won
-              <Badge className="bg-green-100 text-green-700 h-5 w-5 p-0 flex items-center justify-center text-xs">
+              <Badge className="bg-green-100 text-green-700 h-5 min-w-5 p-0 px-1 flex items-center justify-center text-xs">
                 {tabStats.won}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="lost" className="gap-2">
               <ThumbsDown className="h-4 w-4 text-red-600" />
               Lost
-              <Badge className="bg-red-100 text-red-700 h-5 w-5 p-0 flex items-center justify-center text-xs">
+              <Badge className="bg-red-100 text-red-700 h-5 min-w-5 p-0 px-1 flex items-center justify-center text-xs">
                 {tabStats.lost}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="followups" className="gap-2">
-              <CalendarClock className="h-4 w-4" />
-              Follow-ups
-              <Badge variant="secondary" className="h-5 w-5 p-0 flex items-center justify-center text-xs">
-                {tabStats.followups}
-              </Badge>
-            </TabsTrigger>
-            <TabsTrigger value="hot" className="gap-2">
-              <Flame className="h-4 w-4 text-orange-600" />
-              Hot Leads
-              <Badge className="bg-orange-100 text-orange-700 h-5 w-5 p-0 flex items-center justify-center text-xs">
-                {tabStats.hot}
               </Badge>
             </TabsTrigger>
             <TabsTrigger value="analytics" className="gap-2">
@@ -2115,10 +2122,10 @@ export function AdvancedLeadManagement({
 
       {/* Controls */}
       {activeTab !== 'analytics' && (
-        <div className="p-4 bg-white border-b flex items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
+        <div className="p-4 bg-white border-b flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center gap-2 flex-wrap">
             {/* View Switcher */}
-            {['pipeline', 'followups', 'hot'].includes(activeTab) && (
+            {['pipeline', 'today', 'overdue', 'hot'].includes(activeTab) && (
               <div className="flex border rounded-lg p-1">
                 <Button 
                   variant={activeView === 'kanban' ? 'secondary' : 'ghost'} 
@@ -2147,6 +2154,41 @@ export function AdvancedLeadManagement({
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
             </div>
+            
+            {/* Sort By */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <ArrowUpDown className="h-4 w-4 mr-2" />
+                  Sort: {sortBy === 'createdAt' ? 'Date' : sortBy === 'value' ? 'Value' : sortBy === 'followUpDate' ? 'Follow-up' : sortBy === 'name' ? 'Name' : 'Score'}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent>
+                <DropdownMenuItem onClick={() => { setSortBy('createdAt'); setSortOrder('desc') }}>
+                  <Calendar className="h-4 w-4 mr-2" /> Newest First
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setSortBy('createdAt'); setSortOrder('asc') }}>
+                  <Calendar className="h-4 w-4 mr-2" /> Oldest First
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => { setSortBy('value'); setSortOrder('desc') }}>
+                  <IndianRupee className="h-4 w-4 mr-2" /> Highest Value
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setSortBy('value'); setSortOrder('asc') }}>
+                  <IndianRupee className="h-4 w-4 mr-2" /> Lowest Value
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => { setSortBy('followUpDate'); setSortOrder('asc') }}>
+                  <CalendarClock className="h-4 w-4 mr-2" /> Follow-up (Soonest)
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setSortBy('score'); setSortOrder('desc') }}>
+                  <Sparkles className="h-4 w-4 mr-2" /> Highest Score
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => { setSortBy('name'); setSortOrder('asc') }}>
+                  <Users className="h-4 w-4 mr-2" /> Name (A-Z)
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
             
             {/* Filters */}
             <Button 
