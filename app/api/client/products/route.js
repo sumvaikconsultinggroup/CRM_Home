@@ -30,8 +30,8 @@ const BUILD_PRODUCTS = {
     description: 'Enterprise accounting & finance',
     icon: 'indian-rupee',
     color: '#F59E0B',
-    subdomain: 'finance',
-    comingSoon: true
+    subdomain: 'finance'
+    // comingSoon removed - now available!
   }
 }
 
