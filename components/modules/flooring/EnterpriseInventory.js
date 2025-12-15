@@ -3064,6 +3064,392 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* GRN Creation Dialog */}
+      <Dialog open={dialogOpen.type === 'grn'} onOpenChange={(open) => !open && setDialogOpen({ type: null, data: null })}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5" /> Create Goods Receipt Note
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Warehouse *</Label>
+                <Select
+                  value={grnForm.warehouseId || ''}
+                  onValueChange={(v) => setGrnForm({ ...grnForm, warehouseId: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select warehouse" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {warehouses.map(w => (
+                      <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Vendor Name</Label>
+                <Input
+                  value={grnForm.vendorName || ''}
+                  onChange={(e) => setGrnForm({ ...grnForm, vendorName: e.target.value })}
+                  placeholder="Supplier name"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Invoice Number</Label>
+                <Input
+                  value={grnForm.invoiceNumber || ''}
+                  onChange={(e) => setGrnForm({ ...grnForm, invoiceNumber: e.target.value })}
+                  placeholder="INV-001"
+                />
+              </div>
+              <div>
+                <Label>PO Number</Label>
+                <Input
+                  value={grnForm.purchaseOrderNumber || ''}
+                  onChange={(e) => setGrnForm({ ...grnForm, purchaseOrderNumber: e.target.value })}
+                  placeholder="PO-001"
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Items</Label>
+                <Button size="sm" variant="outline" onClick={() => setGrnForm({
+                  ...grnForm,
+                  items: [...(grnForm.items || []), { productId: '', quantity: 0, unitCost: 0 }]
+                })}>
+                  <Plus className="h-4 w-4 mr-1" /> Add Item
+                </Button>
+              </div>
+              
+              {(grnForm.items || []).map((item, idx) => (
+                <div key={idx} className="flex items-center gap-2 mb-2 p-2 bg-slate-50 rounded">
+                  <Select
+                    value={item.productId || ''}
+                    onValueChange={(v) => {
+                      const newItems = [...grnForm.items]
+                      newItems[idx].productId = v
+                      setGrnForm({ ...grnForm, items: newItems })
+                    }}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select product" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {products.map(p => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    className="w-[100px]"
+                    placeholder="Qty"
+                    value={item.quantity || ''}
+                    onChange={(e) => {
+                      const newItems = [...grnForm.items]
+                      newItems[idx].quantity = parseFloat(e.target.value) || 0
+                      setGrnForm({ ...grnForm, items: newItems })
+                    }}
+                  />
+                  <Input
+                    type="number"
+                    className="w-[100px]"
+                    placeholder="Cost"
+                    value={item.unitCost || ''}
+                    onChange={(e) => {
+                      const newItems = [...grnForm.items]
+                      newItems[idx].unitCost = parseFloat(e.target.value) || 0
+                      setGrnForm({ ...grnForm, items: newItems })
+                    }}
+                  />
+                  <Input
+                    className="w-[120px]"
+                    placeholder="Batch #"
+                    value={item.batchNumber || ''}
+                    onChange={(e) => {
+                      const newItems = [...grnForm.items]
+                      newItems[idx].batchNumber = e.target.value
+                      setGrnForm({ ...grnForm, items: newItems })
+                    }}
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => {
+                      const newItems = grnForm.items.filter((_, i) => i !== idx)
+                      setGrnForm({ ...grnForm, items: newItems })
+                    }}
+                  >
+                    <X className="h-4 w-4 text-red-500" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+
+            <div>
+              <Label>Notes</Label>
+              <Textarea
+                value={grnForm.notes || ''}
+                onChange={(e) => setGrnForm({ ...grnForm, notes: e.target.value })}
+                placeholder="Additional notes"
+                rows={2}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen({ type: null, data: null })}>Cancel</Button>
+            <Button 
+              onClick={handleCreateGRN} 
+              disabled={loading || !grnForm.warehouseId || !grnForm.items?.length || grnForm.items.some(i => !i.productId || !i.quantity)}
+            >
+              {loading ? 'Creating...' : 'Create GRN'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View GRN Dialog */}
+      <Dialog open={dialogOpen.type === 'view_grn'} onOpenChange={(open) => !open && setDialogOpen({ type: null, data: null })}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>GRN Details</DialogTitle>
+          </DialogHeader>
+          {dialogOpen.data && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Badge variant="outline" className="text-lg">{dialogOpen.data.grnNumber}</Badge>
+                <Badge className={GRN_STATUS[dialogOpen.data.status]?.color}>
+                  {GRN_STATUS[dialogOpen.data.status]?.label}
+                </Badge>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div><span className="text-slate-500">Warehouse:</span> {dialogOpen.data.warehouseName}</div>
+                <div><span className="text-slate-500">Vendor:</span> {dialogOpen.data.vendorName || '-'}</div>
+                <div><span className="text-slate-500">Invoice:</span> {dialogOpen.data.invoiceNumber || '-'}</div>
+                <div><span className="text-slate-500">Total Value:</span> ₹{(dialogOpen.data.totalValue || 0).toLocaleString()}</div>
+              </div>
+              <div>
+                <Label className="text-xs text-slate-500">Items</Label>
+                <div className="space-y-2 mt-2">
+                  {dialogOpen.data.items?.map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2 bg-slate-50 rounded">
+                      <div>
+                        <p className="font-medium text-sm">{item.productName}</p>
+                        <p className="text-xs text-slate-500">{item.batchNumber || 'No batch'}</p>
+                      </div>
+                      <div className="text-right">
+                        <p>{item.quantity} units</p>
+                        <p className="text-xs text-slate-500">₹{item.unitCost}/unit</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen({ type: null, data: null })}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Challan Creation Dialog */}
+      <Dialog open={dialogOpen.type === 'challan'} onOpenChange={(open) => !open && setDialogOpen({ type: null, data: null })}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5" /> Create Delivery Challan
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Warehouse *</Label>
+                <Select
+                  value={challanForm.warehouseId || ''}
+                  onValueChange={(v) => setChallanForm({ ...challanForm, warehouseId: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select warehouse" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {warehouses.map(w => (
+                      <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Customer Name</Label>
+                <Input
+                  value={challanForm.customerName || ''}
+                  onChange={(e) => setChallanForm({ ...challanForm, customerName: e.target.value })}
+                  placeholder="Customer name"
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Delivery Address</Label>
+              <Textarea
+                value={challanForm.deliveryAddress || ''}
+                onChange={(e) => setChallanForm({ ...challanForm, deliveryAddress: e.target.value })}
+                placeholder="Full delivery address"
+                rows={2}
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div>
+                <Label>Vehicle Number</Label>
+                <Input
+                  value={challanForm.vehicleNumber || ''}
+                  onChange={(e) => setChallanForm({ ...challanForm, vehicleNumber: e.target.value })}
+                  placeholder="MH01AB1234"
+                />
+              </div>
+              <div>
+                <Label>Driver Name</Label>
+                <Input
+                  value={challanForm.driverName || ''}
+                  onChange={(e) => setChallanForm({ ...challanForm, driverName: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label>Driver Phone</Label>
+                <Input
+                  value={challanForm.driverPhone || ''}
+                  onChange={(e) => setChallanForm({ ...challanForm, driverPhone: e.target.value })}
+                />
+              </div>
+            </div>
+
+            <Separator />
+
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Items</Label>
+                <Button size="sm" variant="outline" onClick={() => setChallanForm({
+                  ...challanForm,
+                  items: [...(challanForm.items || []), { productId: '', quantity: 0 }]
+                })}>
+                  <Plus className="h-4 w-4 mr-1" /> Add Item
+                </Button>
+              </div>
+              
+              {(challanForm.items || []).map((item, idx) => (
+                <div key={idx} className="flex items-center gap-2 mb-2 p-2 bg-slate-50 rounded">
+                  <Select
+                    value={item.productId || ''}
+                    onValueChange={(v) => {
+                      const newItems = [...challanForm.items]
+                      newItems[idx].productId = v
+                      setChallanForm({ ...challanForm, items: newItems })
+                    }}
+                  >
+                    <SelectTrigger className="flex-1">
+                      <SelectValue placeholder="Select product" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {products.map(p => (
+                        <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <Input
+                    type="number"
+                    className="w-[100px]"
+                    placeholder="Qty"
+                    value={item.quantity || ''}
+                    onChange={(e) => {
+                      const newItems = [...challanForm.items]
+                      newItems[idx].quantity = parseFloat(e.target.value) || 0
+                      setChallanForm({ ...challanForm, items: newItems })
+                    }}
+                  />
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    onClick={() => {
+                      const newItems = challanForm.items.filter((_, i) => i !== idx)
+                      setChallanForm({ ...challanForm, items: newItems })
+                    }}
+                  >
+                    <X className="h-4 w-4 text-red-500" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen({ type: null, data: null })}>Cancel</Button>
+            <Button 
+              onClick={handleCreateChallan} 
+              disabled={loading || !challanForm.warehouseId || !challanForm.items?.length || challanForm.items.some(i => !i.productId || !i.quantity)}
+            >
+              {loading ? 'Creating...' : 'Create Challan'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Challan Dialog */}
+      <Dialog open={dialogOpen.type === 'view_challan'} onOpenChange={(open) => !open && setDialogOpen({ type: null, data: null })}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>Delivery Challan Details</DialogTitle>
+          </DialogHeader>
+          {dialogOpen.data && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <Badge variant="outline" className="text-lg">{dialogOpen.data.challanNumber}</Badge>
+                <Badge className={CHALLAN_STATUS[dialogOpen.data.status]?.color}>
+                  {CHALLAN_STATUS[dialogOpen.data.status]?.label}
+                </Badge>
+              </div>
+              <div className="grid grid-cols-2 gap-4 text-sm">
+                <div><span className="text-slate-500">Customer:</span> {dialogOpen.data.customerName || '-'}</div>
+                <div><span className="text-slate-500">Warehouse:</span> {dialogOpen.data.warehouseName}</div>
+                <div><span className="text-slate-500">Vehicle:</span> {dialogOpen.data.vehicleNumber || '-'}</div>
+                <div><span className="text-slate-500">Driver:</span> {dialogOpen.data.driverName || '-'}</div>
+              </div>
+              {dialogOpen.data.deliveryAddress && (
+                <div className="text-sm">
+                  <span className="text-slate-500">Delivery Address:</span>
+                  <p>{dialogOpen.data.deliveryAddress}</p>
+                </div>
+              )}
+              <div>
+                <Label className="text-xs text-slate-500">Items</Label>
+                <div className="space-y-2 mt-2">
+                  {dialogOpen.data.items?.map((item, idx) => (
+                    <div key={idx} className="flex items-center justify-between p-2 bg-slate-50 rounded">
+                      <p className="font-medium text-sm">{item.productName}</p>
+                      <p>{item.quantity} units</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              <div className="flex justify-between pt-2 border-t">
+                <span className="text-slate-500">Total Value:</span>
+                <span className="font-semibold">₹{(dialogOpen.data.totalValue || 0).toLocaleString()}</span>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen({ type: null, data: null })}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 
