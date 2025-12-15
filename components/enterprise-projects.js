@@ -1545,6 +1545,60 @@ export function EnterpriseProjects({ authToken, onProjectSelect }) {
                   </GlassCard>
                 </TabsContent>
 
+                <TabsContent value="team" className="mt-4">
+                  <GlassCard className="p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <Users className="h-4 w-4" /> Project Team
+                      </h4>
+                      <Button size="sm" onClick={() => setShowTeamDialog(true)}>
+                        <UserPlus className="h-4 w-4 mr-1" /> Add Member
+                      </Button>
+                    </div>
+                    {(!projectDetail.project.team || projectDetail.project.team.length === 0) ? (
+                      <div className="text-center py-8 text-slate-400">
+                        <Users className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                        <p>No team members assigned</p>
+                        <Button size="sm" variant="outline" className="mt-3" onClick={() => setShowTeamDialog(true)}>
+                          <UserPlus className="h-4 w-4 mr-1" /> Add First Member
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {projectDetail.project.team.map(member => (
+                          <div key={member.id || member.userId} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <Avatar className="h-10 w-10">
+                                <AvatarFallback className="bg-indigo-100 text-indigo-600">
+                                  {(member.userName || 'U').substring(0, 2).toUpperCase()}
+                                </AvatarFallback>
+                              </Avatar>
+                              <div>
+                                <p className="font-medium">{member.userName}</p>
+                                {member.userEmail && (
+                                  <p className="text-xs text-slate-400">{member.userEmail}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge className={getRoleInfo(member.role).color}>
+                                {getRoleInfo(member.role).label}
+                              </Badge>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleRemoveTeamMember(member.id || member.userId)}
+                              >
+                                <X className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </GlassCard>
+                </TabsContent>
+
                 <TabsContent value="activity" className="mt-4">
                   <GlassCard className="p-4">
                     <h4 className="font-medium mb-4 flex items-center gap-2">
