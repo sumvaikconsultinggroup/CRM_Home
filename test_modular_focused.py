@@ -9,7 +9,7 @@ import json
 import time
 
 # Configuration
-BASE_URL = "https://integrated-apps-1.preview.emergentagent.com/api"
+BASE_URL = "https://inventory-sync-46.preview.emergentagent.com/api"
 SUPER_ADMIN_EMAIL = "admin@buildcrm.com"
 SUPER_ADMIN_PASSWORD = "admin123"
 
