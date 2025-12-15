@@ -2328,6 +2328,78 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
     }
   }
 
+  // Send Challan via WhatsApp
+  const sendChallanWhatsApp = (challan, recipient) => {
+    const phone = recipient === 'customer' ? challan.contactPhone : challan.driverPhone
+    if (!phone) {
+      toast.error('Phone number not available')
+      return
+    }
+
+    // Format phone number (remove spaces, dashes and ensure country code)
+    let formattedPhone = phone.replace(/[\s-]/g, '')
+    if (!formattedPhone.startsWith('+')) {
+      formattedPhone = formattedPhone.startsWith('91') ? '+' + formattedPhone : '+91' + formattedPhone
+    }
+    formattedPhone = formattedPhone.replace('+', '')
+
+    // Build WhatsApp message
+    const itemsList = (challan.items || [])
+      .map((item, i) => `${i + 1}. ${item.productName || item.name} - Qty: ${item.quantity}`)
+      .join('\n')
+
+    let message = ''
+    if (recipient === 'customer') {
+      message = `📦 *Delivery Challan - ${challan.challanNumber}*
+
+Hello${challan.customerName ? ' ' + challan.customerName : ''},
+
+Your delivery is ${challan.status === 'dispatched' ? 'on the way!' : 'being prepared.'}
+
+*Items:*
+${itemsList}
+
+*Total Value:* ₹${(challan.totalValue || 0).toLocaleString()}
+
+*Driver Details:*
+Name: ${challan.driverName || 'N/A'}
+Phone: ${challan.driverPhone || 'N/A'}
+Vehicle: ${challan.vehicleNumber || 'N/A'}
+
+*Delivery Address:*
+${challan.deliveryAddress || 'As per order'}
+
+Thank you for your business!`
+    } else {
+      message = `🚛 *Delivery Assignment - ${challan.challanNumber}*
+
+Hello ${challan.driverName || 'Driver'},
+
+New delivery assigned to you.
+
+*Customer:* ${challan.customerName || 'N/A'}
+*Contact:* ${challan.contactPhone || 'N/A'}
+
+*Delivery Address:*
+${challan.deliveryAddress || 'Check with office'}
+
+*Items to deliver:*
+${itemsList}
+
+*Total Value:* ₹${(challan.totalValue || 0).toLocaleString()}
+
+Please confirm receipt of goods and update status after delivery.`
+    }
+
+    // Encode message for URL
+    const encodedMessage = encodeURIComponent(message)
+    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodedMessage}`
+
+    // Open WhatsApp
+    window.open(whatsappUrl, '_blank')
+    toast.success(`Opening WhatsApp for ${recipient}`)
+  }
+
   const renderChallansView = () => (
     <div className="space-y-4">
       {/* Header */}
