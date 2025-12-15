@@ -2630,7 +2630,7 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
 
       {/* Sub Navigation */}
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
-        <TabsList className="bg-slate-100">
+        <TabsList className="bg-slate-100 flex-wrap">
           <TabsTrigger value="stock" className="flex items-center gap-2">
             <Package className="h-4 w-4" /> Stock
           </TabsTrigger>
@@ -2649,6 +2649,12 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
               <Badge variant="secondary" className="ml-1">{alertSummary.total}</Badge>
             )}
           </TabsTrigger>
+          <TabsTrigger value="reports" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" /> Reports
+          </TabsTrigger>
+          <TabsTrigger value="cycle_count" className="flex items-center gap-2">
+            <FileSpreadsheet className="h-4 w-4" /> Audit
+          </TabsTrigger>
           <TabsTrigger value="warehouses" className="flex items-center gap-2">
             <Warehouse className="h-4 w-4" /> Warehouses
           </TabsTrigger>
@@ -2660,6 +2666,8 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
           <TabsContent value="transfers">{renderTransfersView()}</TabsContent>
           <TabsContent value="batches">{renderBatchesView()}</TabsContent>
           <TabsContent value="alerts">{renderAlertsView()}</TabsContent>
+          <TabsContent value="reports">{renderReportsView()}</TabsContent>
+          <TabsContent value="cycle_count">{renderCycleCountView()}</TabsContent>
           <TabsContent value="warehouses">{renderWarehouseManagement()}</TabsContent>
         </div>
       </Tabs>
