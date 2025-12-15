@@ -1349,20 +1349,25 @@ export function AdvancedLeadManagement({
   }, [leads, activeTab, searchTerm, filters])
 
   // Stats for tabs
-  const tabStats = useMemo(() => ({
-    pipeline: leads.filter(l => !['won', 'lost'].includes(l.status)).length,
-    won: leads.filter(l => l.status === 'won').length,
-    lost: leads.filter(l => l.status === 'lost').length,
-    followups: leads.filter(l => {
-      if (['won', 'lost'].includes(l.status)) return false
-      if (!l.followUpDate) return true
-      return new Date(l.followUpDate) <= new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // Within 7 days
-    }).length,
-    hot: leads.filter(l => {
-      if (['won', 'lost'].includes(l.status)) return false
-      return calculateLeadScore(l).score >= 70 || l.priority === 'urgent' || l.priority === 'high'
-    }).length
-  }), [leads])
+  const tabStats = useMemo(() => {
+    const now = new Date()
+    const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+    
+    return {
+      pipeline: leads.filter(l => !['won', 'lost'].includes(l.status)).length,
+      won: leads.filter(l => l.status === 'won').length,
+      lost: leads.filter(l => l.status === 'lost').length,
+      followups: leads.filter(l => {
+        if (['won', 'lost'].includes(l.status)) return false
+        if (!l.followUpDate) return true
+        return new Date(l.followUpDate) <= weekFromNow
+      }).length,
+      hot: leads.filter(l => {
+        if (['won', 'lost'].includes(l.status)) return false
+        return calculateLeadScore(l).score >= 70 || l.priority === 'urgent' || l.priority === 'high'
+      }).length
+    }
+  }, [leads])
 
   // Handle status change
   const handleStatusChange = async (leadId, newStatus) => {
