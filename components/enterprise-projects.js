@@ -1354,10 +1354,11 @@ export function EnterpriseProjects({ authToken, onProjectSelect }) {
               </DialogHeader>
 
               <Tabs defaultValue="overview" className="mt-4">
-                <TabsList className="grid w-full grid-cols-4">
+                <TabsList className="grid w-full grid-cols-5">
                   <TabsTrigger value="overview">Overview</TabsTrigger>
                   <TabsTrigger value="milestones">Milestones</TabsTrigger>
                   <TabsTrigger value="tasks">Tasks ({projectDetail.tasks?.length || 0})</TabsTrigger>
+                  <TabsTrigger value="team">Team ({projectDetail.project?.team?.length || 0})</TabsTrigger>
                   <TabsTrigger value="activity">Activity</TabsTrigger>
                 </TabsList>
 
