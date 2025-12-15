@@ -80,6 +80,16 @@ export function DoorsWindowsModule({ client, user }) {
   const [initialLoadComplete, setInitialLoadComplete] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   
+  // Business Mode Toggle: 'manufacturer' or 'fabricator'
+  // Manufacturer: Runs on dealership model, sells to dealers, has dealer network
+  // Fabricator/Dealer: Buys from manufacturer, sells to end customers
+  const [businessMode, setBusinessMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('dw_business_mode') || 'fabricator'
+    }
+    return 'fabricator'
+  })
+  
   // Data states
   const [dashboard, setDashboard] = useState(null)
   const [surveys, setSurveys] = useState([])
@@ -100,9 +110,18 @@ export function DoorsWindowsModule({ client, user }) {
   const [syncing, setSyncing] = useState(false)
   const [selectedProject, setSelectedProject] = useState(null)
   
-  // New: Notification bar states
+  // Notification bar states
   const [pendingSyncNotification, setPendingSyncNotification] = useState(null)
   const [showSyncNotification, setShowSyncNotification] = useState(true)
+
+  // Handle business mode toggle
+  const toggleBusinessMode = (mode) => {
+    setBusinessMode(mode)
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('dw_business_mode', mode)
+    }
+    toast.success(`Switched to ${mode === 'manufacturer' ? 'Manufacturer' : 'Fabricator/Dealer'} mode`)
+  }
 
   // Memoize headers to prevent unnecessary recalculations
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
