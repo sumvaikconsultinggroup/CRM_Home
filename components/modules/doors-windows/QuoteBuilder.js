@@ -911,14 +911,118 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
     }
   }
 
-  // Filter quotations
-  const filteredQuotations = quotations?.filter(q => {
-    const matchesSearch = !searchQuery ||
-      q.quoteNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      q.customerName?.toLowerCase().includes(searchQuery.toLowerCase())
-    const matchesProject = !selectedProject || q.projectId === selectedProject.id
-    return matchesSearch && matchesProject
-  }) || []
+  // Filter and sort quotations
+  const filteredQuotations = useMemo(() => {
+    let filtered = quotations?.filter(q => {
+      const matchesSearch = !searchQuery ||
+        q.quoteNumber?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        q.customerName?.toLowerCase().includes(searchQuery.toLowerCase())
+      const matchesProject = !selectedProject || q.projectId === selectedProject.id
+      const matchesStatus = statusFilter === 'all' || q.status === statusFilter
+      return matchesSearch && matchesProject && matchesStatus
+    }) || []
+
+    // Sort
+    if (sortBy === 'newest') {
+      filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
+    } else if (sortBy === 'oldest') {
+      filtered.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt))
+    } else if (sortBy === 'highest') {
+      filtered.sort((a, b) => (b.grandTotal || 0) - (a.grandTotal || 0))
+    } else if (sortBy === 'lowest') {
+      filtered.sort((a, b) => (a.grandTotal || 0) - (b.grandTotal || 0))
+    } else if (sortBy === 'customer') {
+      filtered.sort((a, b) => (a.customerName || '').localeCompare(b.customerName || ''))
+    }
+
+    return filtered
+  }, [quotations, searchQuery, selectedProject, statusFilter, sortBy])
+
+  // Export quotes to CSV
+  const handleExportCSV = () => {
+    const headers = ['Quote Number', 'Customer', 'Status', 'Items', 'Total Area (sqft)', 'Grand Total (₹)', 'Valid Until', 'Created At']
+    const rows = filteredQuotations.map(q => [
+      q.quoteNumber,
+      q.customerName,
+      q.status,
+      q.items?.length || 0,
+      typeof q.totalArea === 'number' ? q.totalArea.toFixed(2) : q.totalArea || 0,
+      q.grandTotal || 0,
+      new Date(q.validUntil).toLocaleDateString(),
+      new Date(q.createdAt).toLocaleDateString()
+    ])
+
+    const csvContent = [headers, ...rows].map(row => row.join(',')).join('\n')
+    const blob = new Blob([csvContent], { type: 'text/csv' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `quotes_export_${new Date().toISOString().split('T')[0]}.csv`
+    a.click()
+    URL.revokeObjectURL(url)
+    toast.success('Quotes exported to CSV')
+  }
+
+  // Send quote for invoicing
+  const handleSendForInvoicing = async () => {
+    if (!invoiceQuote) return
+    
+    setCreatingInvoice(true)
+    try {
+      // Create invoice from quote
+      const invoiceData = {
+        quoteId: invoiceQuote.id,
+        quoteNumber: invoiceQuote.quoteNumber,
+        customerName: invoiceQuote.customerName,
+        customerPhone: invoiceQuote.customerPhone,
+        customerEmail: invoiceQuote.customerEmail,
+        siteAddress: invoiceQuote.siteAddress,
+        projectId: invoiceQuote.projectId,
+        items: invoiceQuote.items,
+        accessories: invoiceQuote.accessories,
+        itemsTotal: invoiceQuote.itemsTotal,
+        accessoriesTotal: invoiceQuote.accessoriesTotal,
+        subtotal: invoiceQuote.subtotal,
+        installationCharge: invoiceQuote.installationCharge,
+        taxAmount: invoiceQuote.taxAmount,
+        grandTotal: invoiceQuote.grandTotal,
+        status: 'pending',
+        paidAmount: 0
+      }
+
+      // Create invoice
+      const invoiceRes = await fetch(`${API_BASE}/invoices`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(invoiceData)
+      })
+
+      if (invoiceRes.ok) {
+        // Update quote status to invoiced
+        await fetch(`${API_BASE}/quotations`, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({
+            id: invoiceQuote.id,
+            status: 'invoiced',
+            invoicedAt: new Date().toISOString()
+          })
+        })
+
+        toast.success('Invoice created successfully!')
+        setShowInvoiceDialog(false)
+        setInvoiceQuote(null)
+        onRefresh()
+      } else {
+        toast.error('Failed to create invoice')
+      }
+    } catch (error) {
+      console.error('Invoice creation error:', error)
+      toast.error('Failed to create invoice')
+    } finally {
+      setCreatingInvoice(false)
+    }
+  }
 
   // Calculate live pricing for item form
   const livePricing = useMemo(() => calculatePrice(itemForm, itemForm.manualTotal), [itemForm])
@@ -931,25 +1035,69 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
           <h2 className="text-2xl font-bold text-slate-800">Enterprise Quote Builder</h2>
           <p className="text-slate-500">Create detailed quotations with visuals, panel config & automatic pricing</p>
         </div>
-        <Button
-          onClick={() => { resetQuoteForm(); setShowNewQuote(true); }}
-          className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white"
-        >
-          <Plus className="h-4 w-4 mr-2" /> New Quote
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            onClick={handleExportCSV}
+            className="border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+          >
+            <Download className="h-4 w-4 mr-2" /> Export
+          </Button>
+          <Button
+            onClick={() => { resetQuoteForm(); setShowNewQuote(true); }}
+            className="bg-gradient-to-r from-indigo-600 to-purple-600 text-white"
+          >
+            <Plus className="h-4 w-4 mr-2" /> New Quote
+          </Button>
+        </div>
       </div>
 
-      {/* Search */}
+      {/* Search, Filter & Sort */}
       <Card className={glassStyles?.card}>
         <CardContent className="p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-            <Input
-              placeholder="Search quotes by number or customer..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+              <Input
+                placeholder="Search quotes by number or customer..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Filter Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="draft">Draft</SelectItem>
+                <SelectItem value="sent">Sent</SelectItem>
+                <SelectItem value="approved">Approved</SelectItem>
+                <SelectItem value="rejected">Rejected</SelectItem>
+                <SelectItem value="invoiced">Invoiced</SelectItem>
+                <SelectItem value="expired">Expired</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sortBy} onValueChange={setSortBy}>
+              <SelectTrigger className="w-[160px]">
+                <SelectValue placeholder="Sort By" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="newest">Newest First</SelectItem>
+                <SelectItem value="oldest">Oldest First</SelectItem>
+                <SelectItem value="highest">Highest Value</SelectItem>
+                <SelectItem value="lowest">Lowest Value</SelectItem>
+                <SelectItem value="customer">Customer Name</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          {/* Quick stats */}
+          <div className="flex gap-4 mt-3 pt-3 border-t text-sm text-slate-600">
+            <span>Total: <strong>{filteredQuotations.length}</strong> quotes</span>
+            <span>Value: <strong>₹{filteredQuotations.reduce((sum, q) => sum + (q.grandTotal || 0), 0).toLocaleString()}</strong></span>
+            <span className="text-emerald-600">Approved: <strong>{filteredQuotations.filter(q => q.status === 'approved').length}</strong></span>
+            <span className="text-blue-600">Sent: <strong>{filteredQuotations.filter(q => q.status === 'sent').length}</strong></span>
           </div>
         </CardContent>
       </Card>
