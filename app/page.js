@@ -764,6 +764,23 @@ function ClientDashboard({ user, client, onLogout }) {
     )
   }
 
+  // Render Paints & Coatings Module if active
+  if (activeModule === 'paints') {
+    return (
+      <div className="min-h-screen">
+        <div className="p-4">
+          <Button variant="ghost" onClick={() => setActiveModule(null)} className="mb-4">
+            <ChevronLeft className="h-4 w-4 mr-2" /> Back to Dashboard
+          </Button>
+        </div>
+        <PaintsCoatingsModule 
+          token={authToken}
+          user={user}
+        />
+      </div>
+    )
+  }
+
   // Render Upgrade Flow if active
   if (showUpgradeFlow) {
     return (
