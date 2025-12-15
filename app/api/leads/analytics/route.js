@@ -97,26 +97,24 @@ export async function GET(request) {
       ]
     })
 
-    // Follow-up analytics
+    // Follow-up analytics (handling both Date objects and ISO strings)
+    const todayStr = today.toISOString().split('T')[0]
+    const tomorrowStr = new Date(today.getTime() + 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    const weekFromNowStr = new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    
     const overdueFollowUps = await leadsCollection.countDocuments({
       status: { $nin: ['won', 'lost'] },
-      followUpDate: { $lt: now }
+      followUpDate: { $exists: true, $ne: null, $lt: todayStr }
     })
 
     const todayFollowUps = await leadsCollection.countDocuments({
       status: { $nin: ['won', 'lost'] },
-      followUpDate: {
-        $gte: today,
-        $lt: new Date(today.getTime() + 24 * 60 * 60 * 1000)
-      }
+      followUpDate: { $exists: true, $ne: null, $gte: todayStr, $lt: tomorrowStr }
     })
 
     const weekFollowUps = await leadsCollection.countDocuments({
       status: { $nin: ['won', 'lost'] },
-      followUpDate: {
-        $gte: today,
-        $lt: new Date(today.getTime() + 7 * 24 * 60 * 60 * 1000)
-      }
+      followUpDate: { $exists: true, $ne: null, $gte: todayStr, $lt: weekFromNowStr }
     })
 
     // Conversion rate
