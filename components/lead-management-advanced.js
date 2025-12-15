@@ -2049,9 +2049,21 @@ export function AdvancedLeadManagement({
                     <LeadScoreIndicator score={scoreData.score} size="sm" />
                   </td>
                   <td className="p-3">
-                    <span className={`text-sm ${followUp.isOverdue ? 'text-red-600 font-medium' : 'text-muted-foreground'}`}>
-                      {formatRelativeTime(followUp.date)}
-                    </span>
+                    {lead.followUpDate ? (
+                      <div className={`text-sm ${new Date(lead.followUpDate) < new Date() ? 'text-red-600 font-medium' : 'text-blue-600'}`}>
+                        <CalendarClock className="h-3 w-3 inline mr-1" />
+                        {new Date(lead.followUpDate).toLocaleDateString()}
+                      </div>
+                    ) : (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        className="text-xs text-muted-foreground"
+                        onClick={(e) => { e.stopPropagation(); setSetFollowUpLeadState(lead) }}
+                      >
+                        + Set Date
+                      </Button>
+                    )}
                   </td>
                   <td className="p-3">
                     <Badge variant="secondary">{conversations.length}</Badge>
@@ -2069,6 +2081,9 @@ export function AdvancedLeadManagement({
                         </DropdownMenuItem>
                         <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setConversationDialogLead(lead) }}>
                           <MessageSquare className="h-4 w-4 mr-2" /> Log Conversation
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={(e) => { e.stopPropagation(); setSetFollowUpLeadState(lead) }}>
+                          <CalendarClock className="h-4 w-4 mr-2" /> Set Follow-up
                         </DropdownMenuItem>
                         <DropdownMenuSeparator />
                         <DropdownMenuItem 
