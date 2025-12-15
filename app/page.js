@@ -1034,8 +1034,9 @@ function ClientDashboard({ user, client, onLogout }) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
+                className="h-[calc(100vh-180px)]"
               >
-                <EnterpriseLeads
+                <AdvancedLeadManagement
                   leads={leads}
                   user={user}
                   client={client}
