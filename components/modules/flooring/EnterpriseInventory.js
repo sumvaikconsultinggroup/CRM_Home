@@ -185,6 +185,24 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
   const [cycleCountSummary, setCycleCountSummary] = useState({})
   const [cycleCountForm, setCycleCountForm] = useState({})
   
+  // GRN State
+  const [grns, setGrns] = useState([])
+  const [grnSummary, setGrnSummary] = useState({})
+  const [grnForm, setGrnForm] = useState({ items: [] })
+  
+  // Challan State
+  const [challans, setChallans] = useState([])
+  const [challanSummary, setChallanSummary] = useState({})
+  const [challanForm, setChallanForm] = useState({ items: [] })
+  
+  // Reservation State
+  const [reservations, setReservations] = useState([])
+  const [reservationSummary, setReservationSummary] = useState({})
+  
+  // Quick Lookup State
+  const [lookupResult, setLookupResult] = useState(null)
+  const [lookupLoading, setLookupLoading] = useState(false)
+  
   // UI State
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
