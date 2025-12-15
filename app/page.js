@@ -879,9 +879,21 @@ function ClientDashboard({ user, client, onLogout }) {
             <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)}>
               <Menu className="h-5 w-5" />
             </Button>
+            {/* Product Switcher */}
+            <ProductSwitcher 
+              token={authToken}
+              currentProduct={activeProduct}
+              onProductChange={(productId) => {
+                setActiveProduct(productId)
+                setActiveModule(null)
+                setActiveTab('dashboard')
+              }}
+            />
             <div>
               <h1 className="text-xl font-bold">{client?.businessName || 'Dashboard'}</h1>
-              <p className="text-sm text-muted-foreground">{menuItems.find(m => m.id === activeTab)?.label}</p>
+              <p className="text-sm text-muted-foreground">
+                {activeProduct === 'build-inventory' ? 'Build Inventory' : menuItems.find(m => m.id === activeTab)?.label}
+              </p>
             </div>
           </div>
           <div className="flex items-center gap-4">
@@ -910,14 +922,28 @@ function ClientDashboard({ user, client, onLogout }) {
           </div>
         </motion.header>
 
-        {/* Team Chat Modal */}
-        <AnimatePresence>
-          {showChat && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+        {/* Build Inventory Product View */}
+        {activeProduct === 'build-inventory' && (
+          <div className="p-6">
+            <BuildInventory 
+              token={authToken}
+              user={user}
+              clientModules={modules.filter(m => m.enabled)}
+            />
+          </div>
+        )}
+
+        {/* Build CRM (Default) */}
+        {activeProduct === 'build-crm' && (
+          <>
+            {/* Team Chat Modal */}
+            <AnimatePresence>
+              {showChat && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
               onClick={() => setShowChat(false)}
             >
               <motion.div
