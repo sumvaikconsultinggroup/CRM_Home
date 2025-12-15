@@ -1116,21 +1116,25 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-          {filteredQuotations.map(quote => (
+          {filteredQuotations.map(quote => {
+            const isInvoiced = quote.status === 'invoiced'
+            return (
             <Card
               key={quote.id}
-              className={`${glassStyles?.card} hover:shadow-xl transition-all cursor-pointer`}
+              className={`${glassStyles?.card} transition-all cursor-pointer ${
+                isInvoiced ? 'opacity-60 bg-slate-100' : 'hover:shadow-xl'
+              }`}
             >
               <CardContent className="p-5">
                 <div className="flex items-start justify-between mb-3">
                   <div>
                     <div className="flex items-center gap-2">
-                      <p className="font-semibold text-slate-800">{quote.quoteNumber}</p>
+                      <p className={`font-semibold ${isInvoiced ? 'text-slate-500' : 'text-slate-800'}`}>{quote.quoteNumber}</p>
                       <Badge className={statusStyles[quote.status]}>{quote.status}</Badge>
                     </div>
                     <p className="text-sm text-slate-500">{quote.customerName}</p>
                   </div>
-                  <p className="text-xl font-bold text-emerald-600">₹{(quote.grandTotal || 0).toLocaleString()}</p>
+                  <p className={`text-xl font-bold ${isInvoiced ? 'text-slate-500' : 'text-emerald-600'}`}>₹{(quote.grandTotal || 0).toLocaleString()}</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-2 text-sm mb-3">
@@ -1156,16 +1160,14 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
                 {/* Status Actions */}
                 <div className="flex flex-wrap gap-1 mb-3">
                   {quote.status === 'draft' && (
-                    <>
-                      <Button 
-                        size="sm" 
-                        variant="outline"
-                        className="text-xs h-7 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
-                        onClick={(e) => { e.stopPropagation(); openStatusDialog(quote, 'send'); }}
-                      >
-                        <Send className="h-3 w-3 mr-1" /> Send Quote
-                      </Button>
-                    </>
+                    <Button 
+                      size="sm" 
+                      variant="outline"
+                      className="text-xs h-7 bg-blue-50 text-blue-700 border-blue-200 hover:bg-blue-100"
+                      onClick={(e) => { e.stopPropagation(); openStatusDialog(quote, 'send'); }}
+                    >
+                      <Send className="h-3 w-3 mr-1" /> Send Quote
+                    </Button>
                   )}
                   {quote.status === 'sent' && (
                     <>
@@ -1187,7 +1189,27 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
                       </Button>
                     </>
                   )}
-                  {(quote.status === 'approved' || quote.status === 'rejected') && (
+                  {quote.status === 'approved' && (
+                    <>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="text-xs h-7 bg-green-50 text-green-700 border-green-200 hover:bg-green-100"
+                        onClick={(e) => { e.stopPropagation(); setInvoiceQuote(quote); setShowInvoiceDialog(true); }}
+                      >
+                        <Receipt className="h-3 w-3 mr-1" /> Send for Invoicing
+                      </Button>
+                      <Button 
+                        size="sm" 
+                        variant="outline"
+                        className="text-xs h-7 bg-amber-50 text-amber-700 border-amber-200 hover:bg-amber-100"
+                        onClick={(e) => { e.stopPropagation(); handleEditQuote(quote); }}
+                      >
+                        <Edit className="h-3 w-3 mr-1" /> Revise Quote
+                      </Button>
+                    </>
+                  )}
+                  {quote.status === 'rejected' && (
                     <Button 
                       size="sm" 
                       variant="outline"
@@ -1197,6 +1219,11 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
                       <RotateCcw className="h-3 w-3 mr-1" /> Override
                     </Button>
                   )}
+                  {quote.status === 'invoiced' && (
+                    <Badge className="bg-green-100 text-green-700 text-xs">
+                      <CheckCircle2 className="h-3 w-3 mr-1" /> Invoice Created
+                    </Badge>
+                  )}
                 </div>
 
                 <div className="flex items-center justify-between pt-3 border-t">
@@ -1204,14 +1231,16 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
                     Valid: {new Date(quote.validUntil).toLocaleDateString()}
                   </p>
                   <div className="flex gap-1">
-                    <Button 
-                      variant="ghost" 
-                      size="sm" 
-                      onClick={(e) => { e.stopPropagation(); handleEditQuote(quote); }}
-                      title="Edit Quote"
-                    >
-                      <Edit className="h-4 w-4 text-indigo-600" />
-                    </Button>
+                    {!isInvoiced && (
+                      <Button 
+                        variant="ghost" 
+                        size="sm" 
+                        onClick={(e) => { e.stopPropagation(); handleEditQuote(quote); }}
+                        title="Edit Quote"
+                      >
+                        <Edit className="h-4 w-4 text-indigo-600" />
+                      </Button>
+                    )}
                     <Button variant="ghost" size="sm" onClick={(e) => { e.stopPropagation(); handleDownloadPDF(quote); }}>
                       <Download className="h-4 w-4" />
                     </Button>
@@ -1222,7 +1251,7 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
                 </div>
               </CardContent>
             </Card>
-          ))}
+          )})}
         </div>
       )}
 
