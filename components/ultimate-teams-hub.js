@@ -2201,13 +2201,17 @@ export function UltimateTeamsHub({ authToken, users = [], currentUser }) {
                           key={user.id || member.id}
                           whileHover={{ x: 4 }}
                           className="flex items-center gap-3 p-3 rounded-xl hover:bg-white cursor-pointer transition-colors"
+                          onClick={() => {
+                            setRightPanelContent('profile')
+                            // Store selected profile user in state
+                          }}
                         >
                           <UserAvatarWithStatus user={user} size="md" />
                           <div className="flex-1">
                             <p className="font-medium text-sm">{user.name || user.email}</p>
                             <p className="text-xs text-slate-500">{user.role || 'Member'}</p>
                           </div>
-                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleCreateDM(user.id)}>
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={(e) => { e.stopPropagation(); handleCreateDM(user.id); }}>
                             <MessageCircle className="h-4 w-4" />
                           </Button>
                         </motion.div>
@@ -2216,6 +2220,37 @@ export function UltimateTeamsHub({ authToken, users = [], currentUser }) {
                   </div>
                 </ScrollArea>
               </>
+            )}
+            
+            {/* Notifications View */}
+            {rightPanelContent === 'notifications' && (
+              <NotificationCenter
+                notifications={notifications}
+                onMarkRead={(id) => {
+                  setNotifications(prev => prev.map(n =>
+                    n.id === id ? { ...n, read: true } : n
+                  ))
+                }}
+                onClear={() => setNotifications([])}
+              />
+            )}
+            
+            {/* Saved Messages View */}
+            {rightPanelContent === 'saved' && (
+              <StarredMessagesPanel
+                messages={savedMessages}
+                onNavigate={(msg) => {
+                  if (msg.channelId) {
+                    const channel = channels.find(c => c.id === msg.channelId)
+                    if (channel) {
+                      setSelectedChannel(channel)
+                      setActiveView('teams')
+                    }
+                  }
+                  setRightPanelOpen(false)
+                }}
+                onClose={() => setRightPanelOpen(false)}
+              />
             )}
           </motion.div>
         )}
