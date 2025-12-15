@@ -134,41 +134,118 @@ export async function POST(request) {
     // Create new survey
     const collection = db.collection('dw_surveys')
 
+    // Generate 6-digit site code if not provided
+    const siteCode = body.siteCode || Math.floor(100000 + Math.random() * 900000).toString()
+
     const survey = {
       id: uuidv4(),
       clientId: user.clientId,
       surveyNumber: `SRV-${Date.now()}`,
+      siteCode, // 6-digit site code
       
       // Link to lead/project
       leadId: body.leadId || null,
       projectId: body.projectId || null,
       
-      // Site details
+      // Basic Info
       siteName: body.siteName || '',
       siteAddress: body.siteAddress || '',
+      city: body.city || '',
+      pincode: body.pincode || '',
+      landmark: body.landmark || '',
+      gpsCoordinates: body.gpsCoordinates || '',
+      
+      // Contact Info
       contactPerson: body.contactPerson || '',
       contactPhone: body.contactPhone || '',
+      contactEmail: body.contactEmail || '',
+      alternateContact: body.alternateContact || '',
+      siteIncharge: body.siteIncharge || '',
+      siteInchargePhone: body.siteInchargePhone || '',
       
-      // Survey details
+      // Building Details
+      buildingType: body.buildingType || '',
+      buildingAge: body.buildingAge || '',
+      totalFloors: parseInt(body.totalFloors) || parseInt(body.floors) || 1,
+      basementFloors: parseInt(body.basementFloors) || 0,
+      buildingOrientation: body.buildingOrientation || '',
+      plotArea: body.plotArea || '',
+      builtUpArea: body.builtUpArea || '',
+      
+      // Surveyor Details
       surveyDate: body.surveyDate ? new Date(body.surveyDate) : new Date(),
+      surveyStartTime: body.surveyStartTime || '',
+      surveyEndTime: body.surveyEndTime || '',
       surveyorId: body.surveyorId || user.id,
       surveyorName: body.surveyorName || user.name || '',
+      surveyorPhone: body.surveyorPhone || '',
+      surveyorEmail: body.surveyorEmail || '',
+      
+      // Site Assessment
+      siteConditions: body.siteConditions || '',
+      accessRestrictions: body.accessRestrictions || '',
+      existingFrameType: body.existingFrameType || '',
+      existingFrameCondition: body.existingFrameCondition || '',
+      demolitionRequired: body.demolitionRequired || false,
+      demolitionNotes: body.demolitionNotes || '',
+      
+      // Environmental
+      environmentalFactors: body.environmentalFactors || [],
+      noiseLevel: body.noiseLevel || 'normal',
+      sunExposure: body.sunExposure || 'moderate',
+      
+      // Infrastructure
+      powerAvailable: body.powerAvailable !== false,
+      powerDetails: body.powerDetails || '',
+      waterAvailable: body.waterAvailable !== false,
+      waterDetails: body.waterDetails || '',
+      liftAvailable: body.liftAvailable || false,
+      liftDetails: body.liftDetails || '',
+      craneLiftRequired: body.craneLiftRequired || false,
+      scaffoldingRequired: body.scaffoldingRequired || false,
+      parkingAvailable: body.parkingAvailable !== false,
+      parkingNotes: body.parkingNotes || '',
+      materialStorageSpace: body.materialStorageSpace !== false,
+      storageNotes: body.storageNotes || '',
+      
+      // Work Permissions
+      workingHoursRestriction: body.workingHoursRestriction || false,
+      workingHoursDetails: body.workingHoursDetails || '',
+      weekendWorkAllowed: body.weekendWorkAllowed !== false,
+      societyPermission: body.societyPermission || false,
+      societyPermissionDetails: body.societyPermissionDetails || '',
+      noiseRestrictions: body.noiseRestrictions || false,
+      noiseRestrictionTimes: body.noiseRestrictionTimes || '',
+      
+      // Client Requirements
+      primaryRequirement: body.primaryRequirement || '',
+      budgetRange: body.budgetRange || '',
+      expectedTimeline: body.expectedTimeline || '',
+      priorityFeatures: body.priorityFeatures || [],
+      aestheticPreference: body.aestheticPreference || '',
+      brandPreference: body.brandPreference || '',
+      
+      // Competition
+      competitorQuotes: body.competitorQuotes || false,
+      competitorDetails: body.competitorDetails || '',
       
       // Scope
       scopeSummary: body.scopeSummary || '',
-      buildingType: body.buildingType || '', // residential, commercial, industrial
-      floors: parseInt(body.floors) || 1,
+      specialInstructions: body.specialInstructions || '',
       
       // Status
-      status: 'pending', // pending, in-progress, completed, cancelled
+      status: body.status || 'pending',
       remeasureRequired: false,
       
-      // Counts
+      // Counts & Estimates
       openingsCount: 0,
+      totalWindowOpenings: 0,
+      totalDoorOpenings: 0,
+      estimatedArea: 0,
       estimatedValue: 0,
       
       // Photos & Docs
-      sitePhotos: body.sitePhotos || [],
+      sitePhotos: body.sitePhotos || body.photos || [],
       documents: body.documents || [],
       
       // Geo
@@ -180,7 +257,7 @@ export async function POST(request) {
     }
 
     await collection.insertOne(survey)
-    return successResponse(sanitizeDocument(survey), 201)
+    return successResponse({ survey: sanitizeDocument(survey), id: survey.id, siteCode: survey.siteCode }, 201)
   } catch (error) {
     console.error('DW Surveys POST Error:', error)
     if (error.message === 'Unauthorized') return errorResponse('Unauthorized', 401)
