@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { FlooringProductDialog, ImportProductsDialog, CategoryManagerDialog } from '@/components/modules/flooring-products-ui'
 import { ViewQuoteDialog as ViewQuoteDialogNew, QuoteEditDialog as QuoteEditDialogNew, QuoteStatusConfig as QuoteStatusConfigShared } from '@/components/modules/flooring/QuoteDialogs'
+import { EnterpriseInventory } from '@/components/modules/flooring/EnterpriseInventory'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
