@@ -2120,7 +2120,7 @@ export function UltimateTeamsHub({ authToken, users = [], currentUser }) {
                       type="submit"
                       size="icon"
                       className="h-9 w-9 bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-700 hover:to-purple-700"
-                      disabled={!messageInput.trim() || sending}
+                      disabled={(!messageInput.trim() && pendingAttachments.length === 0) || sending}
                     >
                       {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
                     </Button>
