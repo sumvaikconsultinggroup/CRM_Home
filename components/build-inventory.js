@@ -369,6 +369,8 @@ export function BuildInventory({ token, user, clientModules = [] }) {
         toast.success(data.message || 'Sync completed')
         fetchSyncStatus()
         fetchProducts()
+        // Fetch module fields for the newly synced module
+        fetchModuleFields(moduleId)
       } else {
         toast.error(data.error || 'Sync failed')
       }
