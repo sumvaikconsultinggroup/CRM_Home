@@ -3110,9 +3110,15 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
 
       {/* Sub Navigation */}
       <Tabs value={activeSubTab} onValueChange={setActiveSubTab}>
-        <TabsList className="bg-slate-100 flex-wrap">
+        <TabsList className="bg-slate-100 flex-wrap h-auto p-1">
           <TabsTrigger value="stock" className="flex items-center gap-2">
             <Package className="h-4 w-4" /> Stock
+          </TabsTrigger>
+          <TabsTrigger value="grn" className="flex items-center gap-2">
+            <Receipt className="h-4 w-4" /> GRN
+          </TabsTrigger>
+          <TabsTrigger value="challans" className="flex items-center gap-2">
+            <Truck className="h-4 w-4" /> Challans
           </TabsTrigger>
           <TabsTrigger value="movements" className="flex items-center gap-2">
             <History className="h-4 w-4" /> Movements
@@ -3121,7 +3127,7 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
             <ArrowLeftRight className="h-4 w-4" /> Transfers
           </TabsTrigger>
           <TabsTrigger value="batches" className="flex items-center gap-2">
-            <Layers className="h-4 w-4" /> Batches/Lots
+            <Layers className="h-4 w-4" /> Batches
           </TabsTrigger>
           <TabsTrigger value="alerts" className="flex items-center gap-2">
             <Bell className="h-4 w-4" /> Alerts
@@ -3133,7 +3139,7 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
             <BarChart3 className="h-4 w-4" /> Reports
           </TabsTrigger>
           <TabsTrigger value="cycle_count" className="flex items-center gap-2">
-            <FileSpreadsheet className="h-4 w-4" /> Audit
+            <ClipboardList className="h-4 w-4" /> Audit
           </TabsTrigger>
           <TabsTrigger value="warehouses" className="flex items-center gap-2">
             <Warehouse className="h-4 w-4" /> Warehouses
@@ -3142,6 +3148,8 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
 
         <div className="mt-4">
           <TabsContent value="stock">{renderStockView()}</TabsContent>
+          <TabsContent value="grn">{renderGrnView()}</TabsContent>
+          <TabsContent value="challans">{renderChallansView()}</TabsContent>
           <TabsContent value="movements">{renderMovementsView()}</TabsContent>
           <TabsContent value="transfers">{renderTransfersView()}</TabsContent>
           <TabsContent value="batches">{renderBatchesView()}</TabsContent>
