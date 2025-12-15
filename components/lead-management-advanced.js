@@ -1807,12 +1807,43 @@ export function AdvancedLeadManagement({
         conversations: [...conversations, lostConversation]
       } : l))
       
-      toast.success('Lead marked as lost')
+      toast.success('Lead marked as lost. Contact moved to nurturing.')
       setMarkLostDialog(null)
       setLostReason('')
       setLostNotes('')
+      if (onRefresh) onRefresh()
     } catch (error) {
       toast.error('Failed to update lead')
+    }
+  }
+
+  // Handle creating new lead
+  const handleCreateLead = async (leadData) => {
+    try {
+      const response = await api.createLead(leadData)
+      toast.success('Lead created successfully!')
+      if (onRefresh) {
+        onRefresh()
+      } else {
+        setLeads([response.lead || response, ...leads])
+      }
+    } catch (error) {
+      console.error('Create lead error:', error)
+      throw error
+    }
+  }
+
+  // Handle setting follow-up date
+  const handleSetFollowUp = async (leadId, followUpDate) => {
+    try {
+      await api.updateLead(leadId, { followUpDate })
+      setLeads(leads.map(l => l.id === leadId ? { ...l, followUpDate } : l))
+      if (selectedLead?.id === leadId) {
+        setSelectedLead({ ...selectedLead, followUpDate })
+      }
+      toast.success('Follow-up date updated')
+    } catch (error) {
+      toast.error('Failed to update follow-up date')
     }
   }
 
