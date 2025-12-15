@@ -2384,7 +2384,7 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Warehouse</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Items</th>
                   <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Value</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Vehicle</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Driver</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Status</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Date</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Actions</th>
@@ -2397,17 +2397,34 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
                     <tr key={challan.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3">
                         <Badge variant="outline">{challan.challanNumber}</Badge>
+                        {challan.syncedFromDispatch && (
+                          <Badge variant="secondary" className="ml-1 text-xs">Synced</Badge>
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <p className="text-sm font-medium">{challan.customerName || challan.projectName || '-'}</p>
-                        {challan.projectName && challan.customerName && (
-                          <p className="text-xs text-slate-500">{challan.projectName}</p>
+                        {challan.contactPhone && (
+                          <p className="text-xs text-slate-500 flex items-center gap-1">
+                            <Phone className="h-3 w-3" /> {challan.contactPhone}
+                          </p>
                         )}
                       </td>
                       <td className="px-4 py-3 text-sm">{challan.warehouseName}</td>
                       <td className="px-4 py-3 text-center">{challan.items?.length || 0}</td>
                       <td className="px-4 py-3 text-right font-medium">₹{(challan.totalValue || 0).toLocaleString()}</td>
-                      <td className="px-4 py-3 text-sm">{challan.vehicleNumber || '-'}</td>
+                      <td className="px-4 py-3">
+                        <div className="text-sm">
+                          <p>{challan.driverName || '-'}</p>
+                          {challan.driverPhone && (
+                            <p className="text-xs text-slate-500 flex items-center gap-1">
+                              <Phone className="h-3 w-3" /> {challan.driverPhone}
+                            </p>
+                          )}
+                          {challan.vehicleNumber && (
+                            <p className="text-xs text-slate-400">{challan.vehicleNumber}</p>
+                          )}
+                        </div>
+                      </td>
                       <td className="px-4 py-3 text-center">
                         <Badge className={statusConfig.color}>{statusConfig.label}</Badge>
                       </td>
