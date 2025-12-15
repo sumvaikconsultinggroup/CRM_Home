@@ -2307,23 +2307,62 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
   // RENDER: CHALLANS VIEW
   // =============================================
 
+  // Sync challans from dispatch management
+  const syncChallansFromDispatch = async () => {
+    try {
+      const res = await fetch('/api/inventory/challans/sync', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ syncAll: true })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success(data.message || `Synced ${data.synced || 0} challans from dispatch`)
+        fetchChallans()
+      } else {
+        toast.error(data.error || 'Failed to sync challans')
+      }
+    } catch (error) {
+      toast.error('Failed to sync challans from dispatch')
+      console.error('Challan sync error:', error)
+    }
+  }
+
   const renderChallansView = () => (
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-lg font-semibold">Delivery Challans</h3>
-          <p className="text-sm text-slate-500">Dispatch goods to customers/projects</p>
+          <p className="text-sm text-slate-500">Synced from Dispatch Management</p>
         </div>
         <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={syncChallansFromDispatch}>
+            <RefreshCw className="h-4 w-4 mr-2" /> Sync from Dispatch
+          </Button>
           <Button variant="outline" onClick={() => handleExport('challans')}>
             <Download className="h-4 w-4 mr-2" /> Export
           </Button>
-          <Button onClick={() => { setChallanForm({ items: [], warehouseId: selectedWarehouse !== 'all' ? selectedWarehouse : '' }); setDialogOpen({ type: 'challan', data: null }) }}>
-            <Plus className="h-4 w-4 mr-2" /> New Challan
+          <Button variant="outline" onClick={fetchChallans}>
+            <RefreshCw className="h-4 w-4 mr-2" /> Refresh
           </Button>
         </div>
       </div>
+
+      {/* Info Banner */}
+      <Card className="border-blue-200 bg-blue-50">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <Info className="h-5 w-5 text-blue-600" />
+            <div>
+              <p className="font-medium text-blue-800">Challans Sync from Dispatch Management</p>
+              <p className="text-sm text-blue-600">
+                Delivery challans are automatically created when goods are dispatched. Click &quot;Sync from Dispatch&quot; to pull latest challans.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Summary */}
       <div className="grid grid-cols-4 gap-3">
