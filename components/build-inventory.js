@@ -1156,6 +1156,7 @@ export function BuildInventory({ token, user, clientModules = [] }) {
       <Card>
         <CardHeader>
           <CardTitle>All Dispatches</CardTitle>
+          <CardDescription>Click on a dispatch to manage its workflow</CardDescription>
         </CardHeader>
         <CardContent>
           {dispatches.length === 0 ? (
@@ -1174,13 +1175,13 @@ export function BuildInventory({ token, user, clientModules = [] }) {
                   <TableHead>Value</TableHead>
                   <TableHead>Vehicle</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>WhatsApp</TableHead>
+                  <TableHead>Workflow</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {dispatches.map(dispatch => (
-                  <TableRow key={dispatch.id}>
+                  <TableRow key={dispatch.id} className="cursor-pointer hover:bg-slate-50">
                     <TableCell>
                       <div>
                         <p className="font-medium">{dispatch.dispatchNumber}</p>
@@ -1220,50 +1221,36 @@ export function BuildInventory({ token, user, clientModules = [] }) {
                           )}
                         </div>
                       ) : (
-                        <span className="text-slate-400">-</span>
+                        <span className="text-slate-400 text-xs">Not assigned</span>
                       )}
                     </TableCell>
                     <TableCell>
-                      <Select
-                        value={dispatch.status}
-                        onValueChange={(value) => handleUpdateDispatchStatus(dispatch.id, value)}
-                      >
-                        <SelectTrigger className="w-32">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="pending">Pending</SelectItem>
-                          <SelectItem value="in_transit">In Transit</SelectItem>
-                          <SelectItem value="delivered">Delivered</SelectItem>
-                          <SelectItem value="cancelled">Cancelled</SelectItem>
-                        </SelectContent>
-                      </Select>
+                      {renderDispatchStatus(dispatch)}
                     </TableCell>
                     <TableCell>
-                      {dispatch.whatsappNotification?.sent ? (
-                        <Badge className="bg-green-100 text-green-700">
-                          <CheckCircle2 className="h-3 w-3 mr-1" /> Sent
-                        </Badge>
-                      ) : dispatch.customerPhone ? (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleSendWhatsAppNotification(dispatch.id)}
-                        >
-                          <MessageSquare className="h-3 w-3 mr-1" /> Send
-                        </Button>
-                      ) : (
-                        <span className="text-slate-400 text-sm">No phone</span>
-                      )}
+                      {renderWorkflowButton(dispatch)}
                     </TableCell>
                     <TableCell className="text-right">
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setSelectedDispatch(dispatch)}
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
+                      <div className="flex items-center justify-end gap-1">
+                        {dispatch.deliveryReceiptId && (
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleViewChallan(dispatch)}
+                            title="View Challan"
+                          >
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        )}
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setSelectedDispatch(dispatch)}
+                          title="View Details"
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
