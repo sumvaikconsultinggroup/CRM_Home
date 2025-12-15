@@ -2017,6 +2017,62 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }
 
+  // Handle B2B Dispatch (Mark as dispatched/in-transit for B2B Material Orders)
+  const handleB2BDispatch = async (invoice) => {
+    try {
+      setLoading(true)
+      
+      // Find the related project
+      const project = projects.find(p => p.id === invoice.projectId)
+      if (!project) {
+        toast.error('Project not found for this invoice')
+        return
+      }
+
+      // Safety check: Only for B2B projects
+      if (project.segment !== 'b2b') {
+        toast.error('This action is only for B2B orders. Use Installation for B2C projects.')
+        return
+      }
+
+      // Update project status to in_transit
+      await handleUpdateProjectStatus(project.id, 'in_transit')
+      
+      // Mark invoice as dispatched
+      await fetch('/api/flooring/enhanced/invoices', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          id: invoice.id,
+          action: 'mark_dispatched',
+          by: user?.id
+        })
+      })
+
+      toast.success('Material dispatched! Order marked as In Transit.')
+      fetchInvoices()
+      fetchProjects()
+    } catch (error) {
+      toast.error('Failed to mark as dispatched')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Handle B2B Delivery (Mark as delivered)
+  const handleB2BDelivery = async (projectId) => {
+    try {
+      setLoading(true)
+      await handleUpdateProjectStatus(projectId, 'delivered')
+      toast.success('Material delivered! Order complete.')
+      fetchProjects()
+    } catch (error) {
+      toast.error('Failed to mark as delivered')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // =============================================
   // RENDER TABS
   // =============================================
