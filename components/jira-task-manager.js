@@ -384,10 +384,10 @@ const CalendarView = ({ tasks, onTaskClick, currentDate, onDateChange }) => {
 }
 
 // =============================================
-// TASK CARD COMPONENT
+// TASK CARD COMPONENT (Draggable)
 // =============================================
 
-const TaskCard = ({ task, onClick, onStatusChange }) => {
+const TaskCard = ({ task, onClick, onDragStart, onDragEnd, isDragging }) => {
   const hasSubtasks = task.subtasks?.length > 0
   const completedSubtasks = task.subtaskDetails?.filter(st => st.status === 'completed').length || 0
   const checklistProgress = task.checklist?.length > 0 
@@ -399,13 +399,23 @@ const TaskCard = ({ task, onClick, onStatusChange }) => {
       layout
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
-      className="bg-white rounded-lg border shadow-sm hover:shadow-md transition-all cursor-pointer group"
+      draggable
+      onDragStart={(e) => {
+        e.dataTransfer.setData('taskId', task.id)
+        e.dataTransfer.effectAllowed = 'move'
+        if (onDragStart) onDragStart(task.id)
+      }}
+      onDragEnd={() => {
+        if (onDragEnd) onDragEnd()
+      }}
+      className={`bg-white rounded-lg border shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing group ${isDragging ? 'opacity-50 ring-2 ring-blue-500' : ''}`}
       onClick={onClick}
     >
       <div className="p-3">
-        {/* Header */}
+        {/* Drag Handle + Header */}
         <div className="flex items-start justify-between gap-2 mb-2">
           <div className="flex items-center gap-2">
+            <GripVertical className="h-4 w-4 text-slate-300 opacity-0 group-hover:opacity-100 transition-opacity" />
             <TaskTypeIcon type={task.taskType} />
             <span className="text-xs text-muted-foreground font-mono">{task.taskNumber}</span>
           </div>
@@ -492,16 +502,41 @@ const TaskCard = ({ task, onClick, onStatusChange }) => {
 }
 
 // =============================================
-// KANBAN BOARD
+// KANBAN BOARD (with Drag & Drop)
 // =============================================
 
-const KanbanColumn = ({ status, tasks, onTaskClick, onQuickCreate }) => {
+const KanbanColumn = ({ status, tasks, onTaskClick, onQuickCreate, onDrop, draggingTaskId, onDragStart, onDragEnd }) => {
+  const [isDragOver, setIsDragOver] = useState(false)
   const config = TASK_STATUSES[status]
   const Icon = config.icon
   const columnTasks = tasks.filter(t => t.status === status)
 
+  const handleDragOver = (e) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+    setIsDragOver(true)
+  }
+
+  const handleDragLeave = () => {
+    setIsDragOver(false)
+  }
+
+  const handleDrop = (e) => {
+    e.preventDefault()
+    setIsDragOver(false)
+    const taskId = e.dataTransfer.getData('taskId')
+    if (taskId && onDrop) {
+      onDrop(taskId, status)
+    }
+  }
+
   return (
-    <div className="flex-shrink-0 w-80 bg-slate-50 rounded-xl">
+    <div 
+      className={`flex-shrink-0 w-80 bg-slate-50 rounded-xl transition-all ${isDragOver ? 'ring-2 ring-blue-500 bg-blue-50' : ''}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
       <div className="p-3 border-b bg-white rounded-t-xl">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -520,11 +555,18 @@ const KanbanColumn = ({ status, tasks, onTaskClick, onQuickCreate }) => {
       <ScrollArea className="h-[calc(100vh-340px)] p-3">
         <div className="space-y-2">
           {columnTasks.map((task) => (
-            <TaskCard key={task.id} task={task} onClick={() => onTaskClick(task)} />
+            <TaskCard 
+              key={task.id} 
+              task={task} 
+              onClick={() => onTaskClick(task)}
+              onDragStart={onDragStart}
+              onDragEnd={onDragEnd}
+              isDragging={draggingTaskId === task.id}
+            />
           ))}
           {columnTasks.length === 0 && (
-            <div className="text-center py-8 text-sm text-muted-foreground">
-              No tasks
+            <div className={`text-center py-8 text-sm text-muted-foreground border-2 border-dashed rounded-lg ${isDragOver ? 'border-blue-400 bg-blue-50' : 'border-transparent'}`}>
+              {isDragOver ? 'Drop here' : 'No tasks'}
             </div>
           )}
         </div>
