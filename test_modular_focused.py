@@ -9,7 +9,7 @@ import json
 import time
 
 # Configuration
-BASE_URL = "https://dw-module-fix.preview.emergentagent.com/api"
+BASE_URL = "https://leadcrm-8.preview.emergentagent.com/api"
 SUPER_ADMIN_EMAIL = "admin@buildcrm.com"
 SUPER_ADMIN_PASSWORD = "admin123"
 

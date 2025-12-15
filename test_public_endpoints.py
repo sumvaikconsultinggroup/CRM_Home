@@ -6,7 +6,7 @@ Quick test for public endpoints to verify they're working
 import requests
 import time
 
-BASE_URL = "https://dw-module-fix.preview.emergentagent.com/api"
+BASE_URL = "https://leadcrm-8.preview.emergentagent.com/api"
 
 def test_public_endpoints():
     print("Testing public endpoints...")
