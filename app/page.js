@@ -575,6 +575,7 @@ function SuperAdminDashboard({ user, onLogout }) {
 // ==================== CLIENT DASHBOARD ====================
 function ClientDashboard({ user, client, onLogout }) {
   const [activeTab, setActiveTab] = useState('dashboard')
+  const [activeProduct, setActiveProduct] = useState('build-crm') // Build Suite product
   const [stats, setStats] = useState(null)
   const [leads, setLeads] = useState([])
   const [projects, setProjects] = useState([])
