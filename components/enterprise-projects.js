@@ -305,6 +305,211 @@ export function EnterpriseProjects({ authToken, onProjectSelect }) {
     await handleUpdateProject(projectId, { milestones: updatedMilestones })
   }
 
+  // Phase 2: Template handlers
+  const handleCreateTemplate = async () => {
+    if (!templateForm.name) {
+      toast.error('Template name is required')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const res = await fetch('/api/projects/templates', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(templateForm)
+      })
+      const data = await res.json()
+      
+      if (data.id) {
+        toast.success('Template created successfully')
+        setShowTemplateDialog(false)
+        setTemplateForm({ name: '', description: '', projectType: 'default', defaultBudget: '', estimatedDuration: 30 })
+        fetchTemplates()
+      } else {
+        toast.error(data.error || 'Failed to create template')
+      }
+    } catch (error) {
+      console.error('Create template error:', error)
+      toast.error('Failed to create template')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleCreateFromTemplate = async (templateId) => {
+    setSaving(true)
+    try {
+      const res = await fetch('/api/projects/templates', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          action: 'create-from-template',
+          templateId,
+          projectData: formData
+        })
+      })
+      const data = await res.json()
+      
+      if (data.id || data.projectNumber) {
+        toast.success(`Project ${data.projectNumber} created from template`)
+        setShowCreateDialog(false)
+        resetForm()
+        fetchProjects()
+      } else {
+        toast.error(data.error || 'Failed to create project from template')
+      }
+    } catch (error) {
+      console.error('Create from template error:', error)
+      toast.error('Failed to create project from template')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleDeleteTemplate = async (templateId) => {
+    if (!confirm('Delete this template?')) return
+
+    try {
+      const res = await fetch(`/api/projects/templates?id=${templateId}`, {
+        method: 'DELETE',
+        headers
+      })
+      const data = await res.json()
+      
+      if (data.message) {
+        toast.success('Template deleted')
+        fetchTemplates()
+      } else {
+        toast.error(data.error || 'Failed to delete template')
+      }
+    } catch (error) {
+      console.error('Delete template error:', error)
+      toast.error('Failed to delete template')
+    }
+  }
+
+  // Phase 2: Team handlers
+  const handleAddTeamMember = async () => {
+    if (!teamForm.userId || !projectDetail?.project?.id) {
+      toast.error('Please select a team member')
+      return
+    }
+
+    const selectedUser = users.find(u => u.id === teamForm.userId)
+    
+    setSaving(true)
+    try {
+      const res = await fetch(`/api/projects/${projectDetail.project.id}/team`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          action: 'add_member',
+          userId: teamForm.userId,
+          userName: selectedUser?.name || selectedUser?.email || teamForm.userId,
+          userEmail: selectedUser?.email || '',
+          role: teamForm.role
+        })
+      })
+      const data = await res.json()
+      
+      if (data.id) {
+        toast.success('Team member added')
+        setShowTeamDialog(false)
+        setTeamForm({ userId: '', role: 'worker' })
+        fetchProjectDetail(projectDetail.project.id)
+      } else {
+        toast.error(data.error || 'Failed to add team member')
+      }
+    } catch (error) {
+      console.error('Add team member error:', error)
+      toast.error('Failed to add team member')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleRemoveTeamMember = async (memberId) => {
+    if (!confirm('Remove this team member?')) return
+
+    try {
+      const res = await fetch(`/api/projects/${projectDetail.project.id}/team`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          action: 'remove_member',
+          memberId
+        })
+      })
+      const data = await res.json()
+      
+      if (data.id) {
+        toast.success('Team member removed')
+        fetchProjectDetail(projectDetail.project.id)
+      } else {
+        toast.error(data.error || 'Failed to remove team member')
+      }
+    } catch (error) {
+      console.error('Remove team member error:', error)
+      toast.error('Failed to remove team member')
+    }
+  }
+
+  // Phase 2: Task handlers
+  const handleAddTask = async () => {
+    if (!taskForm.title || !projectDetail?.project?.id) {
+      toast.error('Task title is required')
+      return
+    }
+
+    setSaving(true)
+    try {
+      const res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          ...taskForm,
+          projectId: projectDetail.project.id,
+          status: 'todo'
+        })
+      })
+      const data = await res.json()
+      
+      if (data.id) {
+        toast.success('Task added')
+        setShowTaskDialog(false)
+        setTaskForm({ title: '', description: '', priority: 'medium', assignedTo: '', dueDate: '' })
+        fetchProjectDetail(projectDetail.project.id)
+      } else {
+        toast.error(data.error || 'Failed to add task')
+      }
+    } catch (error) {
+      console.error('Add task error:', error)
+      toast.error('Failed to add task')
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleToggleTask = async (taskId, currentStatus) => {
+    const newStatus = currentStatus === 'completed' ? 'todo' : 'completed'
+    
+    try {
+      const res = await fetch(`/api/tasks/${taskId}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ status: newStatus })
+      })
+      const data = await res.json()
+      
+      if (data.id) {
+        fetchProjectDetail(projectDetail.project.id)
+      }
+    } catch (error) {
+      console.error('Toggle task error:', error)
+    }
+  }
+
   const resetForm = () => {
     setFormData({
       name: '',
