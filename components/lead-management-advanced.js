@@ -1248,7 +1248,7 @@ const LeadAnalytics = ({ leads }) => {
           <div className="flex items-center gap-3">
             <CalendarDays className="h-8 w-8 text-blue-600" />
             <div>
-              <h4 className="font-semibold text-blue-800">Today's Follow-ups</h4>
+              <h4 className="font-semibold text-blue-800">Today&apos;s Follow-ups</h4>
               <p className="text-2xl font-bold text-blue-600">{stats.todayFollowUps}</p>
               <p className="text-xs text-blue-700">Scheduled for today</p>
             </div>
