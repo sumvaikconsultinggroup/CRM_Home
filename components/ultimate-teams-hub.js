@@ -2001,8 +2001,83 @@ export function UltimateTeamsHub({ authToken, users = [], currentUser }) {
               </form>
             </div>
           </>
+        ) : activeView === 'announcements' ? (
+          // Announcements View
+          <div className="flex-1 flex flex-col bg-gradient-to-br from-amber-50 to-orange-50">
+            <div className="h-16 px-6 border-b flex items-center justify-between bg-white">
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-xl bg-amber-100 flex items-center justify-center">
+                  <Megaphone className="h-5 w-5 text-amber-600" />
+                </div>
+                <div>
+                  <h3 className="font-semibold text-slate-900">Announcements</h3>
+                  <p className="text-xs text-slate-500">Important updates from your team</p>
+                </div>
+              </div>
+              <Button onClick={() => setShowAnnouncement(true)} className="bg-gradient-to-r from-amber-500 to-orange-500">
+                <Plus className="h-4 w-4 mr-2" /> New Announcement
+              </Button>
+            </div>
+            
+            <ScrollArea className="flex-1 p-6">
+              {announcements.length === 0 ? (
+                <div className="text-center py-16">
+                  <Megaphone className="h-16 w-16 text-amber-300 mx-auto mb-4" />
+                  <h3 className="font-semibold text-slate-900 mb-2">No announcements yet</h3>
+                  <p className="text-slate-500 mb-4">Be the first to share an update with your team!</p>
+                  <Button onClick={() => setShowAnnouncement(true)}>
+                    <Plus className="h-4 w-4 mr-2" /> Post Announcement
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4 max-w-3xl mx-auto">
+                  <AnimatePresence>
+                    {announcements.map((announcement, idx) => (
+                      <motion.div
+                        key={announcement.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: idx * 0.05 }}
+                      >
+                        <AnnouncementCard
+                          announcement={announcement}
+                          onDismiss={() => setAnnouncements(prev => prev.map(a => a.id === announcement.id ? { ...a, dismissed: true } : a))}
+                        />
+                      </motion.div>
+                    ))}
+                  </AnimatePresence>
+                </div>
+              )}
+            </ScrollArea>
+          </div>
+        ) : activeView === 'activity' ? (
+          // Activity View
+          <div className="flex-1 flex flex-col bg-gradient-to-br from-slate-50 to-slate-100">
+            <div className="h-16 px-6 border-b flex items-center gap-3 bg-white">
+              <div className="h-10 w-10 rounded-xl bg-indigo-100 flex items-center justify-center">
+                <Activity className="h-5 w-5 text-indigo-600" />
+              </div>
+              <div>
+                <h3 className="font-semibold text-slate-900">Activity Feed</h3>
+                <p className="text-xs text-slate-500">Recent activity across all your teams</p>
+              </div>
+            </div>
+            <ActivityFeed 
+              activities={activities} 
+              users={users}
+              onNavigate={(activity) => {
+                if (activity.channelId) {
+                  const channel = channels.find(c => c.id === activity.channelId)
+                  if (channel) {
+                    setSelectedChannel(channel)
+                    setActiveView('teams')
+                  }
+                }
+              }}
+            />
+          </div>
         ) : (
-          // No Channel Selected
+          // No Channel Selected (Default Welcome)
           <div className="flex-1 flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
             <motion.div
               initial={{ opacity: 0, scale: 0.9 }}
