@@ -538,6 +538,14 @@ export async function POST(request) {
       )
     }
 
+    // CONVERT INVENTORY RESERVATIONS when invoice is created from quote
+    // This moves items from "blocked/reserved" to "sold/deducted" in inventory
+    let inventoryResult = null
+    if (body.quoteId) {
+      inventoryResult = await convertInventoryReservation(db, user.clientId, body.quoteId)
+      invoice.inventoryConversionResult = inventoryResult
+    }
+
     return successResponse(sanitizeDocument(invoice), 201)
   } catch (error) {
     console.error('Invoices POST Error:', error)
