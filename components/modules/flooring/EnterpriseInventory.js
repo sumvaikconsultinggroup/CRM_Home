@@ -1231,6 +1231,557 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
   )
 
   // =============================================
+  // RENDER: REPORTS VIEW
+  // =============================================
+
+  const renderReportsView = () => (
+    <div className="space-y-4">
+      {/* Report Selector */}
+      <div className="flex items-center justify-between flex-wrap gap-4">
+        <div>
+          <h3 className="text-lg font-semibold">Inventory Reports</h3>
+          <p className="text-sm text-slate-500">Analytics and insights</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Select value={selectedReport} onValueChange={(v) => { setSelectedReport(v); fetchReport(v) }}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {REPORT_TYPES.map(rt => (
+                <SelectItem key={rt.id} value={rt.id}>{rt.name}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button variant="outline" onClick={() => fetchReport(selectedReport)} disabled={reportLoading}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${reportLoading ? 'animate-spin' : ''}`} /> Refresh
+          </Button>
+        </div>
+      </div>
+
+      {/* Report Type Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        {REPORT_TYPES.map(rt => {
+          const Icon = rt.icon
+          return (
+            <motion.div
+              key={rt.id}
+              whileHover={{ scale: 1.02 }}
+              onClick={() => { setSelectedReport(rt.id); fetchReport(rt.id) }}
+              className={`cursor-pointer p-4 rounded-lg border transition-all ${
+                selectedReport === rt.id ? 'border-blue-500 bg-blue-50' : 'border-slate-200 hover:border-blue-300'
+              }`}
+            >
+              <Icon className={`h-5 w-5 mb-2 ${selectedReport === rt.id ? 'text-blue-600' : 'text-slate-500'}`} />
+              <p className="font-medium text-sm">{rt.name}</p>
+              <p className="text-xs text-slate-500">{rt.description}</p>
+            </motion.div>
+          )
+        })}
+      </div>
+
+      {/* Report Content */}
+      {reportLoading ? (
+        <Card className="p-8 text-center">
+          <RefreshCw className="h-8 w-8 animate-spin mx-auto text-blue-500 mb-3" />
+          <p className="text-slate-500">Generating report...</p>
+        </Card>
+      ) : reportData ? (
+        <div className="space-y-4">
+          {/* Summary Report */}
+          {selectedReport === 'summary' && reportData.summary && (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <StatCard title="Total Products" value={reportData.summary.totalProducts || 0} icon={Package} color="bg-blue-500" />
+                <StatCard title="Total Quantity" value={`${(reportData.summary.totalQuantity || 0).toLocaleString()}`} icon={Boxes} color="bg-indigo-500" />
+                <StatCard title="Total Value" value={`₹${((reportData.summary.totalValue || 0) / 100000).toFixed(2)}L`} icon={DollarSign} color="bg-green-500" />
+                <StatCard title="Low Stock" value={reportData.summary.lowStockCount || 0} icon={AlertTriangle} color="bg-red-500" />
+              </div>
+              {reportData.last30Days && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Last 30 Days Activity</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-4 gap-4 text-center">
+                      <div className="p-3 bg-green-50 rounded-lg">
+                        <p className="text-2xl font-bold text-green-600">{(reportData.last30Days.totalInward || 0).toLocaleString()}</p>
+                        <p className="text-xs text-slate-500">Total Inward</p>
+                      </div>
+                      <div className="p-3 bg-red-50 rounded-lg">
+                        <p className="text-2xl font-bold text-red-600">{(reportData.last30Days.totalOutward || 0).toLocaleString()}</p>
+                        <p className="text-xs text-slate-500">Total Outward</p>
+                      </div>
+                      <div className="p-3 bg-blue-50 rounded-lg">
+                        <p className="text-2xl font-bold text-blue-600">{reportData.last30Days.movementCount || 0}</p>
+                        <p className="text-xs text-slate-500">Movements</p>
+                      </div>
+                      <div className="p-3 bg-amber-50 rounded-lg">
+                        <p className="text-2xl font-bold text-amber-600">{(reportData.expiryAlerts?.expiringSoon || 0) + (reportData.expiryAlerts?.expired || 0)}</p>
+                        <p className="text-xs text-slate-500">Expiry Alerts</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+
+          {/* Valuation Report */}
+          {selectedReport === 'valuation' && reportData.totals && (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <StatCard title="FIFO Value" value={`₹${((reportData.totals.fifoValue || 0) / 100000).toFixed(2)}L`} icon={DollarSign} color="bg-green-500" />
+                <StatCard title="Weighted Avg Value" value={`₹${((reportData.totals.weightedAvgValue || 0) / 100000).toFixed(2)}L`} icon={DollarSign} color="bg-blue-500" />
+                <StatCard title="Variance" value={`₹${((reportData.totals.variance || 0) / 1000).toFixed(2)}K`} icon={TrendingUp} color="bg-amber-500" />
+                <StatCard title="Variance %" value={`${reportData.totals.variancePercent || 0}%`} icon={BarChart3} color="bg-purple-500" />
+              </div>
+              {reportData.byWarehouse && Object.keys(reportData.byWarehouse).length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Valuation by Warehouse</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <table className="w-full">
+                      <thead className="bg-slate-50 border-b">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">Warehouse</th>
+                          <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Quantity</th>
+                          <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">FIFO Value</th>
+                          <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Weighted Avg</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {Object.entries(reportData.byWarehouse).map(([whId, data]) => (
+                          <tr key={whId}>
+                            <td className="px-4 py-2 font-medium">{data.warehouseName}</td>
+                            <td className="px-4 py-2 text-right">{(data.totalQuantity || 0).toLocaleString()}</td>
+                            <td className="px-4 py-2 text-right text-green-600">₹{(data.fifoValue || 0).toLocaleString()}</td>
+                            <td className="px-4 py-2 text-right text-blue-600">₹{(data.weightedAvgValue || 0).toLocaleString()}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+
+          {/* Dead Stock Report */}
+          {selectedReport === 'dead_stock' && reportData.summary && (
+            <>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <StatCard title="Dead Stock Items" value={reportData.summary.deadStockCount || 0} icon={Archive} color="bg-red-500" className={(reportData.summary.deadStockCount || 0) > 0 ? 'bg-red-50' : ''} />
+                <StatCard title="Dead Stock Value" value={`₹${((reportData.summary.deadStockValue || 0) / 1000).toFixed(1)}K`} icon={DollarSign} color="bg-red-600" />
+                <StatCard title="Slow Moving" value={reportData.summary.slowMovingCount || 0} icon={Timer} color="bg-amber-500" />
+                <StatCard title="Slow Moving Value" value={`₹${((reportData.summary.slowMovingValue || 0) / 1000).toFixed(1)}K`} icon={DollarSign} color="bg-amber-600" />
+              </div>
+              {reportData.deadStock && reportData.deadStock.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Archive className="h-4 w-4 text-red-500" /> Dead Stock ({'>'}90 days no movement)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2 max-h-[400px] overflow-y-auto">
+                      {reportData.deadStock.slice(0, 20).map((item, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                          <div>
+                            <p className="font-medium">{item.productName}</p>
+                            <p className="text-xs text-slate-500">{item.warehouseName} • SKU: {item.sku}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold">{item.quantity} sqft</p>
+                            <p className="text-xs text-red-600">{item.daysSinceLastMovement} days idle</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+
+          {/* Aging Report */}
+          {selectedReport === 'aging' && reportData.ageBuckets && (
+            <>
+              <div className="grid grid-cols-5 gap-3">
+                {Object.entries(reportData.ageBuckets).map(([bucket, data]) => (
+                  <Card key={bucket} className="text-center">
+                    <CardContent className="p-4">
+                      <p className="text-xs text-slate-500">{bucket} days</p>
+                      <p className="text-xl font-bold">{data.count}</p>
+                      <p className="text-sm text-green-600">₹{((data.value || 0) / 1000).toFixed(1)}K</p>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+              {reportData.valueDistribution && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Value Distribution by Age</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {reportData.valueDistribution.map(item => (
+                        <div key={item.bucket} className="flex items-center gap-3">
+                          <span className="w-20 text-sm">{item.bucket}d</span>
+                          <div className="flex-1 bg-slate-100 rounded-full h-4 overflow-hidden">
+                            <div 
+                              className="h-full bg-blue-500 rounded-full" 
+                              style={{ width: `${item.percentage}%` }}
+                            />
+                          </div>
+                          <span className="w-16 text-sm text-right">{item.percentage}%</span>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+
+          {/* Warehouse Summary Report */}
+          {selectedReport === 'warehouse_summary' && reportData.warehouses && (
+            <div className="grid md:grid-cols-2 gap-4">
+              {reportData.warehouses.map(wh => (
+                <Card key={wh.warehouseId}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Warehouse className="h-4 w-4" />
+                      {wh.warehouseName}
+                      {wh.isDefault && <Badge className="bg-blue-600 text-xs">Default</Badge>}
+                    </CardTitle>
+                    <CardDescription>{wh.location}</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="text-center p-2 bg-slate-50 rounded">
+                        <p className="text-lg font-bold">{wh.metrics.totalProducts}</p>
+                        <p className="text-xs text-slate-500">Products</p>
+                      </div>
+                      <div className="text-center p-2 bg-slate-50 rounded">
+                        <p className="text-lg font-bold">{(wh.metrics.totalQuantity || 0).toLocaleString()}</p>
+                        <p className="text-xs text-slate-500">Quantity</p>
+                      </div>
+                      <div className="text-center p-2 bg-green-50 rounded">
+                        <p className="text-lg font-bold text-green-600">₹{((wh.metrics.totalValue || 0) / 1000).toFixed(1)}K</p>
+                        <p className="text-xs text-slate-500">Value</p>
+                      </div>
+                    </div>
+                    {(wh.metrics.lowStockCount > 0 || wh.batches.expiringSoonCount > 0) && (
+                      <div className="flex gap-2 mt-3">
+                        {wh.metrics.lowStockCount > 0 && (
+                          <Badge className="bg-amber-100 text-amber-700">{wh.metrics.lowStockCount} Low Stock</Badge>
+                        )}
+                        {wh.batches.expiringSoonCount > 0 && (
+                          <Badge className="bg-red-100 text-red-700">{wh.batches.expiringSoonCount} Expiring</Badge>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {/* Reorder Report */}
+          {selectedReport === 'reorder' && reportData.items && (
+            <>
+              <div className="grid grid-cols-4 gap-3">
+                <StatCard title="Items to Reorder" value={reportData.summary?.totalItems || 0} icon={ShoppingCart} color="bg-blue-500" />
+                <StatCard title="Critical" value={reportData.summary?.criticalCount || 0} icon={AlertCircle} color="bg-red-500" className={(reportData.summary?.criticalCount || 0) > 0 ? 'bg-red-50' : ''} />
+                <StatCard title="High Priority" value={reportData.summary?.highCount || 0} icon={AlertTriangle} color="bg-amber-500" />
+                <StatCard title="Est. Cost" value={`₹${((reportData.summary?.totalEstimatedCost || 0) / 1000).toFixed(1)}K`} icon={DollarSign} color="bg-green-500" />
+              </div>
+              {reportData.items.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Reorder Suggestions</CardTitle>
+                  </CardHeader>
+                  <div className="overflow-x-auto">
+                    <table className="w-full">
+                      <thead className="bg-slate-50 border-b">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">Product</th>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">Warehouse</th>
+                          <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Current</th>
+                          <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Reorder Level</th>
+                          <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Suggested Qty</th>
+                          <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Est. Cost</th>
+                          <th className="px-4 py-2 text-center text-xs font-semibold text-slate-600">Priority</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {reportData.items.map((item, idx) => (
+                          <tr key={idx} className={item.priority === 'critical' ? 'bg-red-50' : item.priority === 'high' ? 'bg-amber-50' : ''}>
+                            <td className="px-4 py-2">
+                              <p className="font-medium">{item.productName}</p>
+                              <p className="text-xs text-slate-500">{item.sku}</p>
+                            </td>
+                            <td className="px-4 py-2 text-sm">{item.warehouseName}</td>
+                            <td className="px-4 py-2 text-right font-medium">{item.availableStock}</td>
+                            <td className="px-4 py-2 text-right">{item.reorderLevel}</td>
+                            <td className="px-4 py-2 text-right font-semibold text-blue-600">{item.suggestedOrderQty}</td>
+                            <td className="px-4 py-2 text-right">₹{(item.estimatedCost || 0).toLocaleString()}</td>
+                            <td className="px-4 py-2 text-center">
+                              <Badge className={
+                                item.priority === 'critical' ? 'bg-red-100 text-red-700' :
+                                item.priority === 'high' ? 'bg-amber-100 text-amber-700' :
+                                'bg-slate-100 text-slate-700'
+                              }>
+                                {item.priority}
+                              </Badge>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              )}
+            </>
+          )}
+
+          {/* Movement Report */}
+          {selectedReport === 'movement' && reportData.summary && (
+            <>
+              <div className="grid grid-cols-3 gap-3">
+                <StatCard title="Total Movements" value={reportData.summary.totalMovements || 0} icon={History} color="bg-slate-500" />
+                <StatCard title="Total Inward" value={`${(reportData.summary.totalInward || 0).toLocaleString()}`} icon={ArrowDownRight} color="bg-green-500" />
+                <StatCard title="Total Outward" value={`${(reportData.summary.totalOutward || 0).toLocaleString()}`} icon={ArrowUpRight} color="bg-red-500" />
+              </div>
+              {reportData.byType && Object.keys(reportData.byType).length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Movement by Type</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                      {Object.entries(reportData.byType).map(([type, data]) => {
+                        const typeConfig = MOVEMENT_TYPES[type] || {}
+                        return (
+                          <div key={type} className={`p-3 rounded-lg ${typeConfig.color?.split(' ')[1] || 'bg-slate-100'}`}>
+                            <p className="text-sm font-medium">{typeConfig.label || type}</p>
+                            <p className="text-lg font-bold">{data.count}</p>
+                            <p className="text-xs">Qty: {data.totalQty?.toLocaleString()}</p>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </>
+          )}
+
+          {/* Turnover Report */}
+          {selectedReport === 'turnover' && reportData.items && (
+            <>
+              <div className="grid grid-cols-3 gap-3">
+                <StatCard title="Avg Turnover Ratio" value={reportData.summary?.avgTurnoverRatio || '0'} icon={TrendingUp} color="bg-blue-500" />
+                <StatCard title="High Turnover" value={reportData.summary?.highTurnover || 0} icon={ArrowUp} color="bg-green-500" />
+                <StatCard title="Low Turnover" value={reportData.summary?.lowTurnover || 0} icon={ArrowDown} color="bg-red-500" />
+              </div>
+              {reportData.items.length > 0 && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="text-base">Inventory Turnover Analysis</CardTitle>
+                  </CardHeader>
+                  <div className="overflow-x-auto max-h-[400px]">
+                    <table className="w-full">
+                      <thead className="bg-slate-50 border-b sticky top-0">
+                        <tr>
+                          <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">Product</th>
+                          <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Current Stock</th>
+                          <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Total Sold</th>
+                          <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Turnover</th>
+                          <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Days of Stock</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y">
+                        {reportData.items.slice(0, 30).map((item, idx) => (
+                          <tr key={idx}>
+                            <td className="px-4 py-2">
+                              <p className="font-medium">{item.productName}</p>
+                              <p className="text-xs text-slate-500">{item.warehouseName}</p>
+                            </td>
+                            <td className="px-4 py-2 text-right">{(item.currentStock || 0).toLocaleString()}</td>
+                            <td className="px-4 py-2 text-right">{(item.totalSold || 0).toLocaleString()}</td>
+                            <td className="px-4 py-2 text-right">
+                              <Badge className={parseFloat(item.turnoverRatio) >= 2 ? 'bg-green-100 text-green-700' : parseFloat(item.turnoverRatio) < 0.5 ? 'bg-red-100 text-red-700' : 'bg-slate-100'}>
+                                {item.turnoverRatio}x
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-2 text-right">{item.daysOfStock > 900 ? '∞' : item.daysOfStock}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </Card>
+              )}
+            </>
+          )}
+        </div>
+      ) : (
+        <Card className="p-8 text-center">
+          <BarChart3 className="h-12 w-12 mx-auto text-slate-300 mb-3" />
+          <p className="text-slate-500">Select a report type to view analytics</p>
+        </Card>
+      )}
+    </div>
+  )
+
+  // =============================================
+  // RENDER: CYCLE COUNT VIEW
+  // =============================================
+
+  const renderCycleCountView = () => (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Stock Audit / Cycle Count</h3>
+          <p className="text-sm text-slate-500">Physical verification of inventory</p>
+        </div>
+        <Button onClick={() => { setCycleCountForm({ warehouseId: selectedWarehouse !== 'all' ? selectedWarehouse : '' }); setDialogOpen({ type: 'cycle_count', data: null }) }} disabled={warehouses.length === 0}>
+          <Plus className="h-4 w-4 mr-2" /> New Cycle Count
+        </Button>
+      </div>
+
+      {/* Summary */}
+      <div className="grid grid-cols-5 gap-3">
+        <StatCard title="Total" value={cycleCountSummary.total || 0} icon={FileSpreadsheet} color="bg-slate-500" />
+        <StatCard title="Draft" value={cycleCountSummary.draft || 0} icon={Edit} color="bg-slate-400" />
+        <StatCard title="In Progress" value={cycleCountSummary.inProgress || 0} icon={Clock} color="bg-blue-500" />
+        <StatCard title="Pending Approval" value={cycleCountSummary.pendingApproval || 0} icon={AlertTriangle} color="bg-amber-500" />
+        <StatCard title="Completed" value={cycleCountSummary.completed || 0} icon={CheckCircle2} color="bg-green-500" />
+      </div>
+
+      {/* Cycle Count List */}
+      {cycleCounts.length > 0 ? (
+        <Card>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Count #</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Warehouse</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Items</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Progress</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Variance</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Status</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Created</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {cycleCounts.map(cc => {
+                  const statusConfig = CYCLE_COUNT_STATUS[cc.status] || {}
+                  const progress = cc.totalItems > 0 ? Math.round((cc.countedItems / cc.totalItems) * 100) : 0
+                  return (
+                    <tr key={cc.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-3">
+                        <Badge variant="outline">{cc.cycleCountNumber}</Badge>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-1">
+                          <Warehouse className="h-3 w-3 text-slate-400" />
+                          <span className="text-sm">{cc.warehouseName}</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {cc.countedItems}/{cc.totalItems}
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <Progress value={progress} className="h-2 flex-1" />
+                          <span className="text-xs">{progress}%</span>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <span className={cc.totalVariance > 0 ? 'text-green-600' : cc.totalVariance < 0 ? 'text-red-600' : ''}>
+                          {cc.totalVariance > 0 ? '+' : ''}{cc.totalVariance || 0}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <Badge className={statusConfig.color}>{statusConfig.label}</Badge>
+                      </td>
+                      <td className="px-4 py-3 text-center text-sm">
+                        {new Date(cc.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setDialogOpen({ type: 'view_cycle_count', data: cc })}>
+                              <Eye className="h-4 w-4 mr-2" /> View Details
+                            </DropdownMenuItem>
+                            {cc.status === 'draft' && (
+                              <>
+                                <DropdownMenuItem onClick={() => handleCycleCountAction(cc.id, 'start')}>
+                                  <Clock className="h-4 w-4 mr-2" /> Start Counting
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="text-red-600" onClick={() => handleCycleCountAction(cc.id, 'cancel')}>
+                                  <X className="h-4 w-4 mr-2" /> Cancel
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            {cc.status === 'in_progress' && (
+                              <>
+                                <DropdownMenuItem onClick={() => setDialogOpen({ type: 'record_counts', data: cc })}>
+                                  <Edit className="h-4 w-4 mr-2" /> Record Counts
+                                </DropdownMenuItem>
+                                {cc.countedItems === cc.totalItems && (
+                                  <DropdownMenuItem onClick={() => handleCycleCountAction(cc.id, 'submit_for_approval')}>
+                                    <Send className="h-4 w-4 mr-2" /> Submit for Approval
+                                  </DropdownMenuItem>
+                                )}
+                              </>
+                            )}
+                            {cc.status === 'pending_approval' && (
+                              <DropdownMenuItem onClick={() => handleCycleCountAction(cc.id, 'approve')}>
+                                <CheckCircle2 className="h-4 w-4 mr-2" /> Approve
+                              </DropdownMenuItem>
+                            )}
+                            {cc.status === 'approved' && (
+                              <DropdownMenuItem onClick={() => handleCycleCountAction(cc.id, 'apply_adjustments')}>
+                                <Settings className="h-4 w-4 mr-2" /> Apply Adjustments
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      ) : (
+        <EmptyState
+          icon={FileSpreadsheet}
+          title="No Cycle Counts"
+          description="Create a cycle count to verify physical inventory against system records."
+          action={() => { setCycleCountForm({ warehouseId: selectedWarehouse !== 'all' ? selectedWarehouse : '' }); setDialogOpen({ type: 'cycle_count', data: null }) }}
+          actionLabel="New Cycle Count"
+        />
+      )}
+    </div>
+  )
+
+  // =============================================
   // RENDER: DIALOGS
   // =============================================
 
