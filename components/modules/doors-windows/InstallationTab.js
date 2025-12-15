@@ -214,7 +214,7 @@ export function InstallationTab({ orders, headers, glassStyles, onRefresh }) {
           <CardHeader className="pb-2">
             <CardTitle className="text-lg flex items-center gap-2">
               <CalendarIcon className="h-5 w-5 text-blue-600" />
-              Today's Installations ({todayInstallations.length})
+              Today&apos;s Installations ({todayInstallations.length})
             </CardTitle>
           </CardHeader>
           <CardContent>
