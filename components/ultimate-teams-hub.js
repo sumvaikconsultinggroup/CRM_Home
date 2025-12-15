@@ -1087,6 +1087,7 @@ export function UltimateTeamsHub({ authToken, users = [], currentUser }) {
   // Refs
   const messagesEndRef = useRef(null)
   const messageInputRef = useRef(null)
+  const fileInputRef = useRef(null)
   
   // Headers for API calls
   const headers = useMemo(() => ({
