@@ -153,8 +153,7 @@ const releaseReservation = async (clientId, quoteId) => {
 // Convert reservation to sold (when invoice is created)
 export const convertReservation = async (clientId, quoteId) => {
   try {
-    const dbName = `client_${clientId.replace(/-/g, '_')}`
-    const db = await getClientDb(dbName)
+    const db = await getClientDb(clientId)
     const reservationCollection = db.collection('inventory_reservations')
     const stockCollection = db.collection('wf_inventory_stock')
     
