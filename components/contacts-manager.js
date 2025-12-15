@@ -895,7 +895,7 @@ const ImportContactsDialog = ({ open, onOpenChange, onImport, onDownloadTemplate
 export function ContactsManager() {
   const [contacts, setContacts] = useState([])
   const [tags, setTags] = useState([])
-  const [stats, setStats] = useState({ total: 0, customers: 0, leads: 0, vendors: 0 })
+  const [stats, setStats] = useState({ total: 0, customers: 0, leads: 0, nurturing: 0, vendors: 0 })
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
   const [typeFilter, setTypeFilter] = useState('')
