@@ -1263,6 +1263,280 @@ const LeadAnalytics = ({ leads }) => {
 // MAIN COMPONENT
 // ============================================
 
+// Advanced Add Lead Dialog
+const AddLeadDialog = ({ open, onClose, onSave, users = [] }) => {
+  const [formData, setFormData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    company: '',
+    source: '',
+    priority: 'medium',
+    value: '',
+    status: 'new',
+    followUpDate: '',
+    followUpTime: '10:00',
+    assignedTo: '',
+    requirements: '',
+    address: '',
+    city: '',
+    state: '',
+    notes: ''
+  })
+  const [saving, setSaving] = useState(false)
+  
+  const handleSave = async () => {
+    if (!formData.name.trim()) {
+      toast.error('Lead name is required')
+      return
+    }
+    if (!formData.phone.trim() && !formData.email.trim()) {
+      toast.error('Either phone or email is required')
+      return
+    }
+    
+    setSaving(true)
+    try {
+      const leadData = {
+        ...formData,
+        value: parseFloat(formData.value) || 0,
+        followUpDate: formData.followUpDate ? `${formData.followUpDate}T${formData.followUpTime}:00` : null
+      }
+      await onSave(leadData)
+      setFormData({
+        name: '', email: '', phone: '', company: '', source: '', priority: 'medium',
+        value: '', status: 'new', followUpDate: '', followUpTime: '10:00', assignedTo: '',
+        requirements: '', address: '', city: '', state: '', notes: ''
+      })
+      onClose()
+    } catch (error) {
+      toast.error('Failed to create lead')
+    } finally {
+      setSaving(false)
+    }
+  }
+  
+  // Set default follow-up date to tomorrow
+  useEffect(() => {
+    if (open && !formData.followUpDate) {
+      const tomorrow = new Date()
+      tomorrow.setDate(tomorrow.getDate() + 1)
+      setFormData(prev => ({ 
+        ...prev, 
+        followUpDate: tomorrow.toISOString().split('T')[0] 
+      }))
+    }
+  }, [open, formData.followUpDate])
+  
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <UserPlus className="h-5 w-5 text-primary" />
+            Add New Lead
+          </DialogTitle>
+        </DialogHeader>
+        
+        <div className="grid gap-6 py-4">
+          {/* Basic Information */}
+          <div className="space-y-4">
+            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Contact Information</h4>
+            <div className="grid md:grid-cols-2 gap-4">
+              <div>
+                <Label className="text-sm font-medium">Full Name *</Label>
+                <Input 
+                  placeholder="e.g., Rajesh Kumar"
+                  className="mt-1"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Company</Label>
+                <Input 
+                  placeholder="e.g., Kumar Enterprises"
+                  className="mt-1"
+                  value={formData.company}
+                  onChange={(e) => setFormData({ ...formData, company: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Phone *</Label>
+                <Input 
+                  placeholder="e.g., 9876543210"
+                  className="mt-1"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Email</Label>
+                <Input 
+                  type="email"
+                  placeholder="e.g., rajesh@email.com"
+                  className="mt-1"
+                  value={formData.email}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Lead Details */}
+          <div className="space-y-4">
+            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Lead Details</h4>
+            <div className="grid md:grid-cols-3 gap-4">
+              <div>
+                <Label className="text-sm font-medium">Lead Source *</Label>
+                <Select value={formData.source} onValueChange={(v) => setFormData({ ...formData, source: v })}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select source" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {LEAD_SOURCES.map(source => (
+                      <SelectItem key={source.id} value={source.id}>
+                        <div className="flex items-center gap-2">
+                          <source.icon className="h-4 w-4" />
+                          {source.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Priority</Label>
+                <Select value={formData.priority} onValueChange={(v) => setFormData({ ...formData, priority: v })}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {PRIORITY_LEVELS.map(p => (
+                      <SelectItem key={p.id} value={p.id}>
+                        <div className="flex items-center gap-2">
+                          <p.icon className={`h-4 w-4 ${p.color}`} />
+                          {p.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Deal Value (₹)</Label>
+                <Input 
+                  type="number"
+                  placeholder="e.g., 500000"
+                  className="mt-1"
+                  value={formData.value}
+                  onChange={(e) => setFormData({ ...formData, value: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Follow-up Scheduling */}
+          <div className="space-y-4">
+            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide flex items-center gap-2">
+              <CalendarClock className="h-4 w-4" /> Follow-up Schedule
+            </h4>
+            <div className="grid md:grid-cols-3 gap-4">
+              <div>
+                <Label className="text-sm font-medium">Follow-up Date *</Label>
+                <Input 
+                  type="date"
+                  className="mt-1"
+                  value={formData.followUpDate}
+                  onChange={(e) => setFormData({ ...formData, followUpDate: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Best Time to Call</Label>
+                <Input 
+                  type="time"
+                  className="mt-1"
+                  value={formData.followUpTime}
+                  onChange={(e) => setFormData({ ...formData, followUpTime: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium">Assign To</Label>
+                <Select value={formData.assignedTo} onValueChange={(v) => setFormData({ ...formData, assignedTo: v })}>
+                  <SelectTrigger className="mt-1">
+                    <SelectValue placeholder="Select team member" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">Unassigned</SelectItem>
+                    {users.map(u => (
+                      <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          </div>
+          
+          {/* Location */}
+          <div className="space-y-4">
+            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Location</h4>
+            <div className="grid md:grid-cols-3 gap-4">
+              <div className="md:col-span-2">
+                <Label className="text-sm font-medium">Address</Label>
+                <Input 
+                  placeholder="Street address"
+                  className="mt-1"
+                  value={formData.address}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                />
+              </div>
+              <div>
+                <Label className="text-sm font-medium">City</Label>
+                <Input 
+                  placeholder="e.g., Mumbai"
+                  className="mt-1"
+                  value={formData.city}
+                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                />
+              </div>
+            </div>
+          </div>
+          
+          {/* Requirements */}
+          <div className="space-y-4">
+            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Requirements & Notes</h4>
+            <div>
+              <Label className="text-sm font-medium">Project Requirements</Label>
+              <Textarea 
+                placeholder="What is the client looking for? e.g., Complete home interior for 3BHK apartment, modern style, budget flexible..."
+                className="mt-1 min-h-[80px]"
+                value={formData.requirements}
+                onChange={(e) => setFormData({ ...formData, requirements: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label className="text-sm font-medium">Additional Notes</Label>
+              <Textarea 
+                placeholder="Any other important details..."
+                className="mt-1"
+                value={formData.notes}
+                onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+              />
+            </div>
+          </div>
+        </div>
+        
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={handleSave} disabled={saving}>
+            {saving ? 'Creating...' : 'Create Lead'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 export function AdvancedLeadManagement({ 
   leads: initialLeads = [], 
   user, 
@@ -1284,6 +1558,10 @@ export function AdvancedLeadManagement({
   const [markLostDialog, setMarkLostDialog] = useState(null)
   const [lostReason, setLostReason] = useState('')
   const [lostNotes, setLostNotes] = useState('')
+  const [showAddLeadDialog, setShowAddLeadDialog] = useState(false)
+  const [setFollowUpLead, setSetFollowUpLeadState] = useState(null)
+  const [sortBy, setSortBy] = useState('createdAt')
+  const [sortOrder, setSortOrder] = useState('desc')
   const [filters, setFilters] = useState({
     status: 'all',
     source: 'all',
@@ -1295,8 +1573,12 @@ export function AdvancedLeadManagement({
     setLeads(initialLeads)
   }, [initialLeads])
 
-  // Filter leads based on active tab and filters
+  // Filter and sort leads based on active tab and filters
   const filteredLeads = useMemo(() => {
+    const now = new Date()
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000)
+    
     let result = [...leads]
     
     // Tab filtering
@@ -1306,10 +1588,24 @@ export function AdvancedLeadManagement({
       result = result.filter(l => l.status === 'won')
     } else if (activeTab === 'lost') {
       result = result.filter(l => l.status === 'lost')
+    } else if (activeTab === 'today') {
+      // Today's follow-ups
+      result = result.filter(l => {
+        if (['won', 'lost'].includes(l.status)) return false
+        if (!l.followUpDate) return false
+        const followUp = new Date(l.followUpDate)
+        return followUp >= todayStart && followUp < todayEnd
+      })
+    } else if (activeTab === 'overdue') {
+      // Overdue follow-ups
+      result = result.filter(l => {
+        if (['won', 'lost'].includes(l.status)) return false
+        if (!l.followUpDate) return false
+        return new Date(l.followUpDate) < todayStart
+      })
     } else if (activeTab === 'followups') {
       result = result.filter(l => {
         if (['won', 'lost'].includes(l.status)) return false
-        if (!l.followUpDate) return true // No follow-up set
         return true
       }).sort((a, b) => {
         const aDate = a.followUpDate ? new Date(a.followUpDate) : new Date('2099-12-31')
@@ -1345,8 +1641,36 @@ export function AdvancedLeadManagement({
       result = result.filter(l => l.priority === filters.priority)
     }
     
+    // Sorting
+    result.sort((a, b) => {
+      let aVal, bVal
+      switch (sortBy) {
+        case 'name':
+          aVal = a.name?.toLowerCase() || ''
+          bVal = b.name?.toLowerCase() || ''
+          break
+        case 'value':
+          aVal = a.value || 0
+          bVal = b.value || 0
+          break
+        case 'followUpDate':
+          aVal = a.followUpDate ? new Date(a.followUpDate).getTime() : 0
+          bVal = b.followUpDate ? new Date(b.followUpDate).getTime() : 0
+          break
+        case 'score':
+          aVal = calculateLeadScore(a).score
+          bVal = calculateLeadScore(b).score
+          break
+        case 'createdAt':
+        default:
+          aVal = new Date(a.createdAt).getTime()
+          bVal = new Date(b.createdAt).getTime()
+      }
+      return sortOrder === 'asc' ? (aVal > bVal ? 1 : -1) : (aVal < bVal ? 1 : -1)
+    })
+    
     return result
-  }, [leads, activeTab, searchTerm, filters])
+  }, [leads, activeTab, searchTerm, filters, sortBy, sortOrder])
 
   // Stats for tabs
   const tabStats = useMemo(() => {
