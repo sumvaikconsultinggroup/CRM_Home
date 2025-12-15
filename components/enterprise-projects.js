@@ -23,9 +23,17 @@ import {
   FolderKanban, Target, TrendingUp, ArrowUpRight, ArrowDownRight,
   CalendarDays, MapPin, Phone, Mail, Building2, FileText, Activity,
   Milestone, Flag, Play, Pause, Check, X, RefreshCw, Download,
-  BarChart3, PieChart, User, Settings, Link2, ExternalLink
+  BarChart3, PieChart, User, Settings, Link2, ExternalLink,
+  GanttChart, Copy, UserPlus, FileUp, Folder, FilePlus, UserCheck
 } from 'lucide-react'
 import { toast } from 'sonner'
+
+const TEAM_ROLES = [
+  { id: 'project_manager', label: 'Project Manager', color: 'bg-purple-100 text-purple-700' },
+  { id: 'team_lead', label: 'Team Lead', color: 'bg-blue-100 text-blue-700' },
+  { id: 'worker', label: 'Worker', color: 'bg-green-100 text-green-700' },
+  { id: 'viewer', label: 'Viewer', color: 'bg-slate-100 text-slate-700' }
+]
 
 const PROJECT_STATUSES = [
   { id: 'planning', label: 'Planning', color: 'bg-blue-100 text-blue-700', icon: Target },
