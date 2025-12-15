@@ -1675,12 +1675,25 @@ export function AdvancedLeadManagement({
   // Stats for tabs
   const tabStats = useMemo(() => {
     const now = new Date()
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+    const todayEnd = new Date(todayStart.getTime() + 24 * 60 * 60 * 1000)
     const weekFromNow = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
     
     return {
       pipeline: leads.filter(l => !['won', 'lost'].includes(l.status)).length,
       won: leads.filter(l => l.status === 'won').length,
       lost: leads.filter(l => l.status === 'lost').length,
+      today: leads.filter(l => {
+        if (['won', 'lost'].includes(l.status)) return false
+        if (!l.followUpDate) return false
+        const followUp = new Date(l.followUpDate)
+        return followUp >= todayStart && followUp < todayEnd
+      }).length,
+      overdue: leads.filter(l => {
+        if (['won', 'lost'].includes(l.status)) return false
+        if (!l.followUpDate) return false
+        return new Date(l.followUpDate) < todayStart
+      }).length,
       followups: leads.filter(l => {
         if (['won', 'lost'].includes(l.status)) return false
         if (!l.followUpDate) return true
