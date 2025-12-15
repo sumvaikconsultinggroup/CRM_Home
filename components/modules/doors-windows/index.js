@@ -198,6 +198,10 @@ export function DoorsWindowsModule({ client, user }) {
     setModuleSettings(newSettings)
   }
 
+  const handleBackToCRM = () => {
+    window.location.href = '/'
+  }
+
   // Get all tabs flat list
   const allTabs = [...TAB_GROUPS.main, ...TAB_GROUPS.operations, ...TAB_GROUPS.support]
 
@@ -207,6 +211,15 @@ export function DoorsWindowsModule({ client, user }) {
       <div className={`${glassStyles.header} text-white p-6 rounded-b-3xl mb-6`}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-4">
+            {/* Back to CRM Button */}
+            <Button 
+              variant="ghost" 
+              className="text-white hover:bg-white/20 p-2"
+              onClick={handleBackToCRM}
+              title="Back to CRM"
+            >
+              <Home className="h-6 w-6" />
+            </Button>
             <div className="p-3 rounded-2xl bg-white/20 backdrop-blur-sm">
               <DoorOpen className="h-10 w-10" />
             </div>
