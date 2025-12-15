@@ -59,6 +59,28 @@ const ALERT_SEVERITY = {
   info: { label: 'Info', color: 'bg-blue-100 text-blue-700 border-blue-300', icon: Info }
 }
 
+// Cycle Count Status Configuration
+const CYCLE_COUNT_STATUS = {
+  draft: { label: 'Draft', color: 'bg-slate-100 text-slate-700' },
+  in_progress: { label: 'In Progress', color: 'bg-blue-100 text-blue-700' },
+  pending_approval: { label: 'Pending Approval', color: 'bg-amber-100 text-amber-700' },
+  approved: { label: 'Approved', color: 'bg-teal-100 text-teal-700' },
+  completed: { label: 'Completed', color: 'bg-green-100 text-green-700' },
+  cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-700' }
+}
+
+// Report Types
+const REPORT_TYPES = [
+  { id: 'summary', name: 'Executive Summary', icon: BarChart3, description: 'Overall inventory health' },
+  { id: 'valuation', name: 'Stock Valuation', icon: DollarSign, description: 'FIFO & Weighted Avg' },
+  { id: 'movement', name: 'Movement Analysis', icon: ArrowLeftRight, description: 'In/Out trends' },
+  { id: 'dead_stock', name: 'Dead Stock', icon: Archive, description: 'Non-moving inventory' },
+  { id: 'aging', name: 'Stock Aging', icon: Timer, description: 'Batch age analysis' },
+  { id: 'warehouse_summary', name: 'Warehouse Summary', icon: Warehouse, description: 'Location-wise' },
+  { id: 'turnover', name: 'Inventory Turnover', icon: TrendingUp, description: 'Movement velocity' },
+  { id: 'reorder', name: 'Reorder Suggestions', icon: ShoppingCart, description: 'Purchase planning' }
+]
+
 // Stat Card Component
 const StatCard = ({ title, value, change, icon: Icon, color, subtitle, onClick, className = '' }) => (
   <motion.div whileHover={{ y: -2, scale: 1.01 }} onClick={onClick} className={onClick ? 'cursor-pointer' : ''}>
