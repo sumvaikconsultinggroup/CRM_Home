@@ -1034,14 +1034,104 @@ export function BuildInventory({ token, user, clientModules = [] }) {
           </h2>
           <p className="text-slate-500">Manage warehouse dispatches and deliveries</p>
         </div>
-        <Button onClick={() => {
-          setDispatchForm({ items: [], paymentMode: 'prepaid' })
-          setDispatchImagePreview(null)
-          setShowDispatchDialog(true)
-        }}>
-          <Plus className="h-4 w-4 mr-2" /> New Dispatch
-        </Button>
+        <div className="flex items-center gap-3">
+          <Button variant="outline" onClick={() => syncDispatchesFromInvoices(null, true)} disabled={syncingInvoices}>
+            <RefreshCw className={`h-4 w-4 mr-2 ${syncingInvoices ? 'animate-spin' : ''}`} />
+            Sync from Invoices
+          </Button>
+          <Button onClick={() => {
+            setDispatchForm({ items: [], paymentMode: 'prepaid' })
+            setDispatchImagePreview(null)
+            setShowDispatchDialog(true)
+          }}>
+            <Plus className="h-4 w-4 mr-2" /> New Dispatch
+          </Button>
+        </div>
       </div>
+
+      {/* Auto-Sync Status Banner */}
+      <Card className={`border ${autoSyncEnabled ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}>
+        <CardContent className="p-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              {autoSyncEnabled ? (
+                <div className="p-2 rounded-full bg-emerald-100">
+                  <RefreshCw className="h-5 w-5 text-emerald-600 animate-spin" style={{ animationDuration: '3s' }} />
+                </div>
+              ) : (
+                <div className="p-2 rounded-full bg-slate-100">
+                  <RefreshCw className="h-5 w-5 text-slate-400" />
+                </div>
+              )}
+              <div>
+                <p className={`font-medium ${autoSyncEnabled ? 'text-emerald-800' : 'text-slate-600'}`}>
+                  {autoSyncEnabled ? 'Auto-Sync Active' : 'Auto-Sync Disabled'}
+                </p>
+                <p className={`text-sm ${autoSyncEnabled ? 'text-emerald-600' : 'text-slate-500'}`}>
+                  {autoSyncEnabled 
+                    ? 'Dispatches sync from invoices every 3 seconds'
+                    : 'Enable auto-sync to automatically create dispatches from invoices'}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-4">
+              {invoiceSyncStatus && (
+                <div className="text-right mr-4">
+                  <p className="text-sm text-slate-500">
+                    <span className="font-medium text-slate-700">{invoiceSyncStatus.pendingCount || 0}</span> pending invoices
+                  </p>
+                  {invoiceSyncStatus.lastSyncAt && (
+                    <p className="text-xs text-slate-400">
+                      Last sync: {new Date(invoiceSyncStatus.lastSyncAt).toLocaleTimeString()}
+                    </p>
+                  )}
+                </div>
+              )}
+              <div className="flex items-center gap-2">
+                <Label htmlFor="auto-sync" className="text-sm">Auto-Sync</Label>
+                <Switch 
+                  id="auto-sync"
+                  checked={autoSyncEnabled} 
+                  onCheckedChange={toggleAutoSync}
+                />
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Pending Invoice Alert */}
+      {invoiceSyncStatus?.pendingCount > 0 && (
+        <Card className="border-amber-200 bg-amber-50">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <AlertCircle className="h-5 w-5 text-amber-600" />
+                <div>
+                  <p className="font-medium text-amber-800">
+                    {invoiceSyncStatus.pendingCount} Invoice(s) Ready for Dispatch
+                  </p>
+                  <p className="text-sm text-amber-600">
+                    Click sync to create dispatch records for these invoices
+                  </p>
+                </div>
+              </div>
+              <Button 
+                size="sm" 
+                className="bg-amber-600 hover:bg-amber-700"
+                onClick={() => syncDispatchesFromInvoices(null, true)}
+                disabled={syncingInvoices}
+              >
+                {syncingInvoices ? (
+                  <><RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Syncing...</>
+                ) : (
+                  <><RefreshCw className="h-4 w-4 mr-2" /> Sync Now</>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
