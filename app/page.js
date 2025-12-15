@@ -667,6 +667,7 @@ function ClientDashboard({ user, client, onLogout }) {
   const hasFlooringModule = modules.some(m => m.id === 'wooden-flooring' && m.enabled)
   const hasFurnitureModule = modules.some(m => m.id === 'furniture' && m.enabled) || true // Always show for now
   const hasDoorsWindowsModule = modules.some(m => (m.id === 'doors-windows' || m.id === 'doors-and-windows') && m.enabled) || true // Always show for now
+  const hasPaintsModule = modules.some(m => m.id === 'paints-coatings' && m.enabled) || true // Always show for now
 
   const menuItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
@@ -686,6 +687,8 @@ function ClientDashboard({ user, client, onLogout }) {
     ...(hasFurnitureModule ? [{ id: 'furniture-module', icon: Sofa, label: 'Furniture', isModule: true }] : []),
     // Add Doors & Windows module link
     ...(hasDoorsWindowsModule ? [{ id: 'doors-windows-module', icon: Square, label: 'Doors & Windows', isModule: true, href: '/doors-windows' }] : []),
+    // Add Paints & Coatings module link
+    ...(hasPaintsModule ? [{ id: 'paints-module', icon: Paintbrush, label: 'Paints & Coatings', isModule: true }] : []),
     { id: 'modules', icon: Package, label: 'Modules' },
     { id: 'integrations', icon: Plug, label: 'Integrations' },
     { id: 'whitelabel', icon: Palette, label: 'White Label' },
