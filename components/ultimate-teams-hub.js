@@ -693,7 +693,7 @@ const CreateTaskDialog = ({ open, onClose, message, onCreateTask }) => {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Priority</Label>
-              <Select value={taskData.priority} onValueChange={(v) => setTaskData({ ...taskData, priority: v })}>
+              <Select value={currentTaskData.priority} onValueChange={(v) => setTaskData({ ...currentTaskData, priority: v })}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -710,8 +710,8 @@ const CreateTaskDialog = ({ open, onClose, message, onCreateTask }) => {
               <Label>Due Date</Label>
               <Input
                 type="date"
-                value={taskData.dueDate}
-                onChange={(e) => setTaskData({ ...taskData, dueDate: e.target.value })}
+                value={currentTaskData.dueDate}
+                onChange={(e) => setTaskData({ ...currentTaskData, dueDate: e.target.value })}
               />
             </div>
           </div>
