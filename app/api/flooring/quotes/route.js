@@ -14,9 +14,9 @@ const generateQuoteNumber = async (clientId) => {
 // Reserve inventory for quote items
 const reserveInventory = async (clientId, quoteId, quoteNumber, customerName, items) => {
   try {
-    // Get the client's database for inventory operations
-    const dbName = `client_${clientId.replace(/-/g, '_')}`
-    const db = await getClientDb(dbName)
+    // Get the client's database using the clientId directly
+    // clientId format is CL-XXXXXX which is valid for getClientDb
+    const db = await getClientDb(clientId)
     const reservationCollection = db.collection('inventory_reservations')
     const stockCollection = db.collection('wf_inventory_stock')
     
