@@ -4372,5 +4372,3 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
     </div>
   )
 }
-
-export { EnterpriseInventory }
