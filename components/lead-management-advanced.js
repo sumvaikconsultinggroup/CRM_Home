@@ -1923,6 +1923,16 @@ export function AdvancedLeadManagement({
                           }}
                         />
                         
+                        {/* Follow-up Date Display */}
+                        {lead.followUpDate && (
+                          <div className={`text-xs flex items-center gap-1 mt-2 ${
+                            new Date(lead.followUpDate) < new Date() ? 'text-red-600' : 'text-blue-600'
+                          }`}>
+                            <CalendarClock className="h-3 w-3" />
+                            Follow-up: {formatRelativeTime(lead.followUpDate)}
+                          </div>
+                        )}
+                        
                         {/* Quick actions */}
                         <div className="flex gap-1 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button variant="ghost" size="sm" className="h-7 flex-1" asChild onClick={(e) => e.stopPropagation()}>
@@ -1949,6 +1959,17 @@ export function AdvancedLeadManagement({
                             }}
                           >
                             <Trophy className="h-3 w-3" />
+                          </Button>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="h-7 flex-1 text-red-600"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setMarkLostDialog(lead)
+                            }}
+                          >
+                            <ThumbsDown className="h-3 w-3" />
                           </Button>
                         </div>
                       </div>
