@@ -980,29 +980,6 @@ function ClientDashboard({ user, client, onLogout }) {
         {/* Build CRM (Default) */}
         {activeProduct === 'build-crm' && (
           <>
-            {/* Team Chat Modal */}
-            <AnimatePresence>
-              {showChat && (
-                <motion.div
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
-              onClick={() => setShowChat(false)}
-            >
-              <motion.div
-                initial={{ scale: 0.9, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.9, opacity: 0 }}
-                className="w-full max-w-2xl h-[600px]"
-                onClick={(e) => e.stopPropagation()}
-              >
-                <TeamChat user={user} users={users} onClose={() => setShowChat(false)} />
-              </motion.div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-
         {/* Content */}
         <div className="p-6">
           <AnimatePresence mode="wait">
