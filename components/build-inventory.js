@@ -1,6 +1,6 @@
 'use client'
 
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -14,6 +14,7 @@ import { Separator } from '@/components/ui/separator'
 import { Progress } from '@/components/ui/progress'
 import { Textarea } from '@/components/ui/textarea'
 import { Switch } from '@/components/ui/switch'
+import { ScrollArea } from '@/components/ui/scroll-area'
 import {
   Table,
   TableBody,
@@ -28,14 +29,16 @@ import {
   Bookmark, UserCheck, Search, Scan, AlertCircle, TrendingUp, DollarSign,
   Box, Boxes, Lock, Unlock, ChevronRight, ExternalLink, Sparkles, Zap,
   Database, Link2, CheckCircle2, Clock, Edit, Trash2, Eye, Upload,
-  AlertTriangle, XCircle, ArrowUpDown, Filter, MoreVertical
+  AlertTriangle, XCircle, ArrowUpDown, Filter, MoreVertical, Camera,
+  MapPin, Phone, User, Calendar, Send, MessageSquare, Image, FileText,
+  PieChart, TrendingDown, Archive, ShoppingCart, IndianRupee
 } from 'lucide-react'
 import { toast } from 'sonner'
 
 // Import the Enterprise Inventory component
 import { EnterpriseInventory } from '@/components/modules/flooring/EnterpriseInventory'
 
-// Build Inventory - Standalone Product
+// Build Inventory - Standalone Product with Enhanced Features
 export function BuildInventory({ token, user, clientModules = [] }) {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [syncStatus, setSyncStatus] = useState({ synced: 0, pending: 0, modules: [], syncedModule: null })
@@ -50,6 +53,26 @@ export function BuildInventory({ token, user, clientModules = [] }) {
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [syncConfig, setSyncConfig] = useState(null)
+  
+  // Dispatch State
+  const [dispatches, setDispatches] = useState([])
+  const [dispatchStats, setDispatchStats] = useState({})
+  const [showDispatchDialog, setShowDispatchDialog] = useState(false)
+  const [dispatchForm, setDispatchForm] = useState({})
+  const [selectedDispatch, setSelectedDispatch] = useState(null)
+  const [dispatchImagePreview, setDispatchImagePreview] = useState(null)
+  
+  // Reports State
+  const [reportData, setReportData] = useState(null)
+  const [selectedReportType, setSelectedReportType] = useState('summary')
+  const [loadingReport, setLoadingReport] = useState(false)
+  
+  // Reservations State
+  const [reservations, setReservations] = useState([])
+  const [reservationStats, setReservationStats] = useState({})
+
+  // File input ref for image upload
+  const fileInputRef = useRef(null)
 
   // Create headers function for fresh token
   const getHeaders = () => ({
@@ -106,12 +129,71 @@ export function BuildInventory({ token, user, clientModules = [] }) {
     }
   }, [token])
 
+  // Fetch dispatches
+  const fetchDispatches = useCallback(async () => {
+    if (!token) return
+    try {
+      const res = await fetch('/api/inventory/dispatch', { headers: getHeaders() })
+      const data = await res.json()
+      if (data.dispatches) {
+        setDispatches(data.dispatches)
+      }
+      if (data.stats) {
+        setDispatchStats(data.stats)
+      }
+    } catch (error) {
+      console.error('Dispatch fetch error:', error)
+    }
+  }, [token])
+
+  // Fetch reservations
+  const fetchReservations = useCallback(async () => {
+    if (!token) return
+    try {
+      const res = await fetch('/api/inventory/reserve', { headers: getHeaders() })
+      const data = await res.json()
+      if (data.reservations) {
+        setReservations(data.reservations)
+      }
+      if (data.stats) {
+        setReservationStats(data.stats)
+      }
+    } catch (error) {
+      console.error('Reservations fetch error:', error)
+    }
+  }, [token])
+
+  // Fetch reports
+  const fetchReport = useCallback(async (type = 'summary') => {
+    if (!token) return
+    setLoadingReport(true)
+    try {
+      const res = await fetch(`/api/inventory/reports?type=${type}`, { headers: getHeaders() })
+      const data = await res.json()
+      setReportData(data)
+    } catch (error) {
+      console.error('Report fetch error:', error)
+      toast.error('Failed to load report')
+    } finally {
+      setLoadingReport(false)
+    }
+  }, [token])
+
   useEffect(() => {
     if (token) {
       fetchSyncStatus()
       fetchProducts()
+      fetchDispatches()
+      fetchReservations()
     }
-  }, [token, fetchSyncStatus, fetchProducts])
+  }, [token, fetchSyncStatus, fetchProducts, fetchDispatches, fetchReservations])
+
+  // Load report when tab changes
+  useEffect(() => {
+    if (activeTab === 'reports' && token) {
+      fetchReport(selectedReportType)
+    }
+  }, [activeTab, selectedReportType, token, fetchReport])
 
   // Check if a module is already synced
   const isSyncLocked = () => {
@@ -120,7 +202,6 @@ export function BuildInventory({ token, user, clientModules = [] }) {
 
   // Trigger sync from a CRM module
   const handleSync = async (moduleId, syncAll = true) => {
-    // Check if another module is already synced
     if (isSyncLocked() && syncConfig.syncedModuleId !== moduleId) {
       toast.error(`Inventory can only sync with one module. Currently synced with: ${syncConfig.syncedModuleName || 'another module'}`)
       setShowSyncDialog(false)
@@ -234,6 +315,108 @@ export function BuildInventory({ token, user, clientModules = [] }) {
     }
   }
 
+  // Create dispatch
+  const handleCreateDispatch = async () => {
+    if (!dispatchForm.customerName || !dispatchForm.items || dispatchForm.items.length === 0) {
+      toast.error('Customer name and items are required')
+      return
+    }
+
+    try {
+      setLoading(true)
+      const res = await fetch('/api/inventory/dispatch', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({
+          ...dispatchForm,
+          dispatchImage: dispatchImagePreview
+        })
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        toast.success(`Dispatch ${data.dispatchNumber} created`)
+        fetchDispatches()
+        setShowDispatchDialog(false)
+        setDispatchForm({})
+        setDispatchImagePreview(null)
+        
+        // Offer to send WhatsApp notification
+        if (dispatchForm.customerPhone) {
+          const sendNotif = confirm('Send WhatsApp notification to customer?')
+          if (sendNotif) {
+            handleSendWhatsAppNotification(data.id)
+          }
+        }
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to create dispatch')
+      }
+    } catch (error) {
+      toast.error('Failed to create dispatch')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Update dispatch status
+  const handleUpdateDispatchStatus = async (dispatchId, newStatus) => {
+    try {
+      const res = await fetch('/api/inventory/dispatch', {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify({ id: dispatchId, status: newStatus })
+      })
+
+      if (res.ok) {
+        toast.success(`Status updated to ${newStatus}`)
+        fetchDispatches()
+      } else {
+        toast.error('Failed to update status')
+      }
+    } catch (error) {
+      toast.error('Failed to update status')
+    }
+  }
+
+  // Send WhatsApp notification (Mocked)
+  const handleSendWhatsAppNotification = async (dispatchId) => {
+    try {
+      const res = await fetch('/api/inventory/dispatch/notify', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ dispatchId })
+      })
+
+      const data = await res.json()
+      if (res.ok) {
+        toast.success('WhatsApp notification sent (MOCKED)')
+        fetchDispatches()
+      } else {
+        toast.error(data.error || 'Failed to send notification')
+      }
+    } catch (error) {
+      toast.error('Failed to send notification')
+    }
+  }
+
+  // Handle image upload for dispatch
+  const handleImageUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (file) {
+      if (file.size > 5 * 1024 * 1024) {
+        toast.error('Image must be less than 5MB')
+        return
+      }
+      
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        setDispatchImagePreview(reader.result)
+      }
+      reader.readAsDataURL(file)
+    }
+  }
+
   // Get synced module fields for manual product entry
   const getSyncedModuleFields = () => {
     if (!syncConfig?.syncedModuleId) return []
@@ -273,6 +456,9 @@ export function BuildInventory({ token, user, clientModules = [] }) {
     return matchesSearch && matchesCategory
   })
 
+  // Only show modules that are actually enabled for this client
+  const enabledClientModules = clientModules.filter(m => m.enabled)
+
   // Dashboard View
   const renderDashboard = () => (
     <div className="space-y-6">
@@ -291,8 +477,8 @@ export function BuildInventory({ token, user, clientModules = [] }) {
               <Button variant="secondary" size="sm" onClick={() => setShowSyncDialog(true)}>
                 <Link2 className="h-4 w-4 mr-2" /> Sync CRM
               </Button>
-              <Button variant="secondary" size="sm" onClick={() => setActiveTab('products')}>
-                <Package className="h-4 w-4 mr-2" /> Products
+              <Button variant="secondary" size="sm" onClick={() => setActiveTab('dispatch')}>
+                <Truck className="h-4 w-4 mr-2" /> Dispatch
               </Button>
               <Button variant="secondary" size="sm" onClick={() => setActiveTab('inventory')}>
                 Open Inventory <ChevronRight className="h-4 w-4 ml-1" />
@@ -332,13 +518,13 @@ export function BuildInventory({ token, user, clientModules = [] }) {
       )}
 
       {/* Quick Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <StatCard
           title="Total Products"
           value={productSummary.total || 0}
           icon={Package}
           color="bg-blue-500"
-          subtitle={`${productSummary.synced || 0} synced, ${productSummary.manual || 0} manual`}
+          subtitle={`${productSummary.synced || 0} synced`}
         />
         <StatCard
           title="Active Products"
@@ -347,16 +533,22 @@ export function BuildInventory({ token, user, clientModules = [] }) {
           color="bg-emerald-500"
         />
         <StatCard
-          title="Categories"
-          value={productSummary.categories?.length || 0}
-          icon={Layers}
+          title="Pending Dispatch"
+          value={dispatchStats.pending || 0}
+          icon={Truck}
           color="bg-amber-500"
         />
         <StatCard
-          title="Last Sync"
-          value={syncStatus.lastSync ? new Date(syncStatus.lastSync).toLocaleDateString() : 'Never'}
-          icon={RefreshCw}
-          color="bg-slate-500"
+          title="In Transit"
+          value={dispatchStats.inTransit || 0}
+          icon={Send}
+          color="bg-blue-500"
+        />
+        <StatCard
+          title="Reserved Items"
+          value={reservationStats.active || 0}
+          icon={Lock}
+          color="bg-purple-500"
         />
       </div>
 
@@ -383,9 +575,9 @@ export function BuildInventory({ token, user, clientModules = [] }) {
           </div>
         </CardHeader>
         <CardContent>
-          {clientModules.filter(m => m.enabled).length > 0 ? (
+          {enabledClientModules.length > 0 ? (
             <div className="space-y-3">
-              {clientModules.filter(m => m.enabled).map(module => {
+              {enabledClientModules.map(module => {
                 const syncInfo = syncStatus.modules.find(s => s.id === module.id)
                 const isCurrentSync = syncConfig?.syncedModuleId === module.id
                 const isLocked = isSyncLocked() && !isCurrentSync
@@ -465,7 +657,7 @@ export function BuildInventory({ token, user, clientModules = [] }) {
       </Card>
 
       {/* Quick Actions */}
-      <div className="grid md:grid-cols-3 gap-4">
+      <div className="grid md:grid-cols-4 gap-4">
         <QuickActionCard
           title="Products"
           description="View & manage all products"
@@ -473,18 +665,78 @@ export function BuildInventory({ token, user, clientModules = [] }) {
           onClick={() => setActiveTab('products')}
         />
         <QuickActionCard
-          title="Warehouses"
-          description="Manage storage locations"
+          title="Dispatch"
+          description="Manage dispatches"
+          icon={Truck}
+          onClick={() => setActiveTab('dispatch')}
+        />
+        <QuickActionCard
+          title="Reports"
+          description="View inventory reports"
+          icon={BarChart3}
+          onClick={() => setActiveTab('reports')}
+        />
+        <QuickActionCard
+          title="Inventory"
+          description="Stock & warehouses"
           icon={Warehouse}
           onClick={() => setActiveTab('inventory')}
         />
-        <QuickActionCard
-          title="Stock Movements"
-          description="Track goods in/out"
-          icon={ArrowLeftRight}
-          onClick={() => setActiveTab('inventory')}
-        />
       </div>
+
+      {/* Recent Dispatches */}
+      {dispatches.length > 0 && (
+        <Card>
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Truck className="h-5 w-5" />
+                Recent Dispatches
+              </CardTitle>
+              <Button variant="outline" size="sm" onClick={() => setActiveTab('dispatch')}>
+                View All
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {dispatches.slice(0, 5).map(dispatch => (
+                <div key={dispatch.id} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className={`p-2 rounded-lg ${
+                      dispatch.status === 'delivered' ? 'bg-emerald-100' :
+                      dispatch.status === 'in_transit' ? 'bg-blue-100' :
+                      dispatch.status === 'cancelled' ? 'bg-red-100' : 'bg-amber-100'
+                    }`}>
+                      <Truck className={`h-4 w-4 ${
+                        dispatch.status === 'delivered' ? 'text-emerald-600' :
+                        dispatch.status === 'in_transit' ? 'text-blue-600' :
+                        dispatch.status === 'cancelled' ? 'text-red-600' : 'text-amber-600'
+                      }`} />
+                    </div>
+                    <div>
+                      <p className="font-medium">{dispatch.dispatchNumber}</p>
+                      <p className="text-sm text-slate-500">{dispatch.customerName}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <Badge className={
+                      dispatch.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' :
+                      dispatch.status === 'in_transit' ? 'bg-blue-100 text-blue-700' :
+                      dispatch.status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                    }>
+                      {dispatch.status?.replace('_', ' ')}
+                    </Badge>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {new Date(dispatch.dispatchDate).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   )
 
@@ -670,6 +922,527 @@ export function BuildInventory({ token, user, clientModules = [] }) {
     </div>
   )
 
+  // Dispatch Tab View
+  const renderDispatchTab = () => (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <Truck className="h-7 w-7" />
+            Dispatch Management
+          </h2>
+          <p className="text-slate-500">Manage warehouse dispatches and deliveries</p>
+        </div>
+        <Button onClick={() => {
+          setDispatchForm({ items: [], paymentMode: 'prepaid' })
+          setDispatchImagePreview(null)
+          setShowDispatchDialog(true)
+        }}>
+          <Plus className="h-4 w-4 mr-2" /> New Dispatch
+        </Button>
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <StatCard title="Total Dispatches" value={dispatchStats.total || 0} icon={Truck} color="bg-slate-500" />
+        <StatCard title="Pending" value={dispatchStats.pending || 0} icon={Clock} color="bg-amber-500" />
+        <StatCard title="In Transit" value={dispatchStats.inTransit || 0} icon={Send} color="bg-blue-500" />
+        <StatCard title="Delivered" value={dispatchStats.delivered || 0} icon={CheckCircle2} color="bg-emerald-500" />
+      </div>
+
+      {/* Dispatches List */}
+      <Card>
+        <CardHeader>
+          <CardTitle>All Dispatches</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {dispatches.length === 0 ? (
+            <div className="text-center py-8">
+              <Truck className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+              <h3 className="font-medium text-slate-600">No Dispatches Yet</h3>
+              <p className="text-sm text-slate-500">Create your first dispatch to get started</p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Dispatch #</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Items</TableHead>
+                  <TableHead>Value</TableHead>
+                  <TableHead>Vehicle</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>WhatsApp</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {dispatches.map(dispatch => (
+                  <TableRow key={dispatch.id}>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{dispatch.dispatchNumber}</p>
+                        <p className="text-xs text-slate-500">
+                          {new Date(dispatch.dispatchDate).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{dispatch.customerName}</p>
+                        {dispatch.customerPhone && (
+                          <p className="text-xs text-slate-500">{dispatch.customerPhone}</p>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{dispatch.items?.length || 0} items</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <span className="font-medium">₹{(dispatch.totalValue || 0).toLocaleString()}</span>
+                    </TableCell>
+                    <TableCell>
+                      {dispatch.transporter?.vehicleNumber ? (
+                        <div>
+                          <p className="font-mono text-sm">{dispatch.transporter.vehicleNumber}</p>
+                          {dispatch.transporter.driverName && (
+                            <p className="text-xs text-slate-500">{dispatch.transporter.driverName}</p>
+                          )}
+                        </div>
+                      ) : (
+                        <span className="text-slate-400">-</span>
+                      )}
+                    </TableCell>
+                    <TableCell>
+                      <Select
+                        value={dispatch.status}
+                        onValueChange={(value) => handleUpdateDispatchStatus(dispatch.id, value)}
+                      >
+                        <SelectTrigger className="w-32">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">Pending</SelectItem>
+                          <SelectItem value="in_transit">In Transit</SelectItem>
+                          <SelectItem value="delivered">Delivered</SelectItem>
+                          <SelectItem value="cancelled">Cancelled</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
+                    <TableCell>
+                      {dispatch.whatsappNotification?.sent ? (
+                        <Badge className="bg-green-100 text-green-700">
+                          <CheckCircle2 className="h-3 w-3 mr-1" /> Sent
+                        </Badge>
+                      ) : dispatch.customerPhone ? (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => handleSendWhatsAppNotification(dispatch.id)}
+                        >
+                          <MessageSquare className="h-3 w-3 mr-1" /> Send
+                        </Button>
+                      ) : (
+                        <span className="text-slate-400 text-sm">No phone</span>
+                      )}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setSelectedDispatch(dispatch)}
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  )
+
+  // Reports Tab View
+  const renderReportsTab = () => (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <BarChart3 className="h-7 w-7" />
+            Inventory Reports
+          </h2>
+          <p className="text-slate-500">Comprehensive inventory analytics and insights</p>
+        </div>
+        <Select value={selectedReportType} onValueChange={setSelectedReportType}>
+          <SelectTrigger className="w-48">
+            <SelectValue placeholder="Select Report" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="summary">Executive Summary</SelectItem>
+            <SelectItem value="stock_levels">Stock Levels</SelectItem>
+            <SelectItem value="movements">Movement Report</SelectItem>
+            <SelectItem value="dispatch_history">Dispatch History</SelectItem>
+            <SelectItem value="low_stock">Low Stock Alert</SelectItem>
+            <SelectItem value="valuation">Stock Valuation</SelectItem>
+            <SelectItem value="category_analysis">Category Analysis</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+
+      {loadingReport ? (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <RefreshCw className="h-8 w-8 animate-spin text-slate-400 mx-auto mb-3" />
+            <p className="text-slate-500">Loading report...</p>
+          </CardContent>
+        </Card>
+      ) : reportData ? (
+        <>
+          {/* Summary Report */}
+          {selectedReportType === 'summary' && reportData.overview && (
+            <div className="space-y-6">
+              {/* Overview Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <StatCard
+                  title="Total Products"
+                  value={reportData.overview.totalProducts}
+                  icon={Package}
+                  color="bg-blue-500"
+                />
+                <StatCard
+                  title="Stock Value"
+                  value={`₹${(reportData.overview.totalStockValue || 0).toLocaleString()}`}
+                  icon={IndianRupee}
+                  color="bg-emerald-500"
+                />
+                <StatCard
+                  title="Retail Value"
+                  value={`₹${(reportData.overview.totalRetailValue || 0).toLocaleString()}`}
+                  icon={DollarSign}
+                  color="bg-amber-500"
+                />
+                <StatCard
+                  title="Profit Margin"
+                  value={`${reportData.overview.profitMargin}%`}
+                  icon={TrendingUp}
+                  color="bg-purple-500"
+                />
+              </div>
+
+              {/* Monthly Stats */}
+              {reportData.monthlyStats && (
+                <Card>
+                  <CardHeader>
+                    <CardTitle>This Month</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                      <div className="p-4 bg-slate-50 rounded-lg">
+                        <p className="text-sm text-slate-500">Total Dispatches</p>
+                        <p className="text-2xl font-bold">{reportData.monthlyStats.totalDispatches}</p>
+                      </div>
+                      <div className="p-4 bg-slate-50 rounded-lg">
+                        <p className="text-sm text-slate-500">Dispatch Value</p>
+                        <p className="text-2xl font-bold">₹{(reportData.monthlyStats.dispatchValue || 0).toLocaleString()}</p>
+                      </div>
+                      <div className="p-4 bg-emerald-50 rounded-lg">
+                        <p className="text-sm text-emerald-600">Delivered</p>
+                        <p className="text-2xl font-bold text-emerald-700">{reportData.monthlyStats.delivered}</p>
+                      </div>
+                      <div className="p-4 bg-amber-50 rounded-lg">
+                        <p className="text-sm text-amber-600">Pending</p>
+                        <p className="text-2xl font-bold text-amber-700">{reportData.monthlyStats.pending}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Low Stock Alert */}
+              {reportData.lowStockItems?.length > 0 && (
+                <Card className="border-amber-200">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-amber-700">
+                      <AlertTriangle className="h-5 w-5" />
+                      Low Stock Alert ({reportData.stockHealth?.lowStockCount || 0} items)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-2">
+                      {reportData.lowStockItems.map((item, i) => (
+                        <div key={i} className="flex items-center justify-between p-3 bg-amber-50 rounded-lg">
+                          <div>
+                            <p className="font-medium">{item.productName}</p>
+                            <p className="text-sm text-slate-500">{item.sku}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-medium text-amber-700">{item.currentStock} in stock</p>
+                            <p className="text-xs text-slate-500">Reorder at {item.reorderLevel}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {/* Stock Levels Report */}
+          {selectedReportType === 'stock_levels' && reportData.products && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <CardTitle>Stock Levels</CardTitle>
+                  <div className="flex items-center gap-4">
+                    <Badge className="bg-emerald-100 text-emerald-700">
+                      In Stock: {reportData.summary?.inStock || 0}
+                    </Badge>
+                    <Badge className="bg-amber-100 text-amber-700">
+                      Low Stock: {reportData.summary?.lowStock || 0}
+                    </Badge>
+                    <Badge className="bg-red-100 text-red-700">
+                      Out of Stock: {reportData.summary?.outOfStock || 0}
+                    </Badge>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product</TableHead>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Total Qty</TableHead>
+                      <TableHead>Available</TableHead>
+                      <TableHead>Reserved</TableHead>
+                      <TableHead>Stock Value</TableHead>
+                      <TableHead>Status</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {reportData.products.map((product, i) => (
+                      <TableRow key={i}>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{product.productName}</p>
+                            <p className="text-xs text-slate-500">{product.sku}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{product.category}</TableCell>
+                        <TableCell>{product.totalQuantity} {product.unit}</TableCell>
+                        <TableCell>{product.availableQuantity} {product.unit}</TableCell>
+                        <TableCell>{product.reservedQuantity} {product.unit}</TableCell>
+                        <TableCell>₹{(product.stockValue || 0).toLocaleString()}</TableCell>
+                        <TableCell>
+                          <Badge className={
+                            product.status === 'in_stock' ? 'bg-emerald-100 text-emerald-700' :
+                            product.status === 'low_stock' ? 'bg-amber-100 text-amber-700' :
+                            'bg-red-100 text-red-700'
+                          }>
+                            {product.status?.replace('_', ' ')}
+                          </Badge>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Low Stock Report */}
+          {selectedReportType === 'low_stock' && (
+            <div className="space-y-6">
+              {/* Out of Stock */}
+              {reportData.outOfStockItems?.length > 0 && (
+                <Card className="border-red-200">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-red-700">
+                      <XCircle className="h-5 w-5" />
+                      Out of Stock ({reportData.outOfStockItems.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Product</TableHead>
+                          <TableHead>SKU</TableHead>
+                          <TableHead>Reorder Level</TableHead>
+                          <TableHead>Suggested Order</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {reportData.outOfStockItems.map((item, i) => (
+                          <TableRow key={i}>
+                            <TableCell className="font-medium">{item.name}</TableCell>
+                            <TableCell><code className="text-xs">{item.sku}</code></TableCell>
+                            <TableCell>{item.reorderLevel}</TableCell>
+                            <TableCell className="font-medium text-red-600">{item.reorderQuantity}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Low Stock */}
+              {reportData.lowStockItems?.length > 0 && (
+                <Card className="border-amber-200">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-amber-700">
+                      <AlertTriangle className="h-5 w-5" />
+                      Low Stock ({reportData.lowStockItems.length})
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Product</TableHead>
+                          <TableHead>SKU</TableHead>
+                          <TableHead>Current Stock</TableHead>
+                          <TableHead>Reorder Level</TableHead>
+                          <TableHead>Deficit</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {reportData.lowStockItems.map((item, i) => (
+                          <TableRow key={i}>
+                            <TableCell className="font-medium">{item.name}</TableCell>
+                            <TableCell><code className="text-xs">{item.sku}</code></TableCell>
+                            <TableCell>{item.currentStock}</TableCell>
+                            <TableCell>{item.reorderLevel}</TableCell>
+                            <TableCell className="font-medium text-amber-600">{item.deficit}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  </CardContent>
+                </Card>
+              )}
+
+              {reportData.summary?.totalAlerts === 0 && (
+                <Card>
+                  <CardContent className="p-8 text-center">
+                    <CheckCircle2 className="h-12 w-12 text-emerald-500 mx-auto mb-3" />
+                    <h3 className="font-medium text-emerald-700">All Stock Levels Healthy</h3>
+                    <p className="text-sm text-slate-500">No low stock or out of stock items</p>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+
+          {/* Dispatch History Report */}
+          {selectedReportType === 'dispatch_history' && (
+            <div className="space-y-6">
+              {/* Stats */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <StatCard title="Total" value={reportData.totalDispatches || 0} icon={Truck} color="bg-slate-500" />
+                <StatCard title="Delivered" value={reportData.byStatus?.delivered?.count || 0} icon={CheckCircle2} color="bg-emerald-500" />
+                <StatCard title="In Transit" value={reportData.byStatus?.in_transit?.count || 0} icon={Send} color="bg-blue-500" />
+                <StatCard title="Total Value" value={`₹${(reportData.totalValue || 0).toLocaleString()}`} icon={IndianRupee} color="bg-amber-500" />
+              </div>
+
+              {/* Recent Dispatches */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Recent Dispatches</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {reportData.recentDispatches?.length > 0 ? (
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead>Dispatch #</TableHead>
+                          <TableHead>Customer</TableHead>
+                          <TableHead>Items</TableHead>
+                          <TableHead>Value</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Status</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {reportData.recentDispatches.map((d, i) => (
+                          <TableRow key={i}>
+                            <TableCell className="font-medium">{d.dispatchNumber}</TableCell>
+                            <TableCell>{d.customerName}</TableCell>
+                            <TableCell>{d.itemCount} items</TableCell>
+                            <TableCell>₹{(d.totalValue || 0).toLocaleString()}</TableCell>
+                            <TableCell>{new Date(d.dispatchDate).toLocaleDateString()}</TableCell>
+                            <TableCell>
+                              <Badge className={
+                                d.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' :
+                                d.status === 'in_transit' ? 'bg-blue-100 text-blue-700' :
+                                'bg-amber-100 text-amber-700'
+                              }>
+                                {d.status?.replace('_', ' ')}
+                              </Badge>
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                  ) : (
+                    <p className="text-center py-8 text-slate-500">No dispatches found</p>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* Category Analysis */}
+          {selectedReportType === 'category_analysis' && reportData.categories && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Category Analysis</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Category</TableHead>
+                      <TableHead>Products</TableHead>
+                      <TableHead>Total Quantity</TableHead>
+                      <TableHead>Cost Value</TableHead>
+                      <TableHead>Retail Value</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {reportData.categories.map((cat, i) => (
+                      <TableRow key={i}>
+                        <TableCell className="font-medium">{cat.name}</TableCell>
+                        <TableCell>{cat.productCount}</TableCell>
+                        <TableCell>{cat.totalQuantity}</TableCell>
+                        <TableCell>₹{(cat.totalCostValue || 0).toLocaleString()}</TableCell>
+                        <TableCell>₹{(cat.totalRetailValue || 0).toLocaleString()}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
+          )}
+        </>
+      ) : (
+        <Card>
+          <CardContent className="p-8 text-center">
+            <BarChart3 className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+            <p className="text-slate-500">Select a report type to view</p>
+          </CardContent>
+        </Card>
+      )}
+    </div>
+  )
+
   return (
     <div className="min-h-screen bg-slate-50">
       {/* Header */}
@@ -694,6 +1467,12 @@ export function BuildInventory({ token, user, clientModules = [] }) {
                 <TabsTrigger value="products">
                   <Package className="h-4 w-4 mr-2" /> Products
                 </TabsTrigger>
+                <TabsTrigger value="dispatch">
+                  <Truck className="h-4 w-4 mr-2" /> Dispatch
+                </TabsTrigger>
+                <TabsTrigger value="reports">
+                  <PieChart className="h-4 w-4 mr-2" /> Reports
+                </TabsTrigger>
                 <TabsTrigger value="inventory">
                   <Warehouse className="h-4 w-4 mr-2" /> Inventory
                 </TabsTrigger>
@@ -704,7 +1483,12 @@ export function BuildInventory({ token, user, clientModules = [] }) {
             </Tabs>
 
             <div className="flex items-center gap-2">
-              <Button variant="outline" size="sm" onClick={fetchSyncStatus}>
+              <Button variant="outline" size="sm" onClick={() => {
+                fetchSyncStatus()
+                fetchProducts()
+                fetchDispatches()
+                if (activeTab === 'reports') fetchReport(selectedReportType)
+              }}>
                 <RefreshCw className="h-4 w-4" />
               </Button>
             </div>
@@ -717,6 +1501,10 @@ export function BuildInventory({ token, user, clientModules = [] }) {
         {activeTab === 'dashboard' && renderDashboard()}
         
         {activeTab === 'products' && renderProductsTab()}
+
+        {activeTab === 'dispatch' && renderDispatchTab()}
+
+        {activeTab === 'reports' && renderReportsTab()}
         
         {activeTab === 'inventory' && (
           <EnterpriseInventory 
@@ -814,7 +1602,7 @@ export function BuildInventory({ token, user, clientModules = [] }) {
               {!selectedModuleForSync ? (
                 <div className="space-y-2">
                   <Label>Select Module</Label>
-                  {clientModules.filter(m => m.enabled).map(module => (
+                  {enabledClientModules.map(module => (
                     <div
                       key={module.id}
                       className="flex items-center justify-between p-3 bg-slate-50 rounded-lg cursor-pointer hover:bg-slate-100"
@@ -1087,6 +1875,411 @@ export function BuildInventory({ token, user, clientModules = [] }) {
               {loading ? 'Saving...' : editingProduct ? 'Update Product' : 'Add Product'}
             </Button>
           </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dispatch Dialog */}
+      <Dialog open={showDispatchDialog} onOpenChange={setShowDispatchDialog}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5" />
+              Create New Dispatch
+            </DialogTitle>
+            <DialogDescription>
+              Enter dispatch details including transporter information for customer notification
+            </DialogDescription>
+          </DialogHeader>
+
+          <ScrollArea className="max-h-[60vh]">
+            <div className="space-y-6 pr-4">
+              {/* Customer Details */}
+              <div>
+                <h4 className="font-medium mb-3 flex items-center gap-2">
+                  <User className="h-4 w-4" /> Customer Details
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Customer Name *</Label>
+                    <Input
+                      value={dispatchForm.customerName || ''}
+                      onChange={(e) => setDispatchForm({ ...dispatchForm, customerName: e.target.value })}
+                      placeholder="Customer name"
+                    />
+                  </div>
+                  <div>
+                    <Label>Phone (for WhatsApp)</Label>
+                    <Input
+                      value={dispatchForm.customerPhone || ''}
+                      onChange={(e) => setDispatchForm({ ...dispatchForm, customerPhone: e.target.value })}
+                      placeholder="+91 98765 43210"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <Label>Delivery Address</Label>
+                    <Textarea
+                      value={dispatchForm.deliveryAddress || ''}
+                      onChange={(e) => setDispatchForm({ ...dispatchForm, deliveryAddress: e.target.value })}
+                      placeholder="Full delivery address"
+                      rows={2}
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Products Selection */}
+              <div>
+                <h4 className="font-medium mb-3 flex items-center gap-2">
+                  <Package className="h-4 w-4" /> Products *
+                </h4>
+                <div className="space-y-3">
+                  {(dispatchForm.items || []).map((item, idx) => (
+                    <div key={idx} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                      <div className="flex-1">
+                        <Select
+                          value={item.productId || ''}
+                          onValueChange={(value) => {
+                            const product = products.find(p => p.id === value)
+                            const newItems = [...(dispatchForm.items || [])]
+                            newItems[idx] = {
+                              ...newItems[idx],
+                              productId: value,
+                              productName: product?.name,
+                              sku: product?.sku,
+                              unit: product?.unit || 'pcs',
+                              unitPrice: product?.sellingPrice || 0
+                            }
+                            setDispatchForm({ ...dispatchForm, items: newItems })
+                          }}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select product" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {products.map(p => (
+                              <SelectItem key={p.id} value={p.id}>{p.name} ({p.sku})</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="w-24">
+                        <Input
+                          type="number"
+                          value={item.quantity || ''}
+                          onChange={(e) => {
+                            const newItems = [...(dispatchForm.items || [])]
+                            newItems[idx] = { ...newItems[idx], quantity: parseInt(e.target.value) || 0 }
+                            setDispatchForm({ ...dispatchForm, items: newItems })
+                          }}
+                          placeholder="Qty"
+                        />
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="text-red-600"
+                        onClick={() => {
+                          const newItems = (dispatchForm.items || []).filter((_, i) => i !== idx)
+                          setDispatchForm({ ...dispatchForm, items: newItems })
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => {
+                      setDispatchForm({
+                        ...dispatchForm,
+                        items: [...(dispatchForm.items || []), { productId: '', quantity: 1 }]
+                      })
+                    }}
+                  >
+                    <Plus className="h-4 w-4 mr-2" /> Add Product
+                  </Button>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Transporter Details */}
+              <div>
+                <h4 className="font-medium mb-3 flex items-center gap-2">
+                  <Truck className="h-4 w-4" /> Transporter Details
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Transporter Name</Label>
+                    <Input
+                      value={dispatchForm.transporterName || ''}
+                      onChange={(e) => setDispatchForm({ ...dispatchForm, transporterName: e.target.value })}
+                      placeholder="Transporter name"
+                    />
+                  </div>
+                  <div>
+                    <Label>Company</Label>
+                    <Input
+                      value={dispatchForm.transporterCompany || ''}
+                      onChange={(e) => setDispatchForm({ ...dispatchForm, transporterCompany: e.target.value })}
+                      placeholder="Transport company"
+                    />
+                  </div>
+                  <div>
+                    <Label>Vehicle Number</Label>
+                    <Input
+                      value={dispatchForm.vehicleNumber || ''}
+                      onChange={(e) => setDispatchForm({ ...dispatchForm, vehicleNumber: e.target.value })}
+                      placeholder="MH 12 AB 1234"
+                    />
+                  </div>
+                  <div>
+                    <Label>Driver Name</Label>
+                    <Input
+                      value={dispatchForm.driverName || ''}
+                      onChange={(e) => setDispatchForm({ ...dispatchForm, driverName: e.target.value })}
+                      placeholder="Driver name"
+                    />
+                  </div>
+                  <div>
+                    <Label>Driver Phone</Label>
+                    <Input
+                      value={dispatchForm.driverPhone || ''}
+                      onChange={(e) => setDispatchForm({ ...dispatchForm, driverPhone: e.target.value })}
+                      placeholder="+91 98765 43210"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Delivery & Payment */}
+              <div>
+                <h4 className="font-medium mb-3 flex items-center gap-2">
+                  <Calendar className="h-4 w-4" /> Delivery & Payment
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Estimated Delivery Date</Label>
+                    <Input
+                      type="date"
+                      value={dispatchForm.estimatedDeliveryDate || ''}
+                      onChange={(e) => setDispatchForm({ ...dispatchForm, estimatedDeliveryDate: e.target.value })}
+                    />
+                  </div>
+                  <div>
+                    <Label>Estimated Time</Label>
+                    <Input
+                      value={dispatchForm.estimatedDeliveryTime || ''}
+                      onChange={(e) => setDispatchForm({ ...dispatchForm, estimatedDeliveryTime: e.target.value })}
+                      placeholder="2:00 PM - 4:00 PM"
+                    />
+                  </div>
+                  <div>
+                    <Label>Delivery Cost (₹)</Label>
+                    <Input
+                      type="number"
+                      value={dispatchForm.deliveryCost || ''}
+                      onChange={(e) => setDispatchForm({ ...dispatchForm, deliveryCost: parseFloat(e.target.value) })}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <Label>Payment Mode</Label>
+                    <Select
+                      value={dispatchForm.paymentMode || 'prepaid'}
+                      onValueChange={(v) => setDispatchForm({ ...dispatchForm, paymentMode: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="prepaid">Prepaid</SelectItem>
+                        <SelectItem value="cod">Cash on Delivery</SelectItem>
+                        <SelectItem value="partial">Partial Payment</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {(dispatchForm.paymentMode === 'cod' || dispatchForm.paymentMode === 'partial') && (
+                    <div>
+                      <Label>Amount to Collect (₹)</Label>
+                      <Input
+                        type="number"
+                        value={dispatchForm.paymentAmount || ''}
+                        onChange={(e) => setDispatchForm({ ...dispatchForm, paymentAmount: parseFloat(e.target.value) })}
+                        placeholder="0"
+                      />
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Photo Upload */}
+              <div>
+                <h4 className="font-medium mb-3 flex items-center gap-2">
+                  <Camera className="h-4 w-4" /> Dispatch Photo
+                </h4>
+                <div className="space-y-3">
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    onChange={handleImageUpload}
+                  />
+                  {dispatchImagePreview ? (
+                    <div className="relative">
+                      <img
+                        src={dispatchImagePreview}
+                        alt="Dispatch"
+                        className="w-full max-h-48 object-cover rounded-lg"
+                      />
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="absolute top-2 right-2"
+                        onClick={() => setDispatchImagePreview(null)}
+                      >
+                        <XCircle className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ) : (
+                    <div
+                      className="border-2 border-dashed border-slate-200 rounded-lg p-8 text-center cursor-pointer hover:border-slate-400 transition-colors"
+                      onClick={() => fileInputRef.current?.click()}
+                    >
+                      <Camera className="h-8 w-8 text-slate-400 mx-auto mb-2" />
+                      <p className="text-sm text-slate-500">Click to upload dispatch image</p>
+                      <p className="text-xs text-slate-400 mt-1">Max 5MB</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Special Instructions */}
+              <div>
+                <Label>Special Instructions</Label>
+                <Textarea
+                  value={dispatchForm.specialInstructions || ''}
+                  onChange={(e) => setDispatchForm({ ...dispatchForm, specialInstructions: e.target.value })}
+                  placeholder="Any special handling or delivery instructions..."
+                  rows={2}
+                />
+              </div>
+            </div>
+          </ScrollArea>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowDispatchDialog(false)
+              setDispatchForm({})
+              setDispatchImagePreview(null)
+            }}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateDispatch} disabled={loading}>
+              {loading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                  Creating...
+                </>
+              ) : (
+                <>
+                  <Truck className="h-4 w-4 mr-2" />
+                  Create Dispatch
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Dispatch Detail Dialog */}
+      <Dialog open={!!selectedDispatch} onOpenChange={() => setSelectedDispatch(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Dispatch Details</DialogTitle>
+          </DialogHeader>
+          
+          {selectedDispatch && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-2xl font-bold">{selectedDispatch.dispatchNumber}</p>
+                  <p className="text-sm text-slate-500">
+                    {new Date(selectedDispatch.dispatchDate).toLocaleString()}
+                  </p>
+                </div>
+                <Badge className={
+                  selectedDispatch.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' :
+                  selectedDispatch.status === 'in_transit' ? 'bg-blue-100 text-blue-700' :
+                  selectedDispatch.status === 'cancelled' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700'
+                }>
+                  {selectedDispatch.status?.replace('_', ' ')}
+                </Badge>
+              </div>
+
+              <Separator />
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <p className="text-sm text-slate-500">Customer</p>
+                  <p className="font-medium">{selectedDispatch.customerName}</p>
+                  {selectedDispatch.customerPhone && <p className="text-sm">{selectedDispatch.customerPhone}</p>}
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Value</p>
+                  <p className="font-medium">₹{(selectedDispatch.totalValue || 0).toLocaleString()}</p>
+                </div>
+              </div>
+
+              {selectedDispatch.transporter?.vehicleNumber && (
+                <div>
+                  <p className="text-sm text-slate-500 mb-2">Transporter</p>
+                  <div className="p-3 bg-slate-50 rounded-lg">
+                    <div className="grid grid-cols-2 gap-2 text-sm">
+                      <p><span className="text-slate-500">Vehicle:</span> {selectedDispatch.transporter.vehicleNumber}</p>
+                      {selectedDispatch.transporter.driverName && (
+                        <p><span className="text-slate-500">Driver:</span> {selectedDispatch.transporter.driverName}</p>
+                      )}
+                      {selectedDispatch.transporter.driverPhone && (
+                        <p><span className="text-slate-500">Phone:</span> {selectedDispatch.transporter.driverPhone}</p>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <div>
+                <p className="text-sm text-slate-500 mb-2">Items ({selectedDispatch.items?.length || 0})</p>
+                <div className="space-y-2">
+                  {selectedDispatch.items?.map((item, i) => (
+                    <div key={i} className="flex justify-between p-2 bg-slate-50 rounded">
+                      <span>{item.productName}</span>
+                      <span className="font-medium">{item.quantity} {item.unit}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {selectedDispatch.dispatchImage && (
+                <div>
+                  <p className="text-sm text-slate-500 mb-2">Dispatch Image</p>
+                  <img
+                    src={selectedDispatch.dispatchImage}
+                    alt="Dispatch"
+                    className="w-full max-h-48 object-cover rounded-lg"
+                  />
+                </div>
+              )}
+            </div>
+          )}
         </DialogContent>
       </Dialog>
     </div>
