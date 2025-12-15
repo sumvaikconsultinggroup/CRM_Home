@@ -608,7 +608,7 @@ function ClientDashboard({ user, client, onLogout }) {
   const [editingItem, setEditingItem] = useState(null)
   const [activeModule, setActiveModule] = useState(null) // Track which module is open
   const [showUpgradeFlow, setShowUpgradeFlow] = useState(false)
-  const [showChat, setShowChat] = useState(false) // Team Chat state
+  // Teams Hub integrated into main navigation
   const authToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null
 
   const fetchData = useCallback(async () => {
