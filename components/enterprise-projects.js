@@ -978,6 +978,219 @@ export function EnterpriseProjects({ authToken, onProjectSelect }) {
           )}
         </>
       )}
+        </TabsContent>
+
+        {/* Templates Tab */}
+        <TabsContent value="templates" className="space-y-6 mt-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold">Project Templates</h3>
+              <p className="text-sm text-slate-500">Create projects quickly from saved templates</p>
+            </div>
+            <Button onClick={() => setShowTemplateDialog(true)}>
+              <Plus className="h-4 w-4 mr-2" /> New Template
+            </Button>
+          </div>
+
+          {templates.length === 0 ? (
+            <GlassCard className="p-12 text-center">
+              <Copy className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+              <p className="text-slate-500 mb-4">No templates yet. Create your first template to speed up project creation.</p>
+              <Button onClick={() => setShowTemplateDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" /> Create Template
+              </Button>
+            </GlassCard>
+          ) : (
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+              {templates.map((template, idx) => (
+                <motion.div
+                  key={template.id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: idx * 0.05 }}
+                >
+                  <GlassCard className="p-5 hover:shadow-xl transition-all">
+                    <div className="flex justify-between items-start mb-3">
+                      <div>
+                        <h3 className="font-semibold text-slate-800">{template.name}</h3>
+                        <Badge variant="outline" className="mt-1">{getTypeLabel(template.projectType)}</Badge>
+                      </div>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => handleDeleteTemplate(template.id)}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500" />
+                      </Button>
+                    </div>
+                    <p className="text-sm text-slate-500 mb-4 line-clamp-2">{template.description || 'No description'}</p>
+                    <div className="flex items-center justify-between text-sm text-slate-500 mb-4">
+                      <span className="flex items-center gap-1">
+                        <Milestone className="h-4 w-4" />
+                        {template.milestones?.length || 0} milestones
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <DollarSign className="h-4 w-4" />
+                        {formatCurrency(template.defaultBudget)}
+                      </span>
+                    </div>
+                    <Button 
+                      className="w-full" 
+                      onClick={() => {
+                        resetForm()
+                        setFormData({ ...formData, projectType: template.projectType })
+                        handleCreateFromTemplate(template.id)
+                      }}
+                    >
+                      <FilePlus className="h-4 w-4 mr-2" /> Use Template
+                    </Button>
+                  </GlassCard>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        {/* Reports Tab */}
+        <TabsContent value="reports" className="space-y-6 mt-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="text-lg font-semibold">Project Reports & Analytics</h3>
+              <p className="text-sm text-slate-500">Insights and analytics across all projects</p>
+            </div>
+            <Button variant="outline" onClick={() => fetchReports()}>
+              <RefreshCw className="h-4 w-4 mr-2" /> Refresh Data
+            </Button>
+          </div>
+
+          {reports ? (
+            <div className="space-y-6">
+              {/* Summary Cards */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <GlassCard className="p-4">
+                  <p className="text-sm text-slate-500">Active Projects</p>
+                  <p className="text-3xl font-bold text-indigo-600">{reports.summary?.activeProjects || 0}</p>
+                </GlassCard>
+                <GlassCard className="p-4">
+                  <p className="text-sm text-slate-500">Completed</p>
+                  <p className="text-3xl font-bold text-emerald-600">{reports.summary?.completedProjects || 0}</p>
+                </GlassCard>
+                <GlassCard className="p-4">
+                  <p className="text-sm text-slate-500">Overdue</p>
+                  <p className="text-3xl font-bold text-red-600">{reports.summary?.overdueProjects || 0}</p>
+                </GlassCard>
+                <GlassCard className="p-4">
+                  <p className="text-sm text-slate-500">Avg Progress</p>
+                  <p className="text-3xl font-bold text-amber-600">{reports.avgProgress || 0}%</p>
+                </GlassCard>
+              </div>
+
+              {/* Financial Summary */}
+              <GlassCard className="p-6">
+                <h4 className="font-semibold mb-4 flex items-center gap-2">
+                  <DollarSign className="h-5 w-5 text-emerald-600" /> Financial Overview
+                </h4>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-sm text-slate-500">Total Budget</p>
+                    <p className="text-xl font-bold text-slate-800">{formatCurrency(reports.financial?.totalBudget)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500">Total Spent</p>
+                    <p className="text-xl font-bold text-slate-800">{formatCurrency(reports.financial?.totalSpent)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500">Avg Budget/Project</p>
+                    <p className="text-xl font-bold text-slate-800">{formatCurrency(reports.financial?.averageBudget)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500">Budget Remaining</p>
+                    <p className="text-xl font-bold text-emerald-600">
+                      {formatCurrency((reports.financial?.totalBudget || 0) - (reports.financial?.totalSpent || 0))}
+                    </p>
+                  </div>
+                </div>
+              </GlassCard>
+
+              {/* Status Distribution */}
+              <div className="grid md:grid-cols-2 gap-6">
+                <GlassCard className="p-6">
+                  <h4 className="font-semibold mb-4">Projects by Status</h4>
+                  <div className="space-y-3">
+                    {PROJECT_STATUSES.map(status => {
+                      const count = reports.byStatus?.[status.id] || 0
+                      const total = reports.summary?.totalProjects || 1
+                      const percent = Math.round((count / total) * 100)
+                      return (
+                        <div key={status.id} className="flex items-center gap-3">
+                          <div className="w-24 text-sm">{status.label}</div>
+                          <div className="flex-1 bg-slate-100 rounded-full h-3 overflow-hidden">
+                            <div 
+                              className={`h-full ${status.color.replace('text-', 'bg-').replace('-700', '-500')}`}
+                              style={{ width: `${percent}%` }}
+                            />
+                          </div>
+                          <div className="w-12 text-right text-sm font-medium">{count}</div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </GlassCard>
+
+                <GlassCard className="p-6">
+                  <h4 className="font-semibold mb-4">Task Status</h4>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-4 bg-emerald-50 rounded-lg">
+                      <p className="text-3xl font-bold text-emerald-600">{reports.tasks?.completed || 0}</p>
+                      <p className="text-sm text-slate-500">Completed</p>
+                    </div>
+                    <div className="text-center p-4 bg-amber-50 rounded-lg">
+                      <p className="text-3xl font-bold text-amber-600">{reports.tasks?.inProgress || 0}</p>
+                      <p className="text-sm text-slate-500">In Progress</p>
+                    </div>
+                    <div className="text-center p-4 bg-blue-50 rounded-lg">
+                      <p className="text-3xl font-bold text-blue-600">{reports.tasks?.pending || 0}</p>
+                      <p className="text-sm text-slate-500">Pending</p>
+                    </div>
+                    <div className="text-center p-4 bg-red-50 rounded-lg">
+                      <p className="text-3xl font-bold text-red-600">{reports.tasks?.overdue || 0}</p>
+                      <p className="text-sm text-slate-500">Overdue</p>
+                    </div>
+                  </div>
+                </GlassCard>
+              </div>
+
+              {/* Top Projects */}
+              {reports.topProjectsByBudget && reports.topProjectsByBudget.length > 0 && (
+                <GlassCard className="p-6">
+                  <h4 className="font-semibold mb-4">Top Projects by Budget</h4>
+                  <div className="space-y-3">
+                    {reports.topProjectsByBudget.map((project, idx) => (
+                      <div key={project.id} className="flex items-center gap-4 p-3 bg-slate-50 rounded-lg">
+                        <span className="w-8 h-8 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center font-bold">
+                          {idx + 1}
+                        </span>
+                        <div className="flex-1">
+                          <p className="font-medium">{project.name}</p>
+                          <p className="text-xs text-slate-400">{project.projectNumber}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium text-emerald-600">{formatCurrency(project.budget)}</p>
+                          <p className="text-xs text-slate-400">{project.progress}% complete</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </GlassCard>
+              )}
+            </div>
+          ) : (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-indigo-600" />
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       {/* Create Project Dialog */}
       <Dialog open={showCreateDialog} onOpenChange={setShowCreateDialog}>
