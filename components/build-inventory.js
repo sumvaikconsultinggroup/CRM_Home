@@ -169,6 +169,63 @@ export function BuildInventory({ token, user, clientModules = [] }) {
     }
   }, [token])
 
+  // Fetch invoice sync status
+  const fetchInvoiceSyncStatus = useCallback(async () => {
+    if (!token) return
+    try {
+      const res = await fetch('/api/inventory/dispatch/sync', { headers: getHeaders() })
+      const data = await res.json()
+      setInvoiceSyncStatus(data)
+      setAutoSyncEnabled(data.autoSyncEnabled ?? true)
+    } catch (error) {
+      console.error('Invoice sync status fetch error:', error)
+    }
+  }, [token])
+
+  // Sync dispatches from invoices
+  const syncDispatchesFromInvoices = useCallback(async (invoiceIds = null, syncAll = true) => {
+    if (!token) return
+    setSyncingInvoices(true)
+    try {
+      const res = await fetch('/api/inventory/dispatch/sync', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({ invoiceIds, syncAll })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        if (data.synced > 0) {
+          toast.success(`${data.synced} dispatch(es) synced from invoices`)
+          fetchDispatches()
+        }
+        fetchInvoiceSyncStatus()
+      }
+      return data
+    } catch (error) {
+      console.error('Invoice sync error:', error)
+    } finally {
+      setSyncingInvoices(false)
+    }
+  }, [token, fetchDispatches])
+
+  // Toggle auto-sync
+  const toggleAutoSync = useCallback(async (enabled) => {
+    if (!token) return
+    try {
+      const res = await fetch('/api/inventory/dispatch/sync', {
+        method: 'PUT',
+        headers: getHeaders(),
+        body: JSON.stringify({ autoSyncEnabled: enabled, syncInterval: 3000 })
+      })
+      if (res.ok) {
+        setAutoSyncEnabled(enabled)
+        toast.success(`Auto-sync ${enabled ? 'enabled' : 'disabled'}`)
+      }
+    } catch (error) {
+      console.error('Toggle auto-sync error:', error)
+    }
+  }, [token])
+
   // Fetch reports
   const fetchReport = useCallback(async (type = 'summary') => {
     if (!token) return
