@@ -2405,7 +2405,23 @@ export function AdvancedLeadManagement({
             exit={{ height: 0, opacity: 0 }}
             className="bg-white border-b overflow-hidden"
           >
-            <div className="p-4 grid md:grid-cols-4 gap-4">
+            <div className="p-4 grid md:grid-cols-5 gap-4">
+              <div>
+                <Label className="text-xs">Time Period</Label>
+                <Select value={filters.timePeriod} onValueChange={(v) => setFilters({ ...filters, timePeriod: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Time</SelectItem>
+                    <SelectItem value="today">Today</SelectItem>
+                    <SelectItem value="week">This Week</SelectItem>
+                    <SelectItem value="month">This Month</SelectItem>
+                    <SelectItem value="quarter">This Quarter</SelectItem>
+                    <SelectItem value="year">This Year</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div>
                 <Label className="text-xs">Source</Label>
                 <Select value={filters.source} onValueChange={(v) => setFilters({ ...filters, source: v })}>
@@ -2434,13 +2450,27 @@ export function AdvancedLeadManagement({
                   </SelectContent>
                 </Select>
               </div>
-              <div className="md:col-span-2 flex items-end">
+              <div>
+                <Label className="text-xs">Stage</Label>
+                <Select value={filters.status} onValueChange={(v) => setFilters({ ...filters, status: v })}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Stages</SelectItem>
+                    {LEAD_STAGES.map(s => (
+                      <SelectItem key={s.id} value={s.id}>{s.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex items-end">
                 <Button 
                   variant="outline" 
                   size="sm"
-                  onClick={() => setFilters({ status: 'all', source: 'all', priority: 'all', assignedTo: 'all' })}
+                  onClick={() => setFilters({ status: 'all', source: 'all', priority: 'all', assignedTo: 'all', timePeriod: 'all' })}
                 >
-                  Clear Filters
+                  Clear All
                 </Button>
               </div>
             </div>
