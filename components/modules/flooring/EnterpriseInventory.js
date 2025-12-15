@@ -159,6 +159,16 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
   const [alerts, setAlerts] = useState([])
   const [alertSummary, setAlertSummary] = useState({})
   
+  // Reports State
+  const [reportData, setReportData] = useState(null)
+  const [selectedReport, setSelectedReport] = useState('summary')
+  const [reportLoading, setReportLoading] = useState(false)
+  
+  // Cycle Count State
+  const [cycleCounts, setCycleCounts] = useState([])
+  const [cycleCountSummary, setCycleCountSummary] = useState({})
+  const [cycleCountForm, setCycleCountForm] = useState({})
+  
   // UI State
   const [loading, setLoading] = useState(false)
   const [searchTerm, setSearchTerm] = useState('')
