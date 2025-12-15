@@ -172,6 +172,21 @@ export async function GET(request) {
         return successResponse(sanitizeDocuments(messages))
       }
 
+      case 'announcements': {
+        // Get team announcements
+        const announcementsCollection = db.collection('announcements')
+        const filter = {}
+        if (teamId) filter.teamId = teamId
+        
+        const announcements = await announcementsCollection
+          .find(filter)
+          .sort({ createdAt: -1 })
+          .limit(20)
+          .toArray()
+        
+        return successResponse(sanitizeDocuments(announcements))
+      }
+
       default:
         return errorResponse('Invalid type parameter', 400)
     }
