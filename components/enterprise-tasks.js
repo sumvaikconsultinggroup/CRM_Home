@@ -568,7 +568,7 @@ const TaskDetailSheet = ({ task, open, onClose, onUpdate, onDelete, users, proje
   const [loading, setLoading] = useState(false)
   const [activeTab, setActiveTab] = useState('details')
 
-  // Initialize form data when task changes
+  // Initialize form data when task changes - use key on parent to reset component instead of effect
   const taskFormData = useMemo(() => {
     if (task) {
       return { ...task }
@@ -576,11 +576,11 @@ const TaskDetailSheet = ({ task, open, onClose, onUpdate, onDelete, users, proje
     return {}
   }, [task])
 
-  useEffect(() => {
-    if (task) {
-      setEditMode(false)
-    }
-  }, [task])
+  // Reset edit mode when sheet opens/closes - use onOpenChange callback instead
+  const handleClose = () => {
+    setEditMode(false)
+    onClose()
+  }
 
   // Use taskFormData as initial state, but track local edits
   const currentFormData = editMode ? formData : taskFormData
