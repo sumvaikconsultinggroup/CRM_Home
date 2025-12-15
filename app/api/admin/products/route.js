@@ -76,8 +76,7 @@ const BUILD_PRODUCTS = {
       starter: 1299,
       professional: 2999,
       enterprise: 5999
-    },
-    comingSoon: true
+    }
   }
 }
 
