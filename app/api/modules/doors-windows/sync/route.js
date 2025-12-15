@@ -22,21 +22,20 @@ export async function POST(request) {
     const events = db.collection('dw_events')
     const now = new Date().toISOString()
 
-    // SYNC ALL - Run all sync operations
+    // SYNC ALL - Run all sync operations (Projects and Contacts ONLY - NOT Leads)
+    // Leads that are "won" become Projects in CRM, so we only sync Projects
     if (action === 'sync-all' || action === 'sync_all') {
       const projects = db.collection('projects')
-      const leads = db.collection('leads')
       const contacts = db.collection('contacts')
       const dwProjects = db.collection('doors_windows_projects')
       const dwContacts = db.collection('dw_contacts')
 
       const results = {
         projects: { created: 0, errors: [] },
-        leads: { created: 0, errors: [] },
         contacts: { created: 0, updated: 0 }
       }
 
-      // 1. Sync Projects
+      // 1. Sync Projects ONLY (Leads are NOT synced - they become Projects when won)
       const syncedProjectIds = (await dwProjects.find({ crmProjectId: { $ne: null } }).toArray())
         .map(r => r.crmProjectId)
       
@@ -92,12 +91,7 @@ export async function POST(request) {
         }
       }
 
-      // 2. Sync Leads
-      const syncedLeadIds = (await dwProjects.find({ leadId: { $ne: null } }).toArray())
-        .map(r => r.leadId)
-
-      const unsyncedLeads = await leads.find({
-        id: { $nin: syncedLeadIds },
+      // 2. Sync Contacts (NO Leads sync - leads become projects when won)
         status: { $nin: ['converted', 'lost'] }
       }).toArray()
 
