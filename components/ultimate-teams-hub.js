@@ -728,6 +728,309 @@ const CreateTaskDialog = ({ open, onClose, message, onCreateTask }) => {
   )
 }
 
+// ==================== ACTIVITY FEED COMPONENT ====================
+const ActivityFeed = ({ activities = [], users = [], onNavigate }) => {
+  const getActivityIcon = (type) => {
+    const icons = {
+      message: MessageCircle,
+      mention: AtSign,
+      reaction: Heart,
+      channel_created: Hash,
+      team_joined: Users,
+      announcement: Megaphone,
+      task_created: ListTodo,
+      file_shared: File
+    }
+    return icons[type] || Activity
+  }
+  
+  const getActivityColor = (type) => {
+    const colors = {
+      message: 'bg-blue-500',
+      mention: 'bg-purple-500',
+      reaction: 'bg-pink-500',
+      channel_created: 'bg-green-500',
+      team_joined: 'bg-indigo-500',
+      announcement: 'bg-amber-500',
+      task_created: 'bg-teal-500',
+      file_shared: 'bg-orange-500'
+    }
+    return colors[type] || 'bg-slate-500'
+  }
+  
+  const formatTimeAgo = (date) => {
+    const now = new Date()
+    const d = new Date(date)
+    const diff = Math.floor((now - d) / 1000)
+    
+    if (diff < 60) return 'Just now'
+    if (diff < 3600) return `${Math.floor(diff / 60)}m ago`
+    if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`
+    return d.toLocaleDateString()
+  }
+  
+  if (activities.length === 0) {
+    return (
+      <div className="flex-1 flex items-center justify-center">
+        <div className="text-center">
+          <Activity className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+          <h3 className="font-semibold text-slate-900 mb-1">No recent activity</h3>
+          <p className="text-sm text-slate-500">Your activity feed will appear here</p>
+        </div>
+      </div>
+    )
+  }
+  
+  return (
+    <ScrollArea className="flex-1">
+      <div className="p-4 space-y-3">
+        {activities.map((activity, idx) => {
+          const Icon = getActivityIcon(activity.type)
+          return (
+            <motion.div
+              key={activity.id || idx}
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: idx * 0.05 }}
+              className="flex gap-3 p-3 bg-white rounded-xl hover:shadow-md transition-shadow cursor-pointer"
+              onClick={() => onNavigate?.(activity)}
+            >
+              <div className={`h-10 w-10 rounded-xl ${getActivityColor(activity.type)} flex items-center justify-center`}>
+                <Icon className="h-5 w-5 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm text-slate-900">
+                  <span className="font-semibold">{activity.actorName || 'Someone'}</span>
+                  {' '}{activity.description || activity.message}
+                </p>
+                {activity.preview && (
+                  <p className="text-xs text-slate-500 truncate mt-1">{activity.preview}</p>
+                )}
+                <p className="text-xs text-slate-400 mt-1">{formatTimeAgo(activity.createdAt)}</p>
+              </div>
+            </motion.div>
+          )
+        })}
+      </div>
+    </ScrollArea>
+  )
+}
+
+// ==================== NOTIFICATION CENTER COMPONENT ====================
+const NotificationCenter = ({ notifications = [], onMarkRead, onClear }) => {
+  const [filter, setFilter] = useState('all') // all, unread, mentions
+  
+  const filteredNotifications = useMemo(() => {
+    if (filter === 'unread') return notifications.filter(n => !n.read)
+    if (filter === 'mentions') return notifications.filter(n => n.type === 'mention')
+    return notifications
+  }, [notifications, filter])
+  
+  const unreadCount = notifications.filter(n => !n.read).length
+  
+  return (
+    <div className="flex flex-col h-full">
+      <div className="p-4 border-b bg-white">
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="font-semibold flex items-center gap-2">
+            <Bell className="h-5 w-5" />
+            Notifications
+            {unreadCount > 0 && (
+              <Badge className="bg-red-500">{unreadCount}</Badge>
+            )}
+          </h3>
+          {notifications.length > 0 && (
+            <Button variant="ghost" size="sm" onClick={onClear}>
+              Clear all
+            </Button>
+          )}
+        </div>
+        <div className="flex gap-1">
+          {['all', 'unread', 'mentions'].map(f => (
+            <Button
+              key={f}
+              variant={filter === f ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => setFilter(f)}
+              className="capitalize"
+            >
+              {f}
+            </Button>
+          ))}
+        </div>
+      </div>
+      
+      <ScrollArea className="flex-1">
+        {filteredNotifications.length === 0 ? (
+          <div className="p-8 text-center text-slate-500">
+            <Bell className="h-12 w-12 mx-auto mb-3 text-slate-300" />
+            <p>No notifications</p>
+          </div>
+        ) : (
+          <div className="p-2 space-y-1">
+            {filteredNotifications.map((notif, idx) => (
+              <motion.div
+                key={notif.id || idx}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: idx * 0.03 }}
+                className={`p-3 rounded-lg cursor-pointer transition-colors ${
+                  notif.read ? 'bg-white hover:bg-slate-50' : 'bg-blue-50 hover:bg-blue-100'
+                }`}
+                onClick={() => onMarkRead?.(notif.id)}
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                    notif.type === 'mention' ? 'bg-purple-100 text-purple-600' :
+                    notif.type === 'announcement' ? 'bg-amber-100 text-amber-600' :
+                    'bg-blue-100 text-blue-600'
+                  }`}>
+                    {notif.type === 'mention' ? <AtSign className="h-4 w-4" /> :
+                     notif.type === 'announcement' ? <Megaphone className="h-4 w-4" /> :
+                     <MessageCircle className="h-4 w-4" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-slate-900">{notif.title}</p>
+                    <p className="text-xs text-slate-500 truncate">{notif.message}</p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {new Date(notif.createdAt).toLocaleTimeString()}
+                    </p>
+                  </div>
+                  {!notif.read && (
+                    <div className="h-2 w-2 rounded-full bg-blue-500" />
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </ScrollArea>
+    </div>
+  )
+}
+
+// ==================== USER PROFILE PANEL ====================
+const UserProfilePanel = ({ user, onClose, onStartDM }) => {
+  if (!user) return null
+  
+  const getInitials = (name) => (name || 'U').substring(0, 2).toUpperCase()
+  
+  return (
+    <div className="flex flex-col h-full">
+      <div className="p-4 border-b bg-white flex items-center justify-between">
+        <h3 className="font-semibold">Profile</h3>
+        <Button variant="ghost" size="icon" onClick={onClose}>
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+      
+      <div className="p-6">
+        {/* Avatar */}
+        <div className="text-center mb-6">
+          <Avatar className="h-24 w-24 mx-auto mb-4">
+            <AvatarImage src={user.avatar} />
+            <AvatarFallback className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white text-2xl">
+              {getInitials(user.name || user.email)}
+            </AvatarFallback>
+          </Avatar>
+          <h2 className="text-xl font-bold text-slate-900">{user.name || 'Unknown'}</h2>
+          <p className="text-sm text-slate-500">{user.email}</p>
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <OnlineStatus status={user.status || 'offline'} size="sm" />
+            <span className="text-sm text-slate-600 capitalize">{user.status || 'offline'}</span>
+          </div>
+        </div>
+        
+        {/* Quick Actions */}
+        <div className="space-y-2">
+          <Button className="w-full" onClick={() => onStartDM?.(user.id)}>
+            <MessageCircle className="h-4 w-4 mr-2" /> Message
+          </Button>
+          <Button variant="outline" className="w-full">
+            <Video className="h-4 w-4 mr-2" /> Video Call
+          </Button>
+          <Button variant="outline" className="w-full">
+            <Phone className="h-4 w-4 mr-2" /> Voice Call
+          </Button>
+        </div>
+        
+        {/* Info */}
+        <Separator className="my-6" />
+        <div className="space-y-4">
+          <div>
+            <Label className="text-xs text-slate-500">Role</Label>
+            <p className="font-medium">{user.role || 'Team Member'}</p>
+          </div>
+          <div>
+            <Label className="text-xs text-slate-500">Local Time</Label>
+            <p className="font-medium">{new Date().toLocaleTimeString()}</p>
+          </div>
+          {user.department && (
+            <div>
+              <Label className="text-xs text-slate-500">Department</Label>
+              <p className="font-medium">{user.department}</p>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ==================== STARRED MESSAGES PANEL ====================
+const StarredMessagesPanel = ({ messages = [], onNavigate, onClose }) => {
+  return (
+    <div className="flex flex-col h-full">
+      <div className="p-4 border-b bg-white flex items-center justify-between">
+        <h3 className="font-semibold flex items-center gap-2">
+          <Star className="h-5 w-5 text-amber-500" />
+          Saved Messages
+        </h3>
+        <Button variant="ghost" size="icon" onClick={onClose}>
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+      
+      <ScrollArea className="flex-1">
+        {messages.length === 0 ? (
+          <div className="p-8 text-center text-slate-500">
+            <BookMarked className="h-12 w-12 mx-auto mb-3 text-slate-300" />
+            <p className="font-medium">No saved messages</p>
+            <p className="text-sm mt-1">Save important messages to find them later</p>
+          </div>
+        ) : (
+          <div className="p-2 space-y-2">
+            {messages.map((msg, idx) => (
+              <motion.div
+                key={msg.id || idx}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="p-3 bg-white rounded-lg hover:shadow-md transition-shadow cursor-pointer"
+                onClick={() => onNavigate?.(msg)}
+              >
+                <div className="flex items-start gap-3">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback className="bg-indigo-100 text-indigo-600 text-xs">
+                      {(msg.senderName || 'U').substring(0, 2).toUpperCase()}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium">{msg.senderName}</p>
+                    <p className="text-sm text-slate-600 line-clamp-2">{msg.content}</p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {new Date(msg.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        )}
+      </ScrollArea>
+    </div>
+  )
+}
+
 // ==================== MAIN COMPONENT ====================
 export function UltimateTeamsHub({ authToken, users = [], currentUser }) {
   // ==================== STATE ====================
@@ -738,6 +1041,9 @@ export function UltimateTeamsHub({ authToken, users = [], currentUser }) {
   const [dmChannels, setDmChannels] = useState([])
   const [announcements, setAnnouncements] = useState([])
   const [unreadCounts, setUnreadCounts] = useState({})
+  const [activities, setActivities] = useState([])
+  const [notifications, setNotifications] = useState([])
+  const [savedMessages, setSavedMessages] = useState([])
   
   // UI State
   const [loading, setLoading] = useState(true)
