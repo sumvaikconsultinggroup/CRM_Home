@@ -986,7 +986,7 @@ function ClientDashboard({ user, client, onLogout }) {
               </motion.div>
             )}
 
-            {/* Tasks Tab - Enterprise Task Management */}
+            {/* Tasks Tab - Jira-Style Task Management */}
             {activeTab === 'tasks' && (
               <motion.div
                 key="tasks"
@@ -994,7 +994,7 @@ function ClientDashboard({ user, client, onLogout }) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
               >
-                <EnterpriseTaskManager token={authToken} />
+                <JiraTaskManager token={authToken} />
               </motion.div>
             )}
 
