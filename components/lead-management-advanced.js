@@ -1468,7 +1468,7 @@ const AddLeadDialog = ({ open, onClose, onSave, users = [] }) => {
                     <SelectValue placeholder="Select team member" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Unassigned</SelectItem>
+                    <SelectItem value="unassigned">Unassigned</SelectItem>
                     {users.map(u => (
                       <SelectItem key={u.id} value={u.id}>{u.name}</SelectItem>
                     ))}
