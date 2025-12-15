@@ -180,7 +180,7 @@ export function BuildInventory({ token, user, clientModules = [] }) {
     } catch (error) {
       console.error('Invoice sync status fetch error:', error)
     }
-  }, [token])
+  }, [token, getHeaders])
 
   // Sync dispatches from invoices
   const syncDispatchesFromInvoices = useCallback(async (invoiceIds = null, syncAll = true) => {
@@ -206,7 +206,7 @@ export function BuildInventory({ token, user, clientModules = [] }) {
     } finally {
       setSyncingInvoices(false)
     }
-  }, [token, fetchDispatches])
+  }, [token, getHeaders, fetchDispatches, fetchInvoiceSyncStatus])
 
   // Toggle auto-sync
   const toggleAutoSync = useCallback(async (enabled) => {
@@ -224,7 +224,7 @@ export function BuildInventory({ token, user, clientModules = [] }) {
     } catch (error) {
       console.error('Toggle auto-sync error:', error)
     }
-  }, [token])
+  }, [token, getHeaders])
 
   // Fetch reports
   const fetchReport = useCallback(async (type = 'summary') => {
@@ -240,7 +240,7 @@ export function BuildInventory({ token, user, clientModules = [] }) {
     } finally {
       setLoadingReport(false)
     }
-  }, [token])
+  }, [token, getHeaders])
 
   useEffect(() => {
     if (token) {
