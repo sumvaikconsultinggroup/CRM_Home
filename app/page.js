@@ -29,7 +29,7 @@ import {
   BarChart3, PieChart as PieChartIcon, ArrowUpRight, ArrowDownRight, Calendar, UserPlus, Package,
   Sparkles, Bell, Search, Filter, Download, RefreshCw, Send, MessageSquare, Palette,
   Globe, Image, FileText, Star, Crown, ChevronDown, ExternalLink, Lock, Square,
-  CalendarDays, Plug, Paintbrush
+  CalendarDays, Plug
 } from 'lucide-react'
 import { EnterpriseFlooringModule } from '@/components/modules/enterprise-flooring-module'
 import { PaintsCoatingsModule } from '@/components/modules/paints-coatings-module'
