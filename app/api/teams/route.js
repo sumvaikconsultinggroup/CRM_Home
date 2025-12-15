@@ -360,7 +360,7 @@ export async function POST(request) {
       }
 
       case 'create_dm': {
-        const { targetUserId } = body
+        const { targetUserId, targetUserName, targetUserEmail } = body
         if (!targetUserId) return errorResponse('Target user ID required', 400)
 
         const channelsCollection = db.collection('channels')
@@ -378,10 +378,18 @@ export async function POST(request) {
           return successResponse(sanitizeDocument(existingDM))
         }
 
-        // Get target user info
+        // Get target user info - try DB first, then use provided info
         const usersCollection = db.collection('users')
-        const targetUser = await usersCollection.findOne({ id: targetUserId })
-        if (!targetUser) return errorResponse('Target user not found', 404)
+        let targetUser = await usersCollection.findOne({ id: targetUserId })
+        
+        // If not in DB, use provided info or create placeholder
+        if (!targetUser) {
+          targetUser = {
+            id: targetUserId,
+            name: targetUserName || targetUserEmail || 'User',
+            email: targetUserEmail || `${targetUserId}@placeholder.com`
+          }
+        }
 
         const dmChannel = {
           id: uuidv4(),
