@@ -484,6 +484,61 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
     }
   }
 
+  // Create Cycle Count
+  const handleCreateCycleCount = async () => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/modules/wooden-flooring/inventory/cycle-count', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(cycleCountForm)
+      })
+      
+      if (res.ok) {
+        toast.success('Cycle count created')
+        fetchCycleCounts()
+        setDialogOpen({ type: null, data: null })
+        setCycleCountForm({})
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to create cycle count')
+      }
+    } catch (error) {
+      toast.error('An error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Update Cycle Count
+  const handleCycleCountAction = async (cycleCountId, action, data = {}) => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/modules/wooden-flooring/inventory/cycle-count', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ id: cycleCountId, action, ...data })
+      })
+      
+      if (res.ok) {
+        toast.success(`Cycle count ${action.replace(/_/g, ' ')} successfully`)
+        fetchCycleCounts()
+        if (action === 'apply_adjustments') {
+          fetchStock()
+          fetchMovements()
+        }
+        setDialogOpen({ type: null, data: null })
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to update cycle count')
+      }
+    } catch (error) {
+      toast.error('An error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // =============================================
   // RENDER: WAREHOUSE MANAGEMENT
   // =============================================
