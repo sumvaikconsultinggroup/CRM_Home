@@ -844,13 +844,13 @@ const LedgerView = ({ expenses, onExport }) => {
       return date >= startDate && date <= endDate
     }).sort((a, b) => new Date(a.date) - new Date(b.date))
     
-    let runningBalance = 0
+    let balance = 0
     const entries = monthExpenses.map((e, i) => {
-      runningBalance += e.amount || 0
+      balance += e.amount || 0
       return {
         ...e,
         serialNo: i + 1,
-        runningBalance
+        runningBalance: balance
       }
     })
     
