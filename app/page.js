@@ -190,6 +190,7 @@ function SuperAdminDashboard({ user, onLogout }) {
   const [newPassword, setNewPassword] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [loading, setLoading] = useState(true)
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
 
   const handleResetPassword = async () => {
     if (!newPassword || newPassword.length < 6) {
