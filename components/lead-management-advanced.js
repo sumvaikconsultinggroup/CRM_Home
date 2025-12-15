@@ -915,31 +915,36 @@ const LeadDetailPanel = ({ lead, onClose, onUpdate, onAddConversation, onStatusC
               </Card>
             )}
             
-            {/* Stage Change Actions */}
-            <Card className="p-4">
-              <h4 className="font-semibold mb-3">Change Stage</h4>
-              <div className="flex flex-wrap gap-2">
-                {LEAD_STAGES.filter(s => s.id !== lead.status).map(stage => (
-                  <Button 
-                    key={stage.id} 
-                    variant="outline" 
-                    size="sm"
-                    className={stage.id === 'won' ? 'border-green-300 text-green-700 hover:bg-green-50' : 
-                               stage.id === 'lost' ? 'border-red-300 text-red-700 hover:bg-red-50' : ''}
-                    onClick={() => {
-                      if (stage.id === 'won') {
-                        onConvertToProject(lead)
-                      } else {
-                        onStatusChange(lead.id, stage.id)
-                      }
-                    }}
-                  >
-                    <stage.icon className="h-4 w-4 mr-1" />
-                    {stage.label}
-                  </Button>
-                ))}
-              </div>
-            </Card>
+            {/* Stage Change Actions - ONLY for active leads */}
+            {!['won', 'lost'].includes(lead.status) && (
+              <Card className="p-4">
+                <h4 className="font-semibold mb-3">Change Stage</h4>
+                <div className="flex flex-wrap gap-2">
+                  {LEAD_STAGES.filter(s => s.id !== lead.status).map(stage => (
+                    <Button 
+                      key={stage.id} 
+                      variant="outline" 
+                      size="sm"
+                      className={stage.id === 'won' ? 'border-green-300 text-green-700 hover:bg-green-50' : 
+                                 stage.id === 'lost' ? 'border-red-300 text-red-700 hover:bg-red-50' : ''}
+                      onClick={() => {
+                        if (stage.id === 'won') {
+                          onConvertToProject(lead)
+                        } else if (stage.id === 'lost') {
+                          // For lost, we'll let the parent handle it with the dialog
+                          onStatusChange(lead.id, 'lost')
+                        } else {
+                          onStatusChange(lead.id, stage.id)
+                        }
+                      }}
+                    >
+                      <stage.icon className="h-4 w-4 mr-1" />
+                      {stage.label}
+                    </Button>
+                  ))}
+                </div>
+              </Card>
+            )}
           </TabsContent>
           
           {/* Conversations Tab */}
