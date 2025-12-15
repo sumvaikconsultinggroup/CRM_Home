@@ -647,7 +647,7 @@ const TaskDetailSheet = ({ task, open, onClose, onUpdate, onDelete, users, proje
   if (!task) return null
 
   return (
-    <Sheet open={open} onOpenChange={onClose}>
+    <Sheet open={open} onOpenChange={handleClose}>
       <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
         <SheetHeader className="pb-4 border-b">
           <div className="flex items-center justify-between">
