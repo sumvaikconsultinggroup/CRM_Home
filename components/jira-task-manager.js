@@ -1433,7 +1433,7 @@ const TaskDetailModal = ({ task, open, onClose, onUpdate, onDelete, users, proje
 // MAIN COMPONENT
 // =============================================
 
-export function JiraTaskManager({ token }) {
+export function JiraTaskManager({ token, currentUser }) {
   const [tasks, setTasks] = useState([])
   const [stats, setStats] = useState(null)
   const [users, setUsers] = useState([])
@@ -1442,21 +1442,28 @@ export function JiraTaskManager({ token }) {
   const [refreshKey, setRefreshKey] = useState(0)
 
   // View & Filters
-  const [viewMode, setViewMode] = useState('kanban')
+  const [viewMode, setViewMode] = useState('kanban') // kanban, list, calendar
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState([])
   const [priorityFilter, setPriorityFilter] = useState([])
   const [assigneeFilter, setAssigneeFilter] = useState([])
   const [projectFilter, setProjectFilter] = useState('')
+  const [quickFilter, setQuickFilter] = useState(null) // my_tasks, due_today, overdue, this_week, high_priority, unassigned
+  const [calendarDate, setCalendarDate] = useState(new Date())
 
-  // Selection
+  // Selection for bulk actions
   const [selectedTasks, setSelectedTasks] = useState([])
   const [selectedTask, setSelectedTask] = useState(null)
   const [detailOpen, setDetailOpen] = useState(false)
 
+  // Sorting
+  const [sortField, setSortField] = useState('createdAt')
+  const [sortDirection, setSortDirection] = useState('desc')
+
   // Dialogs
   const [createDialogOpen, setCreateDialogOpen] = useState(false)
   const [quickCreateStatus, setQuickCreateStatus] = useState(null)
+  const [bulkActionOpen, setBulkActionOpen] = useState(false)
 
   const headers = useMemo(() => ({
     'Content-Type': 'application/json',
