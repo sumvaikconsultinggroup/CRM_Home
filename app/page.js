@@ -862,7 +862,7 @@ function ClientDashboard({ user, client, onLogout }) {
                 } else if (item.isModule && item.id === 'doors-windows-module') {
                   setActiveModule('doors-windows')
                 } else if (item.isChat) {
-                  setShowChat(true)
+                  setActiveTab('teams') // Redirect chat to Teams Hub
                 } else {
                   setActiveTab(item.id)
                 }
