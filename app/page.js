@@ -1104,49 +1104,24 @@ function ClientDashboard({ user, client, onLogout }) {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="space-y-6"
+                className="h-[calc(100vh-180px)]"
               >
-                <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-bold">Expenses</h2>
-                  <Button onClick={() => { setDialogType('expense'); setEditingItem(null); setShowDialog(true); }}>
-                    <Plus className="h-4 w-4 mr-2" /> Add Expense
-                  </Button>
-                </div>
-
-                <div className="grid lg:grid-cols-3 gap-4">
-                  <StatCard title="Total Expenses" value={`₹${stats?.overview.totalExpenses?.toLocaleString()}`} icon={Receipt} />
-                </div>
-                
-                <ExpenseCharts expenses={expenses} />
-
-                <GlassCard className="p-6">
-                  <h3 className="font-semibold mb-4">Recent Expenses</h3>
-                  <div className="space-y-3">
-                    {expenses.map((expense, i) => (
-                      <motion.div
-                        key={expense.id}
-                        className="flex items-center justify-between p-4 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors cursor-pointer"
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: i * 0.03 }}
-                        onClick={() => { setDialogType('expense'); setEditingItem(expense); setShowDialog(true); }}
-                      >
-                        <div>
-                          <p className="font-medium">{expense.description}</p>
-                          <p className="text-sm text-muted-foreground">
-                            {expense.category || 'Uncategorized'} • {expense.date ? new Date(expense.date).toLocaleDateString() : 'No date'}
-                          </p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <span className="font-bold">₹{expense.amount?.toLocaleString() || '0'}</span>
-                          <Badge variant={expense.approved ? 'default' : 'secondary'}>
-                            {expense.approved ? 'Approved' : 'Pending'}
-                          </Badge>
-                        </div>
-                      </motion.div>
-                    ))}
-                  </div>
-                </GlassCard>
+                <AdvancedExpenseManagement
+                  expenses={expenses}
+                  user={user}
+                  projects={projects}
+                  onAddExpense={() => { setDialogType('expense'); setEditingItem(null); setShowDialog(true); }}
+                  onEditExpense={(expense) => { setDialogType('expense'); setEditingItem(expense); setShowDialog(true); }}
+                  onDeleteExpense={async (expense) => {
+                    try {
+                      await api.deleteExpense(expense.id)
+                      await fetchData()
+                    } catch (error) {
+                      console.error('Failed to delete expense:', error)
+                    }
+                  }}
+                  onRefresh={fetchData}
+                />
               </motion.div>
             )}
 
