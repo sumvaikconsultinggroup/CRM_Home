@@ -175,6 +175,150 @@ const FileIcon = ({ mimeType, extension }) => {
 }
 
 // =============================================
+// QUICK FILTER CHIPS
+// =============================================
+
+const QUICK_FILTERS = {
+  my_tasks: { label: 'My Tasks', icon: User, color: 'bg-blue-100 text-blue-700 border-blue-300' },
+  due_today: { label: 'Due Today', icon: CalendarIcon, color: 'bg-amber-100 text-amber-700 border-amber-300' },
+  overdue: { label: 'Overdue', icon: AlertCircle, color: 'bg-red-100 text-red-700 border-red-300' },
+  this_week: { label: 'This Week', icon: CalendarDays, color: 'bg-purple-100 text-purple-700 border-purple-300' },
+  high_priority: { label: 'High Priority', icon: Flag, color: 'bg-orange-100 text-orange-700 border-orange-300' },
+  unassigned: { label: 'Unassigned', icon: Users, color: 'bg-slate-100 text-slate-700 border-slate-300' }
+}
+
+// =============================================
+// CALENDAR VIEW COMPONENT
+// =============================================
+
+const CalendarView = ({ tasks, onTaskClick, currentDate, onDateChange }) => {
+  const monthStart = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1)
+  const monthEnd = new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, 0)
+  
+  // Get start of calendar (may include days from previous month)
+  const calendarStart = new Date(monthStart)
+  calendarStart.setDate(calendarStart.getDate() - calendarStart.getDay())
+  
+  // Get end of calendar (may include days from next month)
+  const calendarEnd = new Date(monthEnd)
+  calendarEnd.setDate(calendarEnd.getDate() + (6 - calendarEnd.getDay()))
+  
+  // Generate all days in the calendar view
+  const days = []
+  let day = new Date(calendarStart)
+  while (day <= calendarEnd) {
+    days.push(new Date(day))
+    day.setDate(day.getDate() + 1)
+  }
+  
+  const weeks = []
+  for (let i = 0; i < days.length; i += 7) {
+    weeks.push(days.slice(i, i + 7))
+  }
+  
+  const getTasksForDay = (date) => {
+    return tasks.filter(task => {
+      if (!task.dueDate) return false
+      const taskDate = new Date(task.dueDate)
+      return isSameDay(taskDate, date)
+    })
+  }
+  
+  const isCurrentMonth = (date) => date.getMonth() === currentDate.getMonth()
+  
+  const goToPrevMonth = () => {
+    const newDate = new Date(currentDate)
+    newDate.setMonth(newDate.getMonth() - 1)
+    onDateChange(newDate)
+  }
+  
+  const goToNextMonth = () => {
+    const newDate = new Date(currentDate)
+    newDate.setMonth(newDate.getMonth() + 1)
+    onDateChange(newDate)
+  }
+  
+  const goToToday = () => {
+    onDateChange(new Date())
+  }
+  
+  return (
+    <Card className="overflow-hidden">
+      {/* Calendar Header */}
+      <div className="flex items-center justify-between p-4 bg-slate-50 border-b">
+        <div className="flex items-center gap-2">
+          <Button variant="outline" size="icon" onClick={goToPrevMonth}>
+            <ChevronLeft className="h-4 w-4" />
+          </Button>
+          <Button variant="outline" size="icon" onClick={goToNextMonth}>
+            <ChevronRight className="h-4 w-4" />
+          </Button>
+          <h3 className="text-lg font-semibold ml-2">
+            {format(currentDate, 'MMMM yyyy')}
+          </h3>
+        </div>
+        <Button variant="outline" size="sm" onClick={goToToday}>
+          Today
+        </Button>
+      </div>
+      
+      {/* Day Headers */}
+      <div className="grid grid-cols-7 border-b">
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+          <div key={day} className="p-2 text-center text-sm font-medium text-muted-foreground bg-slate-50">
+            {day}
+          </div>
+        ))}
+      </div>
+      
+      {/* Calendar Grid */}
+      <div className="divide-y">
+        {weeks.map((week, weekIdx) => (
+          <div key={weekIdx} className="grid grid-cols-7 divide-x min-h-[120px]">
+            {week.map((date, dayIdx) => {
+              const dayTasks = getTasksForDay(date)
+              const isToday = isSameDay(date, new Date())
+              const inMonth = isCurrentMonth(date)
+              
+              return (
+                <div 
+                  key={dayIdx} 
+                  className={`p-1 ${inMonth ? 'bg-white' : 'bg-slate-50'} ${isToday ? 'ring-2 ring-blue-500 ring-inset' : ''}`}
+                >
+                  <div className={`text-sm font-medium mb-1 ${inMonth ? 'text-foreground' : 'text-muted-foreground'} ${isToday ? 'text-blue-600' : ''}`}>
+                    {format(date, 'd')}
+                  </div>
+                  <div className="space-y-1 max-h-[80px] overflow-y-auto">
+                    {dayTasks.slice(0, 3).map(task => {
+                      const priorityConfig = TASK_PRIORITIES[task.priority] || TASK_PRIORITIES.medium
+                      return (
+                        <div
+                          key={task.id}
+                          onClick={() => onTaskClick(task)}
+                          className={`text-xs p-1 rounded cursor-pointer truncate ${isPast(new Date(task.dueDate)) && !isToday ? 'bg-red-100 text-red-700' : 'bg-blue-50 text-blue-700 hover:bg-blue-100'}`}
+                        >
+                          <span className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${priorityConfig.color.split(' ')[0]}`}></span>
+                          {task.title}
+                        </div>
+                      )
+                    })}
+                    {dayTasks.length > 3 && (
+                      <div className="text-xs text-muted-foreground text-center">
+                        +{dayTasks.length - 3} more
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+// =============================================
 // TASK CARD COMPONENT
 // =============================================
 
