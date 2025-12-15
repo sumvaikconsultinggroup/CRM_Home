@@ -993,39 +993,45 @@ const TaskDialog = ({ open, onClose, task, onSave, users, projects, loading }) =
     checklist: []
   })
 
-  useEffect(() => {
+  // Initialize form when dialog opens or task changes
+  const initialFormData = useMemo(() => {
     if (task) {
-      setFormData({
+      return {
         title: task.title || '',
         description: task.description || '',
         taskType: task.taskType || 'task',
         status: task.status || 'todo',
         priority: task.priority || 'medium',
-        projectId: task.projectId || '',
+        projectId: task.projectId || 'none',
         assignees: task.assignees || [],
         startDate: task.startDate ? format(new Date(task.startDate), 'yyyy-MM-dd') : '',
         dueDate: task.dueDate ? format(new Date(task.dueDate), 'yyyy-MM-dd') : '',
         estimatedHours: task.estimatedHours || '',
         labels: task.labels || [],
         checklist: task.checklist || []
-      })
-    } else {
-      setFormData({
-        title: '',
-        description: '',
-        taskType: 'task',
-        status: 'todo',
-        priority: 'medium',
-        projectId: '',
-        assignees: [],
-        startDate: '',
-        dueDate: '',
-        estimatedHours: '',
-        labels: [],
-        checklist: []
-      })
+      }
     }
-  }, [task, open])
+    return {
+      title: '',
+      description: '',
+      taskType: 'task',
+      status: 'todo',
+      priority: 'medium',
+      projectId: 'none',
+      assignees: [],
+      startDate: '',
+      dueDate: '',
+      estimatedHours: '',
+      labels: [],
+      checklist: []
+    }
+  }, [task])
+
+  useEffect(() => {
+    if (open) {
+      setFormData(initialFormData)
+    }
+  }, [open, initialFormData])
 
   const handleSubmit = () => {
     if (!formData.title.trim()) {
