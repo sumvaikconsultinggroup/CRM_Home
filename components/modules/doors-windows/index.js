@@ -187,16 +187,14 @@ export function DoorsWindowsModule({ client, user }) {
       if (!data.error) {
         setCrmSyncStatus(data)
         
-        // NEW: Check for pending syncs and show notification
+        // Check for pending syncs (Projects and Contacts only - NO Leads)
         const availableProjects = data.availableToSync?.projects || 0
-        const availableLeads = data.availableToSync?.leads || 0
         const availableContacts = data.availableToSync?.contacts || 0
-        const totalAvailable = availableProjects + availableLeads + availableContacts
+        const totalAvailable = availableProjects + availableContacts
         
         if (totalAvailable > 0) {
           setPendingSyncNotification({
             projects: availableProjects,
-            leads: availableLeads,
             contacts: availableContacts,
             total: totalAvailable
           })
