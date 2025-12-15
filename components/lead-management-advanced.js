@@ -2770,8 +2770,8 @@ export function AdvancedLeadManagement({
       </AnimatePresence>
 
       {/* Main Content */}
-      <div className="flex-1 overflow-hidden flex">
-        <div className={`flex-1 overflow-auto p-4 ${selectedLead ? 'hidden lg:block' : ''}`}>
+      <div className="flex-1 overflow-hidden flex min-h-0">
+        <div className={`flex-1 overflow-y-auto overflow-x-auto p-4 ${selectedLead ? 'hidden lg:block' : ''}`}>
           {activeTab === 'analytics' ? (
             <LeadAnalytics leads={leads} />
           ) : activeTab === 'won' || activeTab === 'lost' ? (
