@@ -341,7 +341,12 @@ export async function PUT(request, { params }) {
     return successResponse({
       lead: sanitizeDocument(updatedLead),
       projectCreated: projectCreated ? sanitizeDocument(projectCreated) : null,
-      message: projectCreated ? `Lead converted to project: ${projectCreated.projectNumber}` : 'Lead updated successfully'
+      contactUpdated: contactUpdated || null,
+      message: projectCreated 
+        ? `Lead converted to project: ${projectCreated.projectNumber}. Contact updated to customer.` 
+        : body.status === 'lost' 
+          ? 'Lead marked as lost. Contact moved to nurturing.'
+          : 'Lead updated successfully'
     })
   } catch (error) {
     console.error('Lead PUT API Error:', error)
