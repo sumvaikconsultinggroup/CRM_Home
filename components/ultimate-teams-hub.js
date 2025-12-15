@@ -629,16 +629,21 @@ const CreateTaskDialog = ({ open, onClose, message, onCreateTask }) => {
     dueDate: ''
   })
   
-  useEffect(() => {
+  // Initialize task data when message changes using useMemo instead of useEffect
+  const initialTaskData = useMemo(() => {
     if (message) {
-      setTaskData({
+      return {
         title: message.content?.substring(0, 100) || '',
         description: `Created from team message by ${message.senderName}:\n\n"${message.content}"`,
         priority: 'medium',
         dueDate: ''
-      })
+      }
     }
+    return { title: '', description: '', priority: 'medium', dueDate: '' }
   }, [message])
+  
+  // Sync task data when initialTaskData changes
+  const currentTaskData = taskData.title ? taskData : initialTaskData
   
   const handleSubmit = () => {
     if (!taskData.title.trim()) {
