@@ -77,6 +77,7 @@ const TAB_GROUPS = {
 export function DoorsWindowsModule({ client, user }) {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [loading, setLoading] = useState(true)
+  const [initialLoadComplete, setInitialLoadComplete] = useState(false)
   const [refreshKey, setRefreshKey] = useState(0)
   
   // Data states
@@ -98,6 +99,10 @@ export function DoorsWindowsModule({ client, user }) {
   const [crmSyncStatus, setCrmSyncStatus] = useState(null)
   const [syncing, setSyncing] = useState(false)
   const [selectedProject, setSelectedProject] = useState(null)
+  
+  // New: Notification bar states
+  const [pendingSyncNotification, setPendingSyncNotification] = useState(null)
+  const [showSyncNotification, setShowSyncNotification] = useState(true)
 
   // Memoize headers to prevent unnecessary recalculations
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
@@ -106,42 +111,59 @@ export function DoorsWindowsModule({ client, user }) {
     'Content-Type': 'application/json' 
   }), [token])
 
-  // Fetch all data
+  // OPTIMIZED: Fetch critical data first, then secondary data
   useEffect(() => {
-    fetchAllData()
-    fetchProjects()
-    fetchCrmSyncStatus()
+    fetchCriticalData()
   }, [refreshKey])
 
-  const fetchAllData = async () => {
+  // NEW: Optimized critical data fetch (dashboard only for fast initial load)
+  const fetchCriticalData = async () => {
     setLoading(true)
     try {
-      const [dashboardRes, surveysRes, quotesRes, ordersRes, invoicesRes] = await Promise.all([
-        fetch(`${API_BASE}/dashboard`, { headers }),
+      // Step 1: Fetch dashboard ONLY for instant display
+      const dashboardRes = await fetch(`${API_BASE}/dashboard`, { headers })
+      const dashboardData = await dashboardRes.json()
+      if (!dashboardData.error) setDashboard(dashboardData)
+      setLoading(false) // Show dashboard immediately
+      setInitialLoadComplete(true)
+
+      // Step 2: Fetch remaining data in background (parallel)
+      fetchSecondaryData()
+      fetchProjects()
+      fetchCrmSyncStatus()
+    } catch (error) {
+      console.error('Failed to fetch dashboard:', error)
+      setLoading(false)
+      setInitialLoadComplete(true)
+      // Still try to load secondary data
+      fetchSecondaryData()
+      fetchProjects()
+    }
+  }
+
+  // NEW: Secondary data fetch (runs in background after dashboard loads)
+  const fetchSecondaryData = async () => {
+    try {
+      const [surveysRes, quotesRes, ordersRes, invoicesRes] = await Promise.all([
         fetch(`${API_BASE}/surveys`, { headers }),
         fetch(`${API_BASE}/quotations`, { headers }),
         fetch(`${API_BASE}/orders`, { headers }),
         fetch(`${API_BASE}/invoices`, { headers })
       ])
 
-      const [dashboardData, surveysData, quotesData, ordersData, invoicesData] = await Promise.all([
-        dashboardRes.json(),
+      const [surveysData, quotesData, ordersData, invoicesData] = await Promise.all([
         surveysRes.json(),
         quotesRes.json(),
         ordersRes.json(),
         invoicesRes.json()
       ])
 
-      if (!dashboardData.error) setDashboard(dashboardData)
       if (surveysData.surveys) setSurveys(surveysData.surveys)
       if (quotesData.quotations) setQuotations(quotesData.quotations)
       if (ordersData.orders) setOrders(ordersData.orders)
       if (invoicesData.invoices) setInvoices(invoicesData.invoices)
     } catch (error) {
-      console.error('Failed to fetch data:', error)
-      toast.error('Failed to load module data')
-    } finally {
-      setLoading(false)
+      console.error('Failed to fetch secondary data:', error)
     }
   }
 
@@ -149,7 +171,16 @@ export function DoorsWindowsModule({ client, user }) {
     try {
       const res = await fetch(`${API_BASE}/projects`, { headers })
       const data = await res.json()
-      if (data.projects) setProjects(data.projects)
+      if (data.projects) {
+        // FIXED: Filter to show only actual projects, not leads
+        const actualProjects = data.projects.filter(p => 
+          // Include manually created projects OR projects synced from CRM projects (not leads)
+          p.source === 'manual' || 
+          p.crmProjectId || 
+          (p.source === 'crm_sync' && p.syncedFrom?.type === 'project')
+        )
+        setProjects(actualProjects)
+      }
     } catch (error) {
       console.error('Failed to fetch projects:', error)
     }
@@ -159,7 +190,26 @@ export function DoorsWindowsModule({ client, user }) {
     try {
       const res = await fetch(`${API_BASE}/sync?action=status`, { headers })
       const data = await res.json()
-      if (!data.error) setCrmSyncStatus(data)
+      if (!data.error) {
+        setCrmSyncStatus(data)
+        
+        // NEW: Check for pending syncs and show notification
+        const availableProjects = data.availableToSync?.projects || 0
+        const availableLeads = data.availableToSync?.leads || 0
+        const availableContacts = data.availableToSync?.contacts || 0
+        const totalAvailable = availableProjects + availableLeads + availableContacts
+        
+        if (totalAvailable > 0) {
+          setPendingSyncNotification({
+            projects: availableProjects,
+            leads: availableLeads,
+            contacts: availableContacts,
+            total: totalAvailable
+          })
+        } else {
+          setPendingSyncNotification(null)
+        }
+      }
     } catch (error) {
       console.error('Failed to fetch CRM sync status:', error)
     }
