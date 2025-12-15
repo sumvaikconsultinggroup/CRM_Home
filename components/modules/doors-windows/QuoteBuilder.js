@@ -37,7 +37,8 @@ const statusStyles = {
   viewed: 'bg-purple-100 text-purple-700',
   approved: 'bg-emerald-100 text-emerald-700',
   rejected: 'bg-red-100 text-red-700',
-  expired: 'bg-orange-100 text-orange-700'
+  expired: 'bg-orange-100 text-orange-700',
+  invoiced: 'bg-green-200 text-green-800'
 }
 
 // Accessory Icons mapping
