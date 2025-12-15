@@ -69,16 +69,19 @@ export function ProductAssignment({ token }) {
   const [selectedClient, setSelectedClient] = useState(null)
   const [assignForm, setAssignForm] = useState({})
 
-  const headers = {
+  // Create headers function that always uses the current token
+  const getHeaders = () => ({
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`
-  }
+  })
 
-  // Fetch clients
+  // Fetch clients only when token is available
   useEffect(() => {
-    fetchClients()
-    fetchProducts()
-  }, [])
+    if (token) {
+      fetchClients()
+      fetchProducts()
+    }
+  }, [token])
 
   const fetchClients = async () => {
     try {
