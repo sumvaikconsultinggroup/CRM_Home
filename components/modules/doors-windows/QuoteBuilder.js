@@ -273,6 +273,11 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
   const [searchQuery, setSearchQuery] = useState('')
   const [generating, setGenerating] = useState(false)
   const [showPriceBreakdown, setShowPriceBreakdown] = useState(false)
+  const [showStatusDialog, setShowStatusDialog] = useState(false)
+  const [statusQuote, setStatusQuote] = useState(null)
+  const [statusAction, setStatusAction] = useState('')
+  const [statusNotes, setStatusNotes] = useState('')
+  const [updatingStatus, setUpdatingStatus] = useState(false)
 
   // Quote form state
   const [quoteForm, setQuoteForm] = useState({
