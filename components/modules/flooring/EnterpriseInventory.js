@@ -2030,6 +2030,238 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
   )
 
   // =============================================
+  // RENDER: GRN VIEW
+  // =============================================
+
+  const renderGrnView = () => (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Goods Receipt Notes (GRN)</h3>
+          <p className="text-sm text-slate-500">Record incoming goods from vendors</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => handleExport('grn')}>
+            <Download className="h-4 w-4 mr-2" /> Export
+          </Button>
+          <Button onClick={() => { setGrnForm({ items: [], warehouseId: selectedWarehouse !== 'all' ? selectedWarehouse : '' }); setDialogOpen({ type: 'grn', data: null }) }}>
+            <Plus className="h-4 w-4 mr-2" /> New GRN
+          </Button>
+        </div>
+      </div>
+
+      {/* Summary */}
+      <div className="grid grid-cols-4 gap-3">
+        <StatCard title="Total GRNs" value={grnSummary.total || 0} icon={Receipt} color="bg-slate-500" />
+        <StatCard title="Draft" value={grnSummary.draft || 0} icon={FileText} color="bg-amber-500" />
+        <StatCard title="Received" value={grnSummary.received || 0} icon={CheckCircle2} color="bg-green-500" />
+        <StatCard title="Total Value" value={`₹${((grnSummary.totalValue || 0) / 1000).toFixed(1)}K`} icon={DollarSign} color="bg-blue-500" />
+      </div>
+
+      {/* GRN List */}
+      {grns.length > 0 ? (
+        <Card>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">GRN #</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Vendor</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Warehouse</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Invoice</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Items</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Value</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Status</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Date</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {grns.map(grn => {
+                  const statusConfig = GRN_STATUS[grn.status] || {}
+                  return (
+                    <tr key={grn.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-3">
+                        <Badge variant="outline">{grn.grnNumber}</Badge>
+                      </td>
+                      <td className="px-4 py-3 text-sm">{grn.vendorName || '-'}</td>
+                      <td className="px-4 py-3 text-sm">{grn.warehouseName}</td>
+                      <td className="px-4 py-3 text-sm">{grn.invoiceNumber || '-'}</td>
+                      <td className="px-4 py-3 text-center">{grn.items?.length || 0}</td>
+                      <td className="px-4 py-3 text-right font-medium">₹{(grn.totalValue || 0).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-center">
+                        <Badge className={statusConfig.color}>{statusConfig.label}</Badge>
+                      </td>
+                      <td className="px-4 py-3 text-center text-sm">
+                        {new Date(grn.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setDialogOpen({ type: 'view_grn', data: grn })}>
+                              <Eye className="h-4 w-4 mr-2" /> View Details
+                            </DropdownMenuItem>
+                            {grn.status === 'draft' && (
+                              <>
+                                <DropdownMenuItem onClick={() => handleGrnAction(grn.id, 'receive')}>
+                                  <CheckCircle2 className="h-4 w-4 mr-2" /> Receive Goods
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="text-red-600" onClick={() => handleGrnAction(grn.id, 'cancel')}>
+                                  <X className="h-4 w-4 mr-2" /> Cancel
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      ) : (
+        <EmptyState
+          icon={Receipt}
+          title="No GRNs"
+          description="Create a GRN when receiving goods from vendors."
+          action={() => { setGrnForm({ items: [], warehouseId: selectedWarehouse !== 'all' ? selectedWarehouse : '' }); setDialogOpen({ type: 'grn', data: null }) }}
+          actionLabel="New GRN"
+        />
+      )}
+    </div>
+  )
+
+  // =============================================
+  // RENDER: CHALLANS VIEW
+  // =============================================
+
+  const renderChallansView = () => (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold">Delivery Challans</h3>
+          <p className="text-sm text-slate-500">Dispatch goods to customers/projects</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => handleExport('challans')}>
+            <Download className="h-4 w-4 mr-2" /> Export
+          </Button>
+          <Button onClick={() => { setChallanForm({ items: [], warehouseId: selectedWarehouse !== 'all' ? selectedWarehouse : '' }); setDialogOpen({ type: 'challan', data: null }) }}>
+            <Plus className="h-4 w-4 mr-2" /> New Challan
+          </Button>
+        </div>
+      </div>
+
+      {/* Summary */}
+      <div className="grid grid-cols-4 gap-3">
+        <StatCard title="Total Challans" value={challanSummary.total || 0} icon={Truck} color="bg-slate-500" />
+        <StatCard title="Draft" value={challanSummary.draft || 0} icon={FileText} color="bg-slate-400" />
+        <StatCard title="Dispatched" value={challanSummary.dispatched || 0} icon={Send} color="bg-blue-500" />
+        <StatCard title="Delivered" value={challanSummary.delivered || 0} icon={CheckCircle2} color="bg-green-500" />
+      </div>
+
+      {/* Challan List */}
+      {challans.length > 0 ? (
+        <Card>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Challan #</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Customer/Project</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Warehouse</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Items</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Value</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Vehicle</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Status</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Date</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {challans.map(challan => {
+                  const statusConfig = CHALLAN_STATUS[challan.status] || {}
+                  return (
+                    <tr key={challan.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-3">
+                        <Badge variant="outline">{challan.challanNumber}</Badge>
+                      </td>
+                      <td className="px-4 py-3">
+                        <p className="text-sm font-medium">{challan.customerName || challan.projectName || '-'}</p>
+                        {challan.projectName && challan.customerName && (
+                          <p className="text-xs text-slate-500">{challan.projectName}</p>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm">{challan.warehouseName}</td>
+                      <td className="px-4 py-3 text-center">{challan.items?.length || 0}</td>
+                      <td className="px-4 py-3 text-right font-medium">₹{(challan.totalValue || 0).toLocaleString()}</td>
+                      <td className="px-4 py-3 text-sm">{challan.vehicleNumber || '-'}</td>
+                      <td className="px-4 py-3 text-center">
+                        <Badge className={statusConfig.color}>{statusConfig.label}</Badge>
+                      </td>
+                      <td className="px-4 py-3 text-center text-sm">
+                        {new Date(challan.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setDialogOpen({ type: 'view_challan', data: challan })}>
+                              <Eye className="h-4 w-4 mr-2" /> View Details
+                            </DropdownMenuItem>
+                            {challan.status === 'draft' && (
+                              <>
+                                <DropdownMenuItem onClick={() => handleChallanAction(challan.id, 'dispatch')}>
+                                  <Truck className="h-4 w-4 mr-2" /> Dispatch
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem className="text-red-600" onClick={() => handleChallanAction(challan.id, 'cancel')}>
+                                  <X className="h-4 w-4 mr-2" /> Cancel
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                            {challan.status === 'dispatched' && (
+                              <DropdownMenuItem onClick={() => handleChallanAction(challan.id, 'deliver')}>
+                                <CheckCircle2 className="h-4 w-4 mr-2" /> Mark Delivered
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      ) : (
+        <EmptyState
+          icon={Truck}
+          title="No Delivery Challans"
+          description="Create a challan to dispatch goods to customers or projects."
+          action={() => { setChallanForm({ items: [], warehouseId: selectedWarehouse !== 'all' ? selectedWarehouse : '' }); setDialogOpen({ type: 'challan', data: null }) }}
+          actionLabel="New Challan"
+        />
+      )}
+    </div>
+  )
+
+  // =============================================
   // RENDER: DIALOGS
   // =============================================
 
