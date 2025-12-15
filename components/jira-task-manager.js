@@ -31,7 +31,8 @@ import {
   Send, MoreHorizontal, ExternalLink, Download, Upload, Image, File, Trash,
   ListTodo, GitBranch, Activity, History, PlusCircle, UserPlus, AtSign,
   Maximize2, Link, Unlink, AlertTriangle, PlayCircle, PauseCircle, StopCircle,
-  CalendarDays, ArrowUpDown, CheckSquare, Square, Zap
+  CalendarDays, ArrowUpDown, CheckSquare, Square, Zap, GripVertical, FileDown,
+  ClipboardCopy, LayoutTemplate, TrendingUp, Target, BarChart3
 } from 'lucide-react'
 
 // =============================================
