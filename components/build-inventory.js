@@ -116,7 +116,7 @@ export function BuildInventory({ token, user, clientModules = [] }) {
     } catch (error) {
       console.error('Sync status fetch error:', error)
     }
-  }, [token])
+  }, [token, getHeaders])
 
   // Fetch inventory products
   const fetchProducts = useCallback(async () => {
@@ -133,7 +133,7 @@ export function BuildInventory({ token, user, clientModules = [] }) {
     } catch (error) {
       console.error('Products fetch error:', error)
     }
-  }, [token])
+  }, [token, getHeaders])
 
   // Fetch dispatches
   const fetchDispatches = useCallback(async () => {
@@ -150,7 +150,7 @@ export function BuildInventory({ token, user, clientModules = [] }) {
     } catch (error) {
       console.error('Dispatch fetch error:', error)
     }
-  }, [token])
+  }, [token, getHeaders])
 
   // Fetch reservations
   const fetchReservations = useCallback(async () => {
@@ -167,7 +167,7 @@ export function BuildInventory({ token, user, clientModules = [] }) {
     } catch (error) {
       console.error('Reservations fetch error:', error)
     }
-  }, [token])
+  }, [token, getHeaders])
 
   // Fetch invoice sync status
   const fetchInvoiceSyncStatus = useCallback(async () => {
