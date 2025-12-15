@@ -1600,9 +1600,167 @@ export function JiraTaskManager({ token, currentUser }) {
     setPriorityFilter([])
     setAssigneeFilter([])
     setProjectFilter('')
+    setQuickFilter(null)
   }
 
-  const hasActiveFilters = searchQuery || statusFilter.length || priorityFilter.length || assigneeFilter.length || projectFilter
+  const hasActiveFilters = searchQuery || statusFilter.length || priorityFilter.length || assigneeFilter.length || projectFilter || quickFilter
+
+  // Handle quick filter change
+  const handleQuickFilterChange = (filter) => {
+    if (quickFilter === filter) {
+      setQuickFilter(null)
+    } else {
+      setQuickFilter(filter)
+      // Clear other filters when using quick filters
+      setStatusFilter([])
+      setPriorityFilter([])
+      setAssigneeFilter([])
+    }
+  }
+
+  // Filter tasks based on quick filter
+  const getFilteredTasks = useMemo(() => {
+    let filtered = [...tasks]
+    
+    // Apply quick filters
+    if (quickFilter) {
+      const today = new Date()
+      today.setHours(0, 0, 0, 0)
+      const weekEnd = new Date(today)
+      weekEnd.setDate(weekEnd.getDate() + 7)
+      
+      switch (quickFilter) {
+        case 'my_tasks':
+          filtered = filtered.filter(t => t.assignees?.includes(currentUser?.id))
+          break
+        case 'due_today':
+          filtered = filtered.filter(t => t.dueDate && isToday(new Date(t.dueDate)))
+          break
+        case 'overdue':
+          filtered = filtered.filter(t => {
+            if (!t.dueDate) return false
+            const dueDate = new Date(t.dueDate)
+            return isPast(dueDate) && !isToday(dueDate) && t.status !== 'completed'
+          })
+          break
+        case 'this_week':
+          filtered = filtered.filter(t => {
+            if (!t.dueDate) return false
+            const dueDate = new Date(t.dueDate)
+            return dueDate >= today && dueDate <= weekEnd
+          })
+          break
+        case 'high_priority':
+          filtered = filtered.filter(t => t.priority === 'urgent' || t.priority === 'high')
+          break
+        case 'unassigned':
+          filtered = filtered.filter(t => !t.assignees || t.assignees.length === 0)
+          break
+      }
+    }
+    
+    // Sort tasks
+    filtered.sort((a, b) => {
+      let aVal = a[sortField]
+      let bVal = b[sortField]
+      
+      if (sortField === 'dueDate' || sortField === 'createdAt' || sortField === 'updatedAt') {
+        aVal = aVal ? new Date(aVal).getTime() : 0
+        bVal = bVal ? new Date(bVal).getTime() : 0
+      }
+      
+      if (sortField === 'priority') {
+        const priorityOrder = { urgent: 4, high: 3, medium: 2, low: 1 }
+        aVal = priorityOrder[aVal] || 0
+        bVal = priorityOrder[bVal] || 0
+      }
+      
+      if (sortDirection === 'asc') {
+        return aVal > bVal ? 1 : -1
+      }
+      return aVal < bVal ? 1 : -1
+    })
+    
+    return filtered
+  }, [tasks, quickFilter, currentUser, sortField, sortDirection])
+
+  // Bulk actions
+  const handleSelectTask = (taskId) => {
+    setSelectedTasks(prev => 
+      prev.includes(taskId) ? prev.filter(id => id !== taskId) : [...prev, taskId]
+    )
+  }
+
+  const handleSelectAll = () => {
+    if (selectedTasks.length === getFilteredTasks.length) {
+      setSelectedTasks([])
+    } else {
+      setSelectedTasks(getFilteredTasks.map(t => t.id))
+    }
+  }
+
+  const handleBulkStatusChange = async (newStatus) => {
+    setLoading(true)
+    try {
+      await Promise.all(selectedTasks.map(taskId => 
+        fetch(`/api/tasks/${taskId}`, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({ status: newStatus })
+        })
+      ))
+      toast.success(`Updated ${selectedTasks.length} tasks`)
+      setSelectedTasks([])
+      setRefreshKey(prev => prev + 1)
+    } catch (error) {
+      toast.error('Failed to update tasks')
+    }
+    setLoading(false)
+  }
+
+  const handleBulkPriorityChange = async (newPriority) => {
+    setLoading(true)
+    try {
+      await Promise.all(selectedTasks.map(taskId => 
+        fetch(`/api/tasks/${taskId}`, {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({ priority: newPriority })
+        })
+      ))
+      toast.success(`Updated ${selectedTasks.length} tasks`)
+      setSelectedTasks([])
+      setRefreshKey(prev => prev + 1)
+    } catch (error) {
+      toast.error('Failed to update tasks')
+    }
+    setLoading(false)
+  }
+
+  const handleBulkDelete = async () => {
+    if (!confirm(`Are you sure you want to delete ${selectedTasks.length} tasks?`)) return
+    setLoading(true)
+    try {
+      await Promise.all(selectedTasks.map(taskId => 
+        fetch(`/api/tasks/${taskId}`, { method: 'DELETE', headers })
+      ))
+      toast.success(`Deleted ${selectedTasks.length} tasks`)
+      setSelectedTasks([])
+      setRefreshKey(prev => prev + 1)
+    } catch (error) {
+      toast.error('Failed to delete tasks')
+    }
+    setLoading(false)
+  }
+
+  const handleSort = (field) => {
+    if (sortField === field) {
+      setSortDirection(prev => prev === 'asc' ? 'desc' : 'asc')
+    } else {
+      setSortField(field)
+      setSortDirection('asc')
+    }
+  }
 
   return (
     <div className="space-y-4">
