@@ -298,6 +298,32 @@ export function DoorsWindowsModule({ client, user }) {
             </div>
           </div>
           <div className="flex items-center gap-3">
+            {/* Business Mode Toggle */}
+            <div className="flex items-center bg-white/10 rounded-xl p-1">
+              <button
+                onClick={() => toggleBusinessMode('manufacturer')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  businessMode === 'manufacturer'
+                    ? 'bg-white text-indigo-600 shadow-md'
+                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <Factory className="h-4 w-4 inline mr-2" />
+                Manufacturer
+              </button>
+              <button
+                onClick={() => toggleBusinessMode('fabricator')}
+                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                  businessMode === 'fabricator'
+                    ? 'bg-white text-indigo-600 shadow-md'
+                    : 'text-white/80 hover:text-white hover:bg-white/10'
+                }`}
+              >
+                <Wrench className="h-4 w-4 inline mr-2" />
+                Fabricator/Dealer
+              </button>
+            </div>
+
             {/* Project Selector */}
             <Select 
               value={selectedProject?.id || '__all__'} 
