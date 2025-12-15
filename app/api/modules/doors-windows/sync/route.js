@@ -91,55 +91,7 @@ export async function POST(request) {
         }
       }
 
-      // 2. Sync Contacts (NO Leads sync - leads become projects when won)
-        status: { $nin: ['converted', 'lost'] }
-      }).toArray()
-
-      for (const lead of unsyncedLeads) {
-        try {
-          const projectNumber = `DWP-${new Date().getFullYear()}-${String(await dwProjects.countDocuments() + 1).padStart(5, '0')}`
-
-          await dwProjects.insertOne({
-            id: uuidv4(),
-            projectNumber,
-            clientId: user.clientId,
-            name: lead.title || `Lead - ${lead.name}`,
-            leadId: lead.id,
-            customer: {
-              name: lead.name || lead.contactName || '',
-              email: lead.email || '',
-              phone: lead.phone || lead.mobile || '',
-              address: lead.address || ''
-            },
-            clientName: lead.name || lead.contactName || '',
-            clientPhone: lead.phone || lead.mobile || '',
-            clientEmail: lead.email || '',
-            siteAddress: lead.address || '',
-            value: lead.value || lead.budget || 0,
-            budget: lead.value || lead.budget || 0,
-            status: 'new',
-            priority: lead.priority || 'medium',
-            source: 'crm_sync',
-            syncedFrom: { type: 'lead', id: lead.id, syncedAt: now },
-            assignedTo: lead.assignedTo || user.id,
-            statusHistory: [{
-              status: 'new',
-              timestamp: now,
-              by: user.id,
-              notes: `Auto-created from CRM Lead: ${lead.name}`
-            }],
-            isActive: true,
-            createdBy: user.id,
-            createdAt: now,
-            updatedAt: now
-          })
-          results.leads.created++
-        } catch (err) {
-          results.leads.errors.push({ leadId: lead.id, error: err.message })
-        }
-      }
-
-      // 3. Sync Contacts
+      // 2. Sync Contacts (Leads are NOT synced - they become Projects in CRM when won)
       const allContacts = await contacts.find({ isActive: { $ne: false } }).toArray()
       const existingContactIds = (await dwContacts.find({}).toArray()).map(c => c.crmContactId)
 
