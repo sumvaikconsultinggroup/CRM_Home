@@ -350,6 +350,106 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
     }
   }, [token, selectedWarehouse])
 
+  const fetchGrns = useCallback(async () => {
+    try {
+      const params = new URLSearchParams()
+      if (selectedWarehouse !== 'all') params.set('warehouseId', selectedWarehouse)
+      
+      const res = await fetch(`/api/modules/wooden-flooring/inventory/grn?${params}`, { headers })
+      const data = await res.json()
+      if (data.grns) {
+        setGrns(data.grns)
+        setGrnSummary(data.summary || {})
+      }
+    } catch (error) {
+      console.error('GRNs fetch error:', error)
+    }
+  }, [token, selectedWarehouse])
+
+  const fetchChallans = useCallback(async () => {
+    try {
+      const params = new URLSearchParams()
+      if (selectedWarehouse !== 'all') params.set('warehouseId', selectedWarehouse)
+      
+      const res = await fetch(`/api/modules/wooden-flooring/inventory/challans?${params}`, { headers })
+      const data = await res.json()
+      if (data.challans) {
+        setChallans(data.challans)
+        setChallanSummary(data.summary || {})
+      }
+    } catch (error) {
+      console.error('Challans fetch error:', error)
+    }
+  }, [token, selectedWarehouse])
+
+  const fetchReservations = useCallback(async () => {
+    try {
+      const params = new URLSearchParams()
+      if (selectedWarehouse !== 'all') params.set('warehouseId', selectedWarehouse)
+      
+      const res = await fetch(`/api/modules/wooden-flooring/inventory/reservations?${params}`, { headers })
+      const data = await res.json()
+      if (data.reservations) {
+        setReservations(data.reservations)
+        setReservationSummary(data.summary || {})
+      }
+    } catch (error) {
+      console.error('Reservations fetch error:', error)
+    }
+  }, [token, selectedWarehouse])
+
+  const handleQuickLookup = async (searchValue) => {
+    if (!searchValue || searchValue.length < 2) return
+    try {
+      setLookupLoading(true)
+      const params = new URLSearchParams()
+      params.set('sku', searchValue)
+      if (selectedWarehouse !== 'all') params.set('warehouseId', selectedWarehouse)
+      
+      const res = await fetch(`/api/modules/wooden-flooring/inventory/lookup?${params}`, { headers })
+      const data = await res.json()
+      setLookupResult(data)
+      if (data.found) {
+        setDialogOpen({ type: 'lookup_result', data })
+      } else {
+        toast.error('Product not found')
+      }
+    } catch (error) {
+      console.error('Lookup error:', error)
+      toast.error('Lookup failed')
+    } finally {
+      setLookupLoading(false)
+    }
+  }
+
+  const handleExport = async (exportType) => {
+    try {
+      const params = new URLSearchParams()
+      params.set('type', exportType)
+      if (selectedWarehouse !== 'all') params.set('warehouseId', selectedWarehouse)
+      
+      const res = await fetch(`/api/modules/wooden-flooring/inventory/export?${params}`, { headers })
+      
+      if (res.ok) {
+        const blob = await res.blob()
+        const url = window.URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `${exportType}_report_${new Date().toISOString().split('T')[0]}.csv`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        window.URL.revokeObjectURL(url)
+        toast.success('Export downloaded')
+      } else {
+        toast.error('Export failed')
+      }
+    } catch (error) {
+      console.error('Export error:', error)
+      toast.error('Export failed')
+    }
+  }
+
   // Load data on mount
   useEffect(() => {
     fetchWarehouses()
