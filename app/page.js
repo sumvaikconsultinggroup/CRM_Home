@@ -266,6 +266,7 @@ function SuperAdminDashboard({ user, onLogout }) {
   const menuItems = [
     { id: 'overview', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'clients', icon: Building, label: 'Clients' },
+    { id: 'products', icon: Sparkles, label: 'Build Suite Products' },
     { id: 'analytics', icon: BarChart3, label: 'Analytics' },
     { id: 'billing', icon: DollarSign, label: 'Billing & Revenue' },
     { id: 'modules', icon: Package, label: 'Modules' },
