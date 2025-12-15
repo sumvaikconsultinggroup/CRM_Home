@@ -2846,7 +2846,7 @@ export function AdvancedLeadManagement({
               initial={{ width: 0, opacity: 0 }}
               animate={{ width: 480, opacity: 1 }}
               exit={{ width: 0, opacity: 0 }}
-              className="border-l bg-white overflow-hidden flex-shrink-0"
+              className="border-l bg-white overflow-hidden flex-shrink-0 flex flex-col"
             >
               <LeadDetailPanel
                 lead={selectedLead}
