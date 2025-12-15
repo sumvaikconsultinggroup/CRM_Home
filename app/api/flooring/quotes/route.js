@@ -220,8 +220,7 @@ export async function GET(request) {
       let reservationInfo = null
       if (quote.clientId) {
         try {
-          const dbName = `client_${quote.clientId.replace(/-/g, '_')}`
-          const db = await getClientDb(dbName)
+          const db = await getClientDb(quote.clientId)
           const reservationCollection = db.collection('inventory_reservations')
           const reservations = await reservationCollection.find({ quotationId: quoteId }).toArray()
           reservationInfo = {
