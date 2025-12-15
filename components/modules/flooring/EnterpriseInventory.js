@@ -676,6 +676,117 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
     }
   }
 
+  // Create GRN
+  const handleCreateGRN = async () => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/modules/wooden-flooring/inventory/grn', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(grnForm)
+      })
+      
+      if (res.ok) {
+        toast.success('GRN created')
+        fetchGrns()
+        setDialogOpen({ type: null, data: null })
+        setGrnForm({ items: [] })
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to create GRN')
+      }
+    } catch (error) {
+      toast.error('An error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // GRN Action (receive, cancel)
+  const handleGrnAction = async (grnId, action, data = {}) => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/modules/wooden-flooring/inventory/grn', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ id: grnId, action, ...data })
+      })
+      
+      if (res.ok) {
+        toast.success(action === 'receive' ? 'Goods received successfully' : `GRN ${action}d`)
+        fetchGrns()
+        if (action === 'receive') {
+          fetchStock()
+          fetchMovements()
+          fetchBatches()
+        }
+        setDialogOpen({ type: null, data: null })
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to process GRN')
+      }
+    } catch (error) {
+      toast.error('An error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Create Challan
+  const handleCreateChallan = async () => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/modules/wooden-flooring/inventory/challans', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(challanForm)
+      })
+      
+      if (res.ok) {
+        toast.success('Delivery Challan created')
+        fetchChallans()
+        setDialogOpen({ type: null, data: null })
+        setChallanForm({ items: [] })
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to create challan')
+      }
+    } catch (error) {
+      toast.error('An error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Challan Action (dispatch, deliver, cancel)
+  const handleChallanAction = async (challanId, action, data = {}) => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/modules/wooden-flooring/inventory/challans', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ id: challanId, action, ...data })
+      })
+      
+      if (res.ok) {
+        toast.success(`Challan ${action}ed successfully`)
+        fetchChallans()
+        if (action === 'dispatch' || action === 'cancel') {
+          fetchStock()
+          fetchMovements()
+        }
+        setDialogOpen({ type: null, data: null })
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to process challan')
+      }
+    } catch (error) {
+      toast.error('An error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // =============================================
   // RENDER: WAREHOUSE MANAGEMENT
   // =============================================
