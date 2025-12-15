@@ -331,7 +331,9 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
 
   useEffect(() => {
     if (activeSubTab === 'transfers') fetchTransfers()
-  }, [activeSubTab, fetchTransfers])
+    if (activeSubTab === 'reports') fetchReport(selectedReport)
+    if (activeSubTab === 'cycle_count') fetchCycleCounts()
+  }, [activeSubTab, fetchTransfers, fetchReport, selectedReport, fetchCycleCounts])
 
   // Refresh all data
   const refreshAll = () => {
