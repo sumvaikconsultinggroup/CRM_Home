@@ -61,8 +61,9 @@ export async function GET(request) {
       total: await contactsCollection.countDocuments({}),
       customers: await contactsCollection.countDocuments({ type: 'customer' }),
       leads: await contactsCollection.countDocuments({ type: 'lead' }),
+      nurturing: await contactsCollection.countDocuments({ type: 'nurturing' }),
       vendors: await contactsCollection.countDocuments({ type: 'vendor' }),
-      others: await contactsCollection.countDocuments({ type: { $nin: ['customer', 'lead', 'vendor'] } })
+      others: await contactsCollection.countDocuments({ type: { $nin: ['customer', 'lead', 'nurturing', 'vendor'] } })
     }
 
     return successResponse({
