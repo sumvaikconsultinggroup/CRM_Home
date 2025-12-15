@@ -328,6 +328,7 @@ const ContactFormDialog = ({ open, onOpenChange, contact, onSave }) => {
                   <SelectContent>
                     <SelectItem value="customer">Customer</SelectItem>
                     <SelectItem value="lead">Lead</SelectItem>
+                    <SelectItem value="nurturing">Nurturing</SelectItem>
                     <SelectItem value="vendor">Vendor</SelectItem>
                     <SelectItem value="other">Other</SelectItem>
                   </SelectContent>
