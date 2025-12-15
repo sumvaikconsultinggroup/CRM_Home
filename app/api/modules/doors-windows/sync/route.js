@@ -145,11 +145,11 @@ export async function POST(request) {
         timestamp: now
       })
 
-      const totalSynced = results.projects.created + results.leads.created + results.contacts.created + results.contacts.updated
+      const totalSynced = results.projects.created + results.contacts.created + results.contacts.updated
       
       return successResponse({ 
         success: true,
-        message: `Synced ${totalSynced} items (${results.projects.created} projects, ${results.leads.created} leads, ${results.contacts.created} new + ${results.contacts.updated} updated contacts)`, 
+        message: `Synced ${totalSynced} items (${results.projects.created} projects, ${results.contacts.created} new + ${results.contacts.updated} updated contacts)`, 
         results
       })
     }
