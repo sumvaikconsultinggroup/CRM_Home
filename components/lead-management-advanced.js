@@ -765,8 +765,8 @@ const LeadDetailPanel = ({ lead, onClose, onUpdate, onAddConversation, onStatusC
       </div>
       
       {/* Tabs */}
-      <Tabs value={activeDetailTab} onValueChange={setActiveDetailTab} className="flex-1 flex flex-col">
-        <TabsList className="mx-4 mt-4 w-auto justify-start">
+      <Tabs value={activeDetailTab} onValueChange={setActiveDetailTab} className="flex-1 flex flex-col min-h-0 overflow-hidden">
+        <TabsList className="mx-4 mt-4 w-auto justify-start flex-shrink-0">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="conversations">
             Conversations
@@ -780,7 +780,7 @@ const LeadDetailPanel = ({ lead, onClose, onUpdate, onAddConversation, onStatusC
           <TabsTrigger value="insights">Insights</TabsTrigger>
         </TabsList>
         
-        <div className="flex-1 overflow-y-auto p-4">
+        <div className="flex-1 overflow-y-auto p-4 min-h-0">
           {/* Overview Tab */}
           <TabsContent value="overview" className="mt-0 space-y-4">
             {/* Won/Lost Status Banner */}
