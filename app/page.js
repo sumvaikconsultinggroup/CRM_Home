@@ -1330,34 +1330,38 @@ function ClientDashboard({ user, client, onLogout }) {
               </motion.div>
             )}
 
-            {/* White Label Tab */}
+            {/* White Label Tab - Enterprise Grade */}
             {activeTab === 'whitelabel' && (
               <motion.div
                 key="whitelabel"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="space-y-6"
               >
-                <div>
-                  <h2 className="text-2xl font-bold">White Label Settings</h2>
-                  <p className="text-muted-foreground">Customize your CRM branding (Enterprise plan only)</p>
-                </div>
-
-                {client?.planId === 'enterprise' ? (
-                  <WhiteLabelSettings />
+                {client?.planId === 'enterprise' || client?.planId === 'professional' ? (
+                  <EnterpriseWhiteLabel 
+                    authToken={authToken} 
+                    client={client}
+                    onSettingsChange={(settings) => {
+                      // Apply theme changes
+                      if (settings.primaryColor) {
+                        const hslColor = hexToHSL(settings.primaryColor)
+                        document.documentElement.style.setProperty('--primary', hslColor)
+                      }
+                    }}
+                  />
                 ) : (
                   <GlassCard className="p-12 text-center">
                     <Crown className="h-16 w-16 text-amber-500 mx-auto mb-4" />
                     <h3 className="text-xl font-bold mb-2">Enterprise Feature</h3>
                     <p className="text-muted-foreground mb-6">
-                      White labeling is available on the Enterprise plan. Upgrade to customize your branding.
+                      White labeling with 20+ customization options is available on Professional and Enterprise plans.
                     </p>
                     <Button 
                       className="bg-gradient-to-r from-amber-500 to-orange-500"
                       onClick={() => setShowUpgradeFlow(true)}
                     >
-                      <Crown className="h-4 w-4 mr-2" /> Upgrade to Enterprise
+                      <Crown className="h-4 w-4 mr-2" /> Upgrade Now
                     </Button>
                   </GlassCard>
                 )}
