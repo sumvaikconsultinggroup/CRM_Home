@@ -62,6 +62,7 @@ const TAB_GROUPS = {
   ],
   operations: [
     { id: 'orders', label: 'Orders', icon: ShoppingCart },
+    { id: 'invoices', label: 'Invoices', icon: Receipt },
     { id: 'inventory', label: 'Inventory', icon: Package },
     { id: 'production', label: 'Production', icon: Factory },
     { id: 'installation', label: 'Installation', icon: Wrench },
