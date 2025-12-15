@@ -3021,7 +3021,8 @@ const CreateTaskDialog = ({ open, onClose, onCreate, defaultStatus, template, us
     assignees: [],
     dueDate: '',
     estimatedHours: '',
-    labels: []
+    labels: [],
+    recurrence: null
   })
 
   // Compute initial form data based on dialog state and template
@@ -3036,7 +3037,8 @@ const CreateTaskDialog = ({ open, onClose, onCreate, defaultStatus, template, us
       assignees: [],
       dueDate: '',
       estimatedHours: '',
-      labels: []
+      labels: [],
+      recurrence: null
     }
     
     if (template?.defaults) {
@@ -3068,7 +3070,8 @@ const CreateTaskDialog = ({ open, onClose, onCreate, defaultStatus, template, us
     onCreate({
       ...formData,
       projectId: formData.projectId || null,
-      estimatedHours: formData.estimatedHours ? parseFloat(formData.estimatedHours) : null
+      estimatedHours: formData.estimatedHours ? parseFloat(formData.estimatedHours) : null,
+      recurrence: formData.recurrence?.enabled ? formData.recurrence : null
     })
   }
 
