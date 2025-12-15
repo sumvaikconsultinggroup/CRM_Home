@@ -141,6 +141,8 @@ export function EnterpriseProjects({ authToken, onProjectSelect }) {
 
   useEffect(() => {
     fetchProjects()
+    fetchTemplates()
+    fetchUsers()
   }, [])
 
   const fetchProjects = async () => {
@@ -157,6 +159,41 @@ export function EnterpriseProjects({ authToken, onProjectSelect }) {
       toast.error('Failed to load projects')
     } finally {
       setLoading(false)
+    }
+  }
+
+  const fetchTemplates = async () => {
+    try {
+      const res = await fetch('/api/projects/templates', { headers })
+      const data = await res.json()
+      if (Array.isArray(data)) {
+        setTemplates(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch templates:', error)
+    }
+  }
+
+  const fetchUsers = async () => {
+    try {
+      const res = await fetch('/api/users', { headers })
+      const data = await res.json()
+      if (Array.isArray(data)) {
+        setUsers(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch users:', error)
+    }
+  }
+
+  const fetchReports = async (type = 'overview') => {
+    try {
+      const res = await fetch(`/api/projects/reports?type=${type}`, { headers })
+      const data = await res.json()
+      setReports(data)
+    } catch (error) {
+      console.error('Failed to fetch reports:', error)
+      toast.error('Failed to load reports')
     }
   }
 
