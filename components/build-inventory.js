@@ -134,9 +134,36 @@ export function BuildInventory({ token, user, clientModules = [] }) {
       const configData = await configRes.json()
       if (configData.config) {
         setSyncConfig(configData.config)
+        // Fetch module fields for the synced module
+        if (configData.config.syncedModuleId) {
+          fetchModuleFields(configData.config.syncedModuleId)
+        }
       }
     } catch (error) {
       console.error('Sync status fetch error:', error)
+    }
+  }, [token, getHeaders])
+
+  // Fetch dynamic module fields based on synced module
+  const fetchModuleFields = useCallback(async (moduleId) => {
+    if (!token) return
+    try {
+      const url = moduleId 
+        ? `/api/inventory/module-fields?moduleId=${moduleId}`
+        : '/api/inventory/module-fields'
+      const res = await fetch(url, { headers: getHeaders() })
+      const data = await res.json()
+      if (data.fields) {
+        setModuleFields(data.fields)
+        setModuleConfig({
+          name: data.name,
+          unit: data.unit,
+          gstRate: data.gstRate,
+          moduleId: data.moduleId
+        })
+      }
+    } catch (error) {
+      console.error('Module fields fetch error:', error)
     }
   }, [token, getHeaders])
 
