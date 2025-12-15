@@ -934,11 +934,17 @@ export function BuildInventory({ token, user, clientModules = [] }) {
     }
   }
 
-  // Get synced module fields for manual product entry
+  // Get synced module fields for manual product entry (now uses dynamic fields)
   const getSyncedModuleFields = () => {
+    // Return dynamically fetched fields
+    if (moduleFields && moduleFields.length > 0) {
+      return moduleFields
+    }
+    
+    // Fallback to hardcoded fields if API hasn't returned yet
     if (!syncConfig?.syncedModuleId) return []
     
-    const moduleFields = {
+    const fallbackFields = {
       'wooden-flooring': [
         { key: 'woodType', label: 'Wood Type', type: 'text' },
         { key: 'finish', label: 'Finish', type: 'text' },
@@ -947,11 +953,36 @@ export function BuildInventory({ token, user, clientModules = [] }) {
         { key: 'length', label: 'Length (mm)', type: 'number' },
         { key: 'grade', label: 'Grade', type: 'text' }
       ],
+      'doors-and-windows': [
+        { key: 'doorWindowType', label: 'Type', type: 'text' },
+        { key: 'material', label: 'Material', type: 'text' },
+        { key: 'frameWidth', label: 'Frame Width (mm)', type: 'number' },
+        { key: 'frameHeight', label: 'Frame Height (mm)', type: 'number' },
+        { key: 'glassType', label: 'Glass Type', type: 'text' },
+        { key: 'color', label: 'Color/Finish', type: 'text' },
+        { key: 'lockType', label: 'Lock Type', type: 'text' }
+      ],
       'paints-coatings': [
         { key: 'paintType', label: 'Paint Type', type: 'text' },
         { key: 'finish', label: 'Finish', type: 'text' },
         { key: 'coverage', label: 'Coverage (sqft/ltr)', type: 'number' },
         { key: 'dryingTime', label: 'Drying Time', type: 'text' }
+      ],
+      'kitchen': [
+        { key: 'cabinetType', label: 'Cabinet Type', type: 'text' },
+        { key: 'material', label: 'Material', type: 'text' },
+        { key: 'finish', label: 'Finish', type: 'text' },
+        { key: 'width', label: 'Width (mm)', type: 'number' },
+        { key: 'height', label: 'Height (mm)', type: 'number' },
+        { key: 'depth', label: 'Depth (mm)', type: 'number' }
+      ],
+      'modular-furniture': [
+        { key: 'furnitureType', label: 'Furniture Type', type: 'text' },
+        { key: 'material', label: 'Material', type: 'text' },
+        { key: 'finish', label: 'Finish', type: 'text' },
+        { key: 'width', label: 'Width (mm)', type: 'number' },
+        { key: 'height', label: 'Height (mm)', type: 'number' },
+        { key: 'depth', label: 'Depth (mm)', type: 'number' }
       ],
       'furniture': [
         { key: 'material', label: 'Material', type: 'text' },
@@ -961,7 +992,7 @@ export function BuildInventory({ token, user, clientModules = [] }) {
       ]
     }
     
-    return moduleFields[syncConfig.syncedModuleId] || []
+    return fallbackFields[syncConfig.syncedModuleId] || []
   }
 
   // Filter products
