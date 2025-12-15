@@ -713,6 +713,66 @@ export async function POST(request) {
         return successResponse({ added })
       }
 
+      case 'create_announcement': {
+        const { title, content, priority, teamId: annTeamId } = body
+        if (!title || !content) return errorResponse('Title and content required', 400)
+
+        const announcementsCollection = db.collection('announcements')
+        
+        const announcement = {
+          id: uuidv4(),
+          clientId: user.clientId,
+          teamId: annTeamId || null,
+          
+          title,
+          content,
+          priority: priority || 'medium', // high, medium, low
+          
+          authorId: user.id,
+          authorName: user.name || user.email,
+          
+          reactions: [],
+          readBy: [],
+          dismissed: false,
+          
+          scheduledFor: body.scheduledFor ? new Date(body.scheduledFor) : null,
+          expiresAt: body.expiresAt ? new Date(body.expiresAt) : null,
+          
+          createdAt: now,
+          updatedAt: now
+        }
+
+        await announcementsCollection.insertOne(announcement)
+        
+        // Create notifications for team members if teamId provided
+        if (annTeamId) {
+          const teamsCollection = db.collection('teams')
+          const team = await teamsCollection.findOne({ id: annTeamId })
+          
+          if (team && team.members) {
+            const notificationsCollection = db.collection('notifications')
+            for (const member of team.members) {
+              if (member.userId !== user.id) {
+                await notificationsCollection.insertOne({
+                  id: uuidv4(),
+                  clientId: user.clientId,
+                  userId: member.userId,
+                  type: 'announcement',
+                  title: `📢 ${title}`,
+                  message: content.substring(0, 100),
+                  announcementId: announcement.id,
+                  teamId: annTeamId,
+                  read: false,
+                  createdAt: now
+                })
+              }
+            }
+          }
+        }
+
+        return successResponse(sanitizeDocument(announcement), 201)
+      }
+
       default:
         return errorResponse('Invalid action', 400)
     }
