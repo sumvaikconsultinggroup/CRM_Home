@@ -1971,6 +1971,12 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         return
       }
 
+      // Safety check: B2B projects should NOT have installation
+      if (project.segment === 'b2b') {
+        toast.error('B2B orders do not require installation. Use Dispatch/Delivery workflow.')
+        return
+      }
+
       // Create installation record
       const res = await fetch('/api/flooring/enhanced/installations', {
         method: 'POST',
