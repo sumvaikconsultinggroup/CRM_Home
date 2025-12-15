@@ -1125,13 +1125,12 @@ const LeadDetailPanel = ({ lead, onClose, onUpdate, onAddConversation, onStatusC
               </div>
             </Card>
           </TabsContent>
-        </ScrollArea>
+        </div>
       </Tabs>
     </div>
   )
 }
 
-// Analytics Dashboard
 // Enhanced Lead Analytics Dashboard
 const LeadAnalytics = ({ leads }) => {
   const [analyticsTimePeriod, setAnalyticsTimePeriod] = useState('all')
