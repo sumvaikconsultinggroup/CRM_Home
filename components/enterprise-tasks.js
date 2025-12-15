@@ -1610,12 +1610,12 @@ export function EnterpriseTaskManager({ token }) {
             </DropdownMenu>
 
             {/* Project Filter */}
-            <Select value={projectFilter} onValueChange={setProjectFilter}>
+            <Select value={projectFilter || 'all'} onValueChange={(v) => setProjectFilter(v === 'all' ? '' : v)}>
               <SelectTrigger className="w-40">
                 <SelectValue placeholder="All Projects" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All Projects</SelectItem>
+                <SelectItem value="all">All Projects</SelectItem>
                 {projects.map((project) => (
                   <SelectItem key={project.id} value={project.id}>
                     {project.name || project.projectNumber}
