@@ -25,6 +25,7 @@ import { toast } from 'sonner'
 const typeColors = {
   customer: 'bg-green-100 text-green-700 border-green-200',
   lead: 'bg-blue-100 text-blue-700 border-blue-200',
+  nurturing: 'bg-amber-100 text-amber-700 border-amber-200',
   vendor: 'bg-purple-100 text-purple-700 border-purple-200',
   other: 'bg-slate-100 text-slate-700 border-slate-200'
 }
@@ -32,6 +33,7 @@ const typeColors = {
 const typeIcons = {
   customer: Users,
   lead: UserPlus,
+  nurturing: RefreshCw,
   vendor: Briefcase,
   other: User
 }
