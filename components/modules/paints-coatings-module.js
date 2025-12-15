@@ -621,6 +621,82 @@ export function PaintsCoatingsModule({ token, user }) {
       toast.error('Failed to create color')
     }
   }
+  
+  const handleCreateLead = async (leadData) => {
+    try {
+      const res = await fetch('/api/modules/paints-coatings/leads', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(leadData)
+      })
+      if (res.ok) {
+        toast.success('Lead created successfully')
+        setDialogOpen({ type: null, data: null })
+        setRefreshKey(k => k + 1)
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to create lead')
+      }
+    } catch (error) {
+      toast.error('Failed to create lead')
+    }
+  }
+  
+  const handleUpdateLeadStatus = async (leadId, status) => {
+    try {
+      const res = await fetch('/api/modules/paints-coatings/leads', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ id: leadId, action: 'update_status', status })
+      })
+      if (res.ok) {
+        toast.success('Status updated')
+        setRefreshKey(k => k + 1)
+      }
+    } catch (error) {
+      toast.error('Failed to update status')
+    }
+  }
+  
+  const handleCreateSurvey = async (surveyData) => {
+    try {
+      const res = await fetch('/api/modules/paints-coatings/surveys', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(surveyData)
+      })
+      if (res.ok) {
+        toast.success('Survey created successfully')
+        setDialogOpen({ type: null, data: null })
+        setRefreshKey(k => k + 1)
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to create survey')
+      }
+    } catch (error) {
+      toast.error('Failed to create survey')
+    }
+  }
+  
+  const handleCreateSpecification = async (specData) => {
+    try {
+      const res = await fetch('/api/modules/paints-coatings/specifications', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(specData)
+      })
+      if (res.ok) {
+        toast.success('Specification created successfully')
+        setDialogOpen({ type: null, data: null })
+        setRefreshKey(k => k + 1)
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to create specification')
+      }
+    } catch (error) {
+      toast.error('Failed to create specification')
+    }
+  }
 
   // =============================================
   // RENDER TABS
