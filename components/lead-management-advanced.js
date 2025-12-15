@@ -1718,10 +1718,47 @@ export function AdvancedLeadManagement({
       result = result.filter(l => l.status === filters.status)
     }
     if (filters.source !== 'all') {
-      result = result.filter(l => l.source === filters.source)
+      // Match both source ID and label
+      const sourceConfig = LEAD_SOURCES.find(s => s.id === filters.source)
+      result = result.filter(l => 
+        l.source === filters.source || 
+        l.source === sourceConfig?.label ||
+        l.source?.toLowerCase() === filters.source.toLowerCase()
+      )
     }
     if (filters.priority !== 'all') {
       result = result.filter(l => l.priority === filters.priority)
+    }
+    
+    // Time Period Filter
+    if (filters.timePeriod !== 'all') {
+      const now = new Date()
+      let startDate
+      
+      switch (filters.timePeriod) {
+        case 'today':
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+          break
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+          break
+        case 'month':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+          break
+        case 'quarter':
+          const quarterMonth = Math.floor(now.getMonth() / 3) * 3
+          startDate = new Date(now.getFullYear(), quarterMonth, 1)
+          break
+        case 'year':
+          startDate = new Date(now.getFullYear(), 0, 1)
+          break
+        default:
+          startDate = null
+      }
+      
+      if (startDate) {
+        result = result.filter(l => new Date(l.createdAt) >= startDate)
+      }
     }
     
     // Sorting
