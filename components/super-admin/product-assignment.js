@@ -160,7 +160,7 @@ export function ProductAssignment({ token }) {
     try {
       const res = await fetch(`/api/admin/products?clientId=${clientId}&productId=${productId}`, {
         method: 'DELETE',
-        headers
+        headers: getHeaders()
       })
 
       if (res.ok) {
