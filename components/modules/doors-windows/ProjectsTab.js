@@ -152,8 +152,27 @@ export function ProjectsTab({
       p.siteName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       p.contactPerson?.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesStatus = statusFilter === 'all' || p.status === statusFilter
-    return matchesSearch && matchesStatus
+    
+    // Source filter
+    let matchesSource = true
+    if (sourceFilter === 'manual') {
+      matchesSource = p.source === 'manual' || !p.source
+    } else if (sourceFilter === 'crm-project') {
+      matchesSource = p.syncedFrom?.type === 'project' || p.crmProjectId
+    } else if (sourceFilter === 'crm-lead') {
+      matchesSource = p.syncedFrom?.type === 'lead' && !p.crmProjectId
+    }
+    
+    return matchesSearch && matchesStatus && matchesSource
   }) || []
+
+  // Calculate counts for badges
+  const projectCounts = {
+    total: projects?.length || 0,
+    manual: projects?.filter(p => p.source === 'manual' || !p.source).length || 0,
+    fromProject: projects?.filter(p => p.syncedFrom?.type === 'project' || p.crmProjectId).length || 0,
+    fromLead: projects?.filter(p => p.syncedFrom?.type === 'lead' && !p.crmProjectId).length || 0
+  }
 
   // Get project stats
   const getProjectStats = (projectId) => {
