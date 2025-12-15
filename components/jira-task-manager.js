@@ -2995,6 +2995,16 @@ export function JiraTaskManager({ token, currentUser }) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* Team Analytics Panel */}
+      {showAnalytics && (
+        <TeamAnalytics 
+          tasks={tasks}
+          users={users}
+          timeEntries={[]}
+          onClose={() => setShowAnalytics(false)}
+        />
+      )}
     </div>
   )
 }
