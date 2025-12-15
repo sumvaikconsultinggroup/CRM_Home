@@ -112,24 +112,27 @@ export function DoorsWindowsModule({ client, user }) {
   const fetchAllData = async () => {
     setLoading(true)
     try {
-      const [dashboardRes, surveysRes, quotesRes, ordersRes] = await Promise.all([
+      const [dashboardRes, surveysRes, quotesRes, ordersRes, invoicesRes] = await Promise.all([
         fetch(`${API_BASE}/dashboard`, { headers }),
         fetch(`${API_BASE}/surveys`, { headers }),
         fetch(`${API_BASE}/quotations`, { headers }),
-        fetch(`${API_BASE}/orders`, { headers })
+        fetch(`${API_BASE}/orders`, { headers }),
+        fetch(`${API_BASE}/invoices`, { headers })
       ])
 
-      const [dashboardData, surveysData, quotesData, ordersData] = await Promise.all([
+      const [dashboardData, surveysData, quotesData, ordersData, invoicesData] = await Promise.all([
         dashboardRes.json(),
         surveysRes.json(),
         quotesRes.json(),
-        ordersRes.json()
+        ordersRes.json(),
+        invoicesRes.json()
       ])
 
       if (!dashboardData.error) setDashboard(dashboardData)
       if (surveysData.surveys) setSurveys(surveysData.surveys)
       if (quotesData.quotations) setQuotations(quotesData.quotations)
       if (ordersData.orders) setOrders(ordersData.orders)
+      if (invoicesData.invoices) setInvoices(invoicesData.invoices)
     } catch (error) {
       console.error('Failed to fetch data:', error)
       toast.error('Failed to load module data')
