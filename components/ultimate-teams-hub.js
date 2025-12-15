@@ -1989,17 +1989,77 @@ export function UltimateTeamsHub({ authToken, users = [], currentUser }) {
             
             {/* Message Input */}
             <div className="p-4 border-t bg-white">
+              {/* Pending Attachments Preview */}
+              {pendingAttachments.length > 0 && (
+                <div className="mb-3 flex flex-wrap gap-2">
+                  {pendingAttachments.map((att) => (
+                    <motion.div
+                      key={att.id}
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-lg"
+                    >
+                      <File className="h-4 w-4 text-slate-500" />
+                      <span className="text-sm text-slate-700 truncate max-w-[150px]">{att.name}</span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="icon"
+                        className="h-5 w-5"
+                        onClick={() => removePendingAttachment(att.id)}
+                      >
+                        <X className="h-3 w-3" />
+                      </Button>
+                    </motion.div>
+                  ))}
+                </div>
+              )}
+              
+              {/* Hidden File Input */}
+              <input
+                ref={fileInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={handleFileSelect}
+                accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.txt,.zip"
+              />
+              
               <form onSubmit={handleSendMessage} className="relative">
                 <div className="flex items-end gap-2 bg-slate-50 rounded-xl p-2">
                   <div className="flex gap-1">
                     <TooltipProvider>
                       <Tooltip>
                         <TooltipTrigger asChild>
-                          <Button type="button" variant="ghost" size="icon" className="h-9 w-9">
-                            <Plus className="h-5 w-5" />
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-9 w-9"
+                            onClick={() => fileInputRef.current?.click()}
+                            disabled={uploadingFile}
+                          >
+                            {uploadingFile ? <Loader2 className="h-5 w-5 animate-spin" /> : <Plus className="h-5 w-5" />}
                           </Button>
                         </TooltipTrigger>
-                        <TooltipContent>Attach</TooltipContent>
+                        <TooltipContent>Attach File</TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                    
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button 
+                            type="button" 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-9 w-9"
+                            onClick={() => fileInputRef.current?.click()}
+                          >
+                            <Image className="h-5 w-5" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>Add Image</TooltipContent>
                       </Tooltip>
                     </TooltipProvider>
                   </div>
