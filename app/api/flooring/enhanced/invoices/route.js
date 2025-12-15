@@ -88,28 +88,42 @@ const syncInvoiceToCRM = async (db, invoice, user) => {
     if (invoice.projectId) {
       const projects = db.collection('flooring_projects')
       
-      const projectStatus = {
+      // First, get the project to check its segment
+      const project = await projects.findOne({ id: invoice.projectId })
+      
+      // B2C projects have installation, B2B projects have dispatch/delivery
+      const projectStatusB2C = {
         'sent': 'invoice_sent',
         'partially_paid': 'payment_received',
         'paid': 'payment_received'
       }
       
-      if (projectStatus[invoice.status]) {
+      const projectStatusB2B = {
+        'sent': 'invoice_sent',
+        'partially_paid': 'invoice_sent', // Stay at invoice_sent until fully paid
+        'paid': 'in_transit' // After full payment, mark as in transit for delivery (no installation)
+      }
+      
+      // Use appropriate status mapping based on segment
+      const isB2B = project?.segment === 'b2b'
+      const statusMapping = isB2B ? projectStatusB2B : projectStatusB2C
+      
+      if (statusMapping[invoice.status]) {
         await projects.updateOne(
           { id: invoice.projectId },
           { 
             $set: { 
-              status: projectStatus[invoice.status],
+              status: statusMapping[invoice.status],
               lastInvoiceId: invoice.id,
               lastInvoiceStatus: invoice.status,
               updatedAt: now
             },
             $push: {
               statusHistory: {
-                status: projectStatus[invoice.status],
+                status: statusMapping[invoice.status],
                 timestamp: now,
                 by: user.id,
-                notes: `Invoice ${invoice.invoiceNumber} - ${invoice.status}`
+                notes: `Invoice ${invoice.invoiceNumber} - ${invoice.status}${isB2B ? ' (B2B - Material dispatch)' : ''}`
               }
             }
           }
