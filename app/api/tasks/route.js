@@ -319,6 +319,12 @@ export async function POST(request) {
         timestamp: now
       }],
       
+      // Source (for tasks created from other modules like Teams)
+      sourceType: body.sourceType || null, // 'teams_message', 'lead', 'email', etc.
+      sourceMessageId: body.sourceMessageId || null,
+      sourceChannelId: body.sourceChannelId || null,
+      sourceLeadId: body.sourceLeadId || null,
+      
       // Metadata
       createdBy: user.id,
       createdAt: now,
