@@ -8,6 +8,56 @@ export async function OPTIONS() {
   return optionsResponse()
 }
 
+// Convert inventory reservations when invoice is created from quote
+const convertInventoryReservation = async (db, clientId, quotationId) => {
+  try {
+    const reservationCollection = db.collection('inventory_reservations')
+    const stockCollection = db.collection('wf_inventory_stock')
+    
+    const reservations = await reservationCollection.find({ 
+      quotationId, 
+      status: 'active' 
+    }).toArray()
+    
+    if (reservations.length === 0) {
+      return { converted: 0, message: 'No active reservations found' }
+    }
+    
+    let convertedCount = 0
+    for (const reservation of reservations) {
+      // Deduct from total stock (reservation was already from available)
+      await stockCollection.updateOne(
+        { productId: reservation.productId, warehouseId: reservation.warehouseId || 'default' },
+        {
+          $inc: { 
+            quantity: -reservation.quantity, 
+            reservedQuantity: -reservation.quantity 
+          },
+          $set: { updatedAt: new Date() }
+        }
+      )
+      
+      // Update reservation status to converted
+      await reservationCollection.updateOne(
+        { id: reservation.id },
+        { 
+          $set: { 
+            status: 'converted', 
+            convertedAt: new Date(),
+            updatedAt: new Date() 
+          } 
+        }
+      )
+      convertedCount++
+    }
+    
+    return { converted: convertedCount, message: `${convertedCount} inventory reservations converted to sold` }
+  } catch (error) {
+    console.error('Convert inventory reservation error:', error)
+    return { converted: 0, error: error.message }
+  }
+}
+
 // Generate invoice number
 const generateInvoiceNumber = async (db) => {
   const invoices = db.collection('flooring_invoices')
