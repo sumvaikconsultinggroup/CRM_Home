@@ -2844,23 +2844,66 @@ export function BuildInventory({ token, user, clientModules = [] }) {
                 <Separator />
                 <h4 className="font-medium flex items-center gap-2">
                   <Package className="h-4 w-4" />
-                  {syncConfig?.syncedModuleName} Fields
+                  {syncConfig?.syncedModuleName || moduleConfig?.name || 'Module'} Fields
                 </h4>
                 <div className="grid grid-cols-2 gap-4">
                   {getSyncedModuleFields().map(field => (
                     <div key={field.key}>
                       <Label>{field.label}</Label>
-                      <Input
-                        type={field.type}
-                        value={productForm.attributes?.[field.key] || ''}
-                        onChange={(e) => setProductForm({
-                          ...productForm,
-                          attributes: {
-                            ...(productForm.attributes || {}),
-                            [field.key]: field.type === 'number' ? parseFloat(e.target.value) : e.target.value
-                          }
-                        })}
-                      />
+                      {field.type === 'select' && field.options ? (
+                        <Select
+                          value={productForm.attributes?.[field.key] || ''}
+                          onValueChange={(v) => setProductForm({
+                            ...productForm,
+                            attributes: {
+                              ...(productForm.attributes || {}),
+                              [field.key]: v
+                            }
+                          })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder={`Select ${field.label}`} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {field.options.map(opt => (
+                              <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      ) : field.type === 'boolean' ? (
+                        <Select
+                          value={productForm.attributes?.[field.key] === true ? 'yes' : productForm.attributes?.[field.key] === false ? 'no' : ''}
+                          onValueChange={(v) => setProductForm({
+                            ...productForm,
+                            attributes: {
+                              ...(productForm.attributes || {}),
+                              [field.key]: v === 'yes'
+                            }
+                          })}
+                        >
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="yes">Yes</SelectItem>
+                            <SelectItem value="no">No</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      ) : (
+                        <Input
+                          type={field.type === 'number' ? 'number' : 'text'}
+                          min={field.min}
+                          max={field.max}
+                          value={productForm.attributes?.[field.key] || ''}
+                          onChange={(e) => setProductForm({
+                            ...productForm,
+                            attributes: {
+                              ...(productForm.attributes || {}),
+                              [field.key]: field.type === 'number' ? parseFloat(e.target.value) : e.target.value
+                            }
+                          })}
+                        />
+                      )}
                     </div>
                   ))}
                 </div>
