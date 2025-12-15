@@ -452,7 +452,7 @@ export function DoorsWindowsModule({ client, user }) {
                 {invoices.length === 0 ? (
                   <div className="text-center py-12">
                     <Receipt className="h-16 w-16 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-500">No invoices yet. Invoices are created when orders are confirmed.</p>
+                    <p className="text-slate-500">No invoices yet. Invoices are created when quotes are approved.</p>
                   </div>
                 ) : (
                   <div className="space-y-4">
@@ -460,20 +460,43 @@ export function DoorsWindowsModule({ client, user }) {
                       <Card key={invoice.id} className="hover:shadow-lg transition-all">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
-                            <div>
+                            <div className="flex-1">
                               <div className="flex items-center gap-2">
                                 <h4 className="font-semibold">{invoice.invoiceNumber}</h4>
-                                <Badge variant={invoice.status === 'paid' ? 'default' : invoice.status === 'partial' ? 'secondary' : 'outline'}>
-                                  {invoice.status}
+                                <Badge className={
+                                  invoice.paymentStatus === 'paid' ? 'bg-green-100 text-green-700' : 
+                                  invoice.paymentStatus === 'partial' ? 'bg-amber-100 text-amber-700' : 
+                                  'bg-slate-100 text-slate-700'
+                                }>
+                                  {invoice.paymentStatus || invoice.status}
                                 </Badge>
+                                {invoice.quoteNumber && (
+                                  <span className="text-xs text-slate-400">From: {invoice.quoteNumber}</span>
+                                )}
                               </div>
                               <p className="text-sm text-slate-500">{invoice.customerName}</p>
+                              <p className="text-xs text-slate-400 mt-1">
+                                Due: {new Date(invoice.dueDate).toLocaleDateString()}
+                              </p>
                             </div>
                             <div className="text-right">
-                              <p className="font-semibold text-green-600">₹{invoice.grandTotal?.toLocaleString()}</p>
-                              <p className="text-sm text-slate-500">
-                                Paid: ₹{(invoice.paidAmount || 0).toLocaleString()}
-                              </p>
+                              <p className="font-semibold text-lg text-green-600">₹{(invoice.grandTotal || 0).toLocaleString()}</p>
+                              <div className="text-sm">
+                                <span className="text-emerald-600">Paid: ₹{(invoice.paidAmount || 0).toLocaleString()}</span>
+                                {invoice.balanceAmount > 0 && (
+                                  <span className="text-red-600 ml-2">Due: ₹{(invoice.balanceAmount || 0).toLocaleString()}</span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="ml-4 flex gap-2">
+                              <Button size="sm" variant="outline" className="text-xs">
+                                <Download className="h-3 w-3 mr-1" /> PDF
+                              </Button>
+                              {invoice.paymentStatus !== 'paid' && (
+                                <Button size="sm" className="text-xs bg-emerald-600 hover:bg-emerald-700">
+                                  <Plus className="h-3 w-3 mr-1" /> Add Payment
+                                </Button>
+                              )}
                             </div>
                           </div>
                         </CardContent>
