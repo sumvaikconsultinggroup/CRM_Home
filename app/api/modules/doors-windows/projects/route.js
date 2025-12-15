@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
-import { getCollection, Collections } from '@/lib/db/mongodb'
-import { getAuthUser, requireClientAccess } from '@/lib/utils/auth'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireClientAccess, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
 
 export async function OPTIONS() {
@@ -13,10 +13,13 @@ export async function GET(request) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
-    const collection = await getCollection('doors_windows_projects')
-    const projects = await collection.find({ clientId: user.clientId }).toArray()
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('doors_windows_projects')
     
-    return successResponse(sanitizeDocuments(projects))
+    const projects = await collection.find({}).toArray()
+    
+    return successResponse({ projects: sanitizeDocuments(projects) })
   } catch (error) {
     console.error('Doors & Windows Projects GET Error:', error)
     if (error.message === 'Unauthorized' || error.message.includes('Forbidden')) {
@@ -32,18 +35,36 @@ export async function POST(request) {
     requireClientAccess(user)
 
     const body = await request.json()
-    const collection = await getCollection('doors_windows_projects')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('doors_windows_projects')
+
+    const projectNumber = `DWP-${new Date().getFullYear()}-${String(await collection.countDocuments() + 1).padStart(5, '0')}`
+    const now = new Date().toISOString()
 
     const newProject = {
       id: uuidv4(),
+      projectNumber,
       clientId: user.clientId,
-      ...body,
-      createdAt: new Date(),
-      updatedAt: new Date()
+      name: body.name || body.siteName,
+      siteName: body.siteName,
+      siteAddress: body.siteAddress,
+      buildingType: body.buildingType,
+      contactPerson: body.contactPerson,
+      contactPhone: body.contactPhone,
+      contactEmail: body.contactEmail,
+      expectedValue: body.expectedValue ? parseFloat(body.expectedValue) : 0,
+      notes: body.notes,
+      status: body.status || 'active',
+      source: 'manual',
+      isActive: true,
+      createdBy: user.id,
+      createdAt: now,
+      updatedAt: now
     }
 
     await collection.insertOne(newProject)
-    return successResponse(sanitizeDocument(newProject), 201)
+    return successResponse({ project: sanitizeDocument(newProject) }, 201)
   } catch (error) {
     console.error('Doors & Windows Projects POST Error:', error)
     if (error.message === 'Unauthorized' || error.message.includes('Forbidden')) {
@@ -65,10 +86,13 @@ export async function PUT(request) {
       return errorResponse('Project ID is required', 400)
     }
 
-    const collection = await getCollection('doors_windows_projects')
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('doors_windows_projects')
+    
     await collection.updateOne(
-      { id, clientId: user.clientId },
-      { $set: { ...updateData, updatedAt: new Date() } }
+      { id },
+      { $set: { ...updateData, updatedAt: new Date().toISOString() } }
     )
 
     return successResponse({ message: 'Project updated successfully' })
@@ -93,8 +117,11 @@ export async function DELETE(request) {
       return errorResponse('Project ID is required', 400)
     }
 
-    const collection = await getCollection('doors_windows_projects')
-    await collection.deleteOne({ id, clientId: user.clientId })
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const collection = db.collection('doors_windows_projects')
+    
+    await collection.deleteOne({ id })
 
     return successResponse({ message: 'Project deleted successfully' })
   } catch (error) {
