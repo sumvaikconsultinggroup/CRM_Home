@@ -1261,27 +1261,44 @@ function ClientDashboard({ user, client, onLogout }) {
                               </div>
                               <h3 className="font-semibold text-lg">{module.name}</h3>
                               <p className="text-sm text-muted-foreground mt-1">{module.description}</p>
-                              <div className="mt-4 pt-4 border-t flex justify-between items-center">
-                                <span className="font-bold text-green-600">₹{module.price}/mo</span>
-                                {module.id === 'wooden-flooring' ? (
+                              <div className="mt-4 pt-4 border-t space-y-2">
+                                <div className="flex justify-between items-center">
+                                  <span className="font-bold text-green-600">₹{module.price}/mo</span>
+                                  {module.id === 'wooden-flooring' ? (
+                                    <Button 
+                                      size="sm" 
+                                      className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+                                      onClick={() => setActiveModule('flooring')}
+                                    >
+                                      <ExternalLink className="h-4 w-4 mr-1" /> Open Module
+                                    </Button>
+                                  ) : (module.id === 'doors-windows' || module.id === 'doors-and-windows') ? (
+                                    <Button 
+                                      size="sm" 
+                                      className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
+                                      onClick={() => window.location.href = '/doors-windows'}
+                                    >
+                                      <ExternalLink className="h-4 w-4 mr-1" /> Open Module
+                                    </Button>
+                                  ) : (
+                                    <Button size="sm" variant="outline" disabled>
+                                      Coming Soon
+                                    </Button>
+                                  )}
+                                </div>
+                                {/* Go to Inventory Button - for modules that support inventory sync */}
+                                {(module.id === 'wooden-flooring' || module.id === 'paints-coatings' || module.id === 'furniture' || module.id === 'doors-windows' || module.id === 'doors-and-windows') && (
                                   <Button 
                                     size="sm" 
-                                    className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
-                                    onClick={() => setActiveModule('flooring')}
+                                    variant="outline"
+                                    className="w-full border-emerald-300 text-emerald-700 hover:bg-emerald-50"
+                                    onClick={() => {
+                                      setActiveProduct('build-inventory')
+                                      setActiveModule(null)
+                                      setActiveTab('dashboard')
+                                    }}
                                   >
-                                    <ExternalLink className="h-4 w-4 mr-1" /> Open Module
-                                  </Button>
-                                ) : (module.id === 'doors-windows' || module.id === 'doors-and-windows') ? (
-                                  <Button 
-                                    size="sm" 
-                                    className="bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600"
-                                    onClick={() => window.location.href = '/doors-windows'}
-                                  >
-                                    <ExternalLink className="h-4 w-4 mr-1" /> Open Module
-                                  </Button>
-                                ) : (
-                                  <Button size="sm" variant="outline" disabled>
-                                    Coming Soon
+                                    <Package className="h-4 w-4 mr-1" /> Go to Inventory
                                   </Button>
                                 )}
                               </div>
