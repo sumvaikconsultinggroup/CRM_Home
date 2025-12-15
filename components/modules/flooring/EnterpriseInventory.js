@@ -2353,6 +2353,237 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* New Cycle Count Dialog */}
+      <Dialog open={dialogOpen.type === 'cycle_count'} onOpenChange={(open) => !open && setDialogOpen({ type: null, data: null })}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileSpreadsheet className="h-5 w-5" /> Create Cycle Count
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Warehouse *</Label>
+              <Select
+                value={cycleCountForm.warehouseId || ''}
+                onValueChange={(v) => setCycleCountForm({ ...cycleCountForm, warehouseId: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select warehouse to count" />
+                </SelectTrigger>
+                <SelectContent>
+                  {warehouses.map(w => (
+                    <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Count Type</Label>
+              <Select
+                value={cycleCountForm.countType || 'full'}
+                onValueChange={(v) => setCycleCountForm({ ...cycleCountForm, countType: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="full">Full Count (All Products)</SelectItem>
+                  <SelectItem value="partial">Partial Count (Selected Products)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Scheduled Date</Label>
+              <Input
+                type="date"
+                value={cycleCountForm.scheduledDate || ''}
+                onChange={(e) => setCycleCountForm({ ...cycleCountForm, scheduledDate: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>Notes</Label>
+              <Textarea
+                value={cycleCountForm.notes || ''}
+                onChange={(e) => setCycleCountForm({ ...cycleCountForm, notes: e.target.value })}
+                placeholder="Any special instructions..."
+                rows={2}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen({ type: null, data: null })}>Cancel</Button>
+            <Button onClick={handleCreateCycleCount} disabled={loading || !cycleCountForm.warehouseId}>
+              {loading ? 'Creating...' : 'Create Cycle Count'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Cycle Count Dialog */}
+      <Dialog open={dialogOpen.type === 'view_cycle_count'} onOpenChange={(open) => !open && setDialogOpen({ type: null, data: null })}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Cycle Count Details</DialogTitle>
+          </DialogHeader>
+          {dialogOpen.data && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <Badge variant="outline" className="text-lg">{dialogOpen.data.cycleCountNumber}</Badge>
+                  <p className="text-sm text-slate-500 mt-1">{dialogOpen.data.warehouseName}</p>
+                </div>
+                <Badge className={CYCLE_COUNT_STATUS[dialogOpen.data.status]?.color}>
+                  {CYCLE_COUNT_STATUS[dialogOpen.data.status]?.label}
+                </Badge>
+              </div>
+
+              <div className="grid grid-cols-4 gap-4 text-center">
+                <div className="p-3 bg-slate-50 rounded-lg">
+                  <p className="text-2xl font-bold">{dialogOpen.data.totalItems}</p>
+                  <p className="text-xs text-slate-500">Total Items</p>
+                </div>
+                <div className="p-3 bg-blue-50 rounded-lg">
+                  <p className="text-2xl font-bold text-blue-600">{dialogOpen.data.countedItems}</p>
+                  <p className="text-xs text-slate-500">Counted</p>
+                </div>
+                <div className={`p-3 rounded-lg ${dialogOpen.data.totalVariance !== 0 ? 'bg-amber-50' : 'bg-green-50'}`}>
+                  <p className={`text-2xl font-bold ${dialogOpen.data.totalVariance > 0 ? 'text-green-600' : dialogOpen.data.totalVariance < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    {dialogOpen.data.totalVariance > 0 ? '+' : ''}{dialogOpen.data.totalVariance || 0}
+                  </p>
+                  <p className="text-xs text-slate-500">Variance</p>
+                </div>
+                <div className={`p-3 rounded-lg ${(dialogOpen.data.totalVarianceValue || 0) !== 0 ? 'bg-amber-50' : 'bg-green-50'}`}>
+                  <p className={`text-2xl font-bold ${dialogOpen.data.totalVarianceValue > 0 ? 'text-green-600' : dialogOpen.data.totalVarianceValue < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                    ₹{Math.abs(dialogOpen.data.totalVarianceValue || 0).toLocaleString()}
+                  </p>
+                  <p className="text-xs text-slate-500">Variance Value</p>
+                </div>
+              </div>
+
+              <div>
+                <Label className="text-xs text-slate-500">Items</Label>
+                <div className="max-h-[300px] overflow-y-auto mt-2">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-50 sticky top-0">
+                      <tr>
+                        <th className="px-3 py-2 text-left">Product</th>
+                        <th className="px-3 py-2 text-right">System</th>
+                        <th className="px-3 py-2 text-right">Counted</th>
+                        <th className="px-3 py-2 text-right">Variance</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {dialogOpen.data.items?.map((item, idx) => (
+                        <tr key={idx} className={item.variance !== 0 && item.variance !== null ? 'bg-amber-50' : ''}>
+                          <td className="px-3 py-2">
+                            <p className="font-medium">{item.productName}</p>
+                            <p className="text-xs text-slate-500">{item.sku}</p>
+                          </td>
+                          <td className="px-3 py-2 text-right">{item.systemQuantity}</td>
+                          <td className="px-3 py-2 text-right font-medium">
+                            {item.countedQuantity !== null ? item.countedQuantity : '-'}
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            {item.variance !== null ? (
+                              <span className={item.variance > 0 ? 'text-green-600' : item.variance < 0 ? 'text-red-600' : ''}>
+                                {item.variance > 0 ? '+' : ''}{item.variance}
+                              </span>
+                            ) : '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen({ type: null, data: null })}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Record Counts Dialog */}
+      <Dialog open={dialogOpen.type === 'record_counts'} onOpenChange={(open) => !open && setDialogOpen({ type: null, data: null })}>
+        <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Edit className="h-5 w-5" /> Record Physical Counts
+            </DialogTitle>
+            <DialogDescription>
+              Enter the actual counted quantities for each product
+            </DialogDescription>
+          </DialogHeader>
+          {dialogOpen.data && (
+            <div className="space-y-4">
+              <div className="max-h-[400px] overflow-y-auto">
+                <table className="w-full text-sm">
+                  <thead className="bg-slate-50 sticky top-0">
+                    <tr>
+                      <th className="px-3 py-2 text-left">Product</th>
+                      <th className="px-3 py-2 text-right">System Qty</th>
+                      <th className="px-3 py-2 text-right">Counted Qty</th>
+                      <th className="px-3 py-2 text-right">Variance</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {dialogOpen.data.items?.map((item, idx) => {
+                      const countedQty = cycleCountForm[`count_${item.productId}`] ?? item.countedQuantity ?? ''
+                      const variance = countedQty !== '' ? parseFloat(countedQty) - item.systemQuantity : null
+                      return (
+                        <tr key={idx}>
+                          <td className="px-3 py-2">
+                            <p className="font-medium">{item.productName}</p>
+                            <p className="text-xs text-slate-500">{item.sku}</p>
+                          </td>
+                          <td className="px-3 py-2 text-right">{item.systemQuantity}</td>
+                          <td className="px-3 py-2 text-right">
+                            <Input
+                              type="number"
+                              className="w-24 text-right ml-auto"
+                              placeholder="0"
+                              value={countedQty}
+                              onChange={(e) => setCycleCountForm({
+                                ...cycleCountForm,
+                                [`count_${item.productId}`]: e.target.value
+                              })}
+                            />
+                          </td>
+                          <td className="px-3 py-2 text-right">
+                            {variance !== null ? (
+                              <span className={variance > 0 ? 'text-green-600 font-medium' : variance < 0 ? 'text-red-600 font-medium' : ''}>
+                                {variance > 0 ? '+' : ''}{variance}
+                              </span>
+                            ) : '-'}
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen({ type: null, data: null })}>Cancel</Button>
+            <Button onClick={() => {
+              // Gather counted items
+              const countedItems = dialogOpen.data.items.map(item => ({
+                productId: item.productId,
+                quantity: parseFloat(cycleCountForm[`count_${item.productId}`]) || 0,
+                notes: ''
+              })).filter(i => cycleCountForm[`count_${i.productId}`] !== undefined)
+              
+              handleCycleCountAction(dialogOpen.data.id, 'record_counts', { countedItems })
+            }} disabled={loading}>
+              {loading ? 'Saving...' : 'Save Counts'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 
