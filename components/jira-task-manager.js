@@ -2430,18 +2430,51 @@ export function JiraTaskManager({ token, currentUser }) {
       {/* Create Task Dialog */}
       <CreateTaskDialog
         open={createDialogOpen}
-        onClose={() => { setCreateDialogOpen(false); setQuickCreateStatus(null); }}
+        onClose={() => { setCreateDialogOpen(false); setQuickCreateStatus(null); setSelectedTemplate(null); }}
         onCreate={handleCreateTask}
         defaultStatus={quickCreateStatus}
+        template={selectedTemplate}
         users={users}
         projects={projects}
       />
+
+      {/* Template Dialog */}
+      <Dialog open={templateDialogOpen} onOpenChange={(open) => { setTemplateDialogOpen(open); if (!open) setSelectedTemplate(null); }}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              {selectedTemplate && (
+                <>
+                  <div className={`p-1.5 rounded ${selectedTemplate.color} text-white`}>
+                    <selectedTemplate.icon className="h-4 w-4" />
+                  </div>
+                  Create {selectedTemplate.name}
+                </>
+              )}
+            </DialogTitle>
+            <DialogDescription>
+              Create a new task using the {selectedTemplate?.name} template
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <Button 
+              className="w-full" 
+              onClick={() => {
+                setTemplateDialogOpen(false)
+                setCreateDialogOpen(true)
+              }}
+            >
+              Continue with Template
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
 
 // Create Task Dialog Component
-const CreateTaskDialog = ({ open, onClose, onCreate, defaultStatus, users, projects }) => {
+const CreateTaskDialog = ({ open, onClose, onCreate, defaultStatus, template, users, projects }) => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -2455,19 +2488,31 @@ const CreateTaskDialog = ({ open, onClose, onCreate, defaultStatus, users, proje
     labels: []
   })
 
-  // Compute initial form data based on dialog state
-  const initialFormData = useMemo(() => ({
-    title: '',
-    description: '',
-    taskType: 'task',
-    status: defaultStatus || 'todo',
-    priority: 'medium',
-    projectId: '',
-    assignees: [],
-    dueDate: '',
-    estimatedHours: '',
-    labels: []
-  }), [defaultStatus])
+  // Compute initial form data based on dialog state and template
+  const initialFormData = useMemo(() => {
+    const base = {
+      title: '',
+      description: '',
+      taskType: 'task',
+      status: defaultStatus || 'todo',
+      priority: 'medium',
+      projectId: '',
+      assignees: [],
+      dueDate: '',
+      estimatedHours: '',
+      labels: []
+    }
+    
+    if (template?.defaults) {
+      return {
+        ...base,
+        ...template.defaults,
+        status: defaultStatus || base.status
+      }
+    }
+    
+    return base
+  }, [defaultStatus, template])
 
   // Handle dialog open/close
   const handleOpenChange = (isOpen) => {
