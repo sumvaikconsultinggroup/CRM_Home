@@ -1648,7 +1648,8 @@ export function AdvancedLeadManagement({
     status: 'all',
     source: 'all',
     priority: 'all',
-    assignedTo: 'all'
+    assignedTo: 'all',
+    timePeriod: 'all'
   })
 
   useEffect(() => {
