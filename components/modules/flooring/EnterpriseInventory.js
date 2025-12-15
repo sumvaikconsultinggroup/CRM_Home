@@ -2442,6 +2442,19 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
                             <DropdownMenuItem onClick={() => setDialogOpen({ type: 'view_challan', data: challan })}>
                               <Eye className="h-4 w-4 mr-2" /> View Details
                             </DropdownMenuItem>
+                            {/* WhatsApp Send to Customer */}
+                            {challan.contactPhone && (
+                              <DropdownMenuItem onClick={() => sendChallanWhatsApp(challan, 'customer')}>
+                                <Send className="h-4 w-4 mr-2" /> WhatsApp to Customer
+                              </DropdownMenuItem>
+                            )}
+                            {/* WhatsApp Send to Driver */}
+                            {challan.driverPhone && (
+                              <DropdownMenuItem onClick={() => sendChallanWhatsApp(challan, 'driver')}>
+                                <Truck className="h-4 w-4 mr-2" /> WhatsApp to Driver
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuSeparator />
                             {challan.status === 'draft' && (
                               <>
                                 <DropdownMenuItem onClick={() => handleChallanAction(challan.id, 'dispatch')}>
