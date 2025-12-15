@@ -1524,6 +1524,9 @@ const TaskDetailModal = ({ task, open, onClose, onUpdate, onDelete, users, proje
               {/* Actions */}
               <Separator />
               <div className="space-y-2">
+                <Button variant="outline" className="w-full justify-start" onClick={() => { onDuplicate && onDuplicate(task); onClose(); }}>
+                  <ClipboardCopy className="h-4 w-4 mr-2" />Duplicate Task
+                </Button>
                 <Button variant="outline" className="w-full justify-start text-red-600" onClick={() => onDelete(task.id)}>
                   <Trash2 className="h-4 w-4 mr-2" />Delete Task
                 </Button>
