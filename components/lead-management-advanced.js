@@ -2320,8 +2320,40 @@ export function AdvancedLeadManagement({
                           </div>
                         )}
                         
+                        {/* Quick Stage Change */}
+                        <div className="flex gap-1 mt-2" onClick={(e) => e.stopPropagation()}>
+                          <Select onValueChange={(newStatus) => handleStatusChange(lead.id, newStatus)}>
+                            <SelectTrigger className="h-7 text-xs border-dashed">
+                              <ArrowRightCircle className="h-3 w-3 mr-1" />
+                              <span>Move to...</span>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {PIPELINE_STAGES.filter(s => s.id !== stage.id).map(s => (
+                                <SelectItem key={s.id} value={s.id}>
+                                  <div className="flex items-center gap-2">
+                                    <s.icon className="h-3 w-3" />
+                                    {s.label}
+                                  </div>
+                                </SelectItem>
+                              ))}
+                              <SelectItem value="won" className="text-green-600">
+                                <div className="flex items-center gap-2">
+                                  <Trophy className="h-3 w-3" />
+                                  Won
+                                </div>
+                              </SelectItem>
+                              <SelectItem value="lost" className="text-red-600">
+                                <div className="flex items-center gap-2">
+                                  <ThumbsDown className="h-3 w-3" />
+                                  Lost
+                                </div>
+                              </SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
                         {/* Quick actions */}
-                        <div className="flex gap-1 mt-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <div className="flex gap-1 mt-2 opacity-0 group-hover:opacity-100 transition-opacity">
                           <Button variant="ghost" size="sm" className="h-7 flex-1" asChild onClick={(e) => e.stopPropagation()}>
                             <a href={`tel:${lead.phone}`}><Phone className="h-3 w-3" /></a>
                           </Button>
