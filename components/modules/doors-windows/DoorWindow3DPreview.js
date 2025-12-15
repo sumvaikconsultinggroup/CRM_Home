@@ -1,15 +1,10 @@
 'use client'
 
-import { useState, useRef, useLayoutEffect } from 'react'
+import { useRef } from 'react'
 
 // Dynamic SVG-based 3D-like preview with enhanced visuals and glass type support
 export function DoorWindow3DPreview({ config, className = '' }) {
-  const [isClient, setIsClient] = useState(false)
   const containerRef = useRef(null)
-
-  useLayoutEffect(() => {
-    setIsClient(true)
-  }, [])
 
   const {
     type = 'Window',
