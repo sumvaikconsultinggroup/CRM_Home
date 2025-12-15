@@ -331,9 +331,7 @@ export function DoorsWindowsModule({ client, user }) {
                 <p className="font-semibold">New Data Available for Sync!</p>
                 <p className="text-sm text-white/90">
                   {pendingSyncNotification.projects > 0 && `${pendingSyncNotification.projects} new project${pendingSyncNotification.projects > 1 ? 's' : ''}`}
-                  {pendingSyncNotification.projects > 0 && pendingSyncNotification.leads > 0 && ', '}
-                  {pendingSyncNotification.leads > 0 && `${pendingSyncNotification.leads} lead${pendingSyncNotification.leads > 1 ? 's' : ''}`}
-                  {(pendingSyncNotification.projects > 0 || pendingSyncNotification.leads > 0) && pendingSyncNotification.contacts > 0 && ', '}
+                  {pendingSyncNotification.projects > 0 && pendingSyncNotification.contacts > 0 && ', '}
                   {pendingSyncNotification.contacts > 0 && `${pendingSyncNotification.contacts} contact${pendingSyncNotification.contacts > 1 ? 's' : ''}`}
                   {' '}ready to sync from CRM
                 </p>
