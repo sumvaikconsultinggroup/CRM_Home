@@ -792,6 +792,8 @@ function ClientDashboard({ user, client, onLogout }) {
                   setActiveModule('flooring')
                 } else if (item.isModule && item.id === 'furniture-module') {
                   setActiveModule('furniture')
+                } else if (item.isModule && item.id === 'doors-windows-module') {
+                  window.location.href = '/doors-windows'
                 } else if (item.isChat) {
                   setShowChat(true)
                 } else {
