@@ -85,7 +85,7 @@ export function ProductAssignment({ token }) {
 
   const fetchClients = async () => {
     try {
-      const res = await fetch('/api/admin/clients', { headers })
+      const res = await fetch('/api/admin/clients', { headers: getHeaders() })
       const data = await res.json()
       if (Array.isArray(data)) {
         setClients(data)
@@ -99,7 +99,7 @@ export function ProductAssignment({ token }) {
 
   const fetchProducts = async () => {
     try {
-      const res = await fetch('/api/admin/products', { headers })
+      const res = await fetch('/api/admin/products', { headers: getHeaders() })
       const data = await res.json()
       // Products are seeded on first fetch
     } catch (error) {
@@ -109,7 +109,7 @@ export function ProductAssignment({ token }) {
 
   const fetchClientProducts = async (clientId) => {
     try {
-      const res = await fetch(`/api/admin/products/assignments?clientId=${clientId}`, { headers })
+      const res = await fetch(`/api/admin/products/assignments?clientId=${clientId}`, { headers: getHeaders() })
       const data = await res.json()
       if (data.assignments) {
         setClientProducts(prev => ({
