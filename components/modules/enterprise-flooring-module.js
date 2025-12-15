@@ -4551,6 +4551,17 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                               </Button>
                             )}
                             
+                            {/* Paid - Mark as Dispatched (B2B only) */}
+                            {invoice.status === 'paid' && invoice.projectSegment === 'b2b' && (
+                              <Button 
+                                size="sm" 
+                                className="bg-orange-600 hover:bg-orange-700 text-white"
+                                onClick={() => handleB2BDispatch(invoice)}
+                              >
+                                <Truck className="h-4 w-4 mr-1" /> Dispatch
+                              </Button>
+                            )}
+                            
                             {/* More actions dropdown */}
                             {!['cancelled'].includes(invoice.status) && (
                               <DropdownMenu>
