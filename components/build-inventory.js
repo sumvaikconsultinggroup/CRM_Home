@@ -2406,6 +2406,7 @@ export function BuildInventory({ token, user, clientModules = [] }) {
       )}
     </div>
   )
+  }
 
   return (
     <div className="min-h-screen bg-slate-50">
