@@ -240,8 +240,7 @@ export function ProductSwitcher({ token, currentProduct = 'build-crm', onProduct
               features={['Invoicing & Billing', 'GST Compliance', 'Bank Reconciliation', 'Financial Reports']}
               isActive={currentProduct === 'build-finance'}
               isAssigned={products.some(p => (p.productId || p.id) === 'build-finance')}
-              comingSoon
-              onSelect={() => {}}
+              onSelect={() => handleProductSwitch({ productId: 'build-finance' })}
             />
           </div>
           
