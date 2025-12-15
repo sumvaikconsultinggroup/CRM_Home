@@ -994,7 +994,7 @@ function ClientDashboard({ user, client, onLogout }) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
               >
-                <EnterpriseTaskManager token={token} />
+                <EnterpriseTaskManager token={authToken} />
               </motion.div>
             )}
 
