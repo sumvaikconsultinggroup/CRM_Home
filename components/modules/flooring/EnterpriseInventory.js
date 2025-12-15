@@ -3936,8 +3936,17 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
           <TabsTrigger value="cycle_count" className="flex items-center gap-2">
             <ClipboardList className="h-4 w-4" /> Audit
           </TabsTrigger>
+          <TabsTrigger value="reservations" className="flex items-center gap-2">
+            <Bookmark className="h-4 w-4" /> Reservations
+            {(reservationSummary.active || 0) > 0 && (
+              <Badge variant="secondary" className="ml-1">{reservationSummary.active}</Badge>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="warehouses" className="flex items-center gap-2">
             <Warehouse className="h-4 w-4" /> Warehouses
+          </TabsTrigger>
+          <TabsTrigger value="access" className="flex items-center gap-2">
+            <UserCheck className="h-4 w-4" /> Access
           </TabsTrigger>
         </TabsList>
 
@@ -3951,7 +3960,9 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
           <TabsContent value="alerts">{renderAlertsView()}</TabsContent>
           <TabsContent value="reports">{renderReportsView()}</TabsContent>
           <TabsContent value="cycle_count">{renderCycleCountView()}</TabsContent>
+          <TabsContent value="reservations">{renderReservationsView()}</TabsContent>
           <TabsContent value="warehouses">{renderWarehouseManagement()}</TabsContent>
+          <TabsContent value="access">{renderAccessView()}</TabsContent>
         </div>
       </Tabs>
 
