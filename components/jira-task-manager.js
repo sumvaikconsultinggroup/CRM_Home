@@ -30,7 +30,8 @@ import {
   Play, Timer, FolderOpen, Layers, Bug, Lightbulb, Bookmark,
   Send, MoreHorizontal, ExternalLink, Download, Upload, Image, File, Trash,
   ListTodo, GitBranch, Activity, History, PlusCircle, UserPlus, AtSign,
-  Maximize2, Link, Unlink, AlertTriangle, PlayCircle, PauseCircle, StopCircle
+  Maximize2, Link, Unlink, AlertTriangle, PlayCircle, PauseCircle, StopCircle,
+  CalendarDays, ArrowUpDown, CheckSquare, Square, Zap
 } from 'lucide-react'
 
 // =============================================
