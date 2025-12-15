@@ -62,6 +62,17 @@ export function BuildInventory({ token, user, clientModules = [] }) {
   const [selectedDispatch, setSelectedDispatch] = useState(null)
   const [dispatchImagePreview, setDispatchImagePreview] = useState(null)
   
+  // Enhanced Dispatch Workflow State
+  const [showStartDispatchDialog, setShowStartDispatchDialog] = useState(false)
+  const [showLoadDispatchDialog, setShowLoadDispatchDialog] = useState(false)
+  const [showDeliveryReceiptDialog, setShowDeliveryReceiptDialog] = useState(false)
+  const [showChallanDialog, setShowChallanDialog] = useState(false)
+  const [loadingImagePreview, setLoadingImagePreview] = useState(null)
+  const [deliveryReceiptPreview, setDeliveryReceiptPreview] = useState(null)
+  const [dispatchWorkflowData, setDispatchWorkflowData] = useState({})
+  const loadingImageRef = useRef(null)
+  const deliveryReceiptRef = useRef(null)
+  
   // Reports State
   const [reportData, setReportData] = useState(null)
   const [selectedReportType, setSelectedReportType] = useState('summary')
