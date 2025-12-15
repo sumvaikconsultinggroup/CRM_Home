@@ -244,6 +244,22 @@ export function ProjectsTab({
                         <Badge className={statusStyles[project.status] || 'bg-slate-100'}>
                           {project.status}
                         </Badge>
+                        {/* Show source indicator */}
+                        {project.syncedFrom?.type === 'lead' && (
+                          <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 border-amber-200">
+                            From Lead
+                          </Badge>
+                        )}
+                        {project.syncedFrom?.type === 'project' && (
+                          <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 border-blue-200">
+                            From CRM
+                          </Badge>
+                        )}
+                        {project.source === 'manual' && (
+                          <Badge variant="outline" className="text-xs bg-emerald-50 text-emerald-700 border-emerald-200">
+                            Manual
+                          </Badge>
+                        )}
                       </div>
                       <p className="text-sm text-slate-500 flex items-center gap-1">
                         <Building2 className="h-3 w-3" />
