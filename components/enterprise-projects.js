@@ -573,17 +573,18 @@ export function EnterpriseProjects({ authToken, onProjectSelect }) {
 
   const formatCurrency = (amount) => `₹${(amount || 0).toLocaleString()}`
   const formatDate = (date) => date ? new Date(date).toLocaleDateString() : '-'
+  const getRoleInfo = (role) => TEAM_ROLES.find(r => r.id === role) || TEAM_ROLES[3]
 
   return (
     <div className="space-y-6">
-      {/* Header with Stats */}
+      {/* Header */}
       <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
         <div>
-          <h2 className="text-2xl font-bold text-slate-800">Projects</h2>
-          <p className="text-slate-500">Manage and track all your projects</p>
+          <h2 className="text-2xl font-bold text-slate-800">Project Management</h2>
+          <p className="text-slate-500">Enterprise-level project tracking & management</p>
         </div>
         <div className="flex items-center gap-3">
-          <Button variant="outline" onClick={fetchProjects}>
+          <Button variant="outline" onClick={() => { fetchProjects(); fetchTemplates(); }}>
             <RefreshCw className="h-4 w-4 mr-2" /> Refresh
           </Button>
           <Button onClick={() => { resetForm(); setShowCreateDialog(true); }} className="bg-gradient-to-r from-indigo-600 to-purple-600">
@@ -592,9 +593,25 @@ export function EnterpriseProjects({ authToken, onProjectSelect }) {
         </div>
       </div>
 
-      {/* Stats Cards */}
-      {stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+      {/* Main Tabs */}
+      <Tabs value={activeMainTab} onValueChange={(v) => { setActiveMainTab(v); if (v === 'reports') fetchReports(); }}>
+        <TabsList className="bg-slate-100">
+          <TabsTrigger value="projects" className="flex items-center gap-2">
+            <FolderKanban className="h-4 w-4" /> Projects ({projects.length})
+          </TabsTrigger>
+          <TabsTrigger value="templates" className="flex items-center gap-2">
+            <Copy className="h-4 w-4" /> Templates ({templates.length})
+          </TabsTrigger>
+          <TabsTrigger value="reports" className="flex items-center gap-2">
+            <BarChart3 className="h-4 w-4" /> Reports
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Projects Tab */}
+        <TabsContent value="projects" className="space-y-6 mt-6">
+          {/* Stats Cards */}
+          {stats && (
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
           <GlassCard className="p-4">
             <div className="flex items-center justify-between">
               <div>
