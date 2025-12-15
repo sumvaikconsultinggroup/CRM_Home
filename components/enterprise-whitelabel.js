@@ -495,7 +495,7 @@ export function EnterpriseWhiteLabel({ authToken, client, onSettingsChange }) {
             </div>
             Enterprise White Label
           </h2>
-          <p className="text-slate-500 mt-1">Customize every aspect of your platform's branding</p>
+          <p className="text-slate-500 mt-1">Customize every aspect of your platform branding</p>
         </div>
         <div className="flex items-center gap-3">
           {hasChanges && (
