@@ -82,7 +82,8 @@ export async function PUT(request, { params }) {
       }
     }
 
-    // Check if status is changing to "won" - Auto-create project
+    // Check if status is changing to "won" - Auto-create project and update contact to customer
+    if (body.status === 'won' && existingLead.status !== 'won') {
       const projectsCollection = db.collection('projects')
       
       // Check if project already exists for this lead
