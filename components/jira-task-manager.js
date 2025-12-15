@@ -2503,8 +2503,17 @@ export function JiraTaskManager({ token, currentUser }) {
           <p className="text-muted-foreground text-sm">Manage and track all your tasks</p>
         </div>
         <div className="flex items-center gap-2">
+          {/* Due Date Reminders */}
+          <DueDateReminders tasks={tasks} currentUser={currentUser} />
+          
           <Button variant="outline" size="sm" onClick={() => setRefreshKey(prev => prev + 1)}>
             <RefreshCw className={`h-4 w-4 mr-1 ${loading ? 'animate-spin' : ''}`} />
+          </Button>
+          
+          {/* Analytics Button */}
+          <Button variant="outline" size="sm" onClick={() => setShowAnalytics(true)}>
+            <BarChart3 className="h-4 w-4 mr-1" />
+            Analytics
           </Button>
           
           {/* Export Button */}
