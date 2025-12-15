@@ -3859,6 +3859,350 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Quick Lookup Result Dialog */}
+      <Dialog open={dialogOpen.type === 'lookup_result'} onOpenChange={(open) => !open && setDialogOpen({ type: null, data: null })}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Scan className="h-5 w-5" /> Product Lookup Result
+            </DialogTitle>
+          </DialogHeader>
+          {dialogOpen.data?.found && (
+            <div className="space-y-4">
+              {/* Product Info */}
+              <div className="p-4 bg-slate-50 rounded-lg">
+                <div className="flex items-start justify-between">
+                  <div>
+                    <h4 className="text-lg font-semibold">{dialogOpen.data.product?.name}</h4>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="outline">{dialogOpen.data.product?.sku}</Badge>
+                      {dialogOpen.data.product?.barcode && (
+                        <Badge variant="outline" className="bg-slate-100">{dialogOpen.data.product.barcode}</Badge>
+                      )}
+                    </div>
+                    <p className="text-sm text-slate-500 mt-1">{dialogOpen.data.product?.category}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-slate-500">Cost: ₹{dialogOpen.data.product?.costPrice || 0}</p>
+                    <p className="text-sm text-slate-500">Sell: ₹{dialogOpen.data.product?.sellingPrice || 0}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Inventory Summary */}
+              <div className="grid grid-cols-3 gap-4">
+                <div className="p-3 bg-blue-50 rounded-lg text-center">
+                  <p className="text-2xl font-bold text-blue-700">{dialogOpen.data.inventory?.totalQuantity || 0}</p>
+                  <p className="text-xs text-slate-500">Total Quantity</p>
+                </div>
+                <div className="p-3 bg-green-50 rounded-lg text-center">
+                  <p className="text-2xl font-bold text-green-700">{dialogOpen.data.inventory?.totalAvailable || 0}</p>
+                  <p className="text-xs text-slate-500">Available</p>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-lg text-center">
+                  <p className="text-2xl font-bold text-slate-700">{dialogOpen.data.inventory?.warehouseCount || 0}</p>
+                  <p className="text-xs text-slate-500">Warehouses</p>
+                </div>
+              </div>
+
+              {/* Stock by Warehouse */}
+              {dialogOpen.data.inventory?.stockByWarehouse?.length > 0 && (
+                <div>
+                  <Label className="text-sm text-slate-600 mb-2 block">Stock by Warehouse</Label>
+                  <div className="space-y-2">
+                    {dialogOpen.data.inventory.stockByWarehouse.map((wh, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                        <div className="flex items-center gap-2">
+                          <Warehouse className="h-4 w-4 text-slate-400" />
+                          <span className="font-medium">{wh.warehouseName}</span>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <div className="text-right">
+                            <p className="font-semibold">{wh.quantity} total</p>
+                            <p className="text-xs text-green-600">{wh.availableQty} available</p>
+                          </div>
+                          {wh.reservedQty > 0 && (
+                            <Badge className="bg-amber-100 text-amber-700">
+                              <Lock className="h-3 w-3 mr-1" /> {wh.reservedQty} reserved
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Recent Batches */}
+              {dialogOpen.data.batches?.length > 0 && (
+                <div>
+                  <Label className="text-sm text-slate-600 mb-2 block">Recent Batches</Label>
+                  <div className="max-h-[150px] overflow-y-auto space-y-2">
+                    {dialogOpen.data.batches.map((batch, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-2 bg-slate-50 rounded">
+                        <div>
+                          <Badge variant="outline">{batch.batchNumber}</Badge>
+                          <span className="text-sm text-slate-500 ml-2">{batch.warehouseName}</span>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">{batch.quantity} units</p>
+                          {batch.expiryDate && (
+                            <p className="text-xs text-slate-500">Exp: {new Date(batch.expiryDate).toLocaleDateString()}</p>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen({ type: null, data: null })}>Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Reservation Dialog */}
+      <Dialog open={dialogOpen.type === 'reservation'} onOpenChange={(open) => !open && setDialogOpen({ type: null, data: null })}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Bookmark className="h-5 w-5" /> Create Stock Reservation
+            </DialogTitle>
+            <DialogDescription>
+              Reserve inventory for a project or customer order
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Warehouse *</Label>
+                <Select
+                  value={reservationForm.warehouseId || ''}
+                  onValueChange={(v) => setReservationForm({ ...reservationForm, warehouseId: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select warehouse" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {warehouses.map(w => (
+                      <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Product *</Label>
+                <Select
+                  value={reservationForm.productId || ''}
+                  onValueChange={(v) => setReservationForm({ ...reservationForm, productId: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select product" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {products.map(p => (
+                      <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Quantity *</Label>
+                <Input
+                  type="number"
+                  value={reservationForm.quantity || ''}
+                  onChange={(e) => setReservationForm({ ...reservationForm, quantity: parseFloat(e.target.value) || 0 })}
+                  placeholder="0"
+                />
+              </div>
+              <div>
+                <Label>Expiry Date (Optional)</Label>
+                <Input
+                  type="date"
+                  value={reservationForm.expiryDate || ''}
+                  onChange={(e) => setReservationForm({ ...reservationForm, expiryDate: e.target.value })}
+                />
+              </div>
+            </div>
+            <Separator />
+            <p className="text-sm font-medium text-slate-600">Link to:</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Project Name</Label>
+                <Input
+                  value={reservationForm.projectName || ''}
+                  onChange={(e) => setReservationForm({ ...reservationForm, projectName: e.target.value })}
+                  placeholder="e.g., XYZ Interior Project"
+                />
+              </div>
+              <div>
+                <Label>Customer Name</Label>
+                <Input
+                  value={reservationForm.customerName || ''}
+                  onChange={(e) => setReservationForm({ ...reservationForm, customerName: e.target.value })}
+                  placeholder="e.g., ABC Enterprises"
+                />
+              </div>
+            </div>
+            <div>
+              <Label>Order Number</Label>
+              <Input
+                value={reservationForm.orderNumber || ''}
+                onChange={(e) => setReservationForm({ ...reservationForm, orderNumber: e.target.value })}
+                placeholder="e.g., SO-2024-0001"
+              />
+            </div>
+            <div>
+              <Label>Notes</Label>
+              <Textarea
+                value={reservationForm.notes || ''}
+                onChange={(e) => setReservationForm({ ...reservationForm, notes: e.target.value })}
+                placeholder="Any additional notes..."
+                rows={2}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen({ type: null, data: null })}>Cancel</Button>
+            <Button 
+              onClick={handleCreateReservation} 
+              disabled={loading || !reservationForm.warehouseId || !reservationForm.productId || !reservationForm.quantity}
+            >
+              {loading ? 'Creating...' : 'Create Reservation'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Grant Access Dialog */}
+      <Dialog open={dialogOpen.type === 'access'} onOpenChange={(open) => !open && setDialogOpen({ type: null, data: null })}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserCheck className="h-5 w-5" /> Grant Warehouse Access
+            </DialogTitle>
+            <DialogDescription>
+              Assign warehouse permissions to a team member
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>User *</Label>
+              <Select
+                value={accessForm.userId || ''}
+                onValueChange={(v) => setAccessForm({ ...accessForm, userId: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select user" />
+                </SelectTrigger>
+                <SelectContent>
+                  {users.map(u => (
+                    <SelectItem key={u.id} value={u.id}>{u.name || u.email}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Warehouse *</Label>
+              <Select
+                value={accessForm.warehouseId || ''}
+                onValueChange={(v) => setAccessForm({ ...accessForm, warehouseId: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select warehouse" />
+                </SelectTrigger>
+                <SelectContent>
+                  {warehouses.map(w => (
+                    <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
+              <Label>Access Level</Label>
+              <Select
+                value={accessForm.accessLevel || 'standard'}
+                onValueChange={(v) => setAccessForm({ ...accessForm, accessLevel: v })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="standard">Standard - View Only</SelectItem>
+                  <SelectItem value="manager">Manager - View & Edit</SelectItem>
+                  <SelectItem value="full">Full Access - All Permissions</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Separator />
+            <p className="text-sm font-medium text-slate-600">Specific Permissions</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="canView" 
+                  checked={accessForm.canView !== false}
+                  onCheckedChange={(v) => setAccessForm({ ...accessForm, canView: v })}
+                />
+                <Label htmlFor="canView" className="text-sm">Can View</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="canEdit" 
+                  checked={accessForm.canEdit === true}
+                  onCheckedChange={(v) => setAccessForm({ ...accessForm, canEdit: v })}
+                />
+                <Label htmlFor="canEdit" className="text-sm">Can Edit</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="canTransfer" 
+                  checked={accessForm.canTransfer === true}
+                  onCheckedChange={(v) => setAccessForm({ ...accessForm, canTransfer: v })}
+                />
+                <Label htmlFor="canTransfer" className="text-sm">Can Transfer</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="canAdjust" 
+                  checked={accessForm.canAdjust === true}
+                  onCheckedChange={(v) => setAccessForm({ ...accessForm, canAdjust: v })}
+                />
+                <Label htmlFor="canAdjust" className="text-sm">Can Adjust</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="canGRN" 
+                  checked={accessForm.canGRN === true}
+                  onCheckedChange={(v) => setAccessForm({ ...accessForm, canGRN: v })}
+                />
+                <Label htmlFor="canGRN" className="text-sm">Can Create GRN</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <Checkbox 
+                  id="canChallan" 
+                  checked={accessForm.canChallan === true}
+                  onCheckedChange={(v) => setAccessForm({ ...accessForm, canChallan: v })}
+                />
+                <Label htmlFor="canChallan" className="text-sm">Can Create Challan</Label>
+              </div>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen({ type: null, data: null })}>Cancel</Button>
+            <Button 
+              onClick={handleGrantAccess} 
+              disabled={loading || !accessForm.userId || !accessForm.warehouseId}
+            >
+              {loading ? 'Granting...' : 'Grant Access'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 
