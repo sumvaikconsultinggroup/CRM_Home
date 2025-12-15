@@ -212,6 +212,15 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
   const [warehouseForm, setWarehouseForm] = useState({})
   const [movementForm, setMovementForm] = useState({})
   const [transferForm, setTransferForm] = useState({ items: [] })
+  const [reservationForm, setReservationForm] = useState({})
+  
+  // Access Management State
+  const [accessRecords, setAccessRecords] = useState([])
+  const [users, setUsers] = useState([])
+  const [accessForm, setAccessForm] = useState({})
+  
+  // Quick Lookup Search Term
+  const [lookupSearch, setLookupSearch] = useState('')
 
   // API Headers
   const headers = {
