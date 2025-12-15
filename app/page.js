@@ -943,8 +943,14 @@ function ClientDashboard({ user, client, onLogout }) {
             <Badge variant="outline" className="px-3 py-1">
               {client?.planId?.toUpperCase() || 'BASIC'}
             </Badge>
-            {/* Chat Button */}
-            <Button variant="outline" size="icon" onClick={() => setShowChat(true)} className="relative">
+            {/* Teams Hub Quick Access */}
+            <Button 
+              variant="outline" 
+              size="icon" 
+              onClick={() => setActiveTab('teams')} 
+              className="relative"
+              title="Teams Hub"
+            >
               <MessageSquare className="h-4 w-4" />
             </Button>
             <div className="flex items-center gap-2">
