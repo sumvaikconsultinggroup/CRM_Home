@@ -367,6 +367,374 @@ export function BuildInventory({ token, user, clientModules = [] }) {
     }
   }
 
+  // ========== DISPATCH WORKFLOW FUNCTIONS ==========
+
+  // Render dispatch status badge with progress indicator
+  const renderDispatchStatus = (dispatch) => {
+    const statusConfig = {
+      pending: { label: 'Pending', color: 'bg-amber-100 text-amber-700', icon: Clock },
+      loaded: { label: 'Loaded', color: 'bg-blue-100 text-blue-700', icon: Package },
+      in_transit: { label: 'In Transit', color: 'bg-purple-100 text-purple-700', icon: Truck },
+      delivered: { label: 'Delivered', color: 'bg-emerald-100 text-emerald-700', icon: CheckCircle2 },
+      cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-700', icon: XCircle }
+    }
+    const config = statusConfig[dispatch.status] || statusConfig.pending
+    const Icon = config.icon
+
+    return (
+      <div className="flex flex-col gap-1">
+        <Badge className={`${config.color} flex items-center gap-1 w-fit`}>
+          <Icon className="h-3 w-3" />
+          {config.label}
+        </Badge>
+        {dispatch.status === 'pending' && dispatch.dispatchStartedAt && (
+          <span className="text-xs text-blue-600">Started</span>
+        )}
+        {dispatch.goodsLoadedAt && (
+          <span className="text-xs text-slate-500">
+            Loaded: {new Date(dispatch.goodsLoadedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        )}
+        {dispatch.transitStartedAt && (
+          <span className="text-xs text-slate-500">
+            Departed: {new Date(dispatch.transitStartedAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        )}
+        {dispatch.deliveredAt && (
+          <span className="text-xs text-emerald-600">
+            Delivered: {new Date(dispatch.deliveredAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+          </span>
+        )}
+      </div>
+    )
+  }
+
+  // Render workflow action button based on dispatch status
+  const renderWorkflowButton = (dispatch) => {
+    // Pending - no transporter details yet
+    if (dispatch.status === 'pending' && !dispatch.dispatchStartedAt) {
+      return (
+        <Button
+          size="sm"
+          className="bg-amber-500 hover:bg-amber-600 text-white"
+          onClick={() => {
+            setSelectedDispatch(dispatch)
+            setDispatchWorkflowData({})
+            setShowStartDispatchDialog(true)
+          }}
+        >
+          <Truck className="h-3 w-3 mr-1" />
+          Start Dispatch
+        </Button>
+      )
+    }
+
+    // Pending - transporter details entered, need to load goods
+    if (dispatch.status === 'pending' && dispatch.dispatchStartedAt && !dispatch.goodsLoadedAt) {
+      return (
+        <Button
+          size="sm"
+          className="bg-blue-500 hover:bg-blue-600 text-white"
+          onClick={() => {
+            setSelectedDispatch(dispatch)
+            setLoadingImagePreview(null)
+            setDispatchWorkflowData({})
+            setShowLoadDispatchDialog(true)
+          }}
+        >
+          <Package className="h-3 w-3 mr-1" />
+          Load Goods
+        </Button>
+      )
+    }
+
+    // Loaded - can mark as in transit (requires image)
+    if (dispatch.status === 'loaded') {
+      return (
+        <Button
+          size="sm"
+          className="bg-purple-500 hover:bg-purple-600 text-white"
+          onClick={() => handleStartTransit(dispatch)}
+        >
+          <Send className="h-3 w-3 mr-1" />
+          Start Transit
+        </Button>
+      )
+    }
+
+    // In Transit - can mark as delivered (requires receipt)
+    if (dispatch.status === 'in_transit') {
+      return (
+        <Button
+          size="sm"
+          className="bg-emerald-500 hover:bg-emerald-600 text-white"
+          onClick={() => {
+            setSelectedDispatch(dispatch)
+            setDeliveryReceiptPreview(null)
+            setDispatchWorkflowData({})
+            setShowDeliveryReceiptDialog(true)
+          }}
+        >
+          <CheckCircle2 className="h-3 w-3 mr-1" />
+          Mark Delivered
+        </Button>
+      )
+    }
+
+    // Delivered - show view receipt
+    if (dispatch.status === 'delivered') {
+      return (
+        <div className="flex gap-1">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleViewChallan(dispatch)}
+          >
+            <FileText className="h-3 w-3 mr-1" />
+            Challan
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleViewReceipt(dispatch)}
+          >
+            <Receipt className="h-3 w-3 mr-1" />
+            Receipt
+          </Button>
+        </div>
+      )
+    }
+
+    return null
+  }
+
+  // Handle Start Dispatch workflow action
+  const handleStartDispatchSubmit = async () => {
+    if (!selectedDispatch) return
+    
+    const { transporterName, vehicleNumber, driverName, driverPhone, estimatedDeliveryDate } = dispatchWorkflowData
+    
+    if (!vehicleNumber) {
+      toast.error('Vehicle number is required')
+      return
+    }
+
+    try {
+      setLoading(true)
+      const res = await fetch('/api/inventory/dispatch/workflow', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({
+          dispatchId: selectedDispatch.id,
+          action: 'start_dispatch',
+          data: {
+            transporterName,
+            vehicleNumber,
+            driverName,
+            driverPhone,
+            estimatedDeliveryDate
+          }
+        })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success('Dispatch started successfully!')
+        fetchDispatches()
+        setShowStartDispatchDialog(false)
+        setSelectedDispatch(null)
+      } else {
+        toast.error(data.error || 'Failed to start dispatch')
+      }
+    } catch (error) {
+      toast.error('Failed to start dispatch')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Handle Load Goods workflow action
+  const handleLoadGoodsSubmit = async () => {
+    if (!selectedDispatch) return
+    
+    if (!loadingImagePreview) {
+      toast.error('Please upload a loading image')
+      return
+    }
+
+    try {
+      setLoading(true)
+      const res = await fetch('/api/inventory/dispatch/workflow', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({
+          dispatchId: selectedDispatch.id,
+          action: 'load_goods',
+          data: {
+            loadingImage: loadingImagePreview,
+            loadingNotes: dispatchWorkflowData.loadingNotes,
+            packageCount: dispatchWorkflowData.packageCount,
+            totalWeight: dispatchWorkflowData.totalWeight
+          }
+        })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success('Goods loaded and Delivery Challan generated!')
+        fetchDispatches()
+        setShowLoadDispatchDialog(false)
+        setSelectedDispatch(null)
+        // Show challan dialog
+        if (data.challan) {
+          setDispatchWorkflowData({ challan: data.challan })
+          setShowChallanDialog(true)
+        }
+      } else {
+        toast.error(data.error || 'Failed to load goods')
+      }
+    } catch (error) {
+      toast.error('Failed to load goods')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Handle Start Transit
+  const handleStartTransit = async (dispatch) => {
+    if (!dispatch.loadingImage) {
+      toast.error('Loading image is required before starting transit')
+      return
+    }
+
+    try {
+      setLoading(true)
+      const res = await fetch('/api/inventory/dispatch/workflow', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({
+          dispatchId: dispatch.id,
+          action: 'start_transit'
+        })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success('Vehicle departed - goods in transit! WhatsApp notification sent.')
+        fetchDispatches()
+      } else {
+        toast.error(data.error || 'Failed to start transit')
+      }
+    } catch (error) {
+      toast.error('Failed to start transit')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Handle Mark Delivered workflow action
+  const handleMarkDeliveredSubmit = async () => {
+    if (!selectedDispatch) return
+    
+    const { receiverName, receiverPhone, receiverDesignation, deliveryCondition, deliveryNotes } = dispatchWorkflowData
+    
+    if (!receiverName) {
+      toast.error('Receiver name is required')
+      return
+    }
+
+    if (!deliveryReceiptPreview) {
+      toast.error('Please upload signed delivery receipt')
+      return
+    }
+
+    try {
+      setLoading(true)
+      const res = await fetch('/api/inventory/dispatch/workflow', {
+        method: 'POST',
+        headers: getHeaders(),
+        body: JSON.stringify({
+          dispatchId: selectedDispatch.id,
+          action: 'mark_delivered',
+          data: {
+            receiverName,
+            receiverPhone,
+            receiverDesignation,
+            signedReceiptImage: deliveryReceiptPreview,
+            deliveryCondition: deliveryCondition || 'good',
+            deliveryNotes
+          }
+        })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success('Delivery confirmed and receipt recorded!')
+        fetchDispatches()
+        setShowDeliveryReceiptDialog(false)
+        setSelectedDispatch(null)
+      } else {
+        toast.error(data.error || 'Failed to mark as delivered')
+      }
+    } catch (error) {
+      toast.error('Failed to mark as delivered')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Handle image upload for loading
+  const handleLoadingImageUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setLoadingImagePreview(reader.result)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  // Handle image upload for delivery receipt
+  const handleDeliveryReceiptUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setDeliveryReceiptPreview(reader.result)
+    }
+    reader.readAsDataURL(file)
+  }
+
+  // View Challan
+  const handleViewChallan = async (dispatch) => {
+    try {
+      const res = await fetch(`/api/inventory/challan?dispatchId=${dispatch.id}`, { headers: getHeaders() })
+      const data = await res.json()
+      if (data.challans?.length > 0) {
+        setDispatchWorkflowData({ challan: data.challans[0], dispatch })
+        setShowChallanDialog(true)
+      } else {
+        toast.error('Challan not found')
+      }
+    } catch (error) {
+      toast.error('Failed to fetch challan')
+    }
+  }
+
+  // View Receipt
+  const handleViewReceipt = async (dispatch) => {
+    try {
+      const res = await fetch(`/api/inventory/receipt?dispatchId=${dispatch.id}`, { headers: getHeaders() })
+      const data = await res.json()
+      if (data.receipts?.length > 0) {
+        setDispatchWorkflowData({ receipt: data.receipts[0], dispatch })
+        setShowDeliveryReceiptDialog(true)
+      } else {
+        toast.error('Delivery receipt not found')
+      }
+    } catch (error) {
+      toast.error('Failed to fetch receipt')
+    }
+  }
+
   // Add/Update product
   const handleSaveProduct = async () => {
     if (!productForm.name) {
