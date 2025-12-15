@@ -73,18 +73,51 @@ export function EnterpriseProjects({ authToken, onProjectSelect }) {
   const [saving, setSaving] = useState(false)
   
   // View state
-  const [viewMode, setViewMode] = useState('card') // card, table, kanban
+  const [viewMode, setViewMode] = useState('card') // card, table, kanban, timeline
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [typeFilter, setTypeFilter] = useState('all')
   const [sortBy, setSortBy] = useState('createdAt')
   const [sortDir, setSortDir] = useState('desc')
+  const [activeMainTab, setActiveMainTab] = useState('projects') // projects, templates, reports
   
   // Dialog state
   const [showCreateDialog, setShowCreateDialog] = useState(false)
   const [showDetailDialog, setShowDetailDialog] = useState(false)
   const [selectedProject, setSelectedProject] = useState(null)
   const [projectDetail, setProjectDetail] = useState(null)
+  
+  // Phase 2 state
+  const [templates, setTemplates] = useState([])
+  const [reports, setReports] = useState(null)
+  const [showTemplateDialog, setShowTemplateDialog] = useState(false)
+  const [showTeamDialog, setShowTeamDialog] = useState(false)
+  const [showTaskDialog, setShowTaskDialog] = useState(false)
+  const [users, setUsers] = useState([])
+  
+  // Template form
+  const [templateForm, setTemplateForm] = useState({
+    name: '',
+    description: '',
+    projectType: 'default',
+    defaultBudget: '',
+    estimatedDuration: 30
+  })
+  
+  // Task form
+  const [taskForm, setTaskForm] = useState({
+    title: '',
+    description: '',
+    priority: 'medium',
+    assignedTo: '',
+    dueDate: ''
+  })
+  
+  // Team form
+  const [teamForm, setTeamForm] = useState({
+    userId: '',
+    role: 'worker'
+  })
   
   // Form state
   const [formData, setFormData] = useState({
