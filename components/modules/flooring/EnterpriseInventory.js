@@ -2425,6 +2425,252 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
   )
 
   // =============================================
+  // RENDER: RESERVATIONS VIEW
+  // =============================================
+
+  const renderReservationsView = () => (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Bookmark className="h-5 w-5" /> Stock Reservations
+          </h3>
+          <p className="text-sm text-slate-500">Reserve inventory for projects or sales orders</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="outline" onClick={() => handleExport('reservations')}>
+            <Download className="h-4 w-4 mr-2" /> Export
+          </Button>
+          <Button onClick={() => { setReservationForm({ warehouseId: selectedWarehouse !== 'all' ? selectedWarehouse : '' }); setDialogOpen({ type: 'reservation', data: null }) }}>
+            <Plus className="h-4 w-4 mr-2" /> New Reservation
+          </Button>
+        </div>
+      </div>
+
+      {/* Summary Cards */}
+      <div className="grid grid-cols-4 gap-4">
+        <StatCard
+          title="Active Reservations"
+          value={reservationSummary.active || 0}
+          icon={Lock}
+          color="bg-blue-500"
+        />
+        <StatCard
+          title="Pending"
+          value={reservationSummary.pending || 0}
+          icon={Clock}
+          color="bg-amber-500"
+        />
+        <StatCard
+          title="Total Reserved Qty"
+          value={`${(reservationSummary.totalQuantity || 0).toLocaleString()} sqft`}
+          icon={Package}
+          color="bg-indigo-500"
+        />
+        <StatCard
+          title="Total"
+          value={reservationSummary.total || 0}
+          icon={Bookmark}
+          color="bg-slate-500"
+        />
+      </div>
+
+      {/* Reservations Table */}
+      {reservations.length > 0 ? (
+        <Card>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Reservation #</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Product</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Warehouse</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Quantity</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Project/Customer</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Status</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Created</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {reservations.map(res => (
+                  <tr key={res.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3">
+                      <Badge variant="outline">{res.reservationNumber}</Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="font-medium">{res.productName}</p>
+                      <p className="text-xs text-slate-500">{res.sku}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1">
+                        <Warehouse className="h-3 w-3 text-slate-400" />
+                        <span className="text-sm">{res.warehouseName}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-right">
+                      <p className="font-semibold">{(res.quantity || 0).toLocaleString()}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      {res.projectName && <p className="font-medium">{res.projectName}</p>}
+                      {res.customerName && <p className="text-sm text-slate-500">{res.customerName}</p>}
+                      {res.orderNumber && <p className="text-xs text-slate-400">Order: {res.orderNumber}</p>}
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <Badge className={
+                        res.status === 'active' ? 'bg-green-100 text-green-700' :
+                        res.status === 'pending' ? 'bg-amber-100 text-amber-700' :
+                        res.status === 'fulfilled' ? 'bg-blue-100 text-blue-700' :
+                        'bg-slate-100 text-slate-700'
+                      }>
+                        {res.status}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="text-sm">{new Date(res.createdAt).toLocaleDateString()}</p>
+                      <p className="text-xs text-slate-500">{res.createdByName}</p>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          {res.status === 'active' && (
+                            <>
+                              <DropdownMenuItem onClick={() => handleReservationAction(res.id, 'release')}>
+                                <Unlock className="h-4 w-4 mr-2" /> Release
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleReservationAction(res.id, 'fulfill')}>
+                                <CheckCircle2 className="h-4 w-4 mr-2" /> Fulfill
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                            </>
+                          )}
+                          <DropdownMenuItem className="text-red-600" onClick={() => handleDeleteReservation(res.id)}>
+                            <Trash2 className="h-4 w-4 mr-2" /> Delete
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      ) : (
+        <EmptyState
+          icon={Bookmark}
+          title="No Stock Reservations"
+          description="Reserve inventory for projects or customer orders to ensure stock availability."
+          action={() => { setReservationForm({ warehouseId: selectedWarehouse !== 'all' ? selectedWarehouse : '' }); setDialogOpen({ type: 'reservation', data: null }) }}
+          actionLabel="New Reservation"
+        />
+      )}
+    </div>
+  )
+
+  // =============================================
+  // RENDER: ACCESS MANAGEMENT VIEW
+  // =============================================
+
+  const renderAccessView = () => (
+    <div className="space-y-4">
+      {/* Header */}
+      <div className="flex items-center justify-between flex-wrap gap-3">
+        <div>
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <UserCheck className="h-5 w-5" /> Warehouse Access Control
+          </h3>
+          <p className="text-sm text-slate-500">Manage user permissions for warehouses</p>
+        </div>
+        <Button onClick={() => { setAccessForm({}); setDialogOpen({ type: 'access', data: null }) }}>
+          <Plus className="h-4 w-4 mr-2" /> Grant Access
+        </Button>
+      </div>
+
+      {/* Access Records Table */}
+      {accessRecords.length > 0 ? (
+        <Card>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-slate-50 border-b">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">User</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Warehouse</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Access Level</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Permissions</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Granted By</th>
+                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Granted</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Actions</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y">
+                {accessRecords.map(access => (
+                  <tr key={access.id} className="hover:bg-slate-50">
+                    <td className="px-4 py-3">
+                      <p className="font-medium">{access.userName}</p>
+                      <p className="text-xs text-slate-500">{access.userEmail}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex items-center gap-1">
+                        <Warehouse className="h-3 w-3 text-slate-400" />
+                        <span className="text-sm">{access.warehouseName}</span>
+                      </div>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <Badge className={
+                        access.accessLevel === 'full' ? 'bg-green-100 text-green-700' :
+                        access.accessLevel === 'manager' ? 'bg-blue-100 text-blue-700' :
+                        'bg-slate-100 text-slate-700'
+                      }>
+                        {access.accessLevel}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3">
+                      <div className="flex flex-wrap justify-center gap-1">
+                        {access.permissions?.canView && <Badge variant="outline" className="text-xs">View</Badge>}
+                        {access.permissions?.canEdit && <Badge variant="outline" className="text-xs">Edit</Badge>}
+                        {access.permissions?.canTransfer && <Badge variant="outline" className="text-xs">Transfer</Badge>}
+                        {access.permissions?.canAdjust && <Badge variant="outline" className="text-xs">Adjust</Badge>}
+                        {access.permissions?.canGRN && <Badge variant="outline" className="text-xs">GRN</Badge>}
+                        {access.permissions?.canChallan && <Badge variant="outline" className="text-xs">Challan</Badge>}
+                      </div>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="text-sm">{access.grantedByName}</p>
+                    </td>
+                    <td className="px-4 py-3">
+                      <p className="text-sm">{new Date(access.grantedAt).toLocaleDateString()}</p>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700 hover:bg-red-50" onClick={() => handleRevokeAccess(access.id)}>
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      ) : (
+        <EmptyState
+          icon={UserCheck}
+          title="No Access Records"
+          description="Grant warehouse access to team members to control who can view and manage inventory in each location."
+          action={() => { setAccessForm({}); setDialogOpen({ type: 'access', data: null }) }}
+          actionLabel="Grant Access"
+        />
+      )}
+    </div>
+  )
+
+  // =============================================
   // RENDER: DIALOGS
   // =============================================
 
