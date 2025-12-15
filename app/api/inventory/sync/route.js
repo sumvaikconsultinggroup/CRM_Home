@@ -71,12 +71,44 @@ export async function POST(request) {
     const db = await getClientDb(dbName)
     const mainDb = await getMainDb()
 
+    // Check sync configuration - only allow ONE module
+    const configCollection = db.collection('inventory_sync_config')
+    const existingConfig = await configCollection.findOne({ clientId: user.clientId })
+    
+    if (existingConfig && existingConfig.syncedModuleId && existingConfig.syncedModuleId !== moduleId) {
+      return errorResponse(
+        `Inventory can only sync with ONE module. Currently synced with: ${existingConfig.syncedModuleName}. Disconnect first to sync with another module.`,
+        400
+      )
+    }
+
     // Get module info
     const modulesCollection = mainDb.collection('modules')
     const moduleDoc = await modulesCollection.findOne({ id: moduleId })
     if (!moduleDoc) {
       return errorResponse('Module not found', 404)
     }
+    
+    // Save/Update sync configuration to lock to this module
+    const syncConfig = {
+      id: existingConfig?.id || uuidv4(),
+      clientId: user.clientId,
+      syncedModuleId: moduleId,
+      syncedModuleName: moduleDoc.name,
+      twoWaySync: true,
+      autoSync: existingConfig?.autoSync || false,
+      syncFrequency: existingConfig?.syncFrequency || 'manual',
+      lastSyncAt: new Date(),
+      createdAt: existingConfig?.createdAt || new Date(),
+      updatedAt: new Date(),
+      updatedBy: user.id
+    }
+    
+    await configCollection.updateOne(
+      { clientId: user.clientId },
+      { $set: syncConfig },
+      { upsert: true }
+    )
 
     // Determine product collection based on module
     const moduleProductCollections = {
