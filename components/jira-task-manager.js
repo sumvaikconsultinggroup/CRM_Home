@@ -139,6 +139,516 @@ const TASK_TEMPLATES = [
   }
 ]
 
+// Recurring task frequencies
+const RECURRENCE_OPTIONS = [
+  { id: 'none', label: 'No Repeat', icon: Circle },
+  { id: 'daily', label: 'Daily', icon: Repeat },
+  { id: 'weekly', label: 'Weekly', icon: Repeat },
+  { id: 'biweekly', label: 'Every 2 Weeks', icon: Repeat },
+  { id: 'monthly', label: 'Monthly', icon: Repeat }
+]
+
+// Auto-assign rules
+const AUTO_ASSIGN_RULES = [
+  { id: 'round_robin', label: 'Round Robin', description: 'Assign to team members in rotation' },
+  { id: 'least_loaded', label: 'Least Loaded', description: 'Assign to team member with fewest tasks' },
+  { id: 'by_label', label: 'By Label', description: 'Assign based on task labels' },
+  { id: 'by_project', label: 'By Project', description: 'Assign based on project default' }
+]
+
+// =============================================
+// TEAM ANALYTICS COMPONENT
+// =============================================
+
+const TeamAnalytics = ({ tasks, users, timeEntries, onClose }) => {
+  const [period, setPeriod] = useState('week') // week, month, all
+  
+  // Calculate date range
+  const getDateRange = () => {
+    const now = new Date()
+    if (period === 'week') {
+      return { start: subDays(now, 7), end: now }
+    } else if (period === 'month') {
+      return { start: startOfMonth(now), end: endOfMonth(now) }
+    }
+    return { start: subDays(now, 365), end: now }
+  }
+  
+  const dateRange = getDateRange()
+  
+  // Filter tasks by period
+  const periodTasks = useMemo(() => {
+    return tasks.filter(t => {
+      const created = new Date(t.createdAt)
+      return created >= dateRange.start && created <= dateRange.end
+    })
+  }, [tasks, dateRange.start, dateRange.end])
+  
+  // Calculate metrics
+  const metrics = useMemo(() => {
+    const completed = tasks.filter(t => t.status === 'completed')
+    const completedInPeriod = completed.filter(t => {
+      const completedAt = t.completedAt ? new Date(t.completedAt) : new Date(t.updatedAt)
+      return completedAt >= dateRange.start && completedAt <= dateRange.end
+    })
+    
+    const overdue = tasks.filter(t => {
+      if (!t.dueDate || t.status === 'completed') return false
+      return isPast(new Date(t.dueDate)) && !isToday(new Date(t.dueDate))
+    })
+    
+    const avgCompletionTime = completedInPeriod.length > 0
+      ? completedInPeriod.reduce((acc, t) => {
+          const created = new Date(t.createdAt)
+          const done = t.completedAt ? new Date(t.completedAt) : new Date(t.updatedAt)
+          return acc + differenceInDays(done, created)
+        }, 0) / completedInPeriod.length
+      : 0
+    
+    // Status distribution
+    const statusCounts = {}
+    Object.keys(TASK_STATUSES).forEach(s => {
+      statusCounts[s] = tasks.filter(t => t.status === s).length
+    })
+    
+    // Priority distribution
+    const priorityCounts = {}
+    Object.keys(TASK_PRIORITIES).forEach(p => {
+      priorityCounts[p] = tasks.filter(t => t.priority === p).length
+    })
+    
+    // Team workload
+    const teamWorkload = users.map(user => {
+      const userTasks = tasks.filter(t => t.assignees?.includes(user.id))
+      const userCompleted = userTasks.filter(t => t.status === 'completed').length
+      const userInProgress = userTasks.filter(t => t.status === 'in_progress').length
+      const userOverdue = userTasks.filter(t => {
+        if (!t.dueDate || t.status === 'completed') return false
+        return isPast(new Date(t.dueDate))
+      }).length
+      
+      return {
+        user,
+        total: userTasks.length,
+        completed: userCompleted,
+        inProgress: userInProgress,
+        overdue: userOverdue,
+        completionRate: userTasks.length > 0 ? Math.round((userCompleted / userTasks.length) * 100) : 0
+      }
+    }).sort((a, b) => b.total - a.total)
+    
+    // Completion trend (last 7 days)
+    const completionTrend = []
+    for (let i = 6; i >= 0; i--) {
+      const day = subDays(new Date(), i)
+      const dayStart = new Date(day.setHours(0, 0, 0, 0))
+      const dayEnd = new Date(day.setHours(23, 59, 59, 999))
+      
+      const createdOnDay = tasks.filter(t => {
+        const created = new Date(t.createdAt)
+        return created >= dayStart && created <= dayEnd
+      }).length
+      
+      const completedOnDay = completed.filter(t => {
+        const done = t.completedAt ? new Date(t.completedAt) : new Date(t.updatedAt)
+        return done >= dayStart && done <= dayEnd
+      }).length
+      
+      completionTrend.push({
+        date: format(subDays(new Date(), i), 'EEE'),
+        created: createdOnDay,
+        completed: completedOnDay
+      })
+    }
+    
+    return {
+      total: tasks.length,
+      completed: completed.length,
+      completedInPeriod: completedInPeriod.length,
+      inProgress: tasks.filter(t => t.status === 'in_progress').length,
+      overdue: overdue.length,
+      avgCompletionTime: Math.round(avgCompletionTime * 10) / 10,
+      statusCounts,
+      priorityCounts,
+      teamWorkload,
+      completionTrend,
+      completionRate: tasks.length > 0 ? Math.round((completed.length / tasks.length) * 100) : 0
+    }
+  }, [tasks, users, dateRange.start, dateRange.end])
+  
+  const maxTrend = Math.max(...metrics.completionTrend.map(d => Math.max(d.created, d.completed)), 1)
+  
+  return (
+    <Sheet open={true} onOpenChange={onClose}>
+      <SheetContent side="right" className="w-full sm:max-w-2xl overflow-y-auto">
+        <SheetHeader>
+          <SheetTitle className="flex items-center gap-2">
+            <BarChart3 className="h-5 w-5" />
+            Team Analytics & Reports
+          </SheetTitle>
+        </SheetHeader>
+        
+        <div className="mt-6 space-y-6">
+          {/* Period Selector */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">Period:</span>
+            <div className="flex border rounded-lg">
+              {[
+                { id: 'week', label: 'This Week' },
+                { id: 'month', label: 'This Month' },
+                { id: 'all', label: 'All Time' }
+              ].map(p => (
+                <Button
+                  key={p.id}
+                  variant={period === p.id ? 'secondary' : 'ghost'}
+                  size="sm"
+                  onClick={() => setPeriod(p.id)}
+                  className="rounded-none first:rounded-l-lg last:rounded-r-lg"
+                >
+                  {p.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+          
+          {/* Key Metrics */}
+          <div className="grid grid-cols-4 gap-3">
+            <Card className="p-3 text-center">
+              <Gauge className="h-5 w-5 mx-auto text-blue-500 mb-1" />
+              <p className="text-2xl font-bold">{metrics.completionRate}%</p>
+              <p className="text-xs text-muted-foreground">Completion Rate</p>
+            </Card>
+            <Card className="p-3 text-center">
+              <CheckCircle2 className="h-5 w-5 mx-auto text-emerald-500 mb-1" />
+              <p className="text-2xl font-bold">{metrics.completedInPeriod}</p>
+              <p className="text-xs text-muted-foreground">Completed</p>
+            </Card>
+            <Card className="p-3 text-center">
+              <AlertCircle className="h-5 w-5 mx-auto text-red-500 mb-1" />
+              <p className="text-2xl font-bold">{metrics.overdue}</p>
+              <p className="text-xs text-muted-foreground">Overdue</p>
+            </Card>
+            <Card className="p-3 text-center">
+              <Timer className="h-5 w-5 mx-auto text-amber-500 mb-1" />
+              <p className="text-2xl font-bold">{metrics.avgCompletionTime}d</p>
+              <p className="text-xs text-muted-foreground">Avg. Time</p>
+            </Card>
+          </div>
+          
+          {/* Completion Trend Chart */}
+          <Card className="p-4">
+            <h4 className="font-medium mb-4 flex items-center gap-2">
+              <TrendingUp className="h-4 w-4" />
+              7-Day Activity Trend
+            </h4>
+            <div className="flex items-end gap-2 h-32">
+              {metrics.completionTrend.map((day, idx) => (
+                <div key={idx} className="flex-1 flex flex-col items-center gap-1">
+                  <div className="w-full flex gap-0.5 justify-center items-end h-24">
+                    <div 
+                      className="w-3 bg-blue-400 rounded-t transition-all"
+                      style={{ height: `${(day.created / maxTrend) * 100}%`, minHeight: day.created > 0 ? '4px' : '0' }}
+                      title={`${day.created} created`}
+                    />
+                    <div 
+                      className="w-3 bg-emerald-400 rounded-t transition-all"
+                      style={{ height: `${(day.completed / maxTrend) * 100}%`, minHeight: day.completed > 0 ? '4px' : '0' }}
+                      title={`${day.completed} completed`}
+                    />
+                  </div>
+                  <span className="text-xs text-muted-foreground">{day.date}</span>
+                </div>
+              ))}
+            </div>
+            <div className="flex items-center justify-center gap-4 mt-3 text-xs">
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-blue-400 rounded" />
+                <span>Created</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <div className="w-3 h-3 bg-emerald-400 rounded" />
+                <span>Completed</span>
+              </div>
+            </div>
+          </Card>
+          
+          {/* Status Distribution */}
+          <Card className="p-4">
+            <h4 className="font-medium mb-4 flex items-center gap-2">
+              <PieChart className="h-4 w-4" />
+              Task Distribution
+            </h4>
+            <div className="space-y-2">
+              {Object.entries(TASK_STATUSES).map(([key, config]) => {
+                const count = metrics.statusCounts[key] || 0
+                const percentage = metrics.total > 0 ? Math.round((count / metrics.total) * 100) : 0
+                return (
+                  <div key={key} className="flex items-center gap-3">
+                    <div className={`p-1 rounded ${config.color}`}>
+                      <config.icon className="h-3 w-3" />
+                    </div>
+                    <span className="text-sm w-24">{config.label}</span>
+                    <div className="flex-1 h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <div 
+                        className={`h-full ${config.color.split(' ')[0]} transition-all`}
+                        style={{ width: `${percentage}%` }}
+                      />
+                    </div>
+                    <span className="text-sm font-medium w-12 text-right">{count}</span>
+                    <span className="text-xs text-muted-foreground w-10 text-right">{percentage}%</span>
+                  </div>
+                )
+              })}
+            </div>
+          </Card>
+          
+          {/* Team Workload */}
+          <Card className="p-4">
+            <h4 className="font-medium mb-4 flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Team Workload
+            </h4>
+            <div className="space-y-3">
+              {metrics.teamWorkload.slice(0, 8).map((member, idx) => (
+                <div key={member.user.id} className="flex items-center gap-3">
+                  <span className="text-sm text-muted-foreground w-4">{idx + 1}</span>
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={member.user.avatar} />
+                    <AvatarFallback className="text-xs bg-gradient-to-br from-blue-500 to-purple-600 text-white">
+                      {member.user.name?.charAt(0) || member.user.email?.charAt(0)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium truncate">{member.user.name || member.user.email}</p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span>{member.total} tasks</span>
+                      <span>•</span>
+                      <span className="text-emerald-600">{member.completed} done</span>
+                      {member.overdue > 0 && (
+                        <>
+                          <span>•</span>
+                          <span className="text-red-600">{member.overdue} overdue</span>
+                        </>
+                      )}
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-lg font-bold">{member.completionRate}%</p>
+                    <p className="text-xs text-muted-foreground">completion</p>
+                  </div>
+                </div>
+              ))}
+              {metrics.teamWorkload.length === 0 && (
+                <p className="text-center text-muted-foreground py-4">No team members with assigned tasks</p>
+              )}
+            </div>
+          </Card>
+          
+          {/* Priority Breakdown */}
+          <Card className="p-4">
+            <h4 className="font-medium mb-4 flex items-center gap-2">
+              <Flag className="h-4 w-4" />
+              Priority Breakdown
+            </h4>
+            <div className="grid grid-cols-4 gap-3">
+              {Object.entries(TASK_PRIORITIES).map(([key, config]) => {
+                const count = metrics.priorityCounts[key] || 0
+                return (
+                  <div key={key} className={`p-3 rounded-lg ${config.color} text-center`}>
+                    <p className="text-2xl font-bold">{count}</p>
+                    <p className="text-xs opacity-90">{config.label}</p>
+                  </div>
+                )
+              })}
+            </div>
+          </Card>
+        </div>
+      </SheetContent>
+    </Sheet>
+  )
+}
+
+// =============================================
+// RECURRING TASK SETTINGS COMPONENT
+// =============================================
+
+const RecurringTaskSettings = ({ value, onChange }) => {
+  const [isRecurring, setIsRecurring] = useState(value?.frequency && value.frequency !== 'none')
+  const [frequency, setFrequency] = useState(value?.frequency || 'none')
+  const [endDate, setEndDate] = useState(value?.endDate || '')
+  const [occurrences, setOccurrences] = useState(value?.occurrences || '')
+  
+  const handleChange = (updates) => {
+    const newValue = {
+      frequency: updates.frequency ?? frequency,
+      endDate: updates.endDate ?? endDate,
+      occurrences: updates.occurrences ?? occurrences,
+      enabled: updates.enabled ?? isRecurring
+    }
+    onChange(newValue)
+  }
+  
+  return (
+    <div className="space-y-3 p-3 bg-slate-50 rounded-lg">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <Repeat className="h-4 w-4 text-blue-500" />
+          <span className="text-sm font-medium">Recurring Task</span>
+        </div>
+        <Switch 
+          checked={isRecurring}
+          onCheckedChange={(checked) => {
+            setIsRecurring(checked)
+            if (!checked) {
+              setFrequency('none')
+              handleChange({ enabled: false, frequency: 'none' })
+            } else {
+              setFrequency('weekly')
+              handleChange({ enabled: true, frequency: 'weekly' })
+            }
+          }}
+        />
+      </div>
+      
+      {isRecurring && (
+        <div className="space-y-3 pt-2 border-t">
+          <div>
+            <Label className="text-xs">Repeat</Label>
+            <Select value={frequency} onValueChange={(v) => { setFrequency(v); handleChange({ frequency: v }) }}>
+              <SelectTrigger className="mt-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {RECURRENCE_OPTIONS.filter(o => o.id !== 'none').map(opt => (
+                  <SelectItem key={opt.id} value={opt.id}>
+                    <div className="flex items-center gap-2">
+                      <opt.icon className="h-4 w-4" />
+                      {opt.label}
+                    </div>
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <Label className="text-xs">End Date (optional)</Label>
+              <Input 
+                type="date"
+                value={endDate}
+                onChange={(e) => { setEndDate(e.target.value); handleChange({ endDate: e.target.value }) }}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label className="text-xs">Max Occurrences</Label>
+              <Input 
+                type="number"
+                min="1"
+                placeholder="Unlimited"
+                value={occurrences}
+                onChange={(e) => { setOccurrences(e.target.value); handleChange({ occurrences: e.target.value }) }}
+                className="mt-1"
+              />
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// =============================================
+// DUE DATE REMINDERS COMPONENT
+// =============================================
+
+const DueDateReminders = ({ tasks, currentUser }) => {
+  const now = new Date()
+  
+  // Get tasks due soon (next 3 days) or overdue
+  const reminders = useMemo(() => {
+    const upcoming = []
+    const overdue = []
+    
+    tasks.forEach(task => {
+      if (!task.dueDate || task.status === 'completed' || task.status === 'cancelled') return
+      if (!task.assignees?.includes(currentUser?.id)) return
+      
+      const dueDate = new Date(task.dueDate)
+      const daysUntilDue = differenceInDays(dueDate, now)
+      
+      if (daysUntilDue < 0) {
+        overdue.push({ ...task, daysOverdue: Math.abs(daysUntilDue) })
+      } else if (daysUntilDue <= 3) {
+        upcoming.push({ ...task, daysUntilDue })
+      }
+    })
+    
+    return {
+      overdue: overdue.sort((a, b) => b.daysOverdue - a.daysOverdue),
+      upcoming: upcoming.sort((a, b) => a.daysUntilDue - b.daysUntilDue)
+    }
+  }, [tasks, currentUser, now])
+  
+  const totalReminders = reminders.overdue.length + reminders.upcoming.length
+  
+  if (totalReminders === 0) return null
+  
+  return (
+    <Popover>
+      <PopoverTrigger asChild>
+        <Button variant="outline" size="sm" className="relative">
+          <Bell className="h-4 w-4" />
+          {totalReminders > 0 && (
+            <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-red-500 text-white text-xs flex items-center justify-center">
+              {totalReminders > 9 ? '9+' : totalReminders}
+            </span>
+          )}
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-80 p-0" align="end">
+        <div className="p-3 border-b">
+          <h4 className="font-medium flex items-center gap-2">
+            <Bell className="h-4 w-4" />
+            Due Date Reminders
+          </h4>
+        </div>
+        <ScrollArea className="max-h-80">
+          {reminders.overdue.length > 0 && (
+            <div className="p-2">
+              <p className="text-xs font-medium text-red-600 px-2 py-1">OVERDUE</p>
+              {reminders.overdue.map(task => (
+                <div key={task.id} className="p-2 hover:bg-slate-50 rounded cursor-pointer">
+                  <p className="text-sm font-medium truncate">{task.title}</p>
+                  <p className="text-xs text-red-600">
+                    {task.daysOverdue} day{task.daysOverdue > 1 ? 's' : ''} overdue
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+          {reminders.upcoming.length > 0 && (
+            <div className="p-2">
+              <p className="text-xs font-medium text-amber-600 px-2 py-1">DUE SOON</p>
+              {reminders.upcoming.map(task => (
+                <div key={task.id} className="p-2 hover:bg-slate-50 rounded cursor-pointer">
+                  <p className="text-sm font-medium truncate">{task.title}</p>
+                  <p className="text-xs text-amber-600">
+                    {task.daysUntilDue === 0 ? 'Due today' : 
+                     task.daysUntilDue === 1 ? 'Due tomorrow' :
+                     `Due in ${task.daysUntilDue} days`}
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
+        </ScrollArea>
+      </PopoverContent>
+    </Popover>
+  )
+}
+
 // =============================================
 // UTILITY COMPONENTS
 // =============================================
