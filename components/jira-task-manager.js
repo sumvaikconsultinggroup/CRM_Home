@@ -2291,6 +2291,10 @@ export function JiraTaskManager({ token, currentUser }) {
               tasks={getFilteredTasks}
               onTaskClick={handleTaskClick}
               onQuickCreate={handleQuickCreate}
+              onDrop={handleDragDrop}
+              draggingTaskId={draggingTaskId}
+              onDragStart={setDraggingTaskId}
+              onDragEnd={() => setDraggingTaskId(null)}
             />
           ))}
         </div>
