@@ -844,15 +844,15 @@ const LedgerView = ({ expenses, onExport }) => {
       return date >= startDate && date <= endDate
     }).sort((a, b) => new Date(a.date) - new Date(b.date))
     
-    let balance = 0
-    const entries = monthExpenses.map((e, i) => {
-      balance += e.amount || 0
-      return {
+    const entries = monthExpenses.reduce((acc, e, i) => {
+      const prevBalance = acc.length > 0 ? acc[acc.length - 1].runningBalance : 0
+      acc.push({
         ...e,
         serialNo: i + 1,
-        runningBalance: balance
-      }
-    })
+        runningBalance: prevBalance + (e.amount || 0)
+      })
+      return acc
+    }, [])
     
     const totalDebit = entries.reduce((sum, e) => sum + (e.amount || 0), 0)
     
