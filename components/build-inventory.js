@@ -31,9 +31,16 @@ import {
   Database, Link2, CheckCircle2, Clock, Edit, Trash2, Eye, Upload,
   AlertTriangle, XCircle, ArrowUpDown, Filter, MoreVertical, Camera,
   MapPin, Phone, User, Calendar, Send, MessageSquare, Image, FileText,
-  PieChart, TrendingDown, Archive, ShoppingCart, IndianRupee
+  PieChart as PieChartIcon, TrendingDown, Archive, ShoppingCart, IndianRupee,
+  Activity, Layers3, Target, Users, Building2
 } from 'lucide-react'
 import { toast } from 'sonner'
+import {
+  AreaChart, Area, BarChart, Bar, LineChart, Line, PieChart, Pie, Cell,
+  XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend,
+  ComposedChart, RadarChart, Radar, PolarGrid, PolarAngleAxis, PolarRadiusAxis,
+  Treemap
+} from 'recharts'
 
 // Import the Enterprise Inventory component
 import { EnterpriseInventory } from '@/components/modules/flooring/EnterpriseInventory'
