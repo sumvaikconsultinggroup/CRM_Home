@@ -374,6 +374,42 @@ const TaskDetailModal = ({ task, open, onClose, onUpdate, onDelete, users, proje
     'Authorization': `Bearer ${token}`
   }), [token])
 
+  // Fetch functions with useCallback
+  const fetchSubtasks = useCallback(async () => {
+    if (!task?.id) return
+    setLoadingSubtasks(true)
+    try {
+      const res = await fetch(`/api/tasks/subtasks?parentId=${task.id}`, { headers })
+      const data = await res.json()
+      if (data.subtasks) setSubtasks(data.subtasks)
+    } catch (error) {
+      console.error('Failed to fetch subtasks:', error)
+    }
+    setLoadingSubtasks(false)
+  }, [task?.id, headers])
+
+  const fetchAttachments = useCallback(async () => {
+    if (!task?.id) return
+    try {
+      const res = await fetch(`/api/tasks/attachments?taskId=${task.id}`, { headers })
+      const data = await res.json()
+      if (Array.isArray(data)) setAttachments(data)
+    } catch (error) {
+      console.error('Failed to fetch attachments:', error)
+    }
+  }, [task?.id, headers])
+
+  const fetchTimeEntries = useCallback(async () => {
+    if (!task?.id) return
+    try {
+      const res = await fetch(`/api/tasks/time-entries?taskId=${task.id}`, { headers })
+      const data = await res.json()
+      if (data.timeEntries) setTimeEntries(data.timeEntries)
+    } catch (error) {
+      console.error('Failed to fetch time entries:', error)
+    }
+  }, [task?.id, headers])
+
   // Initialize data
   useEffect(() => {
     if (task && open) {
@@ -395,42 +431,7 @@ const TaskDetailModal = ({ task, open, onClose, onUpdate, onDelete, users, proje
       fetchAttachments()
       fetchTimeEntries()
     }
-  }, [task, open])
-
-  const fetchSubtasks = async () => {
-    if (!task?.id) return
-    setLoadingSubtasks(true)
-    try {
-      const res = await fetch(`/api/tasks/subtasks?parentId=${task.id}`, { headers })
-      const data = await res.json()
-      if (data.subtasks) setSubtasks(data.subtasks)
-    } catch (error) {
-      console.error('Failed to fetch subtasks:', error)
-    }
-    setLoadingSubtasks(false)
-  }
-
-  const fetchAttachments = async () => {
-    if (!task?.id) return
-    try {
-      const res = await fetch(`/api/tasks/attachments?taskId=${task.id}`, { headers })
-      const data = await res.json()
-      if (Array.isArray(data)) setAttachments(data)
-    } catch (error) {
-      console.error('Failed to fetch attachments:', error)
-    }
-  }
-
-  const fetchTimeEntries = async () => {
-    if (!task?.id) return
-    try {
-      const res = await fetch(`/api/tasks/time-entries?taskId=${task.id}`, { headers })
-      const data = await res.json()
-      if (data.timeEntries) setTimeEntries(data.timeEntries)
-    } catch (error) {
-      console.error('Failed to fetch time entries:', error)
-    }
-  }
+  }, [task, open, fetchSubtasks, fetchAttachments, fetchTimeEntries])
 
   // Handlers
   const handleUpdateField = async (field, value) => {
