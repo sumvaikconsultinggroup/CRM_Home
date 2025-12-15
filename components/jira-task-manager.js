@@ -1823,7 +1823,30 @@ export function JiraTaskManager({ token, currentUser }) {
       )}
 
       {/* Toolbar */}
-      <Card className="p-3">
+      <Card className="p-3 space-y-3">
+        {/* Quick Filters */}
+        <div className="flex flex-wrap items-center gap-2">
+          <span className="text-sm font-medium text-muted-foreground mr-2">Quick Filters:</span>
+          {Object.entries(QUICK_FILTERS).map(([key, config]) => {
+            const Icon = config.icon
+            return (
+              <Button
+                key={key}
+                variant={quickFilter === key ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleQuickFilterChange(key)}
+                className={quickFilter === key ? '' : config.color}
+              >
+                <Icon className="h-3.5 w-3.5 mr-1" />
+                {config.label}
+              </Button>
+            )
+          })}
+        </div>
+
+        <Separator />
+
+        {/* Main Filters */}
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative flex-1 min-w-[200px] max-w-md">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
@@ -1878,15 +1901,89 @@ export function JiraTaskManager({ token, currentUser }) {
 
           <div className="flex-1" />
 
+          {/* View Mode Toggle */}
           <div className="flex items-center border rounded-lg">
-            <Button variant={viewMode === 'kanban' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('kanban')} className="rounded-r-none">
-              <Kanban className="h-4 w-4" />
-            </Button>
-            <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('list')} className="rounded-l-none">
-              <List className="h-4 w-4" />
-            </Button>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant={viewMode === 'kanban' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('kanban')} className="rounded-r-none border-r">
+                    <Kanban className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Kanban Board</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant={viewMode === 'list' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('list')} className="rounded-none border-r">
+                    <List className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>List View</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Button variant={viewMode === 'calendar' ? 'secondary' : 'ghost'} size="sm" onClick={() => setViewMode('calendar')} className="rounded-l-none">
+                    <CalendarDays className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>Calendar View</TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
           </div>
         </div>
+
+        {/* Bulk Actions Bar */}
+        {selectedTasks.length > 0 && (
+          <>
+            <Separator />
+            <div className="flex items-center gap-3 bg-blue-50 p-2 rounded-lg">
+              <div className="flex items-center gap-2">
+                <CheckSquare className="h-4 w-4 text-blue-600" />
+                <span className="text-sm font-medium text-blue-700">{selectedTasks.length} selected</span>
+              </div>
+              <Separator orientation="vertical" className="h-6" />
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Zap className="h-4 w-4 mr-1" />Change Status
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {Object.entries(TASK_STATUSES).map(([key, config]) => (
+                    <DropdownMenuItem key={key} onClick={() => handleBulkStatusChange(key)}>
+                      <config.icon className="h-4 w-4 mr-2" />{config.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm">
+                    <Flag className="h-4 w-4 mr-1" />Change Priority
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent>
+                  {Object.entries(TASK_PRIORITIES).map(([key, config]) => (
+                    <DropdownMenuItem key={key} onClick={() => handleBulkPriorityChange(key)}>
+                      <config.icon className={`h-4 w-4 mr-2 ${config.iconColor}`} />{config.label}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <Button variant="outline" size="sm" onClick={handleBulkDelete} className="text-red-600 hover:text-red-700 hover:bg-red-50">
+                <Trash2 className="h-4 w-4 mr-1" />Delete
+              </Button>
+              <div className="flex-1" />
+              <Button variant="ghost" size="sm" onClick={() => setSelectedTasks([])}>
+                <X className="h-4 w-4 mr-1" />Clear Selection
+              </Button>
+            </div>
+          </>
+        )}
       </Card>
 
       {/* Main Content */}
@@ -1900,29 +1997,74 @@ export function JiraTaskManager({ token, currentUser }) {
             <KanbanColumn
               key={status}
               status={status}
-              tasks={tasks}
+              tasks={getFilteredTasks}
               onTaskClick={handleTaskClick}
               onQuickCreate={handleQuickCreate}
             />
           ))}
         </div>
+      ) : viewMode === 'calendar' ? (
+        <CalendarView 
+          tasks={getFilteredTasks}
+          onTaskClick={handleTaskClick}
+          currentDate={calendarDate}
+          onDateChange={setCalendarDate}
+        />
       ) : (
         <Card>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead className="bg-slate-50">
                 <tr>
-                  <th className="text-left p-3 text-xs font-medium text-slate-500">Task</th>
-                  <th className="text-left p-3 text-xs font-medium text-slate-500 w-32">Status</th>
-                  <th className="text-left p-3 text-xs font-medium text-slate-500 w-24">Priority</th>
+                  <th className="w-10 p-3">
+                    <Checkbox 
+                      checked={selectedTasks.length === getFilteredTasks.length && getFilteredTasks.length > 0}
+                      onCheckedChange={handleSelectAll}
+                    />
+                  </th>
+                  <th className="text-left p-3 text-xs font-medium text-slate-500 cursor-pointer hover:text-slate-700" onClick={() => handleSort('title')}>
+                    <div className="flex items-center gap-1">
+                      Task
+                      {sortField === 'title' && <ArrowUpDown className="h-3 w-3" />}
+                    </div>
+                  </th>
+                  <th className="text-left p-3 text-xs font-medium text-slate-500 w-32 cursor-pointer hover:text-slate-700" onClick={() => handleSort('status')}>
+                    <div className="flex items-center gap-1">
+                      Status
+                      {sortField === 'status' && <ArrowUpDown className="h-3 w-3" />}
+                    </div>
+                  </th>
+                  <th className="text-left p-3 text-xs font-medium text-slate-500 w-24 cursor-pointer hover:text-slate-700" onClick={() => handleSort('priority')}>
+                    <div className="flex items-center gap-1">
+                      Priority
+                      {sortField === 'priority' && <ArrowUpDown className="h-3 w-3" />}
+                    </div>
+                  </th>
                   <th className="text-left p-3 text-xs font-medium text-slate-500 w-40">Assignees</th>
-                  <th className="text-left p-3 text-xs font-medium text-slate-500 w-32">Due Date</th>
+                  <th className="text-left p-3 text-xs font-medium text-slate-500 w-32 cursor-pointer hover:text-slate-700" onClick={() => handleSort('dueDate')}>
+                    <div className="flex items-center gap-1">
+                      Due Date
+                      {sortField === 'dueDate' && <ArrowUpDown className="h-3 w-3" />}
+                    </div>
+                  </th>
+                  <th className="text-left p-3 text-xs font-medium text-slate-500 w-32 cursor-pointer hover:text-slate-700" onClick={() => handleSort('createdAt')}>
+                    <div className="flex items-center gap-1">
+                      Created
+                      {sortField === 'createdAt' && <ArrowUpDown className="h-3 w-3" />}
+                    </div>
+                  </th>
                 </tr>
               </thead>
               <tbody>
-                {tasks.map((task) => (
-                  <tr key={task.id} className="border-t hover:bg-slate-50 cursor-pointer" onClick={() => handleTaskClick(task)}>
-                    <td className="p-3">
+                {getFilteredTasks.map((task) => (
+                  <tr key={task.id} className={`border-t hover:bg-slate-50 cursor-pointer ${selectedTasks.includes(task.id) ? 'bg-blue-50' : ''}`}>
+                    <td className="p-3" onClick={(e) => e.stopPropagation()}>
+                      <Checkbox 
+                        checked={selectedTasks.includes(task.id)}
+                        onCheckedChange={() => handleSelectTask(task.id)}
+                      />
+                    </td>
+                    <td className="p-3" onClick={() => handleTaskClick(task)}>
                       <div className="flex items-center gap-3">
                         <TaskTypeIcon type={task.taskType} />
                         <div>
@@ -1930,21 +2072,48 @@ export function JiraTaskManager({ token, currentUser }) {
                             <span className="text-xs text-muted-foreground font-mono">{task.taskNumber}</span>
                             <span className="font-medium">{task.title}</span>
                           </div>
+                          {task.labels?.length > 0 && (
+                            <div className="flex gap-1 mt-1">
+                              {task.labels.slice(0, 2).map((labelId, idx) => {
+                                const label = DEFAULT_LABELS.find(l => l.id === labelId)
+                                return label ? (
+                                  <span key={idx} className="px-1.5 py-0.5 rounded text-[10px] text-white" style={{ backgroundColor: label.color }}>
+                                    {label.name}
+                                  </span>
+                                ) : null
+                              })}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>
-                    <td className="p-3"><StatusBadge status={task.status} /></td>
-                    <td className="p-3"><PriorityBadge priority={task.priority} /></td>
-                    <td className="p-3">
+                    <td className="p-3" onClick={() => handleTaskClick(task)}><StatusBadge status={task.status} /></td>
+                    <td className="p-3" onClick={() => handleTaskClick(task)}><PriorityBadge priority={task.priority} /></td>
+                    <td className="p-3" onClick={() => handleTaskClick(task)}>
                       {task.assigneeDetails?.length > 0 ? (
                         <div className="flex -space-x-1">
                           {task.assigneeDetails.slice(0, 3).map((a, i) => <UserAvatar key={i} user={a} size="sm" />)}
+                          {task.assigneeDetails.length > 3 && (
+                            <div className="h-6 w-6 rounded-full bg-slate-200 flex items-center justify-center text-xs">
+                              +{task.assigneeDetails.length - 3}
+                            </div>
+                          )}
                         </div>
                       ) : <span className="text-xs text-muted-foreground">Unassigned</span>}
                     </td>
-                    <td className="p-3">{task.dueDate ? <DueDateBadge date={task.dueDate} /> : '-'}</td>
+                    <td className="p-3" onClick={() => handleTaskClick(task)}>{task.dueDate ? <DueDateBadge date={task.dueDate} /> : '-'}</td>
+                    <td className="p-3 text-xs text-muted-foreground" onClick={() => handleTaskClick(task)}>
+                      {task.createdAt ? format(new Date(task.createdAt), 'MMM d, yyyy') : '-'}
+                    </td>
                   </tr>
                 ))}
+                {getFilteredTasks.length === 0 && (
+                  <tr>
+                    <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                      {quickFilter ? `No tasks match "${QUICK_FILTERS[quickFilter]?.label}" filter` : 'No tasks found'}
+                    </td>
+                  </tr>
+                )}
               </tbody>
             </table>
           </div>
