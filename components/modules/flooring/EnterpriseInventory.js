@@ -821,6 +821,135 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
     }
   }
 
+  // Create Reservation
+  const handleCreateReservation = async () => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/modules/wooden-flooring/inventory/reservations', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(reservationForm)
+      })
+      
+      if (res.ok) {
+        toast.success('Reservation created')
+        fetchReservations()
+        fetchStock()
+        setDialogOpen({ type: null, data: null })
+        setReservationForm({})
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to create reservation')
+      }
+    } catch (error) {
+      toast.error('An error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Reservation Actions (release, fulfill)
+  const handleReservationAction = async (reservationId, action) => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/modules/wooden-flooring/inventory/reservations', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ id: reservationId, action })
+      })
+      
+      if (res.ok) {
+        toast.success(`Reservation ${action}d successfully`)
+        fetchReservations()
+        fetchStock()
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to process reservation')
+      }
+    } catch (error) {
+      toast.error('An error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Delete Reservation
+  const handleDeleteReservation = async (reservationId) => {
+    if (!confirm('Are you sure you want to delete this reservation?')) return
+    
+    try {
+      setLoading(true)
+      const res = await fetch(`/api/modules/wooden-flooring/inventory/reservations?id=${reservationId}`, {
+        method: 'DELETE',
+        headers
+      })
+      
+      if (res.ok) {
+        toast.success('Reservation deleted')
+        fetchReservations()
+        fetchStock()
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to delete reservation')
+      }
+    } catch (error) {
+      toast.error('An error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Grant Warehouse Access
+  const handleGrantAccess = async () => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/modules/wooden-flooring/inventory/access', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(accessForm)
+      })
+      
+      if (res.ok) {
+        toast.success('Access granted')
+        fetchAccessRecords()
+        setDialogOpen({ type: null, data: null })
+        setAccessForm({})
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to grant access')
+      }
+    } catch (error) {
+      toast.error('An error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Revoke Warehouse Access
+  const handleRevokeAccess = async (accessId) => {
+    if (!confirm('Are you sure you want to revoke this access?')) return
+    
+    try {
+      setLoading(true)
+      const res = await fetch(`/api/modules/wooden-flooring/inventory/access?id=${accessId}`, {
+        method: 'DELETE',
+        headers
+      })
+      
+      if (res.ok) {
+        toast.success('Access revoked')
+        fetchAccessRecords()
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to revoke access')
+      }
+    } catch (error) {
+      toast.error('An error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // =============================================
   // RENDER: WAREHOUSE MANAGEMENT
   // =============================================
