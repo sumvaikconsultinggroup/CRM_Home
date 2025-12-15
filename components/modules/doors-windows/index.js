@@ -473,7 +473,7 @@ export function DoorsWindowsModule({ client, user }) {
               projects={projects}
               surveys={surveys}
               selectedProject={selectedProject}
-              onRefresh={fetchAllData}
+              onRefresh={fetchCriticalData}
               headers={headers}
               user={user}
               glassStyles={glassStyles}
@@ -624,7 +624,7 @@ export function DoorsWindowsModule({ client, user }) {
               settings={moduleSettings}
               headers={headers}
               glassStyles={glassStyles}
-              onRefresh={fetchAllData}
+              onRefresh={fetchCriticalData}
             />
           </TabsContent>
 
@@ -634,7 +634,7 @@ export function DoorsWindowsModule({ client, user }) {
               orders={orders}
               headers={headers}
               glassStyles={glassStyles}
-              onRefresh={fetchAllData}
+              onRefresh={fetchCriticalData}
             />
           </TabsContent>
 
