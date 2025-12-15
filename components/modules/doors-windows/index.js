@@ -99,8 +99,12 @@ export function DoorsWindowsModule({ client, user }) {
   const [syncing, setSyncing] = useState(false)
   const [selectedProject, setSelectedProject] = useState(null)
 
+  // Memoize headers to prevent unnecessary recalculations
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
-  const headers = { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
+  const headers = useMemo(() => ({ 
+    'Authorization': `Bearer ${token}`, 
+    'Content-Type': 'application/json' 
+  }), [token])
 
   // Fetch all data
   useEffect(() => {
