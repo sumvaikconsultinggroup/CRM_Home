@@ -651,7 +651,7 @@ const CreateTaskDialog = ({ open, onClose, message, onCreateTask }) => {
       return
     }
     onCreateTask({
-      ...taskData,
+      ...currentTaskData,
       sourceMessageId: message?.id,
       sourceChannelId: message?.channelId
     })
