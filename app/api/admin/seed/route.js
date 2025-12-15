@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
-import { getClientDb } from '@/lib/mongodb'
-import { getAuthUser, requireClientAccess, getUserDatabaseName } from '@/lib/auth-utils'
+import { getClientDb } from '@/lib/db/multitenancy'
+import { getAuthUser, requireClientAccess, getUserDatabaseName } from '@/lib/utils/auth'
 
 // Helper functions for generating realistic data
 const randomItem = (arr) => arr[Math.floor(Math.random() * arr.length)]
