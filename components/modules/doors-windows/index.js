@@ -428,6 +428,60 @@ export function DoorsWindowsModule({ client, user }) {
             </Card>
           </TabsContent>
 
+          {/* Invoices Tab */}
+          <TabsContent value="invoices" className="space-y-6">
+            <Card className={glassStyles.card}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Receipt className="h-5 w-5 text-green-600" />
+                      Invoices
+                    </CardTitle>
+                    <CardDescription>Manage invoices and payments</CardDescription>
+                  </div>
+                  <Button className="bg-gradient-to-r from-green-600 to-emerald-600">
+                    <Plus className="h-4 w-4 mr-2" /> Create Invoice
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {invoices.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Receipt className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+                    <p className="text-slate-500">No invoices yet. Invoices are created when orders are confirmed.</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {invoices.map(invoice => (
+                      <Card key={invoice.id} className="hover:shadow-lg transition-all">
+                        <CardContent className="p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <h4 className="font-semibold">{invoice.invoiceNumber}</h4>
+                                <Badge variant={invoice.status === 'paid' ? 'default' : invoice.status === 'partial' ? 'secondary' : 'outline'}>
+                                  {invoice.status}
+                                </Badge>
+                              </div>
+                              <p className="text-sm text-slate-500">{invoice.customerName}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold text-green-600">₹{invoice.grandTotal?.toLocaleString()}</p>
+                              <p className="text-sm text-slate-500">
+                                Paid: ₹{(invoice.paidAmount || 0).toLocaleString()}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Inventory Tab */}
           <TabsContent value="inventory" className="space-y-6">
             <InventoryTab
