@@ -16,6 +16,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
     const approved = searchParams.get('approved')
+    const projectId = searchParams.get('projectId')
 
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
@@ -24,6 +25,7 @@ export async function GET(request) {
     const filter = {}
     if (category) filter.category = category
     if (approved !== null) filter.approved = approved === 'true'
+    if (projectId) filter.projectId = projectId
 
     const expenses = await expensesCollection
       .find(filter)
