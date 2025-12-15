@@ -1311,10 +1311,51 @@ export function UltimateTeamsHub({ authToken, users = [], currentUser }) {
     }
   }
   
+  // Handle File Selection
+  const handleFileSelect = async (e) => {
+    const files = Array.from(e.target.files || [])
+    if (files.length === 0) return
+    
+    setUploadingFile(true)
+    
+    const newAttachments = []
+    for (const file of files) {
+      // Convert to base64 for storage (in production, upload to cloud storage)
+      const reader = new FileReader()
+      const base64 = await new Promise((resolve) => {
+        reader.onloadend = () => resolve(reader.result)
+        reader.readAsDataURL(file)
+      })
+      
+      newAttachments.push({
+        id: `att-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        url: base64, // In production, this would be a cloud URL
+        uploadedAt: new Date().toISOString()
+      })
+    }
+    
+    setPendingAttachments(prev => [...prev, ...newAttachments])
+    setUploadingFile(false)
+    toast.success(`${files.length} file(s) attached`)
+    
+    // Reset input
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+  }
+  
+  // Remove pending attachment
+  const removePendingAttachment = (attachmentId) => {
+    setPendingAttachments(prev => prev.filter(a => a.id !== attachmentId))
+  }
+
   // Send Message
   const handleSendMessage = async (e) => {
     e?.preventDefault()
-    if (!messageInput.trim() || !selectedChannel) return
+    if ((!messageInput.trim() && pendingAttachments.length === 0) || !selectedChannel) return
     
     setSending(true)
     try {
@@ -1335,14 +1376,16 @@ export function UltimateTeamsHub({ authToken, users = [], currentUser }) {
         body: JSON.stringify({
           action: 'send_message',
           channelId: selectedChannel.id,
-          content: messageInput,
-          mentions
+          content: messageInput || (pendingAttachments.length > 0 ? `Shared ${pendingAttachments.length} file(s)` : ''),
+          mentions,
+          attachments: pendingAttachments
         })
       })
       const data = await res.json()
       
       if (data.id) {
         setMessageInput('')
+        setPendingAttachments([])
         setMessages(prev => [...prev, data])
         scrollToBottom()
       }
