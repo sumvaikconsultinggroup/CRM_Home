@@ -542,6 +542,133 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
     }
   }
 
+  // Edit existing quote - Load quote data into form
+  const handleEditQuote = (quote) => {
+    setEditingQuote(quote)
+    setQuoteForm({
+      projectId: quote.projectId || '',
+      customerName: quote.customerName || '',
+      customerPhone: quote.customerPhone || '',
+      customerEmail: quote.customerEmail || '',
+      siteAddress: quote.siteAddress || '',
+      validDays: quote.validDays || 30,
+      paymentTerms: quote.paymentTerms || '50% advance, 50% before delivery',
+      installationIncluded: quote.installationIncluded !== false,
+      notes: quote.notes || ''
+    })
+    setQuoteItems(quote.items || [])
+    setAccessories(quote.accessories || [])
+    setActiveBuilderTab('items')
+    setShowNewQuote(true)
+  }
+
+  // Update quote status with inventory hold
+  const handleUpdateStatus = async (newStatus, holdInventory = false) => {
+    if (!statusQuote) return
+    
+    setUpdatingStatus(true)
+    try {
+      const updateData = {
+        id: statusQuote.id,
+        status: newStatus,
+        statusNotes: statusNotes,
+        statusUpdatedAt: new Date().toISOString(),
+        statusUpdatedBy: user?.id || 'system'
+      }
+
+      // If approving, optionally hold inventory
+      if (newStatus === 'approved' && holdInventory) {
+        updateData.inventoryHeld = true
+        updateData.inventoryHeldAt = new Date().toISOString()
+        updateData.inventoryHeldItems = statusQuote.items?.map(item => ({
+          itemId: item.id,
+          description: `${item.type} - ${item.category} (${item.width}x${item.height}mm)`,
+          material: item.material,
+          quantity: item.quantity,
+          areaSqft: item.areaSqft
+        }))
+      }
+
+      // If rejected, release held inventory
+      if (newStatus === 'rejected' && statusQuote.inventoryHeld) {
+        updateData.inventoryHeld = false
+        updateData.inventoryReleasedAt = new Date().toISOString()
+      }
+
+      const res = await fetch(`${API_BASE}/quotations`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify(updateData)
+      })
+
+      const data = await res.json()
+      if (res.ok) {
+        const statusMessages = {
+          'sent': 'Quote sent to customer!',
+          'approved': holdInventory ? 'Quote approved & inventory held!' : 'Quote approved!',
+          'rejected': 'Quote marked as rejected',
+          'pending-approval': 'Quote sent for approval',
+          'expired': 'Quote marked as expired'
+        }
+        toast.success(statusMessages[newStatus] || 'Status updated')
+        
+        // If approved with inventory, also update inventory
+        if (newStatus === 'approved' && holdInventory) {
+          await holdInventoryForQuote(statusQuote)
+        }
+        
+        setShowStatusDialog(false)
+        setStatusQuote(null)
+        setStatusNotes('')
+        onRefresh()
+      } else {
+        toast.error(data.error || 'Failed to update status')
+      }
+    } catch (error) {
+      console.error('Status update error:', error)
+      toast.error('Failed to update quote status')
+    } finally {
+      setUpdatingStatus(false)
+    }
+  }
+
+  // Hold inventory for approved quote
+  const holdInventoryForQuote = async (quote) => {
+    try {
+      const inventoryHolds = quote.items?.map(item => ({
+        quoteId: quote.id,
+        quoteNumber: quote.quoteNumber,
+        customerName: quote.customerName,
+        itemType: `${item.type} - ${item.category}`,
+        material: item.material,
+        dimensions: `${item.width}x${item.height}mm`,
+        areaSqft: item.areaSqft,
+        quantity: item.quantity,
+        status: 'held',
+        heldAt: new Date().toISOString()
+      }))
+
+      await fetch(`${API_BASE}/inventory/hold`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ 
+          quoteId: quote.id, 
+          holds: inventoryHolds 
+        })
+      })
+    } catch (error) {
+      console.error('Failed to hold inventory:', error)
+    }
+  }
+
+  // Open status update dialog
+  const openStatusDialog = (quote, action) => {
+    setStatusQuote(quote)
+    setStatusAction(action)
+    setStatusNotes('')
+    setShowStatusDialog(true)
+  }
+
   // Generate detailed PDF with visuals
   const handleDownloadPDF = async (quote) => {
     setGenerating(true)
