@@ -579,7 +579,7 @@ const KanbanColumn = ({ status, tasks, onTaskClick, onQuickCreate, onDrop, dragg
 // TASK DETAIL MODAL - JIRA STYLE
 // =============================================
 
-const TaskDetailModal = ({ task, open, onClose, onUpdate, onDelete, users, projects, token }) => {
+const TaskDetailModal = ({ task, open, onClose, onUpdate, onDelete, onDuplicate, users, projects, token }) => {
   const [activeTab, setActiveTab] = useState('details')
   const [loading, setLoading] = useState(false)
   const [editingField, setEditingField] = useState(null)
