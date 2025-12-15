@@ -224,6 +224,126 @@ export async function POST(request) {
       return successResponse(sanitizeDocument(quote), 201)
     }
 
+    // Create quote from survey (simplified - from SiteSurvey component)
+    if (action === 'from-survey') {
+      const surveysCollection = db.collection('dw_surveys')
+      const openingsCollection = db.collection('dw_openings')
+      const quotesCollection = db.collection('dw_quotations')
+      const itemsCollection = db.collection('dw_quote_items')
+
+      // Get survey if surveyId provided
+      let survey = null
+      let openings = body.openings || []
+      
+      if (body.surveyId) {
+        survey = await surveysCollection.findOne({ id: body.surveyId })
+        if (!survey) return errorResponse('Survey not found', 404)
+        
+        // Get openings from DB if not provided in body
+        if (openings.length === 0) {
+          openings = await openingsCollection.find({ surveyId: body.surveyId }).toArray()
+        }
+      }
+
+      const quoteNumber = `QT-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`
+
+      // Create quote
+      const quote = {
+        id: uuidv4(),
+        clientId: user.clientId,
+        quoteNumber,
+        version: 1,
+        parentQuoteId: null,
+        
+        surveyId: body.surveyId || null,
+        siteCode: body.siteCode || survey?.siteCode || null,
+        leadId: survey?.leadId || body.leadId || null,
+        projectId: survey?.projectId || body.projectId || null,
+        
+        customerName: body.customerName || survey?.contactPerson || '',
+        customerPhone: body.customerPhone || survey?.contactPhone || '',
+        customerEmail: body.customerEmail || survey?.contactEmail || '',
+        siteAddress: body.siteAddress || survey?.siteAddress || '',
+        
+        priceList: body.priceList || 'retail',
+        validUntil: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        
+        // Totals
+        itemsCount: openings.length,
+        totalArea: openings.reduce((sum, o) => {
+          const w = parseFloat(o.width) || 0
+          const h = parseFloat(o.height) || 0
+          return sum + ((w * h) / 92903.04) // Convert mm² to sq.ft
+        }, 0),
+        subtotal: 0,
+        totalDiscount: 0,
+        totalTax: 0,
+        grandTotal: 0,
+        
+        // Status
+        status: 'draft',
+        sentAt: null,
+        viewedAt: null,
+        approvedAt: null,
+        
+        notes: `Created from Site Survey (Code: ${body.siteCode || survey?.siteCode || 'N/A'})`,
+        
+        createdBy: user.id,
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+
+      await quotesCollection.insertOne(quote)
+
+      // Create quote items from openings
+      for (const opening of openings) {
+        const w = parseFloat(opening.width) || 0
+        const h = parseFloat(opening.height) || 0
+        const areaSqft = (w * h) / 92903.04
+
+        const item = {
+          id: uuidv4(),
+          quoteId: quote.id,
+          clientId: user.clientId,
+          
+          openingRef: opening.openingRef || opening.id,
+          type: opening.type || 'Window',
+          category: opening.category || 'Sliding',
+          material: opening.material || 'Aluminium',
+          
+          location: `${opening.room || 'N/A'} - ${opening.floor || 'Ground Floor'}`,
+          width: w,
+          height: h,
+          sillHeight: parseFloat(opening.sillHeight) || 0,
+          
+          panels: parseInt(opening.panels) || 2,
+          glassType: opening.glassType || 'single',
+          frameColor: opening.frameColor || 'white',
+          
+          mesh: opening.mesh || false,
+          grill: opening.grill || false,
+          
+          area: areaSqft,
+          quantity: 1,
+          pricePerSqft: 0, // To be filled during pricing
+          unitPrice: 0,
+          
+          baseAmount: 0,
+          discountAmount: 0,
+          taxAmount: 0,
+          totalAmount: 0,
+          
+          notes: opening.specialNotes || '',
+          createdAt: new Date(),
+          updatedAt: new Date()
+        }
+
+        await itemsCollection.insertOne(item)
+      }
+
+      return successResponse({ quotation: sanitizeDocument(quote), quoteNumber: quote.quoteNumber, id: quote.id }, 201)
+    }
+
     // Request discount approval
     if (action === 'request-discount') {
       const collection = db.collection('dw_quotations')
