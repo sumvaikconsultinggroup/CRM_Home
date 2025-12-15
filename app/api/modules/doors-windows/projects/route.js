@@ -17,9 +17,31 @@ export async function GET(request) {
     const db = await getClientDb(dbName)
     const collection = db.collection('doors_windows_projects')
     
-    const projects = await collection.find({}).toArray()
+    // FIXED: Only fetch ACTUAL projects, NOT lead-sourced ones
+    // Projects come from: 1) Manual creation, 2) CRM Projects sync (NOT Leads)
+    // Leads that are "Won" get converted to Projects in CRM, then synced as Projects
+    const projects = await collection.find({
+      $or: [
+        { source: 'manual' },
+        { source: { $exists: false } }, // Legacy projects
+        { crmProjectId: { $ne: null, $exists: true } }, // Synced from CRM Projects
+        { 'syncedFrom.type': 'project' } // Explicitly synced from Projects
+      ],
+      // Exclude anything that was synced from a lead
+      'syncedFrom.type': { $ne: 'lead' },
+      leadId: { $in: [null, undefined] } // No lead association OR legacy
+    }).toArray()
     
-    return successResponse({ projects: sanitizeDocuments(projects) })
+    // Double-check filter: remove any that have "Lead -" in name or came from leads
+    const filteredProjects = projects.filter(p => {
+      // Skip if name starts with "Lead -"
+      if (p.name?.startsWith('Lead -') || p.name?.startsWith('Lead-')) return false
+      // Skip if syncedFrom type is 'lead'
+      if (p.syncedFrom?.type === 'lead') return false
+      return true
+    })
+    
+    return successResponse({ projects: sanitizeDocuments(filteredProjects) })
   } catch (error) {
     console.error('Doors & Windows Projects GET Error:', error)
     if (error.message === 'Unauthorized' || error.message.includes('Forbidden')) {
