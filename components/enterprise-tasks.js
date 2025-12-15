@@ -667,7 +667,7 @@ const TaskDetailSheet = ({ task, open, onClose, onUpdate, onDelete, users, proje
                   </Button>
                 </>
               ) : (
-                <Button variant="outline" size="sm" onClick={() => setEditMode(true)}>
+                <Button variant="outline" size="sm" onClick={handleStartEdit}>
                   <Edit className="h-4 w-4 mr-1" /> Edit
                 </Button>
               )}
