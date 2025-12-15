@@ -2259,7 +2259,7 @@ export function AdvancedLeadManagement({
               </div>
             </div>
             
-            <div className="bg-slate-100 rounded-b-xl p-3 min-h-[400px] space-y-3">
+            <div className="bg-slate-100 rounded-b-xl p-3 min-h-[400px] max-h-[calc(100vh-380px)] overflow-y-auto space-y-3">
               <AnimatePresence>
                 {stageLeads.map(lead => {
                   const scoreData = calculateLeadScore(lead)
