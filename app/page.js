@@ -62,6 +62,7 @@ import { EnterpriseTeams } from '@/components/enterprise-teams'
 import { JiraTaskManager } from '@/components/jira-task-manager'
 import { ProductSwitcher } from '@/components/product-switcher'
 import { BuildInventory } from '@/components/build-inventory'
+import { BuildFinance } from '@/components/build-finance'
 import { ProductAssignment } from '@/components/super-admin/product-assignment'
 
 // Animation variants
