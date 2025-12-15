@@ -248,8 +248,45 @@ export function BuildInventory({ token, user, clientModules = [] }) {
       fetchProducts()
       fetchDispatches()
       fetchReservations()
+      fetchInvoiceSyncStatus()
     }
-  }, [token, fetchSyncStatus, fetchProducts, fetchDispatches, fetchReservations])
+  }, [token, fetchSyncStatus, fetchProducts, fetchDispatches, fetchReservations, fetchInvoiceSyncStatus])
+
+  // Auto-sync dispatches from invoices every 3 seconds
+  useEffect(() => {
+    if (token && autoSyncEnabled && activeTab === 'dispatch') {
+      // Clear any existing interval
+      if (autoSyncIntervalRef.current) {
+        clearInterval(autoSyncIntervalRef.current)
+      }
+      
+      // Set up 3-second polling for invoice sync
+      autoSyncIntervalRef.current = setInterval(async () => {
+        try {
+          // First check if there are pending invoices
+          const statusRes = await fetch('/api/inventory/dispatch/sync', { headers: getHeaders() })
+          const statusData = await statusRes.json()
+          
+          if (statusData.pendingCount > 0) {
+            // Auto-sync pending invoices
+            await syncDispatchesFromInvoices(null, true)
+          }
+          
+          // Refresh dispatch list
+          await fetchDispatches()
+          setInvoiceSyncStatus(statusData)
+        } catch (error) {
+          console.error('Auto-sync error:', error)
+        }
+      }, 3000) // 3 seconds
+      
+      return () => {
+        if (autoSyncIntervalRef.current) {
+          clearInterval(autoSyncIntervalRef.current)
+        }
+      }
+    }
+  }, [token, autoSyncEnabled, activeTab, fetchDispatches, syncDispatchesFromInvoices])
 
   // Load report when tab changes
   useEffect(() => {
