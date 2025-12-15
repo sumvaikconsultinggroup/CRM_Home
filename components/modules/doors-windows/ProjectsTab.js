@@ -41,6 +41,7 @@ export function ProjectsTab({
   const [editingProject, setEditingProject] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
+  const [sourceFilter, setSourceFilter] = useState('all')
   const [saving, setSaving] = useState(false)
   
   const [projectForm, setProjectForm] = useState({
