@@ -1451,12 +1451,20 @@ export function UltimateTeamsHub({ authToken, users = [], currentUser }) {
   
   // Create DM
   const handleCreateDM = async (targetUserId) => {
+    // Find user info from users array
+    const targetUser = users.find(u => u.id === targetUserId)
+    
     setSending(true)
     try {
       const res = await fetch('/api/teams', {
         method: 'POST',
         headers,
-        body: JSON.stringify({ action: 'create_dm', targetUserId })
+        body: JSON.stringify({ 
+          action: 'create_dm', 
+          targetUserId,
+          targetUserName: targetUser?.name || targetUser?.email,
+          targetUserEmail: targetUser?.email
+        })
       })
       const data = await res.json()
       
@@ -1466,6 +1474,7 @@ export function UltimateTeamsHub({ authToken, users = [], currentUser }) {
         setActiveView('dms')
         setSelectedChannel(data)
         setSelectedTeam(null)
+        toast.success(`Started conversation with ${targetUser?.name || 'User'}`)
       } else {
         toast.error(data.error || 'Failed to create DM')
       }
