@@ -1646,58 +1646,516 @@ export function BuildInventory({ token, user, clientModules = [] }) {
     </div>
   )
 
-  // Reports Tab View
-  const renderReportsTab = () => (
+  // Chart Colors
+  const CHART_COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899', '#06B6D4', '#84CC16', '#F97316', '#6366F1']
+
+  // Reports Tab View with 15+ Graphical Representations
+  const renderReportsTab = () => {
+    const charts = reportData?.charts || {}
+    
+    return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold flex items-center gap-2">
             <BarChart3 className="h-7 w-7" />
-            Inventory Reports
+            Inventory Analytics & Reports
           </h2>
-          <p className="text-slate-500">Comprehensive inventory analytics and insights</p>
+          <p className="text-slate-500">15+ real-time visualizations with dynamic data</p>
         </div>
-        <Select value={selectedReportType} onValueChange={setSelectedReportType}>
-          <SelectTrigger className="w-48">
-            <SelectValue placeholder="Select Report" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="summary">Executive Summary</SelectItem>
-            <SelectItem value="stock_levels">Stock Levels</SelectItem>
-            <SelectItem value="movements">Movement Report</SelectItem>
-            <SelectItem value="dispatch_history">Dispatch History</SelectItem>
-            <SelectItem value="low_stock">Low Stock Alert</SelectItem>
-            <SelectItem value="valuation">Stock Valuation</SelectItem>
-            <SelectItem value="category_analysis">Category Analysis</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex items-center gap-3">
+          <Select value={selectedReportType} onValueChange={setSelectedReportType}>
+            <SelectTrigger className="w-56">
+              <SelectValue placeholder="Select Report" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="comprehensive">Comprehensive Dashboard</SelectItem>
+              <SelectItem value="stock_levels">Stock Levels</SelectItem>
+              <SelectItem value="movements">Movement Report</SelectItem>
+              <SelectItem value="dispatch_history">Dispatch History</SelectItem>
+              <SelectItem value="low_stock">Low Stock Alert</SelectItem>
+              <SelectItem value="valuation">Stock Valuation</SelectItem>
+              <SelectItem value="category_analysis">Category Analysis</SelectItem>
+              <SelectItem value="reservation_analysis">Reservation Analysis</SelectItem>
+            </SelectContent>
+          </Select>
+          <Button variant="outline" onClick={() => fetchReport(selectedReportType)}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
       </div>
 
       {loadingReport ? (
         <Card>
           <CardContent className="p-8 text-center">
             <RefreshCw className="h-8 w-8 animate-spin text-slate-400 mx-auto mb-3" />
-            <p className="text-slate-500">Loading report...</p>
+            <p className="text-slate-500">Loading comprehensive report data...</p>
           </CardContent>
         </Card>
       ) : reportData ? (
         <>
-          {/* Summary Report */}
-          {selectedReportType === 'summary' && reportData.overview && (
+          {/* COMPREHENSIVE DASHBOARD with 15+ Charts */}
+          {(selectedReportType === 'comprehensive' || selectedReportType === 'summary') && (
             <div className="space-y-6">
-              {/* Overview Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <StatCard
-                  title="Total Products"
-                  value={reportData.overview.totalProducts}
-                  icon={Package}
-                  color="bg-blue-500"
-                />
-                <StatCard
-                  title="Stock Value"
-                  value={`₹${(reportData.overview.totalStockValue || 0).toLocaleString()}`}
-                  icon={IndianRupee}
+              {/* 1-4: Summary Cards */}
+              {reportData.summaryCards && (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  {reportData.summaryCards.map((card, i) => (
+                    <Card key={i} className="relative overflow-hidden">
+                      <CardContent className="p-4">
+                        <div className={`absolute top-0 right-0 w-20 h-20 rounded-bl-full opacity-10 ${
+                          card.color === 'emerald' ? 'bg-emerald-500' :
+                          card.color === 'amber' ? 'bg-amber-500' :
+                          card.color === 'purple' ? 'bg-purple-500' : 'bg-blue-500'
+                        }`} />
+                        <p className="text-sm text-slate-500">{card.title}</p>
+                        <p className="text-2xl font-bold mt-1">
+                          {card.format === 'currency' ? `₹${(card.value || 0).toLocaleString()}` : card.value}
+                        </p>
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              )}
+
+              {/* Monthly Stats Row */}
+              {reportData.monthlyStats && (
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-lg flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      This Month&apos;s Performance
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+                      <div className="p-3 bg-slate-50 rounded-lg text-center">
+                        <p className="text-xs text-slate-500">Dispatches</p>
+                        <p className="text-xl font-bold">{reportData.monthlyStats.totalDispatches}</p>
+                      </div>
+                      <div className="p-3 bg-emerald-50 rounded-lg text-center">
+                        <p className="text-xs text-emerald-600">Delivered</p>
+                        <p className="text-xl font-bold text-emerald-700">{reportData.monthlyStats.delivered}</p>
+                      </div>
+                      <div className="p-3 bg-amber-50 rounded-lg text-center">
+                        <p className="text-xs text-amber-600">Pending</p>
+                        <p className="text-xl font-bold text-amber-700">{reportData.monthlyStats.pending}</p>
+                      </div>
+                      <div className="p-3 bg-blue-50 rounded-lg text-center">
+                        <p className="text-xs text-blue-600">In Transit</p>
+                        <p className="text-xl font-bold text-blue-700">{reportData.monthlyStats.inTransit || 0}</p>
+                      </div>
+                      <div className="p-3 bg-purple-50 rounded-lg text-center">
+                        <p className="text-xs text-purple-600">Challans</p>
+                        <p className="text-xl font-bold text-purple-700">{reportData.monthlyStats.challansGenerated || 0}</p>
+                      </div>
+                      <div className="p-3 bg-slate-100 rounded-lg text-center">
+                        <p className="text-xs text-slate-600">Value</p>
+                        <p className="text-lg font-bold">₹{(reportData.monthlyStats.dispatchValue || 0).toLocaleString()}</p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Charts Row 1: Stock by Category & Dispatch Status */}
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* 5. Stock Levels by Category (Bar Chart) */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Stock Value by Category</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <BarChart data={charts.stockByCategory || []}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                        <XAxis dataKey="category" tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${v/1000}k`} />
+                        <Tooltip 
+                          formatter={(value) => [`₹${value?.toLocaleString()}`, 'Value']}
+                          contentStyle={{ borderRadius: 8 }}
+                        />
+                        <Bar dataKey="value" fill="#3B82F6" radius={[4, 4, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* 6. Dispatch Status Breakdown (Donut Chart) */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Dispatch Status Distribution</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <PieChart>
+                        <Pie
+                          data={charts.dispatchByStatus || []}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={60}
+                          outerRadius={90}
+                          dataKey="count"
+                          nameKey="label"
+                          label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {(charts.dispatchByStatus || []).map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color || CHART_COLORS[index]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts Row 2: Movement Trend & Daily Dispatch */}
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* 7. Inventory Movement Trend (Line Chart) */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Inventory Movement Trend (6 Months)</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <LineChart data={charts.movementTrend || []}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                        <XAxis dataKey="month" tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} />
+                        <Tooltip contentStyle={{ borderRadius: 8 }} />
+                        <Legend />
+                        <Line type="monotone" dataKey="inward" stroke="#10B981" name="Inward" strokeWidth={2} />
+                        <Line type="monotone" dataKey="outward" stroke="#EF4444" name="Outward" strokeWidth={2} />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* 8. Daily Dispatch Volume (Area Chart) */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Daily Dispatch Volume (30 Days)</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <AreaChart data={charts.dailyDispatchVolume || []}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                        <XAxis dataKey="date" tick={{ fontSize: 10 }} interval={4} />
+                        <YAxis tick={{ fontSize: 11 }} />
+                        <Tooltip contentStyle={{ borderRadius: 8 }} formatter={(v) => [`₹${v?.toLocaleString()}`, 'Value']} />
+                        <Area type="monotone" dataKey="value" stroke="#8B5CF6" fill="#8B5CF6" fillOpacity={0.2} />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts Row 3: Fast & Slow Moving Items */}
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* 9. Fast Moving Items (Horizontal Bar) */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <TrendingUp className="h-4 w-4 text-emerald-500" />
+                      Top 10 Fast-Moving Items
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={(charts.fastMovingItems || []).slice(0, 10)} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                        <XAxis type="number" tick={{ fontSize: 11 }} />
+                        <YAxis dataKey="productName" type="category" tick={{ fontSize: 10 }} width={120} />
+                        <Tooltip contentStyle={{ borderRadius: 8 }} />
+                        <Bar dataKey="totalQty" fill="#10B981" radius={[0, 4, 4, 0]} name="Qty Moved" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* 10. Slow Moving Items (Horizontal Bar) */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <TrendingDown className="h-4 w-4 text-amber-500" />
+                      Top 10 Slow-Moving Items
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={(charts.slowMovingItems || []).slice(0, 10)} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                        <XAxis type="number" tick={{ fontSize: 11 }} />
+                        <YAxis dataKey="productName" type="category" tick={{ fontSize: 10 }} width={120} />
+                        <Tooltip contentStyle={{ borderRadius: 8 }} />
+                        <Bar dataKey="stockQty" fill="#F59E0B" radius={[0, 4, 4, 0]} name="Stock Qty" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts Row 4: Stock Location & Reservation Status */}
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* 11. Stock by Location (Pie Chart) */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Stock Distribution by Location</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <PieChart>
+                        <Pie
+                          data={charts.stockByLocation || []}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={90}
+                          dataKey="value"
+                          nameKey="location"
+                          label={({ location, percent }) => `${location} ${(percent * 100).toFixed(0)}%`}
+                        >
+                          {(charts.stockByLocation || []).map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(v) => [`₹${v?.toLocaleString()}`, 'Value']} />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* 12. Reservation Status (Pie Chart) */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Lock className="h-4 w-4 text-purple-500" />
+                      Inventory Reservation Status
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <PieChart>
+                        <Pie
+                          data={charts.reservationStatus || []}
+                          cx="50%"
+                          cy="50%"
+                          outerRadius={90}
+                          dataKey="count"
+                          nameKey="label"
+                          label={({ label, count }) => `${label}: ${count}`}
+                        >
+                          {(charts.reservationStatus || []).map((entry, index) => (
+                            <Cell key={`cell-${index}`} fill={entry.color || CHART_COLORS[index]} />
+                          ))}
+                        </Pie>
+                        <Tooltip />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts Row 5: Blocked vs Available & Weekly Dispatch */}
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* 13. Blocked vs Available Stock (Stacked Bar) */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Available vs Blocked Stock</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <BarChart data={charts.stockComparison || []}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                        <XAxis dataKey="product" tick={{ fontSize: 10 }} angle={-45} textAnchor="end" height={70} />
+                        <YAxis tick={{ fontSize: 11 }} />
+                        <Tooltip contentStyle={{ borderRadius: 8 }} />
+                        <Legend />
+                        <Bar dataKey="available" stackId="a" fill="#10B981" name="Available" />
+                        <Bar dataKey="blocked" stackId="a" fill="#8B5CF6" name="Blocked" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* 14. Weekly Dispatch Trend (Bar Chart) */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Weekly Dispatch Trend (12 Weeks)</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <BarChart data={charts.weeklyDispatch || []}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                        <XAxis dataKey="week" tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} />
+                        <Tooltip contentStyle={{ borderRadius: 8 }} />
+                        <Legend />
+                        <Bar dataKey="delivered" fill="#10B981" name="Delivered" />
+                        <Bar dataKey="pending" fill="#F59E0B" name="Pending" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Charts Row 6: Top Customers & Stock Age */}
+              <div className="grid md:grid-cols-2 gap-6">
+                {/* 15. Top Customers by Dispatch Value */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base flex items-center gap-2">
+                      <Users className="h-4 w-4 text-blue-500" />
+                      Top 10 Customers by Dispatch Value
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={(charts.topCustomers || []).slice(0, 10)} layout="vertical">
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                        <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${v/1000}k`} />
+                        <YAxis dataKey="customer" type="category" tick={{ fontSize: 10 }} width={100} />
+                        <Tooltip contentStyle={{ borderRadius: 8 }} formatter={(v) => [`₹${v?.toLocaleString()}`, 'Value']} />
+                        <Bar dataKey="value" fill="#3B82F6" radius={[0, 4, 4, 0]} name="Value" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+
+                {/* 16. Stock Age Distribution */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-base">Stock Age Distribution</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <ResponsiveContainer width="100%" height={300}>
+                      <BarChart data={charts.ageDistribution || []}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                        <XAxis dataKey="range" tick={{ fontSize: 11 }} />
+                        <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `₹${v/1000}k`} />
+                        <Tooltip contentStyle={{ borderRadius: 8 }} formatter={(v) => [`₹${v?.toLocaleString()}`, 'Value']} />
+                        <Bar dataKey="value" fill="#F97316" radius={[4, 4, 0, 0]} name="Stock Value" />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Stock Health & Quote Conversion */}
+              <div className="grid md:grid-cols-3 gap-6">
+                {/* Stock Health Card */}
+                {reportData.stockHealth && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Activity className="h-4 w-4" />
+                        Stock Health
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-3">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-slate-600">Healthy Stock</span>
+                          <Badge className="bg-emerald-100 text-emerald-700">{reportData.stockHealth.healthyStock}</Badge>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-slate-600">Low Stock</span>
+                          <Badge className="bg-amber-100 text-amber-700">{reportData.stockHealth.lowStockCount}</Badge>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-slate-600">Out of Stock</span>
+                          <Badge className="bg-red-100 text-red-700">{reportData.stockHealth.outOfStockCount}</Badge>
+                        </div>
+                        <Separator />
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-slate-600">Active Reservations</span>
+                          <Badge className="bg-purple-100 text-purple-700">{reportData.stockHealth.activeReservations}</Badge>
+                        </div>
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-slate-600">Reserved Qty</span>
+                          <span className="font-medium">{reportData.stockHealth.totalReservedQty}</span>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Quote Conversion Gauge */}
+                {charts.quoteConversion && (
+                  <Card>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base flex items-center gap-2">
+                        <Target className="h-4 w-4" />
+                        Quote-to-Invoice Conversion
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="text-center">
+                        <div className="relative inline-flex items-center justify-center">
+                          <svg className="w-24 h-24">
+                            <circle cx="48" cy="48" r="40" stroke="#E5E7EB" strokeWidth="8" fill="none" />
+                            <circle 
+                              cx="48" cy="48" r="40" 
+                              stroke="#10B981" 
+                              strokeWidth="8" 
+                              fill="none"
+                              strokeDasharray={`${2 * Math.PI * 40}`}
+                              strokeDashoffset={`${2 * Math.PI * 40 * (1 - (charts.quoteConversion.conversionRate || 0) / 100)}`}
+                              transform="rotate(-90 48 48)"
+                            />
+                          </svg>
+                          <span className="absolute text-2xl font-bold">{charts.quoteConversion.conversionRate || 0}%</span>
+                        </div>
+                        <p className="text-sm text-slate-500 mt-2">
+                          {charts.quoteConversion.converted} of {charts.quoteConversion.totalQuotes} converted
+                        </p>
+                        <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
+                          <div className="p-2 bg-amber-50 rounded">
+                            <span className="text-amber-600">Pending: {charts.quoteConversion.pending}</span>
+                          </div>
+                          <div className="p-2 bg-red-50 rounded">
+                            <span className="text-red-600">Expired: {charts.quoteConversion.expired}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                {/* Low Stock Alerts */}
+                {reportData.lowStockItems?.length > 0 && (
+                  <Card className="border-amber-200">
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-base flex items-center gap-2 text-amber-700">
+                        <AlertTriangle className="h-4 w-4" />
+                        Low Stock Alerts ({reportData.lowStockItems.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="space-y-2 max-h-[200px] overflow-y-auto">
+                        {reportData.lowStockItems.slice(0, 5).map((item, i) => (
+                          <div key={i} className="flex justify-between items-center p-2 bg-amber-50 rounded text-sm">
+                            <div className="truncate flex-1">
+                              <p className="font-medium truncate">{item.productName}</p>
+                              <p className="text-xs text-slate-500">{item.sku}</p>
+                            </div>
+                            <Badge className="bg-amber-100 text-amber-700 ml-2">
+                              {item.currentStock}/{item.reorderLevel}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
+            </div>
+          )}
                   color="bg-emerald-500"
                 />
                 <StatCard
