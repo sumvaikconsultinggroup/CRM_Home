@@ -226,6 +226,17 @@ export function ProjectsTab({
                 <SelectItem value="cancelled">Cancelled</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={sourceFilter} onValueChange={setSourceFilter}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by source" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sources ({projectCounts.total})</SelectItem>
+                <SelectItem value="manual">Manual ({projectCounts.manual})</SelectItem>
+                <SelectItem value="crm-project">From CRM Projects ({projectCounts.fromProject})</SelectItem>
+                <SelectItem value="crm-lead">From CRM Leads ({projectCounts.fromLead})</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
