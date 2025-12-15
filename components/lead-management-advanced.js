@@ -404,7 +404,7 @@ const ConversationItem = ({ conversation, isLast }) => {
   )
 }
 
-// Add Conversation Dialog
+// Add Conversation Dialog with Follow-up Scheduling
 const AddConversationDialog = ({ open, onClose, lead, onSave }) => {
   const [formData, setFormData] = useState({
     type: 'call',
@@ -413,10 +413,35 @@ const AddConversationDialog = ({ open, onClose, lead, onSave }) => {
     notes: '',
     keyPoints: [''],
     nextAction: '',
-    callbackDate: '',
-    callbackTime: ''
+    scheduleFollowUp: true,
+    followUpDate: '',
+    followUpTime: '10:00',
+    followUpQuickSelect: ''
   })
   const [saving, setSaving] = useState(false)
+  
+  // Quick date selection options
+  const quickDateOptions = [
+    { id: 'tomorrow', label: 'Tomorrow', days: 1 },
+    { id: '2days', label: 'In 2 Days', days: 2 },
+    { id: '3days', label: 'In 3 Days', days: 3 },
+    { id: '1week', label: 'In 1 Week', days: 7 },
+    { id: '2weeks', label: 'In 2 Weeks', days: 14 },
+    { id: '1month', label: 'In 1 Month', days: 30 }
+  ]
+  
+  const handleQuickDateSelect = (days) => {
+    const date = new Date()
+    date.setDate(date.getDate() + days)
+    // Skip weekends
+    if (date.getDay() === 0) date.setDate(date.getDate() + 1)
+    if (date.getDay() === 6) date.setDate(date.getDate() + 2)
+    setFormData({ 
+      ...formData, 
+      followUpDate: date.toISOString().split('T')[0],
+      followUpQuickSelect: days.toString()
+    })
+  }
   
   const handleAddKeyPoint = () => {
     setFormData({ ...formData, keyPoints: [...formData.keyPoints, ''] })
@@ -441,17 +466,23 @@ const AddConversationDialog = ({ open, onClose, lead, onSave }) => {
     
     setSaving(true)
     try {
+      const followUpDateTime = formData.scheduleFollowUp && formData.followUpDate 
+        ? `${formData.followUpDate}T${formData.followUpTime || '10:00'}:00`
+        : null
+      
       const conversation = {
         id: Date.now().toString(),
-        ...formData,
+        type: formData.type,
+        outcome: formData.outcome,
+        duration: formData.duration,
+        notes: formData.notes,
         keyPoints: formData.keyPoints.filter(p => p.trim()),
-        callbackDate: formData.outcome === 'callback_requested' && formData.callbackDate 
-          ? `${formData.callbackDate}T${formData.callbackTime || '10:00'}` 
-          : null,
+        nextAction: formData.nextAction,
+        followUpScheduled: followUpDateTime,
         timestamp: new Date().toISOString()
       }
       
-      await onSave(conversation)
+      await onSave(conversation, followUpDateTime)
       setFormData({
         type: 'call',
         outcome: '',
@@ -459,8 +490,10 @@ const AddConversationDialog = ({ open, onClose, lead, onSave }) => {
         notes: '',
         keyPoints: [''],
         nextAction: '',
-        callbackDate: '',
-        callbackTime: ''
+        scheduleFollowUp: true,
+        followUpDate: '',
+        followUpTime: '10:00',
+        followUpQuickSelect: ''
       })
       onClose()
     } catch (error) {
@@ -527,17 +560,77 @@ const AddConversationDialog = ({ open, onClose, lead, onSave }) => {
             </Select>
           </div>
           
-          {/* Callback Date (if requested) */}
-          {formData.outcome === 'callback_requested' && (
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <Label className="text-sm font-medium">Callback Date</Label>
-                <Input 
-                  type="date" 
-                  className="mt-1"
-                  value={formData.callbackDate}
-                  onChange={(e) => setFormData({ ...formData, callbackDate: e.target.value })}
+          {/* Schedule Next Follow-up - ALWAYS VISIBLE */}
+          <div className="p-4 bg-blue-50 rounded-xl border border-blue-200">
+            <div className="flex items-center justify-between mb-3">
+              <Label className="text-sm font-medium flex items-center gap-2">
+                <CalendarClock className="h-4 w-4 text-blue-600" />
+                Schedule Next Follow-up
+              </Label>
+              <div className="flex items-center gap-2">
+                <Checkbox 
+                  id="scheduleFollowUp"
+                  checked={formData.scheduleFollowUp}
+                  onCheckedChange={(checked) => setFormData({ ...formData, scheduleFollowUp: checked })}
                 />
+                <label htmlFor="scheduleFollowUp" className="text-xs text-muted-foreground cursor-pointer">
+                  Set follow-up
+                </label>
+              </div>
+            </div>
+            
+            {formData.scheduleFollowUp && (
+              <>
+                {/* Quick Select Buttons */}
+                <div className="mb-3">
+                  <Label className="text-xs text-muted-foreground mb-2 block">Quick Select:</Label>
+                  <div className="flex flex-wrap gap-2">
+                    {quickDateOptions.map(opt => (
+                      <Button
+                        key={opt.id}
+                        type="button"
+                        variant={formData.followUpQuickSelect === opt.days.toString() ? 'default' : 'outline'}
+                        size="sm"
+                        className="text-xs h-7"
+                        onClick={() => handleQuickDateSelect(opt.days)}
+                      >
+                        {opt.label}
+                      </Button>
+                    ))}
+                  </div>
+                </div>
+                
+                {/* Manual Date & Time Selection */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Or select date:</Label>
+                    <Input 
+                      type="date" 
+                      className="mt-1"
+                      value={formData.followUpDate}
+                      onChange={(e) => setFormData({ ...formData, followUpDate: e.target.value, followUpQuickSelect: '' })}
+                    />
+                  </div>
+                  <div>
+                    <Label className="text-xs text-muted-foreground">Best time to call:</Label>
+                    <Input 
+                      type="time" 
+                      className="mt-1"
+                      value={formData.followUpTime}
+                      onChange={(e) => setFormData({ ...formData, followUpTime: e.target.value })}
+                    />
+                  </div>
+                </div>
+                
+                {formData.followUpDate && (
+                  <p className="text-xs text-blue-700 mt-2 flex items-center gap-1">
+                    <CheckCircle className="h-3 w-3" />
+                    Follow-up scheduled for {new Date(formData.followUpDate).toLocaleDateString('en-IN', { weekday: 'long', day: 'numeric', month: 'short' })} at {formData.followUpTime}
+                  </p>
+                )}
+              </>
+            )}
+          </div>
               </div>
               <div>
                 <Label className="text-sm font-medium">Callback Time</Label>
