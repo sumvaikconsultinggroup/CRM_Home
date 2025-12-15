@@ -2060,7 +2060,7 @@ export function AdvancedLeadManagement({
             <Button variant="outline" onClick={onRefresh}>
               <RefreshCw className="h-4 w-4 mr-2" /> Refresh
             </Button>
-            <Button onClick={onAddLead}>
+            <Button onClick={() => setShowAddLeadDialog(true)}>
               <Plus className="h-4 w-4 mr-2" /> Add Lead
             </Button>
           </div>
