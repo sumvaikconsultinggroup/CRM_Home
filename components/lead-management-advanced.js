@@ -780,33 +780,60 @@ const LeadDetailPanel = ({ lead, onClose, onUpdate, onAddConversation, onStatusC
           <TabsTrigger value="insights">Insights</TabsTrigger>
         </TabsList>
         
-        <ScrollArea className="flex-1 p-4">
+        <div className="flex-1 overflow-y-auto p-4">
           {/* Overview Tab */}
           <TabsContent value="overview" className="mt-0 space-y-4">
-            {/* Smart Follow-up Suggestion */}
-            <Card className={`p-4 ${followUpSuggestion.isOverdue ? 'border-red-300 bg-red-50' : 'border-blue-300 bg-blue-50'}`}>
-              <div className="flex items-start gap-3">
-                <div className={`p-2 rounded-lg ${followUpSuggestion.isOverdue ? 'bg-red-100' : 'bg-blue-100'}`}>
-                  <Brain className={`h-5 w-5 ${followUpSuggestion.isOverdue ? 'text-red-600' : 'text-blue-600'}`} />
-                </div>
-                <div className="flex-1">
-                  <h4 className={`font-semibold ${followUpSuggestion.isOverdue ? 'text-red-700' : 'text-blue-700'}`}>
-                    {followUpSuggestion.isOverdue ? '⚠️ Follow-up Overdue!' : '🧠 Smart Follow-up Suggestion'}
-                  </h4>
-                  <p className="text-sm mt-1">{followUpSuggestion.reason}</p>
-                  <div className="flex items-center gap-4 mt-2 text-sm">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-4 w-4" />
-                      {followUpSuggestion.date.toLocaleDateString()}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      Best time: {followUpSuggestion.bestTime}
-                    </span>
+            {/* Won/Lost Status Banner */}
+            {lead.status === 'won' && (
+              <Card className="p-4 border-green-300 bg-green-50">
+                <div className="flex items-center gap-3">
+                  <Trophy className="h-8 w-8 text-green-600" />
+                  <div>
+                    <h4 className="font-semibold text-green-700">🎉 Deal Won!</h4>
+                    <p className="text-sm text-green-600">This lead has been converted to a project.</p>
                   </div>
                 </div>
-              </div>
-            </Card>
+              </Card>
+            )}
+            
+            {lead.status === 'lost' && (
+              <Card className="p-4 border-red-300 bg-red-50">
+                <div className="flex items-center gap-3">
+                  <ThumbsDown className="h-8 w-8 text-red-600" />
+                  <div>
+                    <h4 className="font-semibold text-red-700">Deal Lost</h4>
+                    <p className="text-sm text-red-600">Reason: {lead.lostReason || 'Not specified'}</p>
+                  </div>
+                </div>
+              </Card>
+            )}
+            
+            {/* Smart Follow-up Suggestion - ONLY for active leads */}
+            {!['won', 'lost'].includes(lead.status) && (
+              <Card className={`p-4 ${followUpSuggestion.isOverdue ? 'border-red-300 bg-red-50' : 'border-blue-300 bg-blue-50'}`}>
+                <div className="flex items-start gap-3">
+                  <div className={`p-2 rounded-lg ${followUpSuggestion.isOverdue ? 'bg-red-100' : 'bg-blue-100'}`}>
+                    <Brain className={`h-5 w-5 ${followUpSuggestion.isOverdue ? 'text-red-600' : 'text-blue-600'}`} />
+                  </div>
+                  <div className="flex-1">
+                    <h4 className={`font-semibold ${followUpSuggestion.isOverdue ? 'text-red-700' : 'text-blue-700'}`}>
+                      {followUpSuggestion.isOverdue ? '⚠️ Follow-up Overdue!' : '🧠 Smart Follow-up Suggestion'}
+                    </h4>
+                    <p className="text-sm mt-1">{followUpSuggestion.reason}</p>
+                    <div className="flex items-center gap-4 mt-2 text-sm">
+                      <span className="flex items-center gap-1">
+                        <Calendar className="h-4 w-4" />
+                        {followUpSuggestion.date.toLocaleDateString()}
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <Clock className="h-4 w-4" />
+                        Best time: {followUpSuggestion.bestTime}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </Card>
+            )}
             
             {/* Contact Info */}
             <Card className="p-4">
