@@ -71,6 +71,12 @@ export function BuildInventory({ token, user, clientModules = [] }) {
   const [reservations, setReservations] = useState([])
   const [reservationStats, setReservationStats] = useState({})
 
+  // Invoice Dispatch Sync State
+  const [invoiceSyncStatus, setInvoiceSyncStatus] = useState(null)
+  const [autoSyncEnabled, setAutoSyncEnabled] = useState(true)
+  const [syncingInvoices, setSyncingInvoices] = useState(false)
+  const autoSyncIntervalRef = useRef(null)
+
   // File input ref for image upload
   const fileInputRef = useRef(null)
 
