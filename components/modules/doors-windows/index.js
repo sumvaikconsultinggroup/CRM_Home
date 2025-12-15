@@ -485,6 +485,7 @@ export function DoorsWindowsModule({ client, user }) {
               onRefresh={fetchProjects}
               headers={headers}
               glassStyles={glassStyles}
+              businessMode={businessMode}
             />
           </TabsContent>
 
@@ -498,6 +499,7 @@ export function DoorsWindowsModule({ client, user }) {
               headers={headers}
               user={user}
               glassStyles={glassStyles}
+              businessMode={businessMode}
             />
           </TabsContent>
 
@@ -512,6 +514,7 @@ export function DoorsWindowsModule({ client, user }) {
               headers={headers}
               user={user}
               glassStyles={glassStyles}
+              businessMode={businessMode}
             />
           </TabsContent>
 
