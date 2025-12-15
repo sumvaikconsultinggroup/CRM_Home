@@ -60,6 +60,9 @@ import { BillingCenter } from '@/components/super-admin/billing-center'
 import { EnterpriseProjects } from '@/components/enterprise-projects'
 import { EnterpriseTeams } from '@/components/enterprise-teams'
 import { JiraTaskManager } from '@/components/jira-task-manager'
+import { ProductSwitcher } from '@/components/product-switcher'
+import { BuildInventory } from '@/components/build-inventory'
+import { ProductAssignment } from '@/components/super-admin/product-assignment'
 
 // Animation variants
 const fadeIn = {
