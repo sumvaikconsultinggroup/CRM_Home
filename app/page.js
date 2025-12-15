@@ -1170,7 +1170,7 @@ function ClientDashboard({ user, client, onLogout }) {
               </motion.div>
             )}
 
-            {/* Teams Tab - Slack-like Collaboration */}
+            {/* Teams Hub - Ultimate Enterprise Collaboration */}
             {activeTab === 'teams' && (
               <motion.div
                 key="teams"
@@ -1178,7 +1178,7 @@ function ClientDashboard({ user, client, onLogout }) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
               >
-                <EnterpriseTeams authToken={authToken} users={users} />
+                <UltimateTeamsHub authToken={authToken} users={users} currentUser={user} />
               </motion.div>
             )}
 
