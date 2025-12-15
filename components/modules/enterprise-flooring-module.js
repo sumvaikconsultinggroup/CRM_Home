@@ -2599,6 +2599,17 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                               Material Req
                             </Button>
                           )}
+                          {/* B2B: Mark as Delivered (when In Transit) */}
+                          {project.segment === 'b2b' && project.status === 'in_transit' && (
+                            <Button 
+                              size="sm" 
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                              onClick={() => handleB2BDelivery(project.id)}
+                            >
+                              <CheckCircle2 className="h-4 w-4 mr-1" />
+                              Delivered
+                            </Button>
+                          )}
                           <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'project', data: project })} title="Edit">
                             <Edit className="h-4 w-4" />
                           </Button>
