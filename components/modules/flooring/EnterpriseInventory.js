@@ -4374,4 +4374,3 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
 }
 
 export { EnterpriseInventory }
-export default EnterpriseInventory
