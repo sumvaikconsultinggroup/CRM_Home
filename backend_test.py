@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import time
 
 # Configuration
-BASE_URL = "https://modularmods.preview.emergentagent.com/api"
+BASE_URL = "https://woodinv-manager.preview.emergentagent.com/api"
 SUPER_ADMIN_EMAIL = "admin@buildcrm.com"
 SUPER_ADMIN_PASSWORD = "admin123"
 
