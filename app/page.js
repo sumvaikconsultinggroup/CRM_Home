@@ -859,7 +859,7 @@ function ClientDashboard({ user, client, onLogout }) {
                 } else if (item.isModule && item.id === 'paints-module') {
                   setActiveModule('paints')
                 } else if (item.isModule && item.id === 'doors-windows-module') {
-                  window.location.href = '/doors-windows'
+                  setActiveModule('doors-windows')
                 } else if (item.isChat) {
                   setShowChat(true)
                 } else {
