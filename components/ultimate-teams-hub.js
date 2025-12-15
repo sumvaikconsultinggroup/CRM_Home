@@ -1626,6 +1626,19 @@ export function UltimateTeamsHub({ authToken, users = [], currentUser }) {
             isActive={activeView === 'activity'}
             onClick={() => setActiveView('activity')}
           />
+          <NavItem
+            icon={BookMarked}
+            label="Saved Messages"
+            isActive={rightPanelContent === 'saved' && rightPanelOpen}
+            onClick={() => { setRightPanelContent('saved'); setRightPanelOpen(true); }}
+          />
+          <NavItem
+            icon={Bell}
+            label="Notifications"
+            badge={notifications.filter(n => !n.read).length}
+            isActive={rightPanelContent === 'notifications' && rightPanelOpen}
+            onClick={() => { setRightPanelContent('notifications'); setRightPanelOpen(true); }}
+          />
         </div>
         
         <Separator className="bg-white/10 my-2" />
