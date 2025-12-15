@@ -19,7 +19,7 @@ import {
   FileText, Calculator, Package, DoorOpen, Maximize2, Grid3X3,
   CheckCircle2, Send, Printer, ShoppingCart, RefreshCw, PenLine,
   ChevronRight, ArrowRight, X, Layers, Settings, User, Palette,
-  Lock, Unlock, RotateCcw, Square, CircleDot, Grip, Move
+  Lock, Unlock, RotateCcw, Square, CircleDot, Grip, Move, Receipt
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { DoorWindow3DPreview } from './DoorWindow3DPreview'
