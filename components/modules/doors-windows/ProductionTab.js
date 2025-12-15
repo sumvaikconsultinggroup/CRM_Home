@@ -853,7 +853,7 @@ export function ProductionTab({ orders, settings, headers, glassStyles, onRefres
           <DialogHeader>
             <DialogTitle>Complete Stage</DialogTitle>
             <DialogDescription>
-              Mark "{productionStages.find(s => s.id === selectedWorkOrder?.currentStage)?.name}" as complete
+              Mark &quot;{productionStages.find(s => s.id === selectedWorkOrder?.currentStage)?.name}&quot; as complete
             </DialogDescription>
           </DialogHeader>
           <div className="py-4 space-y-4">
