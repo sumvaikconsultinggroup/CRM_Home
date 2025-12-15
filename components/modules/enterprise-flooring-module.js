@@ -7407,7 +7407,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           <TabsContent value="quotes">{renderQuotes()}</TabsContent>
           <TabsContent value="invoices">{renderInvoices()}</TabsContent>
           <TabsContent value="installations">{renderInstallations()}</TabsContent>
-          <TabsContent value="inventory">{renderInventory()}</TabsContent>
+          <TabsContent value="inventory">
+            <EnterpriseInventory 
+              token={token} 
+              products={products}
+              onRefreshProducts={fetchProducts}
+            />
+          </TabsContent>
           <TabsContent value="reports">{renderReports()}</TabsContent>
           <TabsContent value="settings">{renderSettings()}</TabsContent>
         </div>
