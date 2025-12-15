@@ -705,7 +705,7 @@ function ClientDashboard({ user, client, onLogout }) {
     // Add Furniture module link
     ...(hasFurnitureModule ? [{ id: 'furniture-module', icon: Sofa, label: 'Furniture', isModule: true }] : []),
     // Add Doors & Windows module link
-    ...(hasDoorsWindowsModule ? [{ id: 'doors-windows-module', icon: Square, label: 'Doors & Windows', isModule: true, href: '/doors-windows' }] : []),
+    ...(hasDoorsWindowsModule ? [{ id: 'doors-windows-module', icon: Square, label: 'Doors & Windows', isModule: true }] : []),
     // Add Paints & Coatings module link
     ...(hasPaintsModule ? [{ id: 'paints-module', icon: Paintbrush, label: 'Paints & Coatings', isModule: true }] : []),
     { id: 'modules', icon: Package, label: 'Modules' },
