@@ -2092,6 +2092,17 @@ export function AdvancedLeadManagement({
 
   // Handle status change
   const handleStatusChange = async (leadId, newStatus) => {
+    // For won/lost, show the appropriate dialog
+    const lead = leads.find(l => l.id === leadId)
+    if (newStatus === 'won' && lead) {
+      setMarkWonDialog(lead)
+      return
+    }
+    if (newStatus === 'lost' && lead) {
+      setMarkLostDialog(lead)
+      return
+    }
+    
     try {
       const response = await api.updateLead(leadId, { status: newStatus })
       
