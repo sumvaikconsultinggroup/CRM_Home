@@ -985,53 +985,15 @@ function ClientDashboard({ user, client, onLogout }) {
               </motion.div>
             )}
 
-            {/* Tasks Tab */}
+            {/* Tasks Tab - Enterprise Task Management */}
             {activeTab === 'tasks' && (
               <motion.div
                 key="tasks"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="space-y-6"
               >
-                <div className="flex justify-between items-center">
-                  <h2 className="text-2xl font-bold">Task Board</h2>
-                  <Button onClick={() => { setDialogType('task'); setEditingItem(null); setShowDialog(true); }}>
-                    <Plus className="h-4 w-4 mr-2" /> Add Task
-                  </Button>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-                  {['todo', 'in_progress', 'review', 'completed'].map((status) => (
-                    <GlassCard key={status}>
-                      <div className="p-4 border-b flex items-center justify-between">
-                        <span className="font-medium capitalize">{status.replace('_', ' ')}</span>
-                        <Badge variant="secondary">{tasks.filter(t => t.status === status).length}</Badge>
-                      </div>
-                      <div className="p-3 space-y-2 min-h-[300px]">
-                        {tasks.filter(t => t.status === status).map((task) => (
-                          <motion.div
-                            key={task.id}
-                            className="p-3 bg-white rounded-lg shadow-sm border hover:shadow-md cursor-pointer"
-                            whileHover={{ scale: 1.02 }}
-                            onClick={() => { setDialogType('task'); setEditingItem(task); setShowDialog(true); }}
-                          >
-                            <p className="font-medium text-sm">{task.title}</p>
-                            <p className="text-xs text-muted-foreground mt-1">{task.description || 'No description'}</p>
-                            <div className="flex justify-between items-center mt-2">
-                              <Badge variant={task.priority === 'urgent' || task.priority === 'high' ? 'destructive' : 'secondary'} className="text-xs">
-                                {task.priority || 'medium'}
-                              </Badge>
-                              <span className="text-xs text-muted-foreground">
-                                {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}
-                              </span>
-                            </div>
-                          </motion.div>
-                        ))}
-                      </div>
-                    </GlassCard>
-                  ))}
-                </div>
+                <EnterpriseTaskManager token={token} />
               </motion.div>
             )}
 
