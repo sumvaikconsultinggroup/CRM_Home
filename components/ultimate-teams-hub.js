@@ -675,8 +675,8 @@ const CreateTaskDialog = ({ open, onClose, message, onCreateTask }) => {
           <div className="space-y-2">
             <Label>Task Title</Label>
             <Input
-              value={taskData.title}
-              onChange={(e) => setTaskData({ ...taskData, title: e.target.value })}
+              value={currentTaskData.title}
+              onChange={(e) => setTaskData({ ...currentTaskData, title: e.target.value })}
               placeholder="Enter task title..."
             />
           </div>
@@ -684,8 +684,8 @@ const CreateTaskDialog = ({ open, onClose, message, onCreateTask }) => {
           <div className="space-y-2">
             <Label>Description</Label>
             <Textarea
-              value={taskData.description}
-              onChange={(e) => setTaskData({ ...taskData, description: e.target.value })}
+              value={currentTaskData.description}
+              onChange={(e) => setTaskData({ ...currentTaskData, description: e.target.value })}
               rows={4}
             />
           </div>
