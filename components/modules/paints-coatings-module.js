@@ -388,6 +388,10 @@ export function PaintsCoatingsModule({ token, user }) {
   const [colors, setColors] = useState([])
   const [categories, setCategories] = useState([])
   const [dealers, setDealers] = useState([])
+  const [leads, setLeads] = useState([])
+  const [leadStats, setLeadStats] = useState(null)
+  const [surveys, setSurveys] = useState([])
+  const [specifications, setSpecifications] = useState([])
   const [rateCards, setRateCards] = useState([])
   const [moduleConfig, setModuleConfig] = useState(null)
   
