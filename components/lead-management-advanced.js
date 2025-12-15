@@ -1813,7 +1813,7 @@ export function AdvancedLeadManagement({
   }
 
   // Handle adding conversation
-  const handleAddConversation = async (conversation) => {
+  const handleAddConversation = async (conversation, followUpDateTime) => {
     const lead = conversationDialogLead
     if (!lead) return
     
@@ -1824,10 +1824,10 @@ export function AdvancedLeadManagement({
         createdBy: user?.name || user?.email || 'Unknown'
       }]
       
-      // Also update follow-up date if callback was requested
+      // Update follow-up date if provided from conversation dialog
       const updates = { conversations: updatedConversations }
-      if (conversation.callbackDate) {
-        updates.followUpDate = conversation.callbackDate
+      if (followUpDateTime) {
+        updates.followUpDate = followUpDateTime
       }
       
       await api.updateLead(lead.id, updates)
@@ -1838,7 +1838,11 @@ export function AdvancedLeadManagement({
         setSelectedLead({ ...selectedLead, ...updates })
       }
       
-      toast.success('Conversation logged successfully')
+      if (followUpDateTime) {
+        toast.success(`Conversation logged & follow-up scheduled for ${new Date(followUpDateTime).toLocaleDateString()}`)
+      } else {
+        toast.success('Conversation logged successfully')
+      }
     } catch (error) {
       console.error('Add conversation error:', error)
       throw error
