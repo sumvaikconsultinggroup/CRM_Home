@@ -984,7 +984,7 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
                   </div>
                   <div className="flex items-center gap-1 text-slate-600">
                     <Maximize2 className="h-3 w-3" />
-                    {quote.totalArea?.toFixed(0) || 0} sqft
+                    {typeof quote.totalArea === 'number' ? quote.totalArea.toFixed(0) : (parseFloat(quote.totalArea) || 0)} sqft
                   </div>
                 </div>
 
