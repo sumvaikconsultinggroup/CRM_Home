@@ -286,7 +286,7 @@ export function BuildInventory({ token, user, clientModules = [] }) {
         }
       }
     }
-  }, [token, autoSyncEnabled, activeTab, fetchDispatches, syncDispatchesFromInvoices])
+  }, [token, autoSyncEnabled, activeTab, fetchDispatches, syncDispatchesFromInvoices, getHeaders])
 
   // Load report when tab changes
   useEffect(() => {
