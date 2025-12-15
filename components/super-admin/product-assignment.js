@@ -49,8 +49,7 @@ const PRODUCTS = {
     color: 'amber',
     bgColor: 'bg-amber-500',
     bgLight: 'bg-amber-50',
-    textColor: 'text-amber-600',
-    comingSoon: true
+    textColor: 'text-amber-600'
   }
 }
 
