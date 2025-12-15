@@ -800,6 +800,24 @@ function ClientDashboard({ user, client, onLogout }) {
     )
   }
 
+  // Render Doors & Windows Module if active
+  if (activeModule === 'doors-windows') {
+    return (
+      <div className="min-h-screen">
+        <div className="p-4">
+          <Button variant="ghost" onClick={() => setActiveModule(null)} className="mb-4">
+            <ChevronLeft className="h-4 w-4 mr-2" /> Back to Dashboard
+          </Button>
+        </div>
+        <DoorsWindowsModule 
+          client={client}
+          user={user}
+          token={authToken}
+        />
+      </div>
+    )
+  }
+
   // Render Upgrade Flow if active
   if (showUpgradeFlow) {
     return (
