@@ -233,26 +233,54 @@ export async function PUT(request, { params }) {
         body.convertedAt = now
         body.convertedBy = user.id
 
-        // Auto-create contact from lead data
-        const contactsCollection = db.collection('contacts')
+        // Update existing contact to 'customer' type OR create new one if not exists
+        // First try to find contact linked to this lead
+        let leadContact = existingLead.contactId 
+          ? await contactsCollection.findOne({ id: existingLead.contactId })
+          : await contactsCollection.findOne({ leadId: leadId })
         
-        // Check if contact already exists with same email
-        const existingContact = existingLead.email 
-          ? await contactsCollection.findOne({ email: existingLead.email })
-          : null
+        // If no contact linked to lead, try finding by email
+        if (!leadContact && existingLead.email) {
+          leadContact = await contactsCollection.findOne({ email: existingLead.email.toLowerCase() })
+        }
         
-        if (!existingContact && (existingLead.name || existingLead.company || existingLead.email)) {
+        if (leadContact) {
+          // UPDATE existing contact to customer type
+          await contactsCollection.updateOne(
+            { id: leadContact.id },
+            { 
+              $set: { 
+                type: 'customer',
+                status: 'active',
+                projectId: newProject.id,
+                tags: [...new Set([...(leadContact.tags || []).filter(t => t !== 'new-lead' && t !== 'lost-lead' && t !== 'nurturing'), 'converted-lead', 'customer'])],
+                notes: `${leadContact.notes || ''}\n[${now.toISOString()}] Lead converted to customer - Project: ${newProject.projectNumber}`,
+                updatedAt: now
+              }
+            }
+          )
+          contactUpdated = { id: leadContact.id, type: 'customer' }
+          
+          // Update project with contact reference
+          await projectsCollection.updateOne(
+            { id: newProject.id },
+            { $set: { contactId: leadContact.id } }
+          )
+          
+          body.contactId = leadContact.id
+        } else if (existingLead.name || existingLead.company || existingLead.email) {
+          // Create new contact as customer if none exists
           const newContact = {
             id: uuidv4(),
             clientId: user.clientId,
             
             // Contact info from lead
             name: existingLead.name || existingLead.company || 'Unknown',
-            email: existingLead.email || '',
+            email: existingLead.email?.toLowerCase() || '',
             phone: existingLead.phone || '',
             company: existingLead.company || '',
             
-            // Type & Status
+            // Type & Status - directly as customer since lead is won
             type: 'customer',
             status: 'active',
             
@@ -270,8 +298,13 @@ export async function PUT(request, { params }) {
             projectId: newProject.id,
             
             // Tags
-            tags: ['converted-lead', ...(existingLead.tags || [])],
-            notes: `Contact auto-created from won lead: ${existingLead.title || existingLead.name}`,
+            tags: ['converted-lead', 'customer', ...(existingLead.tags || [])],
+            notes: `Contact created from won lead: ${existingLead.title || existingLead.name}. Project: ${newProject.projectNumber}`,
+            
+            // Stats
+            totalRevenue: 0,
+            totalProjects: 1,
+            lastContactedAt: null,
             
             // Metadata
             createdBy: user.id,
@@ -280,6 +313,7 @@ export async function PUT(request, { params }) {
           }
           
           await contactsCollection.insertOne(newContact)
+          contactUpdated = { id: newContact.id, type: 'customer', created: true }
           
           // Update project with contact reference
           await projectsCollection.updateOne(
@@ -288,13 +322,6 @@ export async function PUT(request, { params }) {
           )
           
           body.contactId = newContact.id
-        } else if (existingContact) {
-          // Link existing contact to project
-          await projectsCollection.updateOne(
-            { id: newProject.id },
-            { $set: { contactId: existingContact.id } }
-          )
-          body.contactId = existingContact.id
         }
       }
     }
