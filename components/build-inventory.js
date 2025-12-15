@@ -1411,22 +1411,31 @@ export function BuildInventory({ token, user, clientModules = [] }) {
             <Truck className="h-7 w-7" />
             Dispatch Management
           </h2>
-          <p className="text-slate-500">Manage warehouse dispatches and deliveries</p>
+          <p className="text-slate-500">Dispatches are automatically created from invoices via Build Finance</p>
         </div>
         <div className="flex items-center gap-3">
           <Button variant="outline" onClick={() => syncDispatchesFromInvoices(null, true)} disabled={syncingInvoices}>
             <RefreshCw className={`h-4 w-4 mr-2 ${syncingInvoices ? 'animate-spin' : ''}`} />
             Sync from Invoices
           </Button>
-          <Button onClick={() => {
-            setDispatchForm({ items: [], paymentMode: 'prepaid' })
-            setDispatchImagePreview(null)
-            setShowDispatchDialog(true)
-          }}>
-            <Plus className="h-4 w-4 mr-2" /> New Dispatch
-          </Button>
         </div>
       </div>
+
+      {/* Info Banner - No Manual Dispatch */}
+      <Card className="border-blue-200 bg-blue-50">
+        <CardContent className="p-4">
+          <div className="flex items-center gap-3">
+            <AlertCircle className="h-5 w-5 text-blue-600" />
+            <div>
+              <p className="font-medium text-blue-800">Dispatches & Challans Sync from Invoices</p>
+              <p className="text-sm text-blue-600">
+                All dispatches and delivery challans are automatically created when invoices are generated in Build Finance. 
+                No manual dispatch creation is allowed to ensure accurate inventory tracking.
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Auto-Sync Status Banner */}
       <Card className={`border ${autoSyncEnabled ? 'border-emerald-200 bg-emerald-50' : 'border-slate-200 bg-slate-50'}`}>
