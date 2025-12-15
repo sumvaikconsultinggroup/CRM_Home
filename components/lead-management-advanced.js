@@ -1100,40 +1100,127 @@ const LeadDetailPanel = ({ lead, onClose, onUpdate, onAddConversation, onStatusC
 }
 
 // Analytics Dashboard
+// Enhanced Lead Analytics Dashboard
 const LeadAnalytics = ({ leads }) => {
+  const [analyticsTimePeriod, setAnalyticsTimePeriod] = useState('all')
+  
   const stats = useMemo(() => {
-    const total = leads.length
-    const won = leads.filter(l => l.status === 'won')
-    const lost = leads.filter(l => l.status === 'lost')
-    const active = leads.filter(l => !['won', 'lost'].includes(l.status))
+    // Filter by time period first
+    let filteredLeads = [...leads]
+    const now = new Date()
     
-    const totalValue = leads.reduce((sum, l) => sum + (l.value || 0), 0)
+    if (analyticsTimePeriod !== 'all') {
+      let startDate
+      switch (analyticsTimePeriod) {
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+          break
+        case 'month':
+          startDate = new Date(now.getFullYear(), now.getMonth(), 1)
+          break
+        case 'quarter':
+          const quarterMonth = Math.floor(now.getMonth() / 3) * 3
+          startDate = new Date(now.getFullYear(), quarterMonth, 1)
+          break
+        case 'year':
+          startDate = new Date(now.getFullYear(), 0, 1)
+          break
+        default:
+          startDate = null
+      }
+      if (startDate) {
+        filteredLeads = filteredLeads.filter(l => new Date(l.createdAt) >= startDate)
+      }
+    }
+    
+    const total = filteredLeads.length
+    const won = filteredLeads.filter(l => l.status === 'won')
+    const lost = filteredLeads.filter(l => l.status === 'lost')
+    const active = filteredLeads.filter(l => !['won', 'lost'].includes(l.status))
+    
+    const totalValue = filteredLeads.reduce((sum, l) => sum + (l.value || 0), 0)
     const wonValue = won.reduce((sum, l) => sum + (l.value || 0), 0)
+    const lostValue = lost.reduce((sum, l) => sum + (l.value || 0), 0)
     const pipelineValue = active.reduce((sum, l) => sum + (l.value || 0), 0)
     
-    const conversionRate = total > 0 ? ((won.length / total) * 100).toFixed(1) : 0
+    // Better conversion rate calculation (won / (won + lost))
+    const decidedLeads = won.length + lost.length
+    const conversionRate = decidedLeads > 0 ? ((won.length / decidedLeads) * 100).toFixed(1) : 0
     const avgDealSize = won.length > 0 ? Math.round(wonValue / won.length) : 0
+    const avgLeadValue = total > 0 ? Math.round(totalValue / total) : 0
     
-    // Source analysis
+    // Source analysis with enhanced metrics
     const bySource = LEAD_SOURCES.map(source => {
-      const sourceLeads = leads.filter(l => l.source === source.id || l.source === source.label)
+      const sourceLeads = filteredLeads.filter(l => 
+        l.source === source.id || 
+        l.source === source.label ||
+        l.source?.toLowerCase() === source.id.toLowerCase()
+      )
       const wonFromSource = sourceLeads.filter(l => l.status === 'won')
+      const lostFromSource = sourceLeads.filter(l => l.status === 'lost')
+      const activeFromSource = sourceLeads.filter(l => !['won', 'lost'].includes(l.status))
+      const decidedFromSource = wonFromSource.length + lostFromSource.length
+      
       return {
         source: source.label,
+        sourceId: source.id,
+        icon: source.icon,
         total: sourceLeads.length,
+        active: activeFromSource.length,
         won: wonFromSource.length,
+        lost: lostFromSource.length,
         value: sourceLeads.reduce((sum, l) => sum + (l.value || 0), 0),
-        conversionRate: sourceLeads.length > 0 ? ((wonFromSource.length / sourceLeads.length) * 100).toFixed(0) : 0
+        wonValue: wonFromSource.reduce((sum, l) => sum + (l.value || 0), 0),
+        conversionRate: decidedFromSource > 0 ? ((wonFromSource.length / decidedFromSource) * 100).toFixed(0) : '-',
+        avgValue: sourceLeads.length > 0 ? Math.round(sourceLeads.reduce((sum, l) => sum + (l.value || 0), 0) / sourceLeads.length) : 0
       }
     }).filter(s => s.total > 0).sort((a, b) => b.total - a.total)
     
-    // Stage distribution
-    const byStage = LEAD_STAGES.map(stage => ({
-      stage: stage.label,
-      stageId: stage.id,
-      count: leads.filter(l => l.status === stage.id).length,
-      value: leads.filter(l => l.status === stage.id).reduce((sum, l) => sum + (l.value || 0), 0),
-      color: stage.color
+    // Stage distribution with percentages
+    const byStage = LEAD_STAGES.map(stage => {
+      const stageLeads = filteredLeads.filter(l => l.status === stage.id)
+      return {
+        stage: stage.label,
+        stageId: stage.id,
+        count: stageLeads.length,
+        percentage: total > 0 ? ((stageLeads.length / total) * 100).toFixed(1) : 0,
+        value: stageLeads.reduce((sum, l) => sum + (l.value || 0), 0),
+        color: stage.color,
+        bgLight: stage.bgLight,
+        textColor: stage.text
+      }
+    })
+    
+    // Monthly trend analysis
+    const monthlyData = []
+    for (let i = 5; i >= 0; i--) {
+      const monthStart = new Date(now.getFullYear(), now.getMonth() - i, 1)
+      const monthEnd = new Date(now.getFullYear(), now.getMonth() - i + 1, 0)
+      const monthLeads = leads.filter(l => {
+        const created = new Date(l.createdAt)
+        return created >= monthStart && created <= monthEnd
+      })
+      const monthWon = monthLeads.filter(l => l.status === 'won')
+      const monthLost = monthLeads.filter(l => l.status === 'lost')
+      
+      monthlyData.push({
+        month: monthStart.toLocaleDateString('en-IN', { month: 'short', year: '2-digit' }),
+        total: monthLeads.length,
+        won: monthWon.length,
+        lost: monthLost.length,
+        value: monthLeads.reduce((sum, l) => sum + (l.value || 0), 0),
+        wonValue: monthWon.reduce((sum, l) => sum + (l.value || 0), 0)
+      })
+    }
+    
+    // Priority distribution
+    const byPriority = PRIORITY_LEVELS.map(p => ({
+      priority: p.label,
+      priorityId: p.id,
+      color: p.color,
+      bgColor: p.bgColor,
+      count: filteredLeads.filter(l => l.priority === p.id && !['won', 'lost'].includes(l.status)).length,
+      value: filteredLeads.filter(l => l.priority === p.id && !['won', 'lost'].includes(l.status)).reduce((sum, l) => sum + (l.value || 0), 0)
     }))
     
     // Follow-up analytics
@@ -1148,11 +1235,28 @@ const LeadAnalytics = ({ leads }) => {
       return l.followUpDate.split('T')[0] === today
     }).length
     
+    const thisWeekFollowUps = leads.filter(l => {
+      if (!l.followUpDate || ['won', 'lost'].includes(l.status)) return false
+      const followUp = new Date(l.followUpDate)
+      const weekEnd = new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000)
+      return followUp >= now && followUp <= weekEnd
+    }).length
+    
     // Hot leads (high score)
-    const hotLeads = leads.filter(l => {
+    const hotLeads = filteredLeads.filter(l => {
       if (['won', 'lost'].includes(l.status)) return false
       return calculateLeadScore(l).score >= 70
     }).length
+    
+    // Lost reasons analysis
+    const lostReasons = {}
+    lost.forEach(l => {
+      const reason = l.lostReason || 'Unknown'
+      lostReasons[reason] = (lostReasons[reason] || 0) + 1
+    })
+    const lostReasonsArray = Object.entries(lostReasons)
+      .map(([reason, count]) => ({ reason, count }))
+      .sort((a, b) => b.count - a.count)
     
     return {
       total,
@@ -1161,178 +1265,307 @@ const LeadAnalytics = ({ leads }) => {
       active: active.length,
       totalValue,
       wonValue,
+      lostValue,
       pipelineValue,
       conversionRate,
       avgDealSize,
+      avgLeadValue,
       bySource,
       byStage,
+      byPriority,
+      monthlyData,
       overdueFollowUps,
       todayFollowUps,
-      hotLeads
+      thisWeekFollowUps,
+      hotLeads,
+      lostReasonsArray
     }
-  }, [leads])
+  }, [leads, analyticsTimePeriod])
   
   return (
     <div className="space-y-6">
-      {/* Key Metrics */}
-      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-blue-100">
-              <Target className="h-5 w-5 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Total Leads</p>
-              <p className="text-2xl font-bold">{stats.total}</p>
-            </div>
+      {/* Time Period Selector */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-semibold flex items-center gap-2">
+          <BarChart3 className="h-5 w-5" /> Lead Analytics & Reporting
+        </h2>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-muted-foreground">Period:</span>
+          <div className="flex border rounded-lg p-1">
+            {[
+              { id: 'week', label: 'Week' },
+              { id: 'month', label: 'Month' },
+              { id: 'quarter', label: 'Quarter' },
+              { id: 'year', label: 'Year' },
+              { id: 'all', label: 'All Time' }
+            ].map(period => (
+              <Button
+                key={period.id}
+                variant={analyticsTimePeriod === period.id ? 'secondary' : 'ghost'}
+                size="sm"
+                className="text-xs"
+                onClick={() => setAnalyticsTimePeriod(period.id)}
+              >
+                {period.label}
+              </Button>
+            ))}
           </div>
+        </div>
+      </div>
+      
+      {/* Key Metrics Cards */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-3">
+        <Card className="p-3 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+          <p className="text-xs text-blue-600 font-medium">Total Leads</p>
+          <p className="text-2xl font-bold text-blue-700">{stats.total}</p>
         </Card>
-        
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-green-100">
-              <Trophy className="h-5 w-5 text-green-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Won</p>
-              <p className="text-2xl font-bold text-green-600">{stats.won}</p>
-            </div>
-          </div>
+        <Card className="p-3 bg-gradient-to-br from-yellow-50 to-yellow-100 border-yellow-200">
+          <p className="text-xs text-yellow-600 font-medium">Active Pipeline</p>
+          <p className="text-2xl font-bold text-yellow-700">{stats.active}</p>
         </Card>
-        
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-red-100">
-              <ThumbsDown className="h-5 w-5 text-red-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Lost</p>
-              <p className="text-2xl font-bold text-red-600">{stats.lost}</p>
-            </div>
-          </div>
+        <Card className="p-3 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+          <p className="text-xs text-green-600 font-medium">Won</p>
+          <p className="text-2xl font-bold text-green-700">{stats.won}</p>
         </Card>
-        
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-purple-100">
-              <TrendingUp className="h-5 w-5 text-purple-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Conversion Rate</p>
-              <p className="text-2xl font-bold">{stats.conversionRate}%</p>
-            </div>
-          </div>
+        <Card className="p-3 bg-gradient-to-br from-red-50 to-red-100 border-red-200">
+          <p className="text-xs text-red-600 font-medium">Lost</p>
+          <p className="text-2xl font-bold text-red-700">{stats.lost}</p>
         </Card>
-        
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-emerald-100">
-              <IndianRupee className="h-5 w-5 text-emerald-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Pipeline Value</p>
-              <p className="text-xl font-bold">₹{(stats.pipelineValue / 100000).toFixed(1)}L</p>
-            </div>
-          </div>
+        <Card className="p-3 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+          <p className="text-xs text-purple-600 font-medium">Conversion</p>
+          <p className="text-2xl font-bold text-purple-700">{stats.conversionRate}%</p>
         </Card>
-        
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-orange-100">
-              <Flame className="h-5 w-5 text-orange-600" />
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Hot Leads</p>
-              <p className="text-2xl font-bold text-orange-600">{stats.hotLeads}</p>
-            </div>
-          </div>
+        <Card className="p-3 bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
+          <p className="text-xs text-emerald-600 font-medium">Pipeline Value</p>
+          <p className="text-xl font-bold text-emerald-700">₹{(stats.pipelineValue / 100000).toFixed(1)}L</p>
+        </Card>
+        <Card className="p-3 bg-gradient-to-br from-teal-50 to-teal-100 border-teal-200">
+          <p className="text-xs text-teal-600 font-medium">Won Value</p>
+          <p className="text-xl font-bold text-teal-700">₹{(stats.wonValue / 100000).toFixed(1)}L</p>
+        </Card>
+        <Card className="p-3 bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+          <p className="text-xs text-orange-600 font-medium">Avg Deal Size</p>
+          <p className="text-xl font-bold text-orange-700">₹{(stats.avgDealSize / 1000).toFixed(0)}K</p>
         </Card>
       </div>
+      
+      {/* Monthly Trend */}
+      <Card className="p-6">
+        <h3 className="font-semibold mb-4 flex items-center gap-2">
+          <LineChart className="h-5 w-5" /> Monthly Lead Trend (Last 6 Months)
+        </h3>
+        <div className="grid grid-cols-6 gap-2">
+          {stats.monthlyData.map((month, i) => {
+            const maxTotal = Math.max(...stats.monthlyData.map(m => m.total))
+            const barHeight = maxTotal > 0 ? (month.total / maxTotal) * 100 : 0
+            return (
+              <div key={month.month} className="text-center">
+                <div className="h-32 flex items-end justify-center mb-2">
+                  <div className="w-full max-w-12 relative">
+                    <div 
+                      className="bg-blue-200 rounded-t transition-all"
+                      style={{ height: `${barHeight}%`, minHeight: month.total > 0 ? '8px' : '0' }}
+                    >
+                      <div 
+                        className="bg-green-500 rounded-t absolute bottom-0 left-0 right-0"
+                        style={{ height: `${month.total > 0 ? (month.won / month.total) * 100 : 0}%` }}
+                      />
+                    </div>
+                  </div>
+                </div>
+                <p className="text-xs font-medium">{month.month}</p>
+                <p className="text-lg font-bold">{month.total}</p>
+                <p className="text-xs text-green-600">Won: {month.won}</p>
+                <p className="text-xs text-muted-foreground">₹{(month.value / 100000).toFixed(1)}L</p>
+              </div>
+            )
+          })}
+        </div>
+        <div className="flex items-center justify-center gap-4 mt-4 text-xs">
+          <span className="flex items-center gap-1"><span className="w-3 h-3 bg-blue-200 rounded" /> Total Leads</span>
+          <span className="flex items-center gap-1"><span className="w-3 h-3 bg-green-500 rounded" /> Won</span>
+        </div>
+      </Card>
       
       {/* Conversion Funnel */}
       <Card className="p-6">
         <h3 className="font-semibold mb-4 flex items-center gap-2">
           <BarChart2 className="h-5 w-5" /> Sales Funnel
         </h3>
-        <div className="space-y-3">
-          {stats.byStage.filter(s => s.count > 0).map((stage, i) => {
+        <div className="space-y-2">
+          {stats.byStage.map((stage, i) => {
             const maxCount = Math.max(...stats.byStage.map(s => s.count))
             const percentage = maxCount > 0 ? (stage.count / maxCount) * 100 : 0
             return (
-              <div key={stage.stageId} className="flex items-center gap-4">
-                <div className="w-28 text-sm font-medium">{stage.stage}</div>
-                <div className="flex-1 h-8 bg-slate-100 rounded-lg overflow-hidden">
+              <div key={stage.stageId} className="flex items-center gap-3">
+                <div className="w-24 text-sm font-medium truncate">{stage.stage}</div>
+                <div className="flex-1 h-8 bg-slate-100 rounded-lg overflow-hidden relative">
                   <div 
-                    className={`h-full ${stage.color} flex items-center justify-end px-2 transition-all`}
-                    style={{ width: `${percentage}%` }}
+                    className={`h-full ${stage.color} transition-all flex items-center`}
+                    style={{ width: `${Math.max(percentage, 5)}%` }}
                   >
-                    <span className="text-xs text-white font-medium">{stage.count}</span>
+                    <span className="text-xs text-white font-medium px-2">{stage.count}</span>
                   </div>
                 </div>
-                <div className="w-24 text-sm text-right text-muted-foreground">
-                  ₹{(stage.value / 100000).toFixed(1)}L
-                </div>
+                <div className="w-12 text-xs text-muted-foreground text-right">{stage.percentage}%</div>
+                <div className="w-20 text-sm text-right font-medium">₹{(stage.value / 100000).toFixed(1)}L</div>
               </div>
             )
           })}
         </div>
       </Card>
       
-      {/* Source Performance */}
-      <Card className="p-6">
-        <h3 className="font-semibold mb-4 flex items-center gap-2">
-          <PieChart className="h-5 w-5" /> Lead Source Performance
-        </h3>
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="border-b">
-                <th className="text-left py-2 text-sm font-medium">Source</th>
-                <th className="text-center py-2 text-sm font-medium">Leads</th>
-                <th className="text-center py-2 text-sm font-medium">Won</th>
-                <th className="text-center py-2 text-sm font-medium">Conv. Rate</th>
-                <th className="text-right py-2 text-sm font-medium">Value</th>
-              </tr>
-            </thead>
-            <tbody>
-              {stats.bySource.slice(0, 8).map((source, i) => (
-                <tr key={source.source} className="border-b last:border-0">
-                  <td className="py-3 text-sm font-medium">{source.source}</td>
-                  <td className="py-3 text-sm text-center">{source.total}</td>
-                  <td className="py-3 text-sm text-center text-green-600">{source.won}</td>
-                  <td className="py-3 text-center">
-                    <Badge variant={source.conversionRate >= 30 ? 'default' : 'secondary'}>
-                      {source.conversionRate}%
-                    </Badge>
-                  </td>
-                  <td className="py-3 text-sm text-right">₹{source.value.toLocaleString()}</td>
+      {/* Source Performance & Priority Distribution */}
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Source Performance */}
+        <Card className="p-6">
+          <h3 className="font-semibold mb-4 flex items-center gap-2">
+            <Globe className="h-5 w-5" /> Lead Source Performance
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b text-xs text-muted-foreground">
+                  <th className="text-left py-2 font-medium">Source</th>
+                  <th className="text-center py-2 font-medium">Total</th>
+                  <th className="text-center py-2 font-medium">Active</th>
+                  <th className="text-center py-2 font-medium">Won</th>
+                  <th className="text-center py-2 font-medium">Conv%</th>
+                  <th className="text-right py-2 font-medium">Value</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {stats.bySource.map((source, i) => {
+                  const SourceIcon = source.icon
+                  return (
+                    <tr key={source.sourceId} className="border-b last:border-0 hover:bg-slate-50">
+                      <td className="py-2">
+                        <div className="flex items-center gap-2">
+                          <SourceIcon className="h-4 w-4 text-muted-foreground" />
+                          <span className="font-medium">{source.source}</span>
+                        </div>
+                      </td>
+                      <td className="py-2 text-center font-semibold">{source.total}</td>
+                      <td className="py-2 text-center text-yellow-600">{source.active}</td>
+                      <td className="py-2 text-center text-green-600 font-semibold">{source.won}</td>
+                      <td className="py-2 text-center">
+                        <Badge variant={Number(source.conversionRate) >= 30 ? 'default' : 'secondary'} className="text-xs">
+                          {source.conversionRate}%
+                        </Badge>
+                      </td>
+                      <td className="py-2 text-right">₹{(source.value / 100000).toFixed(1)}L</td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+              <tfoot className="border-t-2">
+                <tr className="font-semibold">
+                  <td className="py-2">Total</td>
+                  <td className="py-2 text-center">{stats.total}</td>
+                  <td className="py-2 text-center text-yellow-600">{stats.active}</td>
+                  <td className="py-2 text-center text-green-600">{stats.won}</td>
+                  <td className="py-2 text-center">
+                    <Badge>{stats.conversionRate}%</Badge>
+                  </td>
+                  <td className="py-2 text-right">₹{(stats.totalValue / 100000).toFixed(1)}L</td>
+                </tr>
+              </tfoot>
+            </table>
+          </div>
+        </Card>
+        
+        {/* Priority & Lost Reasons */}
+        <div className="space-y-6">
+          {/* Priority Distribution */}
+          <Card className="p-6">
+            <h3 className="font-semibold mb-4 flex items-center gap-2">
+              <Flag className="h-5 w-5" /> Active Leads by Priority
+            </h3>
+            <div className="space-y-3">
+              {stats.byPriority.map(p => {
+                const maxCount = Math.max(...stats.byPriority.map(pr => pr.count))
+                const percentage = maxCount > 0 ? (p.count / maxCount) * 100 : 0
+                return (
+                  <div key={p.priorityId} className="flex items-center gap-3">
+                    <div className={`w-20 text-sm font-medium ${p.color}`}>{p.priority}</div>
+                    <div className="flex-1 h-6 bg-slate-100 rounded overflow-hidden">
+                      <div 
+                        className={`h-full ${p.bgColor} transition-all flex items-center px-2`}
+                        style={{ width: `${Math.max(percentage, 8)}%` }}
+                      >
+                        <span className={`text-xs font-medium ${p.color}`}>{p.count}</span>
+                      </div>
+                    </div>
+                    <div className="w-20 text-sm text-right">₹{(p.value / 100000).toFixed(1)}L</div>
+                  </div>
+                )
+              })}
+            </div>
+          </Card>
+          
+          {/* Lost Reasons */}
+          {stats.lostReasonsArray.length > 0 && (
+            <Card className="p-6">
+              <h3 className="font-semibold mb-4 flex items-center gap-2">
+                <ThumbsDown className="h-5 w-5 text-red-500" /> Lost Reasons Analysis
+              </h3>
+              <div className="space-y-2">
+                {stats.lostReasonsArray.slice(0, 5).map((item, i) => (
+                  <div key={item.reason} className="flex items-center justify-between">
+                    <span className="text-sm">{item.reason}</span>
+                    <Badge variant="outline" className="text-red-600 border-red-200">
+                      {item.count} leads
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            </Card>
+          )}
         </div>
-      </Card>
+      </div>
       
-      {/* Action Items */}
-      <div className="grid md:grid-cols-2 gap-4">
-        <Card className="p-4 border-orange-200 bg-orange-50">
+      {/* Follow-up Action Items */}
+      <div className="grid md:grid-cols-4 gap-4">
+        <Card className="p-4 border-red-200 bg-gradient-to-br from-red-50 to-red-100">
           <div className="flex items-center gap-3">
-            <AlertTriangle className="h-8 w-8 text-orange-600" />
+            <AlertTriangle className="h-8 w-8 text-red-600" />
             <div>
-              <h4 className="font-semibold text-orange-800">Overdue Follow-ups</h4>
-              <p className="text-2xl font-bold text-orange-600">{stats.overdueFollowUps}</p>
-              <p className="text-xs text-orange-700">Leads need immediate attention</p>
+              <p className="text-xs text-red-600 font-medium">Overdue</p>
+              <p className="text-3xl font-bold text-red-700">{stats.overdueFollowUps}</p>
+              <p className="text-xs text-red-600">Need immediate action</p>
             </div>
           </div>
         </Card>
         
-        <Card className="p-4 border-blue-200 bg-blue-50">
+        <Card className="p-4 border-blue-200 bg-gradient-to-br from-blue-50 to-blue-100">
           <div className="flex items-center gap-3">
             <CalendarDays className="h-8 w-8 text-blue-600" />
             <div>
-              <h4 className="font-semibold text-blue-800">Today&apos;s Follow-ups</h4>
-              <p className="text-2xl font-bold text-blue-600">{stats.todayFollowUps}</p>
-              <p className="text-xs text-blue-700">Scheduled for today</p>
+              <p className="text-xs text-blue-600 font-medium">Today</p>
+              <p className="text-3xl font-bold text-blue-700">{stats.todayFollowUps}</p>
+              <p className="text-xs text-blue-600">Scheduled for today</p>
+            </div>
+          </div>
+        </Card>
+        
+        <Card className="p-4 border-purple-200 bg-gradient-to-br from-purple-50 to-purple-100">
+          <div className="flex items-center gap-3">
+            <CalendarClock className="h-8 w-8 text-purple-600" />
+            <div>
+              <p className="text-xs text-purple-600 font-medium">This Week</p>
+              <p className="text-3xl font-bold text-purple-700">{stats.thisWeekFollowUps}</p>
+              <p className="text-xs text-purple-600">Coming up</p>
+            </div>
+          </div>
+        </Card>
+        
+        <Card className="p-4 border-orange-200 bg-gradient-to-br from-orange-50 to-orange-100">
+          <div className="flex items-center gap-3">
+            <Flame className="h-8 w-8 text-orange-600" />
+            <div>
+              <p className="text-xs text-orange-600 font-medium">Hot Leads</p>
+              <p className="text-3xl font-bold text-orange-700">{stats.hotLeads}</p>
+              <p className="text-xs text-orange-600">Score 70+</p>
             </div>
           </div>
         </Card>
