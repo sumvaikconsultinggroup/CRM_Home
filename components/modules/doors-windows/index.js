@@ -116,6 +116,12 @@ export function DoorsWindowsModule({ client, user }) {
   const [pendingSyncNotification, setPendingSyncNotification] = useState(null)
   const [showSyncNotification, setShowSyncNotification] = useState(true)
 
+  // Post-Invoicing states
+  const [postInvoicingData, setPostInvoicingData] = useState({})
+  const [postInvoicingStats, setPostInvoicingStats] = useState({})
+  const [financeSyncStatus, setFinanceSyncStatus] = useState({})
+  const [syncingToFinance, setSyncingToFinance] = useState(false)
+
   // Handle business mode toggle
   const toggleBusinessMode = (mode) => {
     setBusinessMode(mode)
