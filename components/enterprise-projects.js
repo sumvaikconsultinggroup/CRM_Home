@@ -308,6 +308,31 @@ export function EnterpriseProjects({ authToken, onProjectSelect }) {
   }
 
   // Phase 2: Template handlers
+  const handleLoadPreBuiltTemplates = async () => {
+    setLoadingTemplates(true)
+    try {
+      const res = await fetch('/api/projects/templates/seed', {
+        method: 'POST',
+        headers
+      })
+      const data = await res.json()
+      
+      if (data.count > 0) {
+        toast.success(`Loaded ${data.count} professional templates!`)
+        fetchTemplates()
+      } else if (data.count === 0) {
+        toast.info('All templates already loaded')
+      } else {
+        toast.error(data.error || 'Failed to load templates')
+      }
+    } catch (error) {
+      console.error('Load templates error:', error)
+      toast.error('Failed to load pre-built templates')
+    } finally {
+      setLoadingTemplates(false)
+    }
+  }
+
   const handleCreateTemplate = async () => {
     if (!templateForm.name) {
       toast.error('Template name is required')
