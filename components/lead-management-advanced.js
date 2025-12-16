@@ -2114,10 +2114,17 @@ export function AdvancedLeadManagement({
         toast.success('Lead status updated')
       }
       
+      // Update local state immediately for responsive UI
       setLeads(leads.map(l => l.id === leadId ? { ...l, status: newStatus, ...response.lead } : l))
       
       if (selectedLead?.id === leadId) {
         setSelectedLead({ ...selectedLead, status: newStatus })
+      }
+      
+      // IMPORTANT: Call onRefresh to sync with parent state
+      // This ensures changes persist when navigating between tabs
+      if (onRefresh) {
+        onRefresh()
       }
     } catch (error) {
       console.error('Status update error:', error)
