@@ -946,13 +946,20 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
         
         // Update form with complete project details from API
         if (projectData) {
+          // Extract customer name from API response with multiple fallbacks
+          const apiCustomerName = projectData.contactPerson || projectData.customerName || 
+                                  projectData.clientName || projectData.name || ''
+          const apiCustomerPhone = projectData.contactPhone || projectData.phone || projectData.mobile || ''
+          const apiCustomerEmail = projectData.contactEmail || projectData.email || ''
+          const apiSiteAddress = projectData.siteAddress || projectData.address || projectData.location || ''
+          
           setQuoteForm(prev => ({
             ...prev,
             projectId,
-            customerName: projectData.contactPerson || prev.customerName,
-            customerPhone: projectData.contactPhone || prev.customerPhone,
-            customerEmail: projectData.contactEmail || prev.customerEmail,
-            siteAddress: projectData.siteAddress || prev.siteAddress,
+            customerName: apiCustomerName || prev.customerName,
+            customerPhone: apiCustomerPhone || prev.customerPhone,
+            customerEmail: apiCustomerEmail || prev.customerEmail,
+            siteAddress: apiSiteAddress || prev.siteAddress,
             paymentTerms: projectData.paymentTerms || prev.paymentTerms
           }))
         }
