@@ -541,12 +541,14 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
   const qualifiedLeads = leads.filter(l => l.status === 'qualified').length
   const negotiationLeads = leads.filter(l => l.status === 'negotiation').length
   const lostLeads = leads.filter(l => l.status === 'lost').length
+  // Active leads = leads NOT in won or lost status (i.e., still in the pipeline)
+  const activeLeadsCount = leads.filter(l => !['won', 'lost'].includes(l.status)).length
   const conversionRate = leads.length > 0 ? Math.round((wonLeads.length / leads.length) * 100) : 0
   const avgDealSize = wonLeads.length > 0 ? Math.round(revenueFromWonLeads / wonLeads.length) : 0
   const pipelineValue = leads.filter(l => !['won', 'lost'].includes(l.status)).reduce((sum, l) => sum + (l.value || 0), 0)
   
-  // Project metrics
-  const activeProjects = projects.filter(p => ['in_progress', 'active', 'ongoing'].includes(p.status)).length
+  // Project metrics - include 'planning' status since new projects start in planning
+  const activeProjects = projects.filter(p => ['planning', 'in_progress', 'active', 'ongoing'].includes(p.status)).length
   const completedProjects = projects.filter(p => p.status === 'completed').length
   const projectCompletionRate = projects.length > 0 ? Math.round((completedProjects / projects.length) * 100) : 0
   
