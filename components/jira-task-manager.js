@@ -2055,7 +2055,7 @@ const TaskDetailModal = ({ task, open, onClose, onUpdate, onDelete, onDuplicate,
 // MAIN COMPONENT
 // =============================================
 
-export function JiraTaskManager({ token, currentUser }) {
+export function JiraTaskManager({ token, currentUser, onRefresh }) {
   const [tasks, setTasks] = useState([])
   const [stats, setStats] = useState(null)
   const [users, setUsers] = useState([])
