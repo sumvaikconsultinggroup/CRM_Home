@@ -619,42 +619,71 @@ export function DoorsWindowsModule({ client, user }) {
       )}
 
       <div className="px-6 pb-6">
-        {/* Tabs Navigation - Multi-row for all tabs */}
+        {/* Mode Indicator Bar */}
+        <div className={`mb-4 p-3 rounded-xl ${businessMode === 'manufacturer' ? 'bg-gradient-to-r from-purple-100 to-indigo-100 border border-purple-200' : 'bg-gradient-to-r from-emerald-100 to-teal-100 border border-emerald-200'}`}>
+          <div className="flex items-center gap-3">
+            {businessMode === 'manufacturer' ? (
+              <>
+                <Factory className="h-5 w-5 text-purple-600" />
+                <div>
+                  <p className="font-semibold text-purple-800">Manufacturer Mode</p>
+                  <p className="text-xs text-purple-600">B2B operations • Dealer network management • Production-focused workflow</p>
+                </div>
+              </>
+            ) : (
+              <>
+                <Wrench className="h-5 w-5 text-emerald-600" />
+                <div>
+                  <p className="font-semibold text-emerald-800">Fabricator/Dealer Mode</p>
+                  <p className="text-xs text-emerald-600">Customer-facing • Site surveys • Full quote-to-installation workflow</p>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+
+        {/* Tabs Navigation - Mode-specific tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <div className={`${glassStyles.card} p-3 rounded-2xl`}>
             {/* Main Tabs */}
             <div className="flex flex-wrap gap-2 mb-2">
-              {TAB_GROUPS.main.map(tab => (
+              {currentTabGroups.main.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                     activeTab === tab.id 
                       ? 'bg-white shadow-md text-indigo-600' 
-                      : 'text-slate-600 hover:bg-white/50'
+                      : tab.highlight 
+                        ? 'text-purple-600 bg-purple-50 hover:bg-purple-100'
+                        : 'text-slate-600 hover:bg-white/50'
                   }`}
                 >
                   <tab.icon className="h-4 w-4" />
                   {tab.label}
+                  {tab.highlight && <Sparkles className="h-3 w-3 text-amber-500" />}
                 </button>
               ))}
               <Separator orientation="vertical" className="h-8 mx-2" />
-              {TAB_GROUPS.operations.map(tab => (
+              {currentTabGroups.operations.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
                   className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
                     activeTab === tab.id 
                       ? 'bg-white shadow-md text-indigo-600' 
-                      : 'text-slate-600 hover:bg-white/50'
+                      : tab.highlight 
+                        ? 'text-purple-600 bg-purple-50 hover:bg-purple-100'
+                        : 'text-slate-600 hover:bg-white/50'
                   }`}
                 >
                   <tab.icon className="h-4 w-4" />
                   {tab.label}
+                  {tab.highlight && <Sparkles className="h-3 w-3 text-amber-500" />}
                 </button>
               ))}
               <Separator orientation="vertical" className="h-8 mx-2" />
-              {TAB_GROUPS.support.map(tab => (
+              {currentTabGroups.support.map(tab => (
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
