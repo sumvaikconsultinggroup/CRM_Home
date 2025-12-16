@@ -94,6 +94,8 @@ export function EnterpriseProjects({ authToken, onProjectSelect }) {
   const [showTeamDialog, setShowTeamDialog] = useState(false)
   const [showTaskDialog, setShowTaskDialog] = useState(false)
   const [users, setUsers] = useState([])
+  const [selectedTemplateCategory, setSelectedTemplateCategory] = useState('all')
+  const [loadingTemplates, setLoadingTemplates] = useState(false)
   
   // Template form
   const [templateForm, setTemplateForm] = useState({
