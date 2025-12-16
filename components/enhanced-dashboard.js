@@ -700,7 +700,7 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
           <div className="flex flex-wrap gap-2 sm:gap-3 w-full md:w-auto">
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button 
-                className="bg-white text-indigo-600 hover:bg-white/90 shadow-lg flex-1 md:flex-none text-sm sm:text-base h-9 sm:h-10 font-semibold"
+                className="bg-white text-indigo-600 hover:bg-slate-100 shadow-lg flex-1 md:flex-none text-sm sm:text-base h-9 sm:h-10 font-semibold"
                 onClick={() => onNavigate?.('leads')}
               >
                 <Plus className="h-4 w-4 mr-1 sm:mr-2" /> 
@@ -709,7 +709,7 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
             </motion.div>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button 
-                className="bg-white/20 backdrop-blur-sm border-2 border-white/50 text-white hover:bg-white/30 flex-1 md:flex-none text-sm sm:text-base h-9 sm:h-10 font-semibold shadow-lg"
+                className="bg-indigo-800 text-white hover:bg-indigo-900 shadow-lg flex-1 md:flex-none text-sm sm:text-base h-9 sm:h-10 font-semibold border-2 border-indigo-400"
                 onClick={() => onNavigate?.('projects')}
               >
                 <Briefcase className="h-4 w-4 mr-1 sm:mr-2" /> 
@@ -718,7 +718,7 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
             </motion.div>
             <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
               <Button 
-                className="bg-white/20 backdrop-blur-sm border-2 border-white/50 text-white hover:bg-white/30 flex-1 md:flex-none text-sm sm:text-base h-9 sm:h-10 font-semibold shadow-lg"
+                className="bg-pink-700 text-white hover:bg-pink-800 shadow-lg flex-1 md:flex-none text-sm sm:text-base h-9 sm:h-10 font-semibold border-2 border-pink-400"
                 onClick={() => onNavigate?.('tasks')}
               >
                 <CheckCircle2 className="h-4 w-4 mr-1 sm:mr-2" /> 
