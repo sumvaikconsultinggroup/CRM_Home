@@ -242,6 +242,24 @@ function SuperAdminDashboard({ user, onLogout }) {
     fetchData()
   }, [fetchData])
 
+  // Responsive state - MUST be before any conditional returns
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
+  const isMobileView = windowWidth < 768
+  const isTabletView = windowWidth >= 768 && windowWidth < 1024
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidth(window.innerWidth)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  // Auto-collapse sidebar on tablet
+  useEffect(() => {
+    if (isTabletView) setSidebarOpen(false)
+    else if (!isMobileView) setSidebarOpen(true)
+  }, [isMobileView, isTabletView])
+
   const handleToggleClientStatus = async (clientId) => {
     try {
       await api.updateAdminClient(clientId, 'toggle-status')
