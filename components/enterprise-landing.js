@@ -743,7 +743,57 @@ export default function EnterpriseLanding({ onLogin }) {
 
             {/* Desktop Nav */}
             <div className="hidden lg:flex items-center gap-8">
-              {['Features', 'Modules', 'Pricing', 'Integrations'].map((item) => (
+              <motion.button
+                onClick={() => scrollToSection('features')}
+                className="text-gray-600 hover:text-gray-900 font-medium transition-colors relative group"
+                whileHover={{ y: -2 }}
+              >
+                Features
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-blue-600 to-purple-600 group-hover:w-full transition-all duration-300" />
+              </motion.button>
+              
+              {/* Products Dropdown */}
+              <div className="relative group">
+                <motion.button
+                  className="flex items-center gap-1 text-gray-600 hover:text-gray-900 font-medium transition-colors"
+                  whileHover={{ y: -2 }}
+                >
+                  Products
+                  <ChevronDown className="h-4 w-4 transition-transform group-hover:rotate-180" />
+                </motion.button>
+                
+                <div className="absolute top-full left-0 mt-2 w-72 bg-white rounded-xl shadow-2xl border border-gray-100 overflow-hidden opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 transform translate-y-2 group-hover:translate-y-0">
+                  <a href="/products/buildcrm" className="flex items-center gap-3 px-4 py-3 hover:bg-blue-50 transition-colors">
+                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-lg flex items-center justify-center shadow-md">
+                      <Target className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-gray-900">BuilDCRM</div>
+                      <div className="text-xs text-gray-500">Sales & Lead Management</div>
+                    </div>
+                  </a>
+                  <a href="/products/build-inventory" className="flex items-center gap-3 px-4 py-3 hover:bg-orange-50 transition-colors">
+                    <div className="w-10 h-10 bg-gradient-to-br from-orange-500 to-red-600 rounded-lg flex items-center justify-center shadow-md">
+                      <Package className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-gray-900">BuilD Inventory</div>
+                      <div className="text-xs text-gray-500">Stock & Warehouse Management</div>
+                    </div>
+                  </a>
+                  <a href="/products/build-finance" className="flex items-center gap-3 px-4 py-3 hover:bg-green-50 transition-colors">
+                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-emerald-600 rounded-lg flex items-center justify-center shadow-md">
+                      <Receipt className="h-5 w-5 text-white" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-gray-900">BuilD Finance</div>
+                      <div className="text-xs text-gray-500">Invoicing & Accounting</div>
+                    </div>
+                  </a>
+                </div>
+              </div>
+              
+              {['Modules', 'Pricing', 'Integrations'].map((item) => (
                 <motion.button
                   key={item}
                   onClick={() => scrollToSection(item.toLowerCase())}
