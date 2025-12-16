@@ -658,15 +658,26 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
     <div className="space-y-6">
       {/* ==================== WELCOME BANNER ==================== */}
       <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0, y: -30, scale: 0.95 }}
+        animate={{ opacity: 1, y: 0, scale: 1 }}
+        transition={{ duration: 0.8, ease: [0.34, 1.56, 0.64, 1] }}
         className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white p-5 sm:p-6 lg:p-8"
       >
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:20px_20px]" />
         <motion.div 
           className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"
-          animate={{ scale: [1, 1.2, 1], x: [0, 20, 0] }}
-          transition={{ duration: 8, repeat: Infinity }}
+          animate={{ scale: [1, 1.3, 1], x: [0, 30, 0], y: [0, -20, 0] }}
+          transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+        />
+        <motion.div 
+          className="absolute bottom-0 left-0 w-48 h-48 bg-pink-400/20 rounded-full blur-3xl"
+          animate={{ scale: [1, 1.2, 1], x: [0, -20, 0], y: [0, 20, 0] }}
+          transition={{ duration: 8, repeat: Infinity, ease: "easeInOut", delay: 1 }}
+        />
+        <motion.div 
+          className="absolute top-1/2 left-1/3 w-32 h-32 bg-yellow-400/10 rounded-full blur-2xl"
+          animate={{ scale: [0.8, 1.2, 0.8], opacity: [0.3, 0.6, 0.3] }}
+          transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
         />
         
         <div className="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-6">
