@@ -273,21 +273,27 @@ export function DoorsWindowsModule({ client, user }) {
         body: JSON.stringify({ action: 'sync-all' })
       })
       const data = await res.json()
-      if (data.success) {
+      
+      // Check if response is successful (either res.ok or data.success)
+      if (res.ok && (data.success || data.results || data.message)) {
         const { results } = data
         const summary = []
         if (results?.projects?.created > 0) summary.push(`${results.projects.created} projects`)
-        if (results?.leads?.created > 0) summary.push(`${results.leads.created} leads`)
         if (results?.contacts?.created > 0) summary.push(`${results.contacts.created} contacts`)
         if (results?.contacts?.updated > 0) summary.push(`${results.contacts.updated} updated`)
         
         toast.success(summary.length > 0 
           ? `Synced: ${summary.join(', ')}` 
-          : 'Sync complete - everything up to date!')
+          : data.message || 'Sync complete - everything up to date!')
         fetchCrmSyncStatus()
         fetchProjects()
+        setShowSyncNotification(false)
+        setPendingSyncNotification(null)
       } else {
-        toast.error(data.error || data.details || 'Sync failed')
+        // Show detailed error message
+        const errorMsg = data.error || data.details || 'Sync failed'
+        console.error('Sync API Error:', data)
+        toast.error(errorMsg)
       }
     } catch (error) {
       console.error('CRM Sync Error:', error)
