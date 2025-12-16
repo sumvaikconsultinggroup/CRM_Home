@@ -11,7 +11,7 @@ from datetime import datetime, timedelta
 import time
 
 # Configuration
-BASE_URL = "https://interactive-crm.preview.emergentagent.com/api"
+BASE_URL = "https://synctask-central.preview.emergentagent.com/api"
 SUPER_ADMIN_EMAIL = "admin@buildcrm.com"
 SUPER_ADMIN_PASSWORD = "admin123"
 DEMO_CLIENT_EMAIL = "demo@example.com"
