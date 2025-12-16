@@ -543,6 +543,8 @@ export function EnterpriseProjects({ authToken, onProjectSelect, onRefresh }) {
       
       if (data.id) {
         fetchProjectDetail(projectDetail.project.id)
+        // Notify parent to refresh dashboard data
+        onRefresh?.()
       }
     } catch (error) {
       console.error('Toggle task error:', error)
