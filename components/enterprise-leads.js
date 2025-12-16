@@ -787,47 +787,47 @@ export function EnterpriseLeads({
 
       {/* Stats Row - Responsive */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-blue-100">
-              <Target className="h-5 w-5 text-blue-600" />
+        <Card className="p-2 sm:p-3 lg:p-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 rounded-lg bg-blue-100">
+              <Target className="h-4 w-4 sm:h-5 sm:w-5 text-blue-600" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Total Leads</p>
-              <p className="text-2xl font-bold">{stats.total}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Total</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold">{stats.total}</p>
             </div>
           </div>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-green-100">
-              <DollarSign className="h-5 w-5 text-green-600" />
+        <Card className="p-2 sm:p-3 lg:p-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 rounded-lg bg-green-100">
+              <DollarSign className="h-4 w-4 sm:h-5 sm:w-5 text-green-600" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Pipeline Value</p>
-              <p className="text-2xl font-bold">₹{stats.totalValue.toLocaleString()}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Value</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold">₹{(stats.totalValue / 1000).toFixed(0)}K</p>
             </div>
           </div>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-orange-100">
-              <Flame className="h-5 w-5 text-orange-600" />
+        <Card className="p-2 sm:p-3 lg:p-4">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 rounded-lg bg-orange-100">
+              <Flame className="h-4 w-4 sm:h-5 sm:w-5 text-orange-600" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Hot Leads</p>
-              <p className="text-2xl font-bold">{stats.hotLeads}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Hot</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold">{stats.hotLeads}</p>
             </div>
           </div>
         </Card>
-        <Card className="p-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 rounded-lg bg-purple-100">
-              <Bell className="h-5 w-5 text-purple-600" />
+        <Card className="p-2 sm:p-3 lg:p-4 hidden sm:block">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <div className="p-1.5 sm:p-2 rounded-lg bg-purple-100">
+              <Bell className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Follow-up Today</p>
-              <p className="text-2xl font-bold">{stats.followupToday}</p>
+              <p className="text-xs sm:text-sm text-muted-foreground">Follow-up</p>
+              <p className="text-lg sm:text-xl lg:text-2xl font-bold">{stats.followupToday}</p>
             </div>
           </div>
         </Card>
