@@ -395,6 +395,16 @@ export function DoorsWindowsModule({ client, user }) {
     fetchCrmSyncStatus()
   }, [refreshKey])
 
+  // Fetch post-invoicing data when tab changes
+  useEffect(() => {
+    if (activeTab === 'post-invoicing') {
+      fetchPostInvoicingData()
+    }
+    if (activeTab === 'finance-sync') {
+      fetchFinanceSyncStatus()
+    }
+  }, [activeTab])
+
   const fetchAllData = async () => {
     setLoading(true)
     try {
