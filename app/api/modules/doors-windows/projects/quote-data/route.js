@@ -95,15 +95,15 @@ export async function GET(request) {
     }))
 
     // Prepare the response - include multiple field name variations for compatibility
-    // Extract customer info from project or linked survey
-    const customerName = project.contactPerson || project.customerName || project.clientName || 
-                        project.name || completedSurvey?.contactPerson || ''
-    const customerPhone = project.contactPhone || project.phone || project.mobile ||
-                         completedSurvey?.contactPhone || ''
-    const customerEmail = project.contactEmail || project.email ||
-                         completedSurvey?.contactEmail || ''
-    const siteAddress = project.siteAddress || project.address || project.location ||
-                       completedSurvey?.siteAddress || ''
+    // Extract customer info from project (check nested customer object first) or linked survey
+    const customerName = project.customer?.name || project.clientName || project.contactPerson || 
+                        project.customerName || completedSurvey?.contactPerson || ''
+    const customerPhone = project.customer?.phone || project.clientPhone || project.contactPhone || 
+                         project.phone || project.mobile || completedSurvey?.contactPhone || ''
+    const customerEmail = project.customer?.email || project.clientEmail || project.contactEmail || 
+                         project.email || completedSurvey?.contactEmail || ''
+    const siteAddress = project.siteAddress || project.customer?.address || project.address || 
+                       project.location || completedSurvey?.siteAddress || ''
     
     const quoteData = {
       project: sanitizeDocument({
