@@ -905,13 +905,30 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
     // First, set basic project info from local data immediately
     const project = projects?.find(p => p.id === projectId)
     if (project) {
+      // Extract customer name from various possible field names
+      const customerName = project.contactPerson || project.customerName || project.clientName || 
+                          project.customer?.name || project.contact?.name || 
+                          project.name || quoteForm.customerName
+      
+      // Extract phone from various possible field names  
+      const customerPhone = project.contactPhone || project.phone || project.mobile ||
+                           project.customer?.phone || project.contact?.phone || quoteForm.customerPhone
+      
+      // Extract email from various possible field names
+      const customerEmail = project.contactEmail || project.email || 
+                           project.customer?.email || project.contact?.email || quoteForm.customerEmail
+      
+      // Extract address from various possible field names
+      const siteAddress = project.siteAddress || project.address || project.location ||
+                         project.site?.address || quoteForm.siteAddress
+      
       setQuoteForm({
         ...quoteForm,
         projectId,
-        customerName: project.contactPerson || project.customerName || quoteForm.customerName,
-        customerPhone: project.contactPhone || project.phone || quoteForm.customerPhone,
-        customerEmail: project.contactEmail || project.email || quoteForm.customerEmail,
-        siteAddress: project.siteAddress || project.address || quoteForm.siteAddress,
+        customerName,
+        customerPhone,
+        customerEmail,
+        siteAddress,
         paymentTerms: project.paymentTerms || quoteForm.paymentTerms
       })
     }
