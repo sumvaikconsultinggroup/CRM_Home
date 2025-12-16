@@ -228,7 +228,7 @@ const LineChart = ({ data = [], height = 150, color = '#6366f1', showArea = true
   )
 }
 
-// Donut chart component
+// Donut chart component with enhanced animations
 const DonutChart = ({ data = [], size = 150 }) => {
   const total = data.reduce((sum, d) => sum + d.value, 0) || 1
   
@@ -250,24 +250,67 @@ const DonutChart = ({ data = [], size = 150 }) => {
     const largeArc = angle > 180 ? 1 : 0
     const pathD = `M 50 50 L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`
     
-    acc.push({ ...item, pathD, endAngle })
+    acc.push({ ...item, pathD, endAngle, startAngle })
     return acc
   }, [])
 
   return (
-    <svg width={size} height={size} viewBox="0 0 100 100">
-      {segments.map((segment, i) => (
-        <motion.path
-          key={i}
-          d={segment.pathD}
-          fill={segment.color}
-          initial={{ scale: 0, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ delay: i * 0.1, duration: 0.5 }}
-          className="cursor-pointer hover:opacity-80 transition-opacity"
-        />
-      ))}
-      <circle cx="50" cy="50" r="25" fill="white" />
+    <svg width={size} height={size} viewBox="0 0 100 100" className="drop-shadow-lg">
+      <defs>
+        <filter id="donutShadow">
+          <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.2"/>
+        </filter>
+      </defs>
+      <motion.g
+        initial={{ rotate: -180, opacity: 0 }}
+        animate={{ rotate: 0, opacity: 1 }}
+        transition={{ duration: 1, ease: [0.34, 1.56, 0.64, 1] }}
+        style={{ transformOrigin: '50px 50px' }}
+      >
+        {segments.map((segment, i) => (
+          <motion.path
+            key={i}
+            d={segment.pathD}
+            fill={segment.color}
+            filter="url(#donutShadow)"
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ 
+              delay: 0.3 + i * 0.15, 
+              duration: 0.6,
+              ease: [0.34, 1.56, 0.64, 1]
+            }}
+            whileHover={{ 
+              scale: 1.08,
+              filter: "brightness(1.1)",
+              transition: { duration: 0.2 }
+            }}
+            className="cursor-pointer"
+            style={{ transformOrigin: '50px 50px' }}
+          />
+        ))}
+      </motion.g>
+      <motion.circle 
+        cx="50" 
+        cy="50" 
+        r="25" 
+        fill="white"
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        transition={{ delay: 0.5, duration: 0.5, ease: [0.34, 1.56, 0.64, 1] }}
+      />
+      <motion.text
+        x="50"
+        y="50"
+        textAnchor="middle"
+        dominantBaseline="middle"
+        className="text-xs font-bold fill-slate-700"
+        initial={{ opacity: 0, scale: 0 }}
+        animate={{ opacity: 1, scale: 1 }}
+        transition={{ delay: 0.8, duration: 0.4 }}
+      >
+        {total}
+      </motion.text>
     </svg>
   )
 }
