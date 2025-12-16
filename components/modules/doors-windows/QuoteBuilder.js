@@ -892,22 +892,114 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
     `
   }
 
-  // Link customer from project
-  const handleSelectProject = (projectId) => {
+  // Link customer from project - Enhanced to auto-fetch survey data and measurements
+  const handleSelectProject = async (projectId) => {
     if (projectId === '__none__') {
       setQuoteForm({ ...quoteForm, projectId: '' })
+      setQuoteItems([])
       return
     }
+    
     const project = projects?.find(p => p.id === projectId)
     if (project) {
+      // Update form with all project details
       setQuoteForm({
         ...quoteForm,
         projectId,
-        customerName: project.contactPerson || quoteForm.customerName,
-        customerPhone: project.contactPhone || quoteForm.customerPhone,
-        customerEmail: project.contactEmail || quoteForm.customerEmail,
-        siteAddress: project.siteAddress || quoteForm.siteAddress
+        customerName: project.contactPerson || project.customerName || quoteForm.customerName,
+        customerPhone: project.contactPhone || project.phone || quoteForm.customerPhone,
+        customerEmail: project.contactEmail || project.email || quoteForm.customerEmail,
+        siteAddress: project.siteAddress || project.address || quoteForm.siteAddress,
+        // Also set payment terms if available
+        paymentTerms: project.paymentTerms || quoteForm.paymentTerms
       })
+      
+      toast.success(`Project "${project.name}" selected`)
+      
+      // Find surveys for this project
+      const projectSurveys = surveys?.filter(s => s.projectId === projectId) || []
+      
+      if (projectSurveys.length > 0) {
+        // Get the latest completed survey
+        const completedSurvey = projectSurveys.find(s => s.status === 'completed') || projectSurveys[0]
+        
+        if (completedSurvey?.items?.length > 0) {
+          // Convert survey items to quote items
+          const surveyQuoteItems = completedSurvey.items.map((item, index) => {
+            // Calculate pricing for each item
+            const pricing = calculatePrice({
+              type: item.type || 'Window',
+              category: item.category || 'Sliding',
+              material: item.material || 'Aluminium',
+              width: item.width || 1200,
+              height: item.height || 1500,
+              glassType: item.glassType || 'single',
+              finish: item.finish || 'anodized',
+              panels: item.panels || 2,
+              mesh: item.mesh || false,
+              grill: item.grill || false,
+              quantity: item.quantity || 1
+            })
+            
+            return {
+              id: `survey-item-${Date.now()}-${index}`,
+              type: item.type || 'Window',
+              category: item.category || 'Sliding',
+              location: item.location || '',
+              floor: item.floor || 'Ground Floor',
+              room: item.room || 'Living Room',
+              width: item.width || 1200,
+              height: item.height || 1500,
+              material: item.material || 'Aluminium',
+              glassType: item.glassType || 'single',
+              finish: item.finish || 'anodized',
+              frameColor: item.frameColor || 'white',
+              panels: item.panels || 2,
+              panelConfig: item.panelConfig || generateDefaultPanelConfig(item.panels || 2, item.category || 'Sliding'),
+              mesh: item.mesh || false,
+              grill: item.grill || false,
+              quantity: item.quantity || 1,
+              notes: item.notes || item.remarks || '',
+              surveyItemId: item.id, // Reference to original survey item
+              ...pricing
+            }
+          })
+          
+          setQuoteItems(surveyQuoteItems)
+          toast.success(`${surveyQuoteItems.length} item(s) auto-populated from site survey`)
+        } else {
+          toast.info('Site survey found but no items to import')
+        }
+      } else if (project.measurements?.length > 0) {
+        // Try to get items from project measurements if no survey
+        const measurementItems = project.measurements.map((m, index) => {
+          const pricing = calculatePrice({
+            type: m.type || 'Window',
+            category: m.category || 'Sliding',
+            material: m.material || 'Aluminium',
+            width: m.width || 1200,
+            height: m.height || 1500,
+            glassType: m.glassType || 'single',
+            finish: m.finish || 'anodized',
+            panels: m.panels || 2,
+            mesh: m.mesh || false,
+            grill: m.grill || false,
+            quantity: m.quantity || 1
+          })
+          
+          return {
+            id: `measurement-${Date.now()}-${index}`,
+            ...m,
+            ...pricing
+          }
+        })
+        
+        setQuoteItems(measurementItems)
+        toast.success(`${measurementItems.length} item(s) auto-populated from project measurements`)
+      } else {
+        // Clear items if no survey data
+        toast.info('No survey data found for this project. Add items manually.')
+      }
     }
   }
 
