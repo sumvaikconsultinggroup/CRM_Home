@@ -1204,7 +1204,7 @@ function ClientDashboard({ user, client, onLogout }) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
               >
-                <EnterpriseProjects authToken={authToken} />
+                <EnterpriseProjects authToken={authToken} onRefresh={fetchData} />
               </motion.div>
             )}
 
