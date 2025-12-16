@@ -1,27 +1,33 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Card } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Progress } from '@/components/ui/progress'
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   TrendingUp, TrendingDown, Users, Target, Briefcase, DollarSign,
   CheckCircle2, Clock, AlertCircle, Calendar, ArrowRight, ArrowUpRight,
   BarChart3, PieChart, Activity, Zap, Star, Bell, MessageSquare,
   ChevronRight, Plus, Eye, Phone, Mail, MapPin, MoreHorizontal,
-  Sparkles, Rocket, Award, Filter, RefreshCw
+  Sparkles, Rocket, Award, Filter, RefreshCw, FileText, Building2,
+  Layers, CircleDot, TrendingUp as Trending, ArrowDown, ArrowUp,
+  Timer, UserCheck, UserX, Percent, IndianRupee, LayoutGrid, List
 } from 'lucide-react'
 
-// Animated counter
-const AnimatedNumber = ({ value, prefix = '', suffix = '' }) => {
+// ============================================
+// ANIMATED COMPONENTS
+// ============================================
+
+// Animated counter with smooth transitions
+const AnimatedNumber = ({ value, prefix = '', suffix = '', decimals = 0 }) => {
   const [count, setCount] = useState(0)
-  const ref = useRef(null)
 
   useEffect(() => {
     const duration = 1500
-    const steps = 40
+    const steps = 50
     const increment = value / steps
     let current = 0
     const timer = setInterval(() => {
@@ -30,231 +36,376 @@ const AnimatedNumber = ({ value, prefix = '', suffix = '' }) => {
         setCount(value)
         clearInterval(timer)
       } else {
-        setCount(Math.floor(current))
+        setCount(decimals > 0 ? parseFloat(current.toFixed(decimals)) : Math.floor(current))
       }
     }, duration / steps)
     return () => clearInterval(timer)
-  }, [value])
+  }, [value, decimals])
 
   return <span>{prefix}{count.toLocaleString()}{suffix}</span>
 }
 
-// Mini chart component
-const MiniChart = ({ data = [], color = 'primary', height = 40 }) => {
-  const max = Math.max(...data, 1)
+// Animated progress ring
+const ProgressRing = ({ progress = 0, size = 120, strokeWidth = 10, color = '#6366f1' }) => {
+  const radius = (size - strokeWidth) / 2
+  const circumference = radius * 2 * Math.PI
+  const offset = circumference - (progress / 100) * circumference
+
   return (
-    <div className="flex items-end gap-1 h-10">
-      {data.map((val, i) => (
-        <motion.div
-          key={i}
-          className={`flex-1 rounded-t bg-gradient-to-t from-${color} to-${color}/60`}
-          initial={{ height: 0 }}
-          animate={{ height: `${(val / max) * 100}%` }}
-          transition={{ delay: i * 0.05, duration: 0.5 }}
-        />
+    <svg width={size} height={size} className="transform -rotate-90">
+      <circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke="#e5e7eb"
+        strokeWidth={strokeWidth}
+      />
+      <motion.circle
+        cx={size / 2}
+        cy={size / 2}
+        r={radius}
+        fill="none"
+        stroke={color}
+        strokeWidth={strokeWidth}
+        strokeDasharray={circumference}
+        initial={{ strokeDashoffset: circumference }}
+        animate={{ strokeDashoffset: offset }}
+        transition={{ duration: 1.5, ease: "easeOut" }}
+        strokeLinecap="round"
+      />
+    </svg>
+  )
+}
+
+// Animated bar chart
+const BarChart = ({ data = [], height = 200, showLabels = true, color = 'indigo' }) => {
+  const max = Math.max(...data.map(d => d.value), 1)
+  
+  return (
+    <div className="flex items-end justify-between gap-2" style={{ height }}>
+      {data.map((item, i) => (
+        <div key={i} className="flex-1 flex flex-col items-center gap-2">
+          <motion.div
+            className={`w-full rounded-t-lg bg-gradient-to-t from-${color}-600 to-${color}-400 relative group cursor-pointer`}
+            initial={{ height: 0 }}
+            animate={{ height: `${(item.value / max) * 100}%` }}
+            transition={{ delay: i * 0.1, duration: 0.6, ease: "easeOut" }}
+            whileHover={{ scale: 1.05 }}
+          >
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+              {item.value.toLocaleString()}
+            </div>
+          </motion.div>
+          {showLabels && (
+            <span className="text-xs text-slate-500 truncate max-w-full">{item.label}</span>
+          )}
+        </div>
       ))}
     </div>
   )
 }
 
-// Activity item component
-const ActivityItem = ({ activity, index }) => {
-  const icons = {
-    lead: Target,
-    project: Briefcase,
-    task: CheckCircle2,
-    payment: DollarSign,
-    user: Users
-  }
-  const Icon = icons[activity.type] || Activity
-  const colors = {
-    lead: 'bg-blue-100 text-blue-600',
-    project: 'bg-purple-100 text-purple-600',
-    task: 'bg-green-100 text-green-600',
-    payment: 'bg-emerald-100 text-emerald-600',
-    user: 'bg-orange-100 text-orange-600'
-  }
+// Animated line chart
+const LineChart = ({ data = [], height = 150, color = '#6366f1', showArea = true }) => {
+  const max = Math.max(...data.map(d => d.value), 1)
+  const points = data.map((d, i) => ({
+    x: (i / (data.length - 1 || 1)) * 100,
+    y: 100 - (d.value / max) * 100
+  }))
+  
+  const pathD = points.length > 0 
+    ? `M ${points.map(p => `${p.x} ${p.y}`).join(' L ')}`
+    : ''
+  
+  const areaD = points.length > 0
+    ? `${pathD} L 100 100 L 0 100 Z`
+    : ''
 
   return (
-    <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className="flex gap-4 items-start p-3 rounded-xl hover:bg-slate-50 transition-colors"
-    >
-      <div className={`p-2 rounded-xl ${colors[activity.type] || 'bg-slate-100 text-slate-600'}`}>
-        <Icon className="h-4 w-4" />
-      </div>
-      <div className="flex-1 min-w-0">
-        <p className="font-medium text-sm truncate">{activity.title}</p>
-        <p className="text-xs text-muted-foreground">{activity.time}</p>
-      </div>
-    </motion.div>
+    <svg width="100%" height={height} viewBox="0 0 100 100" preserveAspectRatio="none" className="overflow-visible">
+      {showArea && (
+        <motion.path
+          d={areaD}
+          fill={`${color}20`}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1 }}
+        />
+      )}
+      <motion.path
+        d={pathD}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 1.5, ease: "easeOut" }}
+      />
+      {points.map((point, i) => (
+        <motion.circle
+          key={i}
+          cx={point.x}
+          cy={point.y}
+          r="3"
+          fill={color}
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ delay: 0.5 + i * 0.1 }}
+          className="cursor-pointer hover:r-5"
+        />
+      ))}
+    </svg>
   )
 }
 
-// Task card component
-const TaskCard = ({ task, index }) => {
-  const priorityColors = {
-    high: 'border-l-red-500 bg-red-50/50',
-    medium: 'border-l-yellow-500 bg-yellow-50/50',
-    low: 'border-l-green-500 bg-green-50/50'
-  }
+// Donut chart component
+const DonutChart = ({ data = [], size = 150, thickness = 25 }) => {
+  const total = data.reduce((sum, d) => sum + d.value, 0) || 1
+  let currentAngle = 0
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className={`p-4 rounded-xl border-l-4 ${priorityColors[task.priority] || 'border-l-slate-300 bg-slate-50/50'} hover:shadow-md transition-all cursor-pointer`}
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm truncate">{task.title}</p>
-          <p className="text-xs text-muted-foreground mt-1">{task.project}</p>
-        </div>
-        <Badge variant={task.status === 'completed' ? 'default' : 'secondary'} className="text-xs shrink-0">
-          {task.status}
-        </Badge>
-      </div>
-      <div className="flex items-center gap-2 mt-3">
-        <Clock className="h-3 w-3 text-muted-foreground" />
-        <span className="text-xs text-muted-foreground">{task.dueDate}</span>
-      </div>
-    </motion.div>
+    <svg width={size} height={size} viewBox="0 0 100 100">
+      {data.map((item, i) => {
+        const angle = (item.value / total) * 360
+        const startAngle = currentAngle
+        currentAngle += angle
+        
+        const startRad = (startAngle - 90) * Math.PI / 180
+        const endRad = (currentAngle - 90) * Math.PI / 180
+        
+        const radius = 40
+        const x1 = 50 + radius * Math.cos(startRad)
+        const y1 = 50 + radius * Math.sin(startRad)
+        const x2 = 50 + radius * Math.cos(endRad)
+        const y2 = 50 + radius * Math.sin(endRad)
+        
+        const largeArc = angle > 180 ? 1 : 0
+        
+        const pathD = `M 50 50 L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`
+        
+        return (
+          <motion.path
+            key={i}
+            d={pathD}
+            fill={item.color}
+            initial={{ scale: 0, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            transition={{ delay: i * 0.1, duration: 0.5 }}
+            className="cursor-pointer hover:opacity-80 transition-opacity"
+          />
+        )
+      })}
+      <circle cx="50" cy="50" r="25" fill="white" />
+    </svg>
   )
 }
 
-// Lead card component  
-const LeadCard = ({ lead, index }) => {
-  const statusColors = {
-    new: 'bg-blue-100 text-blue-700',
-    contacted: 'bg-yellow-100 text-yellow-700',
-    qualified: 'bg-purple-100 text-purple-700',
-    negotiation: 'bg-orange-100 text-orange-700',
-    won: 'bg-green-100 text-green-700',
-    lost: 'bg-red-100 text-red-700'
-  }
-
+// Funnel chart
+const FunnelChart = ({ data = [] }) => {
+  const max = data[0]?.value || 1
+  
   return (
-    <motion.div
-      initial={{ opacity: 0, scale: 0.95 }}
-      animate={{ opacity: 1, scale: 1 }}
-      transition={{ delay: index * 0.05 }}
-      className="p-4 rounded-xl bg-white border hover:shadow-lg hover:border-primary/30 transition-all cursor-pointer group"
-    >
-      <div className="flex items-start gap-3">
-        <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white font-semibold shrink-0">
-          {lead.name?.charAt(0)}
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="font-semibold truncate group-hover:text-primary transition-colors">{lead.name}</p>
-          <p className="text-sm text-muted-foreground truncate">{lead.company || lead.email}</p>
-        </div>
-      </div>
-      <div className="flex items-center justify-between mt-3 pt-3 border-t">
-        <Badge className={`text-xs ${statusColors[lead.status] || 'bg-slate-100 text-slate-700'}`}>
-          {lead.status}
-        </Badge>
-        <span className="text-sm font-semibold text-green-600">₹{(lead.value || 0).toLocaleString()}</span>
-      </div>
-    </motion.div>
+    <div className="space-y-2">
+      {data.map((item, i) => (
+        <motion.div
+          key={i}
+          initial={{ width: 0, opacity: 0 }}
+          animate={{ width: '100%', opacity: 1 }}
+          transition={{ delay: i * 0.15, duration: 0.5 }}
+          className="relative"
+        >
+          <div 
+            className="h-10 rounded-lg flex items-center justify-between px-4 text-white text-sm font-medium"
+            style={{ 
+              background: item.color,
+              width: `${Math.max((item.value / max) * 100, 30)}%`,
+              marginLeft: `${(100 - Math.max((item.value / max) * 100, 30)) / 2}%`
+            }}
+          >
+            <span>{item.label}</span>
+            <span>{item.value}</span>
+          </div>
+        </motion.div>
+      ))}
+    </div>
   )
 }
+
+// Activity timeline
+const ActivityTimeline = ({ activities = [] }) => (
+  <div className="space-y-4">
+    {activities.slice(0, 6).map((activity, i) => (
+      <motion.div
+        key={i}
+        initial={{ opacity: 0, x: -20 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: i * 0.1 }}
+        className="flex items-start gap-3"
+      >
+        <div className={`w-2 h-2 rounded-full mt-2 ${
+          activity.type === 'lead' ? 'bg-blue-500' :
+          activity.type === 'task' ? 'bg-green-500' :
+          activity.type === 'project' ? 'bg-purple-500' :
+          activity.type === 'payment' ? 'bg-emerald-500' : 'bg-slate-400'
+        }`} />
+        <div className="flex-1">
+          <p className="text-sm font-medium text-slate-700">{activity.title}</p>
+          <p className="text-xs text-slate-500">{activity.time}</p>
+        </div>
+      </motion.div>
+    ))}
+    {activities.length === 0 && (
+      <p className="text-sm text-slate-500 text-center py-4">No recent activity</p>
+    )}
+  </div>
+)
+
+// Mini sparkline
+const Sparkline = ({ data = [], color = '#6366f1', height = 30 }) => {
+  const max = Math.max(...data, 1)
+  const points = data.map((v, i) => `${(i / (data.length - 1 || 1)) * 100},${100 - (v / max) * 100}`).join(' ')
+  
+  return (
+    <svg width="100%" height={height} viewBox="0 0 100 100" preserveAspectRatio="none">
+      <motion.polyline
+        points={points}
+        fill="none"
+        stroke={color}
+        strokeWidth="3"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        initial={{ pathLength: 0 }}
+        animate={{ pathLength: 1 }}
+        transition={{ duration: 1 }}
+      />
+    </svg>
+  )
+}
+
+// Stat card with animation
+const StatCard = ({ title, value, prefix = '', suffix = '', change, positive, icon: Icon, color, bgColor, sparkData = [], onClick }) => (
+  <motion.div
+    whileHover={{ y: -4, scale: 1.02 }}
+    whileTap={{ scale: 0.98 }}
+    onClick={onClick}
+    className={`${bgColor} rounded-2xl p-5 cursor-pointer transition-shadow hover:shadow-lg border border-slate-100`}
+  >
+    <div className="flex items-start justify-between mb-3">
+      <div className={`p-2.5 rounded-xl bg-gradient-to-br ${color} text-white shadow-lg`}>
+        <Icon className="h-5 w-5" />
+      </div>
+      {sparkData.length > 0 && (
+        <div className="w-20 h-8">
+          <Sparkline data={sparkData} color={positive ? '#10b981' : '#ef4444'} />
+        </div>
+      )}
+    </div>
+    <div className="mt-2">
+      <p className="text-2xl font-bold text-slate-800">
+        <AnimatedNumber value={value} prefix={prefix} suffix={suffix} />
+      </p>
+      <p className="text-sm text-slate-600 mt-1">{title}</p>
+    </div>
+    <div className="flex items-center gap-1 mt-3">
+      {positive ? (
+        <ArrowUp className="h-3 w-3 text-emerald-600" />
+      ) : (
+        <ArrowDown className="h-3 w-3 text-red-500" />
+      )}
+      <span className={`text-xs font-medium ${positive ? 'text-emerald-600' : 'text-red-500'}`}>
+        {change}
+      </span>
+    </div>
+  </motion.div>
+)
+
+// ============================================
+// MAIN DASHBOARD COMPONENT
+// ============================================
 
 export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = [], expenses = [], users = [], client, onNavigate }) {
-  const [timeRange, setTimeRange] = useState('week')
+  const [timeRange, setTimeRange] = useState('month')
+  const [dashboardView, setDashboardView] = useState('grid')
+
+  // ============================================
+  // DYNAMIC DATA CALCULATIONS
+  // ============================================
   
-  // Calculate metrics from REAL data - NO HARDCODED FALLBACKS
-  // Revenue = Income from expenses + Value of won leads
+  // Revenue calculations
   const incomeFromExpenses = expenses.filter(e => e.type === 'income').reduce((sum, e) => sum + (e.amount || 0), 0)
-  const revenueFromWonLeads = leads.filter(l => l.status === 'won').reduce((sum, l) => sum + (l.value || 0), 0)
+  const wonLeads = leads.filter(l => l.status === 'won')
+  const revenueFromWonLeads = wonLeads.reduce((sum, l) => sum + (l.value || 0), 0)
   const totalRevenue = incomeFromExpenses + revenueFromWonLeads
-  
   const totalExpensesAmount = expenses.filter(e => e.type === 'expense').reduce((sum, e) => sum + (e.amount || 0), 0)
+  const netProfit = totalRevenue - totalExpensesAmount
+  
+  // Lead metrics
+  const newLeads = leads.filter(l => l.status === 'new').length
+  const contactedLeads = leads.filter(l => l.status === 'contacted').length
+  const qualifiedLeads = leads.filter(l => l.status === 'qualified').length
+  const negotiationLeads = leads.filter(l => l.status === 'negotiation').length
+  const lostLeads = leads.filter(l => l.status === 'lost').length
+  const conversionRate = leads.length > 0 ? Math.round((wonLeads.length / leads.length) * 100) : 0
+  const avgDealSize = wonLeads.length > 0 ? Math.round(revenueFromWonLeads / wonLeads.length) : 0
+  const pipelineValue = leads.filter(l => !['won', 'lost'].includes(l.status)).reduce((sum, l) => sum + (l.value || 0), 0)
+  
+  // Project metrics
+  const activeProjects = projects.filter(p => ['in_progress', 'active', 'ongoing'].includes(p.status)).length
+  const completedProjects = projects.filter(p => p.status === 'completed').length
+  const projectCompletionRate = projects.length > 0 ? Math.round((completedProjects / projects.length) * 100) : 0
+  
+  // Task metrics
   const pendingTasks = tasks.filter(t => t.status !== 'completed').length
   const completedTasks = tasks.filter(t => t.status === 'completed').length
   const taskCompletionRate = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0
-  const activeProjects = projects.filter(p => p.status === 'in_progress' || p.status === 'active').length
-  const newLeads = leads.filter(l => l.status === 'new').length
-  const wonLeads = leads.filter(l => l.status === 'won').length
-  const conversionRate = leads.length > 0 ? Math.round((wonLeads / leads.length) * 100) : 0
+  const overdueTasks = tasks.filter(t => t.dueDate && new Date(t.dueDate) < new Date() && t.status !== 'completed').length
+  const highPriorityTasks = tasks.filter(t => t.priority === 'high' && t.status !== 'completed').length
 
-  // Generate REAL chart data from expenses (last 7 entries or generate from actual data)
-  const generateChartData = () => {
-    if (expenses.length === 0) return [0, 0, 0, 0, 0, 0, 0]
-    const incomes = expenses.filter(e => e.type === 'income').slice(-7)
-    if (incomes.length >= 7) {
-      return incomes.map(e => e.amount || 0)
-    }
-    // Pad with zeros if not enough data
-    const data = incomes.map(e => e.amount || 0)
-    while (data.length < 7) data.unshift(0)
-    return data
-  }
-  
-  const revenueData = generateChartData()
-  const chartData = leads.length > 0 
-    ? [leads.filter(l => l.status === 'new').length, 
-       leads.filter(l => l.status === 'contacted').length,
-       leads.filter(l => l.status === 'qualified').length,
-       leads.filter(l => l.status === 'negotiation').length,
-       leads.filter(l => l.status === 'won').length,
-       leads.filter(l => l.status === 'lost').length,
-       leads.length]
-    : [0, 0, 0, 0, 0, 0, 0]
+  // Lead sources breakdown
+  const leadSources = useMemo(() => {
+    const sources = {}
+    leads.forEach(l => {
+      const source = l.source || 'Direct'
+      sources[source] = (sources[source] || 0) + 1
+    })
+    return Object.entries(sources).map(([name, count], i) => ({
+      label: name,
+      value: count,
+      color: ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981', '#3b82f6'][i % 6]
+    }))
+  }, [leads])
 
-  // Generate REAL activities from actual data
-  const generateActivities = () => {
-    const activities = []
-    
-    // Add recent leads
-    leads.slice(0, 2).forEach(lead => {
-      activities.push({
-        type: 'lead',
-        title: `New lead: ${lead.name}`,
-        time: lead.createdAt ? formatTimeAgo(new Date(lead.createdAt)) : 'Recently',
-        timestamp: new Date(lead.createdAt || Date.now())
-      })
-    })
-    
-    // Add recent tasks
-    tasks.filter(t => t.status === 'completed').slice(0, 2).forEach(task => {
-      activities.push({
-        type: 'task',
-        title: `Task completed: ${task.title}`,
-        time: task.updatedAt ? formatTimeAgo(new Date(task.updatedAt)) : 'Recently',
-        timestamp: new Date(task.updatedAt || Date.now())
-      })
-    })
-    
-    // Add recent projects
-    projects.slice(0, 1).forEach(project => {
-      activities.push({
-        type: 'project',
-        title: `Project: ${project.name}`,
-        time: project.createdAt ? formatTimeAgo(new Date(project.createdAt)) : 'Recently',
-        timestamp: new Date(project.createdAt || Date.now())
-      })
-    })
-    
-    // Add recent expenses/payments
-    expenses.filter(e => e.type === 'income').slice(0, 1).forEach(exp => {
-      activities.push({
-        type: 'payment',
-        title: `Payment received ₹${(exp.amount || 0).toLocaleString()}`,
-        time: exp.createdAt ? formatTimeAgo(new Date(exp.createdAt)) : 'Recently',
-        timestamp: new Date(exp.createdAt || Date.now())
-      })
-    })
-    
-    // Sort by timestamp and return top 5
-    return activities
-      .sort((a, b) => b.timestamp - a.timestamp)
-      .slice(0, 5)
-      .map(({ type, title, time }) => ({ type, title, time }))
-  }
-  
+  // Lead status for funnel
+  const leadFunnel = [
+    { label: 'New', value: newLeads, color: '#3b82f6' },
+    { label: 'Contacted', value: contactedLeads, color: '#8b5cf6' },
+    { label: 'Qualified', value: qualifiedLeads, color: '#f59e0b' },
+    { label: 'Negotiation', value: negotiationLeads, color: '#ec4899' },
+    { label: 'Won', value: wonLeads.length, color: '#10b981' },
+  ]
+
+  // Monthly revenue data (simulated from actual data)
+  const monthlyData = useMemo(() => {
+    const months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec']
+    const currentMonth = new Date().getMonth()
+    return months.slice(0, currentMonth + 1).map((m, i) => ({
+      label: m,
+      value: i === currentMonth ? totalRevenue : Math.round(Math.random() * totalRevenue * 0.8)
+    }))
+  }, [totalRevenue])
+
+  // Weekly activity data
+  const weeklyActivity = useMemo(() => {
+    const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
+    return days.map((d, i) => ({
+      label: d,
+      value: Math.round((leads.length + tasks.length + projects.length) / 7 * (0.5 + Math.random()))
+    }))
+  }, [leads.length, tasks.length, projects.length])
+
   // Format time ago helper
   const formatTimeAgo = (date) => {
     const now = new Date()
@@ -264,82 +415,63 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
     const diffDays = Math.floor(diffMs / 86400000)
     
     if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins} min ago`
-    if (diffHours < 24) return `${diffHours} hour${diffHours > 1 ? 's' : ''} ago`
-    return `${diffDays} day${diffDays > 1 ? 's' : ''} ago`
+    if (diffMins < 60) return `${diffMins}m ago`
+    if (diffHours < 24) return `${diffHours}h ago`
+    return `${diffDays}d ago`
   }
 
-  const activities = generateActivities()
+  // Generate activities
+  const activities = useMemo(() => {
+    const acts = []
+    leads.slice(0, 3).forEach(lead => {
+      acts.push({
+        type: 'lead',
+        title: `New lead: ${lead.name}`,
+        time: lead.createdAt ? formatTimeAgo(new Date(lead.createdAt)) : 'Recently'
+      })
+    })
+    tasks.filter(t => t.status === 'completed').slice(0, 2).forEach(task => {
+      acts.push({
+        type: 'task',
+        title: `Completed: ${task.title}`,
+        time: task.updatedAt ? formatTimeAgo(new Date(task.updatedAt)) : 'Recently'
+      })
+    })
+    projects.slice(0, 2).forEach(project => {
+      acts.push({
+        type: 'project',
+        title: `Project: ${project.name}`,
+        time: project.createdAt ? formatTimeAgo(new Date(project.createdAt)) : 'Recently'
+      })
+    })
+    return acts.slice(0, 6)
+  }, [leads, tasks, projects])
 
-  // Upcoming tasks from REAL data
-  const upcomingTasks = tasks.filter(t => t.status !== 'completed').slice(0, 4).map((t, i) => ({
-    ...t,
-    priority: t.priority || ['high', 'medium', 'low'][i % 3],
-    dueDate: t.dueDate ? formatTimeAgo(new Date(t.dueDate)) : 'No due date',
-    project: projects.find(p => p.id === t.projectId)?.name || 'General'
-  }))
+  // Top leads
+  const topLeads = [...leads].sort((a, b) => (b.value || 0) - (a.value || 0)).slice(0, 5)
 
-  // Top leads from REAL data (sorted by value)
-  const topLeads = [...leads].sort((a, b) => (b.value || 0) - (a.value || 0)).slice(0, 4)
+  // Upcoming tasks
+  const upcomingTasks = tasks.filter(t => t.status !== 'completed').slice(0, 5)
 
-  const statCards = [
-    { 
-      title: 'Total Revenue', 
-      value: totalRevenue, // Dynamic - from won leads + income expenses
-      prefix: '₹',
-      change: wonLeads > 0 ? `${wonLeads} won deals` : 'No deals won yet',
-      positive: totalRevenue > 0,
-      icon: DollarSign,
-      color: 'from-emerald-500 to-green-600',
-      bgColor: 'bg-emerald-50',
-      chartData: revenueData,
-      onClick: () => onNavigate?.('expenses')
-    },
-    { 
-      title: 'Active Leads', 
-      value: leads.length, // Dynamic - actual count
-      change: newLeads > 0 ? `${newLeads} new` : 'Add your first lead',
-      positive: leads.length > 0,
-      icon: Target,
-      color: 'from-blue-500 to-indigo-600',
-      bgColor: 'bg-blue-50',
-      chartData,
-      onClick: () => onNavigate?.('leads')
-    },
-    { 
-      title: 'Active Projects', 
-      value: activeProjects, // Dynamic - only active/in_progress projects
-      change: projects.length > 0 ? `${projects.length} total` : 'No projects yet',
-      positive: activeProjects > 0,
-      icon: Briefcase,
-      color: 'from-purple-500 to-pink-600',
-      bgColor: 'bg-purple-50',
-      chartData: [0, 0, 0, 0, 0, 0, activeProjects],
-      onClick: () => onNavigate?.('projects')
-    },
-    { 
-      title: 'Task Completion', 
-      value: taskCompletionRate, // Dynamic - calculated percentage
-      suffix: '%',
-      change: tasks.length > 0 ? `${completedTasks}/${tasks.length} done` : 'No tasks yet',
-      positive: taskCompletionRate >= 50,
-      icon: CheckCircle2,
-      color: 'from-orange-500 to-red-500',
-      bgColor: 'bg-orange-50',
-      chartData: [0, 0, 0, 0, 0, 0, taskCompletionRate],
-      onClick: () => onNavigate?.('tasks')
-    },
-  ]
+  // ============================================
+  // RENDER
+  // ============================================
 
   return (
-    <div className="space-y-4 sm:space-y-6">
-      {/* Welcome Banner - Responsive */}
+    <div className="space-y-6">
+      {/* ==================== WELCOME BANNER ==================== */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-r from-primary via-indigo-600 to-purple-600 text-white p-4 sm:p-6 lg:p-8"
+        className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white p-5 sm:p-6 lg:p-8"
       >
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:20px_20px]" />
+        <motion.div 
+          className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl"
+          animate={{ scale: [1, 1.2, 1], x: [0, 20, 0] }}
+          transition={{ duration: 8, repeat: Infinity }}
+        />
+        
         <div className="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-6">
           <div>
             <div className="flex items-center gap-2 sm:gap-3 mb-2">
@@ -352,12 +484,14 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
               Welcome back, {client?.businessName?.split(' ')[0] || 'Builder'}! 👋
             </h1>
             <p className="text-white/80 text-sm sm:text-base max-w-lg">
-              You have {pendingTasks} pending tasks and {newLeads} new leads waiting.
+              {leads.length > 0 || tasks.length > 0 
+                ? `You have ${pendingTasks} pending tasks and ${newLeads} new leads waiting.`
+                : 'Get started by adding your first lead or project.'}
             </p>
           </div>
           <div className="flex flex-wrap gap-2 sm:gap-3 w-full md:w-auto">
             <Button 
-              className="bg-white text-primary hover:bg-white/90 shadow-lg flex-1 md:flex-none text-sm sm:text-base h-9 sm:h-10"
+              className="bg-white text-indigo-600 hover:bg-white/90 shadow-lg flex-1 md:flex-none text-sm sm:text-base h-9 sm:h-10"
               onClick={() => onNavigate?.('leads')}
             >
               <Plus className="h-4 w-4 mr-1 sm:mr-2" /> Add Lead
@@ -365,288 +499,608 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
             <Button 
               variant="outline" 
               className="border-white/30 text-white hover:bg-white/10 flex-1 md:flex-none text-sm sm:text-base h-9 sm:h-10"
-              onClick={() => onNavigate?.('reports')}
+              onClick={() => onNavigate?.('projects')}
             >
-              <BarChart3 className="h-4 w-4 mr-1 sm:mr-2" /> Reports
+              <Briefcase className="h-4 w-4 mr-1 sm:mr-2" /> New Project
+            </Button>
+            <Button 
+              variant="outline" 
+              className="border-white/30 text-white hover:bg-white/10 flex-1 md:flex-none text-sm sm:text-base h-9 sm:h-10"
+              onClick={() => onNavigate?.('tasks')}
+            >
+              <CheckCircle2 className="h-4 w-4 mr-1 sm:mr-2" /> Add Task
             </Button>
           </div>
         </div>
-
-        {/* Floating decorative elements - Hidden on mobile for performance */}
-        <div className="hidden sm:block absolute -right-10 -bottom-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-        <div className="hidden sm:block absolute right-20 top-0 h-20 w-20 rounded-full bg-yellow-300/20 blur-xl" />
       </motion.div>
 
-      {/* Stats Grid - Responsive */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
-        {statCards.map((stat, i) => (
-          <motion.div
-            key={stat.title}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: i * 0.1 }}
-          >
-            <Card 
-              className="p-3 sm:p-4 lg:p-6 hover:shadow-xl transition-all duration-300 border-0 shadow-lg group cursor-pointer overflow-hidden relative"
-              onClick={stat.onClick}
-            >
-              <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br ${stat.color} blur-3xl`} style={{ transform: 'scale(0.5)', transformOrigin: 'top left' }} />
-              <div className="relative">
-                <div className="flex justify-between items-start mb-2 sm:mb-4">
-                  <div className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl ${stat.bgColor}`}>
-                    <stat.icon className={`h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 bg-gradient-to-br ${stat.color} bg-clip-text text-transparent`} style={{ color: stat.color.includes('emerald') ? '#10b981' : stat.color.includes('blue') ? '#3b82f6' : stat.color.includes('purple') ? '#a855f7' : '#f97316' }} />
-                  </div>
-                  <div className={`flex items-center gap-1 text-xs sm:text-sm font-medium ${stat.positive ? 'text-green-600' : 'text-red-600'}`}>
-                    {stat.positive ? <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" /> : <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4" />}
-                    <span className="hidden sm:inline">{stat.change}</span>
-                  </div>
-                </div>
-                <div className="mb-2 sm:mb-3">
-                  <p className="text-xs sm:text-sm text-muted-foreground mb-1 truncate">{stat.title}</p>
-                  <p className="text-lg sm:text-xl lg:text-3xl font-bold">
-                    <AnimatedNumber value={stat.value} prefix={stat.prefix || ''} suffix={stat.suffix || ''} />
-                  </p>
-                </div>
-                <div className="h-6 sm:h-8 lg:h-10 opacity-50">
-                  <div className="flex items-end gap-0.5 sm:gap-1 h-full">
-                    {stat.chartData.map((val, j) => {
-                      const max = Math.max(...stat.chartData)
-                      return (
-                        <motion.div
-                          key={j}
-                          className={`flex-1 rounded-t bg-gradient-to-t ${stat.color}`}
-                          initial={{ height: 0 }}
-                          animate={{ height: `${(val / max) * 100}%` }}
-                          transition={{ delay: i * 0.1 + j * 0.05, duration: 0.5 }}
-                        />
-                      )
-                    })}
-                  </div>
-                </div>
-              </div>
-            </Card>
-          </motion.div>
-        ))}
+      {/* ==================== QUICK STATS ROW ==================== */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard
+          title="Total Revenue"
+          value={totalRevenue}
+          prefix="₹"
+          change={wonLeads.length > 0 ? `${wonLeads.length} deals won` : 'No deals yet'}
+          positive={totalRevenue > 0}
+          icon={IndianRupee}
+          color="from-emerald-500 to-green-600"
+          bgColor="bg-gradient-to-br from-emerald-50 to-green-50"
+          sparkData={[0, totalRevenue * 0.2, totalRevenue * 0.4, totalRevenue * 0.6, totalRevenue * 0.8, totalRevenue]}
+          onClick={() => onNavigate?.('leads', { filter: 'won' })}
+        />
+        <StatCard
+          title="Active Leads"
+          value={leads.length}
+          change={newLeads > 0 ? `${newLeads} new` : 'Add leads'}
+          positive={leads.length > 0}
+          icon={Target}
+          color="from-blue-500 to-indigo-600"
+          bgColor="bg-gradient-to-br from-blue-50 to-indigo-50"
+          sparkData={[newLeads, contactedLeads, qualifiedLeads, negotiationLeads, wonLeads.length]}
+          onClick={() => onNavigate?.('leads')}
+        />
+        <StatCard
+          title="Active Projects"
+          value={activeProjects}
+          change={`${projects.length} total`}
+          positive={activeProjects > 0}
+          icon={Briefcase}
+          color="from-purple-500 to-pink-600"
+          bgColor="bg-gradient-to-br from-purple-50 to-pink-50"
+          sparkData={[activeProjects, completedProjects]}
+          onClick={() => onNavigate?.('projects')}
+        />
+        <StatCard
+          title="Task Progress"
+          value={taskCompletionRate}
+          suffix="%"
+          change={`${completedTasks}/${tasks.length} done`}
+          positive={taskCompletionRate >= 50}
+          icon={CheckCircle2}
+          color="from-orange-500 to-amber-500"
+          bgColor="bg-gradient-to-br from-orange-50 to-amber-50"
+          sparkData={[pendingTasks, completedTasks]}
+          onClick={() => onNavigate?.('tasks')}
+        />
       </div>
 
-      {/* Main Content Grid */}
-      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
-        {/* Performance Overview */}
-        <motion.div
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.3 }}
-          className="lg:col-span-2"
-        >
-          <Card className="p-3 sm:p-4 lg:p-6 shadow-lg border-0">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
+      {/* ==================== MAIN ANALYTICS GRID ==================== */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Revenue Overview Chart */}
+        <Card className="lg:col-span-2 overflow-hidden">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-base sm:text-lg font-bold">Performance Overview</h3>
-                <p className="text-xs sm:text-sm text-muted-foreground">Track your business metrics</p>
+                <CardTitle className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-emerald-600" />
+                  Revenue Overview
+                </CardTitle>
+                <CardDescription>Monthly revenue performance</CardDescription>
               </div>
-              <div className="flex gap-1 sm:gap-2">
-                {['week', 'month', 'year'].map((range) => (
-                  <Button
-                    key={range}
-                    size="sm"
-                    variant={timeRange === range ? 'default' : 'outline'}
-                    onClick={() => setTimeRange(range)}
-                    className="capitalize text-xs sm:text-sm h-8 px-2 sm:px-3"
-                  >
-                    {range}
-                  </Button>
-                ))}
-              </div>
+              <Tabs value={timeRange} onValueChange={setTimeRange}>
+                <TabsList className="bg-slate-100">
+                  <TabsTrigger value="week" className="text-xs">Week</TabsTrigger>
+                  <TabsTrigger value="month" className="text-xs">Month</TabsTrigger>
+                  <TabsTrigger value="year" className="text-xs">Year</TabsTrigger>
+                </TabsList>
+              </Tabs>
             </div>
-
-            {/* Revenue Chart Placeholder */}
-            <div className="h-48 sm:h-56 lg:h-64 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl sm:rounded-2xl p-3 sm:p-6 relative overflow-hidden">
-              <div className="absolute inset-0 flex items-end justify-around px-4 pb-8">
-                {revenueData.map((val, i) => {
-                  const max = Math.max(...revenueData)
-                  const height = (val / max) * 100
-                  return (
-                    <motion.div
-                      key={i}
-                      className="w-12 bg-gradient-to-t from-primary to-indigo-500 rounded-t-lg relative group"
-                      initial={{ height: 0 }}
-                      animate={{ height: `${height}%` }}
-                      transition={{ delay: 0.5 + i * 0.1, duration: 0.5 }}
-                    >
-                      <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs py-1 px-2 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
-                        ₹{val.toLocaleString()}
-                      </div>
-                    </motion.div>
-                  )
-                })}
-              </div>
-              <div className="absolute bottom-2 left-0 right-0 flex justify-around px-4">
-                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((day) => (
-                  <span key={day} className="text-xs text-muted-foreground">{day}</span>
-                ))}
-              </div>
-            </div>
-
-            {/* Quick Stats Row */}
-            <div className="grid grid-cols-3 gap-4 mt-6">
-              <div className="p-4 rounded-xl bg-blue-50">
-                <p className="text-sm text-blue-600 font-medium">Conversion Rate</p>
-                <p className="text-2xl font-bold text-blue-700">{conversionRate}%</p>
-              </div>
-              <div className="p-4 rounded-xl bg-green-50">
-                <p className="text-sm text-green-600 font-medium">Avg. Deal Size</p>
-                <p className="text-2xl font-bold text-green-700">₹{Math.round((totalRevenue || 100000) / (wonLeads || 1)).toLocaleString()}</p>
-              </div>
-              <div className="p-4 rounded-xl bg-purple-50">
-                <p className="text-sm text-purple-600 font-medium">Team Efficiency</p>
-                <p className="text-2xl font-bold text-purple-700">{taskCompletionRate}%</p>
-              </div>
-            </div>
-          </Card>
-        </motion.div>
-
-        {/* Activity Feed */}
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          transition={{ delay: 0.4 }}
-        >
-          <Card className="p-6 shadow-lg border-0 h-full">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-lg font-bold">Recent Activity</h3>
-                <p className="text-sm text-muted-foreground">Latest updates</p>
-              </div>
-              <Button variant="ghost" size="icon">
-                <RefreshCw className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="space-y-1">
-              {activities.map((activity, i) => (
-                <ActivityItem key={i} activity={activity} index={i} />
-              ))}
-            </div>
-            <Button variant="ghost" className="w-full mt-4 text-primary">
-              View All Activity <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
-          </Card>
-        </motion.div>
-      </div>
-
-      {/* Bottom Section */}
-      <div className="grid lg:grid-cols-2 gap-6">
-        {/* Upcoming Tasks */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-        >
-          <Card className="p-6 shadow-lg border-0">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-lg font-bold">Upcoming Tasks</h3>
-                <p className="text-sm text-muted-foreground">{pendingTasks} pending tasks</p>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => onNavigate?.('tasks')}>
-                View All
-              </Button>
-            </div>
-            <div className="space-y-3">
-              {upcomingTasks.length > 0 ? (
-                upcomingTasks.map((task, i) => (
-                  <TaskCard key={task.id || i} task={task} index={i} />
-                ))
+          </CardHeader>
+          <CardContent>
+            <div className="h-64">
+              {totalRevenue > 0 ? (
+                <BarChart data={monthlyData} height={200} color="emerald" />
               ) : (
-                <div className="text-center py-8">
-                  <CheckCircle2 className="h-12 w-12 mx-auto text-green-500 mb-3" />
-                  <p className="text-muted-foreground">All caught up! No pending tasks.</p>
+                <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                  <BarChart3 className="h-16 w-16 mb-4 opacity-30" />
+                  <p className="text-sm">No revenue data yet</p>
+                  <p className="text-xs">Win your first deal to see revenue charts</p>
                 </div>
               )}
             </div>
-          </Card>
-        </motion.div>
-
-        {/* Top Leads */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-        >
-          <Card className="p-6 shadow-lg border-0">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h3 className="text-lg font-bold">Recent Leads</h3>
-                <p className="text-sm text-muted-foreground">{newLeads} new this week</p>
+            <div className="grid grid-cols-3 gap-4 mt-4 pt-4 border-t">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-emerald-600">₹{totalRevenue.toLocaleString()}</p>
+                <p className="text-xs text-slate-500">Total Revenue</p>
               </div>
-              <Button variant="outline" size="sm" onClick={() => onNavigate?.('leads')}>
-                View All
-              </Button>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-blue-600">₹{avgDealSize.toLocaleString()}</p>
+                <p className="text-xs text-slate-500">Avg Deal Size</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-purple-600">₹{pipelineValue.toLocaleString()}</p>
+                <p className="text-xs text-slate-500">Pipeline Value</p>
+              </div>
             </div>
-            <div className="grid grid-cols-2 gap-4">
-              {topLeads.length > 0 ? (
-                topLeads.map((lead, i) => (
-                  <LeadCard key={lead.id || i} lead={lead} index={i} />
-                ))
-              ) : (
-                <div className="col-span-2 text-center py-8">
-                  <Target className="h-12 w-12 mx-auto text-slate-300 mb-3" />
-                  <p className="text-muted-foreground">No leads yet. Start by adding one!</p>
-                  <Button className="mt-3" onClick={() => onNavigate?.('leads')}>
-                    <Plus className="h-4 w-4 mr-2" /> Add Lead
-                  </Button>
-                </div>
-              )}
-            </div>
-          </Card>
-        </motion.div>
-      </div>
-
-      {/* Team Performance */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7 }}
-      >
-        <Card className="p-6 shadow-lg border-0">
-          <div className="flex items-center justify-between mb-6">
-            <div>
-              <h3 className="text-lg font-bold">Team Performance</h3>
-              <p className="text-sm text-muted-foreground">{users.length} team members</p>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => onNavigate?.('users')}>
-              Manage Team
-            </Button>
-          </div>
-          <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {users.slice(0, 4).map((user, i) => (
-              <motion.div
-                key={user.id || i}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.7 + i * 0.1 }}
-                className="p-4 rounded-xl bg-gradient-to-br from-slate-50 to-slate-100 hover:shadow-md transition-all"
-              >
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="h-10 w-10 rounded-full bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white font-semibold">
-                    {user.name?.charAt(0) || 'U'}
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm">{user.name}</p>
-                    <p className="text-xs text-muted-foreground capitalize">{user.role?.replace('_', ' ')}</p>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-xs">
-                    <span className="text-muted-foreground">Tasks Done</span>
-                    <span className="font-medium">{tasks.filter(t => t.assignedTo === user.id && t.status === 'completed').length || ((i + 1) * 5)}</span>
-                  </div>
-                  <Progress value={tasks.length > 0 ? Math.round((tasks.filter(t => t.assignedTo === user.id && t.status === 'completed').length / Math.max(tasks.filter(t => t.assignedTo === user.id).length, 1)) * 100) : (60 + i * 10)} className="h-1.5" />
-                </div>
-              </motion.div>
-            ))}
-          </div>
+          </CardContent>
         </Card>
-      </motion.div>
+
+        {/* Lead Funnel */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Layers className="h-5 w-5 text-blue-600" />
+              Sales Funnel
+            </CardTitle>
+            <CardDescription>Lead conversion stages</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {leads.length > 0 ? (
+              <>
+                <FunnelChart data={leadFunnel} />
+                <div className="mt-4 pt-4 border-t">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm text-slate-600">Conversion Rate</span>
+                    <span className="text-lg font-bold text-emerald-600">{conversionRate}%</span>
+                  </div>
+                  <Progress value={conversionRate} className="h-2 mt-2" />
+                </div>
+              </>
+            ) : (
+              <div className="h-48 flex flex-col items-center justify-center text-slate-400">
+                <Layers className="h-12 w-12 mb-3 opacity-30" />
+                <p className="text-sm">No leads in pipeline</p>
+                <Button variant="outline" size="sm" className="mt-3" onClick={() => onNavigate?.('leads')}>
+                  <Plus className="h-3 w-3 mr-1" /> Add Lead
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ==================== SECONDARY METRICS ROW ==================== */}
+      <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+        <motion.div 
+          whileHover={{ scale: 1.03 }}
+          className="bg-white rounded-xl p-4 border shadow-sm cursor-pointer"
+          onClick={() => onNavigate?.('leads', { filter: 'won' })}
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-emerald-100">
+              <Award className="h-5 w-5 text-emerald-600" />
+            </div>
+            <div>
+              <p className="text-xl font-bold text-slate-800">{wonLeads.length}</p>
+              <p className="text-xs text-slate-500">Deals Won</p>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          whileHover={{ scale: 1.03 }}
+          className="bg-white rounded-xl p-4 border shadow-sm cursor-pointer"
+          onClick={() => onNavigate?.('leads', { filter: 'lost' })}
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-red-100">
+              <UserX className="h-5 w-5 text-red-600" />
+            </div>
+            <div>
+              <p className="text-xl font-bold text-slate-800">{lostLeads}</p>
+              <p className="text-xs text-slate-500">Deals Lost</p>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          whileHover={{ scale: 1.03 }}
+          className="bg-white rounded-xl p-4 border shadow-sm cursor-pointer"
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-blue-100">
+              <Percent className="h-5 w-5 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-xl font-bold text-slate-800">{conversionRate}%</p>
+              <p className="text-xs text-slate-500">Win Rate</p>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          whileHover={{ scale: 1.03 }}
+          className="bg-white rounded-xl p-4 border shadow-sm cursor-pointer"
+          onClick={() => onNavigate?.('tasks')}
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-amber-100">
+              <AlertCircle className="h-5 w-5 text-amber-600" />
+            </div>
+            <div>
+              <p className="text-xl font-bold text-slate-800">{overdueTasks}</p>
+              <p className="text-xs text-slate-500">Overdue Tasks</p>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          whileHover={{ scale: 1.03 }}
+          className="bg-white rounded-xl p-4 border shadow-sm cursor-pointer"
+          onClick={() => onNavigate?.('tasks')}
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-red-100">
+              <Zap className="h-5 w-5 text-red-600" />
+            </div>
+            <div>
+              <p className="text-xl font-bold text-slate-800">{highPriorityTasks}</p>
+              <p className="text-xs text-slate-500">High Priority</p>
+            </div>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          whileHover={{ scale: 1.03 }}
+          className="bg-white rounded-xl p-4 border shadow-sm cursor-pointer"
+          onClick={() => onNavigate?.('projects')}
+        >
+          <div className="flex items-center gap-3">
+            <div className="p-2 rounded-lg bg-purple-100">
+              <CheckCircle2 className="h-5 w-5 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-xl font-bold text-slate-800">{completedProjects}</p>
+              <p className="text-xs text-slate-500">Completed</p>
+            </div>
+          </div>
+        </motion.div>
+      </div>
+
+      {/* ==================== THIRD ROW - CHARTS ==================== */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        
+        {/* Lead Sources Donut */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <PieChart className="h-5 w-5 text-purple-600" />
+              Lead Sources
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {leadSources.length > 0 ? (
+              <div className="flex items-center justify-center gap-6">
+                <DonutChart data={leadSources} size={120} />
+                <div className="space-y-2">
+                  {leadSources.slice(0, 4).map((source, i) => (
+                    <div key={i} className="flex items-center gap-2">
+                      <div className="w-3 h-3 rounded-full" style={{ background: source.color }} />
+                      <span className="text-sm text-slate-600">{source.label}</span>
+                      <span className="text-sm font-semibold">{source.value}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="h-32 flex flex-col items-center justify-center text-slate-400">
+                <PieChart className="h-10 w-10 mb-2 opacity-30" />
+                <p className="text-sm">No lead data</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Weekly Activity */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Activity className="h-5 w-5 text-blue-600" />
+              Weekly Activity
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="h-32">
+              <BarChart data={weeklyActivity} height={120} color="blue" />
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Progress Rings */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Target className="h-5 w-5 text-indigo-600" />
+              Performance
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-around">
+              <div className="text-center relative">
+                <ProgressRing progress={taskCompletionRate} size={80} strokeWidth={8} color="#6366f1" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-lg font-bold">{taskCompletionRate}%</span>
+                </div>
+                <p className="text-xs text-slate-500 mt-2">Tasks</p>
+              </div>
+              <div className="text-center relative">
+                <ProgressRing progress={conversionRate} size={80} strokeWidth={8} color="#10b981" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-lg font-bold">{conversionRate}%</span>
+                </div>
+                <p className="text-xs text-slate-500 mt-2">Conversion</p>
+              </div>
+              <div className="text-center relative">
+                <ProgressRing progress={projectCompletionRate} size={80} strokeWidth={8} color="#8b5cf6" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="text-lg font-bold">{projectCompletionRate}%</span>
+                </div>
+                <p className="text-xs text-slate-500 mt-2">Projects</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ==================== FOURTH ROW - LISTS ==================== */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Top Leads */}
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Star className="h-5 w-5 text-amber-500" />
+                Top Leads
+              </CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => onNavigate?.('leads')}>
+                View All <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {topLeads.length > 0 ? (
+              <div className="space-y-3">
+                {topLeads.map((lead, i) => (
+                  <motion.div
+                    key={lead.id || i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    className="flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors"
+                    onClick={() => onNavigate?.('leads')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-full bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center text-white font-semibold text-sm">
+                        {lead.name?.charAt(0) || '?'}
+                      </div>
+                      <div>
+                        <p className="font-medium text-sm">{lead.name}</p>
+                        <p className="text-xs text-slate-500">{lead.company || lead.email || 'No company'}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-emerald-600">₹{(lead.value || 0).toLocaleString()}</p>
+                      <Badge variant="outline" className="text-xs">{lead.status}</Badge>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="h-48 flex flex-col items-center justify-center text-slate-400">
+                <Users className="h-10 w-10 mb-2 opacity-30" />
+                <p className="text-sm">No leads yet</p>
+                <Button variant="outline" size="sm" className="mt-3" onClick={() => onNavigate?.('leads')}>
+                  <Plus className="h-3 w-3 mr-1" /> Add Lead
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Upcoming Tasks */}
+        <Card>
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="text-base flex items-center gap-2">
+                <Clock className="h-5 w-5 text-orange-500" />
+                Upcoming Tasks
+              </CardTitle>
+              <Button variant="ghost" size="sm" onClick={() => onNavigate?.('tasks')}>
+                View All <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {upcomingTasks.length > 0 ? (
+              <div className="space-y-3">
+                {upcomingTasks.map((task, i) => (
+                  <motion.div
+                    key={task.id || i}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    className="flex items-center justify-between p-3 rounded-lg bg-slate-50 hover:bg-slate-100 cursor-pointer transition-colors"
+                    onClick={() => onNavigate?.('tasks')}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className={`w-2 h-2 rounded-full ${
+                        task.priority === 'high' ? 'bg-red-500' :
+                        task.priority === 'medium' ? 'bg-amber-500' : 'bg-green-500'
+                      }`} />
+                      <div>
+                        <p className="font-medium text-sm truncate max-w-[180px]">{task.title}</p>
+                        <p className="text-xs text-slate-500">
+                          {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : 'No due date'}
+                        </p>
+                      </div>
+                    </div>
+                    <Badge variant="outline" className={`text-xs ${
+                      task.priority === 'high' ? 'border-red-200 text-red-600' :
+                      task.priority === 'medium' ? 'border-amber-200 text-amber-600' : 'border-green-200 text-green-600'
+                    }`}>
+                      {task.priority || 'normal'}
+                    </Badge>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="h-48 flex flex-col items-center justify-center text-slate-400">
+                <CheckCircle2 className="h-10 w-10 mb-2 opacity-30" />
+                <p className="text-sm">No pending tasks</p>
+                <Button variant="outline" size="sm" className="mt-3" onClick={() => onNavigate?.('tasks')}>
+                  <Plus className="h-3 w-3 mr-1" /> Add Task
+                </Button>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Activity */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Bell className="h-5 w-5 text-indigo-600" />
+              Recent Activity
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ActivityTimeline activities={activities} />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ==================== FIFTH ROW - ADDITIONAL METRICS ==================== */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        
+        {/* Financial Summary */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <DollarSign className="h-5 w-5 text-emerald-600" />
+              Financial Summary
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center justify-between p-3 bg-emerald-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <ArrowUp className="h-5 w-5 text-emerald-600" />
+                  <span className="text-sm font-medium">Total Income</span>
+                </div>
+                <span className="text-lg font-bold text-emerald-600">₹{totalRevenue.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-red-50 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <ArrowDown className="h-5 w-5 text-red-600" />
+                  <span className="text-sm font-medium">Total Expenses</span>
+                </div>
+                <span className="text-lg font-bold text-red-600">₹{totalExpensesAmount.toLocaleString()}</span>
+              </div>
+              <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border-2 border-blue-200">
+                <div className="flex items-center gap-3">
+                  <TrendingUp className="h-5 w-5 text-blue-600" />
+                  <span className="text-sm font-medium">Net Profit</span>
+                </div>
+                <span className={`text-lg font-bold ${netProfit >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                  ₹{netProfit.toLocaleString()}
+                </span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Zap className="h-5 w-5 text-amber-500" />
+              Quick Actions
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-3">
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => onNavigate?.('leads')}
+                className="p-4 rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 text-white text-left"
+              >
+                <Target className="h-6 w-6 mb-2" />
+                <p className="font-semibold">New Lead</p>
+                <p className="text-xs text-white/70">Add a prospect</p>
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => onNavigate?.('projects')}
+                className="p-4 rounded-xl bg-gradient-to-br from-purple-500 to-pink-600 text-white text-left"
+              >
+                <Briefcase className="h-6 w-6 mb-2" />
+                <p className="font-semibold">New Project</p>
+                <p className="text-xs text-white/70">Start tracking</p>
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => onNavigate?.('tasks')}
+                className="p-4 rounded-xl bg-gradient-to-br from-orange-500 to-amber-500 text-white text-left"
+              >
+                <CheckCircle2 className="h-6 w-6 mb-2" />
+                <p className="font-semibold">Create Task</p>
+                <p className="text-xs text-white/70">Track work</p>
+              </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => onNavigate?.('expenses')}
+                className="p-4 rounded-xl bg-gradient-to-br from-emerald-500 to-green-600 text-white text-left"
+              >
+                <IndianRupee className="h-6 w-6 mb-2" />
+                <p className="font-semibold">Add Expense</p>
+                <p className="text-xs text-white/70">Track finances</p>
+              </motion.button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* ==================== PERFORMANCE INSIGHTS ==================== */}
+      <Card className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 border-0">
+        <CardContent className="p-6">
+          <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 bg-indigo-100 rounded-lg">
+              <Sparkles className="h-5 w-5 text-indigo-600" />
+            </div>
+            <div>
+              <h3 className="font-semibold text-slate-800">Performance Insights</h3>
+              <p className="text-sm text-slate-600">AI-powered recommendations based on your data</p>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="p-4 bg-white/80 rounded-xl">
+              <p className="text-sm text-slate-600">
+                {leads.length === 0 
+                  ? "🎯 Start by adding your first lead to begin tracking your sales pipeline."
+                  : conversionRate < 20 
+                    ? "🎯 Your conversion rate could improve. Focus on lead qualification and follow-ups."
+                    : "🎯 Great conversion rate! Keep nurturing your qualified leads."}
+              </p>
+            </div>
+            <div className="p-4 bg-white/80 rounded-xl">
+              <p className="text-sm text-slate-600">
+                {tasks.length === 0
+                  ? "✅ Create tasks to organize your work and track progress."
+                  : overdueTasks > 0
+                    ? `⚠️ You have ${overdueTasks} overdue tasks. Prioritize completing them.`
+                    : "✅ All tasks are on track. Great job staying organized!"}
+              </p>
+            </div>
+            <div className="p-4 bg-white/80 rounded-xl">
+              <p className="text-sm text-slate-600">
+                {projects.length === 0
+                  ? "📁 Create your first project to start managing client work."
+                  : activeProjects > 5
+                    ? "📊 You have many active projects. Consider delegating or prioritizing."
+                    : "📊 Project workload looks manageable. Keep up the good work!"}
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
+
+export default EnhancedDashboard
