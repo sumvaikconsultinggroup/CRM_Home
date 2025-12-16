@@ -817,6 +817,405 @@ export function DoorsWindowsModule({ client, user }) {
             </Card>
           </TabsContent>
 
+          {/* ==================== POST-INVOICING TAB ==================== */}
+          <TabsContent value="post-invoicing" className="space-y-6">
+            <Card className={glassStyles.card}>
+              <CardHeader>
+                <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <ScrollText className="h-5 w-5 text-green-600" />
+                      Enterprise Post-Invoicing
+                    </CardTitle>
+                    <CardDescription>
+                      Complete lifecycle management: Challans, Payments, Installations, Warranties & AMC
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={() => fetchPostInvoicingData()}>
+                      <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+                    </Button>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent>
+                {/* Stats Grid */}
+                <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 mb-6">
+                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center gap-2">
+                      <ScrollText className="h-4 w-4 text-blue-600" />
+                      <span className="text-xs text-blue-600">Challans</span>
+                    </div>
+                    <p className="text-xl font-bold text-blue-700">{postInvoicingStats?.challans?.total || 0}</p>
+                  </div>
+                  <div className="p-3 bg-orange-50 rounded-lg border border-orange-200">
+                    <div className="flex items-center gap-2">
+                      <Truck className="h-4 w-4 text-orange-600" />
+                      <span className="text-xs text-orange-600">In Transit</span>
+                    </div>
+                    <p className="text-xl font-bold text-orange-700">{postInvoicingStats?.challans?.dispatched || 0}</p>
+                  </div>
+                  <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
+                    <div className="flex items-center gap-2">
+                      <Wrench className="h-4 w-4 text-purple-600" />
+                      <span className="text-xs text-purple-600">Installs</span>
+                    </div>
+                    <p className="text-xl font-bold text-purple-700">{postInvoicingStats?.installations?.total || 0}</p>
+                  </div>
+                  <div className="p-3 bg-green-50 rounded-lg border border-green-200">
+                    <div className="flex items-center gap-2">
+                      <IndianRupee className="h-4 w-4 text-green-600" />
+                      <span className="text-xs text-green-600">Collected</span>
+                    </div>
+                    <p className="text-xl font-bold text-green-700">₹{((postInvoicingStats?.payments?.totalCollected || 0) / 1000).toFixed(0)}K</p>
+                  </div>
+                  <div className="p-3 bg-cyan-50 rounded-lg border border-cyan-200">
+                    <div className="flex items-center gap-2">
+                      <Shield className="h-4 w-4 text-cyan-600" />
+                      <span className="text-xs text-cyan-600">Warranties</span>
+                    </div>
+                    <p className="text-xl font-bold text-cyan-700">{postInvoicingStats?.warranties?.active || 0}</p>
+                  </div>
+                  <div className="p-3 bg-pink-50 rounded-lg border border-pink-200">
+                    <div className="flex items-center gap-2">
+                      <Award className="h-4 w-4 text-pink-600" />
+                      <span className="text-xs text-pink-600">AMC</span>
+                    </div>
+                    <p className="text-xl font-bold text-pink-700">{postInvoicingStats?.amcs?.active || 0}</p>
+                  </div>
+                </div>
+
+                {/* Sub-tabs for post-invoicing sections */}
+                <Tabs defaultValue="challans" className="space-y-4">
+                  <TabsList className="flex flex-wrap gap-1">
+                    <TabsTrigger value="challans" className="text-xs">
+                      <Truck className="h-3 w-3 mr-1" /> Challans
+                    </TabsTrigger>
+                    <TabsTrigger value="payments" className="text-xs">
+                      <CreditCard className="h-3 w-3 mr-1" /> Payments
+                    </TabsTrigger>
+                    <TabsTrigger value="installs" className="text-xs">
+                      <Wrench className="h-3 w-3 mr-1" /> Installations
+                    </TabsTrigger>
+                    <TabsTrigger value="warranties" className="text-xs">
+                      <Shield className="h-3 w-3 mr-1" /> Warranties
+                    </TabsTrigger>
+                    <TabsTrigger value="amc" className="text-xs">
+                      <Award className="h-3 w-3 mr-1" /> AMC
+                    </TabsTrigger>
+                  </TabsList>
+
+                  <TabsContent value="challans">
+                    <div className="space-y-3">
+                      {(postInvoicingData?.challans || []).length > 0 ? (
+                        postInvoicingData.challans.map((challan) => (
+                          <Card key={challan.id} className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-semibold">{challan.challanNumber}</p>
+                                <p className="text-sm text-muted-foreground">{challan.customerName} • {challan.totalItems || 0} items</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge className={
+                                  challan.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                                  challan.status === 'dispatched' ? 'bg-blue-100 text-blue-700' :
+                                  'bg-gray-100 text-gray-700'
+                                }>{challan.status}</Badge>
+                                <Button size="sm" variant="ghost"><Eye className="h-4 w-4" /></Button>
+                                <Button size="sm" variant="ghost"><Printer className="h-4 w-4" /></Button>
+                              </div>
+                            </div>
+                          </Card>
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Truck className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                          <p>No delivery challans yet</p>
+                          <p className="text-sm">Create a challan from an invoice</p>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="payments">
+                    <div className="space-y-3">
+                      {/* Payment Method Summary */}
+                      <div className="grid grid-cols-4 gap-2 mb-4">
+                        <div className="p-2 bg-green-50 rounded text-center">
+                          <p className="text-xs text-green-600">Cash</p>
+                          <p className="font-bold text-green-700">₹{((postInvoicingStats?.payments?.cash || 0) / 1000).toFixed(1)}K</p>
+                        </div>
+                        <div className="p-2 bg-blue-50 rounded text-center">
+                          <p className="text-xs text-blue-600">UPI</p>
+                          <p className="font-bold text-blue-700">₹{((postInvoicingStats?.payments?.upi || 0) / 1000).toFixed(1)}K</p>
+                        </div>
+                        <div className="p-2 bg-purple-50 rounded text-center">
+                          <p className="text-xs text-purple-600">Bank</p>
+                          <p className="font-bold text-purple-700">₹{((postInvoicingStats?.payments?.bank || 0) / 1000).toFixed(1)}K</p>
+                        </div>
+                        <div className="p-2 bg-orange-50 rounded text-center">
+                          <p className="text-xs text-orange-600">Cheque</p>
+                          <p className="font-bold text-orange-700">₹{((postInvoicingStats?.payments?.cheque || 0) / 1000).toFixed(1)}K</p>
+                        </div>
+                      </div>
+                      {(postInvoicingData?.payments || []).length > 0 ? (
+                        postInvoicingData.payments.map((payment) => (
+                          <Card key={payment.id} className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-semibold">{payment.paymentId}</p>
+                                <p className="text-sm text-muted-foreground">{payment.invoiceNumber} • {payment.method?.replace('_', ' ')}</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-green-600">₹{payment.amount?.toLocaleString()}</span>
+                                <Badge className={payment.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                                  {payment.status}
+                                </Badge>
+                              </div>
+                            </div>
+                          </Card>
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <CreditCard className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                          <p>No payments recorded yet</p>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="installs">
+                    <div className="space-y-3">
+                      {(postInvoicingData?.installations || []).length > 0 ? (
+                        postInvoicingData.installations.map((inst) => (
+                          <Card key={inst.id} className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-semibold">{inst.installationNumber}</p>
+                                <p className="text-sm text-muted-foreground">{inst.customerName}</p>
+                              </div>
+                              <div className="flex items-center gap-3">
+                                <div className="flex items-center gap-1">
+                                  <Progress value={inst.completionPercentage || 0} className="w-16 h-2" />
+                                  <span className="text-xs">{inst.completionPercentage || 0}%</span>
+                                </div>
+                                <Badge className={
+                                  inst.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                  inst.status === 'in-progress' ? 'bg-blue-100 text-blue-700' :
+                                  'bg-purple-100 text-purple-700'
+                                }>{inst.status}</Badge>
+                              </div>
+                            </div>
+                          </Card>
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Wrench className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                          <p>No installations scheduled yet</p>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="warranties">
+                    <div className="space-y-3">
+                      {(postInvoicingData?.warranties || []).length > 0 ? (
+                        postInvoicingData.warranties.map((warranty) => (
+                          <Card key={warranty.id} className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-semibold">{warranty.warrantyNumber}</p>
+                                <p className="text-sm text-muted-foreground">{warranty.customerName} • {warranty.itemsCovered} items</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="text-xs">Valid until: {warranty.endDate ? new Date(warranty.endDate).toLocaleDateString() : '-'}</span>
+                                <Badge className={warranty.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
+                                  {warranty.status}
+                                </Badge>
+                              </div>
+                            </div>
+                          </Card>
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Shield className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                          <p>No warranties registered yet</p>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+
+                  <TabsContent value="amc">
+                    <div className="space-y-3">
+                      {(postInvoicingData?.amcs || []).length > 0 ? (
+                        postInvoicingData.amcs.map((amc) => (
+                          <Card key={amc.id} className="p-4">
+                            <div className="flex items-center justify-between">
+                              <div>
+                                <p className="font-semibold">{amc.amcNumber}</p>
+                                <p className="text-sm text-muted-foreground">{amc.customerName} • {amc.contractPeriod} months</p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold">₹{amc.value?.toLocaleString()}</span>
+                                <Badge className={amc.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}>
+                                  {amc.status}
+                                </Badge>
+                              </div>
+                            </div>
+                          </Card>
+                        ))
+                      ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                          <Award className="h-12 w-12 mx-auto mb-2 opacity-30" />
+                          <p>No AMC contracts yet</p>
+                        </div>
+                      )}
+                    </div>
+                  </TabsContent>
+                </Tabs>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* ==================== FINANCE SYNC TAB ==================== */}
+          <TabsContent value="finance-sync" className="space-y-6">
+            <Card className={glassStyles.card}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <RefreshCw className="h-5 w-5 text-blue-600" />
+                      BuilD Finance Sync
+                    </CardTitle>
+                    <CardDescription>
+                      Sync quotes, invoices, and payments to BuilD Finance for unified accounting
+                    </CardDescription>
+                  </div>
+                  <Button onClick={syncAllToFinance} disabled={syncingToFinance}>
+                    {syncingToFinance ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                    Sync All Pending
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid md:grid-cols-3 gap-6">
+                  {/* Quotes Sync */}
+                  <Card className="p-6 bg-purple-50 border-purple-200">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-3 rounded-xl bg-purple-100">
+                        <FileText className="h-6 w-6 text-purple-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">Quotes</h3>
+                        <p className="text-sm text-muted-foreground">Sync approved quotes</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Total</span>
+                        <span className="font-medium">{financeSyncStatus?.quotes?.total || 0}</span>
+                      </div>
+                      <div className="flex justify-between text-green-600">
+                        <span>Synced</span>
+                        <span className="font-medium">{financeSyncStatus?.quotes?.synced || 0}</span>
+                      </div>
+                      <div className="flex justify-between text-orange-600">
+                        <span>Pending</span>
+                        <span className="font-medium">{financeSyncStatus?.quotes?.pending || 0}</span>
+                      </div>
+                      <Progress value={financeSyncStatus?.quotes?.total ? (financeSyncStatus.quotes.synced / financeSyncStatus.quotes.total) * 100 : 0} className="h-2 mt-2" />
+                    </div>
+                  </Card>
+
+                  {/* Invoices Sync */}
+                  <Card className="p-6 bg-blue-50 border-blue-200">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-3 rounded-xl bg-blue-100">
+                        <Receipt className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">Invoices</h3>
+                        <p className="text-sm text-muted-foreground">Sync to finance</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Total</span>
+                        <span className="font-medium">{financeSyncStatus?.invoices?.total || 0}</span>
+                      </div>
+                      <div className="flex justify-between text-green-600">
+                        <span>Synced</span>
+                        <span className="font-medium">{financeSyncStatus?.invoices?.synced || 0}</span>
+                      </div>
+                      <div className="flex justify-between text-orange-600">
+                        <span>Pending</span>
+                        <span className="font-medium">{financeSyncStatus?.invoices?.pending || 0}</span>
+                      </div>
+                      <Progress value={financeSyncStatus?.invoices?.total ? (financeSyncStatus.invoices.synced / financeSyncStatus.invoices.total) * 100 : 0} className="h-2 mt-2" />
+                    </div>
+                  </Card>
+
+                  {/* Payments Sync */}
+                  <Card className="p-6 bg-green-50 border-green-200">
+                    <div className="flex items-center gap-3 mb-4">
+                      <div className="p-3 rounded-xl bg-green-100">
+                        <IndianRupee className="h-6 w-6 text-green-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">Payments</h3>
+                        <p className="text-sm text-muted-foreground">Sync collections</p>
+                      </div>
+                    </div>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Total</span>
+                        <span className="font-medium">{financeSyncStatus?.payments?.total || 0}</span>
+                      </div>
+                      <div className="flex justify-between text-green-600">
+                        <span>Synced</span>
+                        <span className="font-medium">{financeSyncStatus?.payments?.synced || 0}</span>
+                      </div>
+                      <div className="flex justify-between text-orange-600">
+                        <span>Pending</span>
+                        <span className="font-medium">{financeSyncStatus?.payments?.pending || 0}</span>
+                      </div>
+                      <Progress value={financeSyncStatus?.payments?.total ? (financeSyncStatus.payments.synced / financeSyncStatus.payments.total) * 100 : 0} className="h-2 mt-2" />
+                    </div>
+                  </Card>
+                </div>
+
+                <Separator className="my-6" />
+
+                <div className="p-4 bg-slate-50 rounded-lg">
+                  <h3 className="font-semibold mb-3">Auto-Sync Settings</h3>
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-sm">Auto-sync quotes when approved</p>
+                        <p className="text-xs text-muted-foreground">Automatically sync quotes to Finance when status changes to approved</p>
+                      </div>
+                      <Badge className="bg-green-100 text-green-700">Enabled</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-sm">Auto-sync invoices on creation</p>
+                        <p className="text-xs text-muted-foreground">Automatically sync new invoices to BuilD Finance</p>
+                      </div>
+                      <Badge className="bg-green-100 text-green-700">Enabled</Badge>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-medium text-sm">Auto-sync payments</p>
+                        <p className="text-xs text-muted-foreground">Sync payment collections to Finance immediately</p>
+                      </div>
+                      <Badge className="bg-green-100 text-green-700">Enabled</Badge>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
           {/* Products Tab - Links to Build Inventory */}
           <TabsContent value="products" className="space-y-6">
             <Card className={glassStyles.card}>
