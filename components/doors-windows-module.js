@@ -367,6 +367,13 @@ export function DoorsWindowsModule({ client, user }) {
   const [aiChatMessages, setAiChatMessages] = useState([])
   const [aiInput, setAiInput] = useState('')
   const [aiLoading, setAiLoading] = useState(false)
+  
+  // Post-Invoicing states
+  const [postInvoicingData, setPostInvoicingData] = useState({})
+  const [postInvoicingStats, setPostInvoicingStats] = useState({})
+  const [showPostInvoicingDialog, setShowPostInvoicingDialog] = useState(null)
+  const [financeSyncStatus, setFinanceSyncStatus] = useState({})
+  const [syncingToFinance, setSyncingToFinance] = useState(false)
 
   // Projects state
   const [projects, setProjects] = useState([])
