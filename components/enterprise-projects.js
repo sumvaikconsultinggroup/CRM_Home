@@ -1648,107 +1648,414 @@ export function EnterpriseProjects({ authToken, onProjectSelect }) {
                 </TabsList>
 
                 <TabsContent value="overview" className="space-y-4 mt-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    {/* Progress Card */}
-                    <GlassCard className="p-4">
-                      <h4 className="font-medium mb-3 flex items-center gap-2">
-                        <Target className="h-4 w-4" /> Progress
-                      </h4>
-                      <div className="space-y-2">
-                        <div className="flex justify-between">
-                          <span className="text-2xl font-bold">{projectDetail.project.progress || 0}%</span>
-                          <Badge className={getStatusInfo(projectDetail.project.status).color}>
-                            {getStatusInfo(projectDetail.project.status).label}
-                          </Badge>
+                  {(() => {
+                    const progressData = calculateDynamicProgress(projectDetail.project, projectDetail.tasks)
+                    const timelinePerf = calculateTimelinePerformance(projectDetail.project)
+                    const teamPerf = calculateTeamPerformance(projectDetail.project?.team, projectDetail.tasks)
+                    
+                    return (
+                      <>
+                        <div className="grid grid-cols-2 gap-4">
+                          {/* Dynamic Progress Card */}
+                          <GlassCard className="p-4">
+                            <h4 className="font-medium mb-3 flex items-center gap-2">
+                              <Target className="h-4 w-4 text-indigo-600" /> Dynamic Progress
+                              <Badge className={getStatusInfo(projectDetail.project.status).color}>
+                                {getStatusInfo(projectDetail.project.status).label}
+                              </Badge>
+                            </h4>
+                            <div className="space-y-4">
+                              {/* Overall Progress */}
+                              <div>
+                                <div className="flex justify-between mb-1">
+                                  <span className="text-sm text-slate-600">Overall Progress</span>
+                                  <span className="text-2xl font-bold text-indigo-600">{progressData.combinedProgress}%</span>
+                                </div>
+                                <Progress value={progressData.combinedProgress} className="h-3 [&>div]:bg-gradient-to-r [&>div]:from-indigo-500 [&>div]:to-purple-500" />
+                              </div>
+                              
+                              {/* Task Progress Breakdown */}
+                              <div className="bg-slate-50 rounded-lg p-3">
+                                <div className="flex justify-between items-center mb-2">
+                                  <span className="text-sm font-medium flex items-center gap-2">
+                                    <CheckCircle2 className="h-4 w-4 text-blue-500" /> Tasks
+                                  </span>
+                                  <span className="text-sm font-bold text-blue-600">
+                                    {progressData.completedTasks}/{progressData.totalTasks}
+                                  </span>
+                                </div>
+                                <Progress value={progressData.taskProgress} className="h-2 [&>div]:bg-blue-500" />
+                                <p className="text-xs text-slate-500 mt-1">{progressData.taskProgress}% complete</p>
+                              </div>
+                              
+                              {/* Milestone Progress Breakdown */}
+                              <div className="bg-slate-50 rounded-lg p-3">
+                                <div className="flex justify-between items-center mb-2">
+                                  <span className="text-sm font-medium flex items-center gap-2">
+                                    <Milestone className="h-4 w-4 text-purple-500" /> Milestones
+                                  </span>
+                                  <span className="text-sm font-bold text-purple-600">
+                                    {progressData.completedMilestones}/{progressData.totalMilestones}
+                                  </span>
+                                </div>
+                                <Progress value={progressData.milestoneProgress} className="h-2 [&>div]:bg-purple-500" />
+                                <p className="text-xs text-slate-500 mt-1">{progressData.milestoneProgress}% complete</p>
+                              </div>
+                            </div>
+                          </GlassCard>
+
+                          {/* Editable Budget Card */}
+                          <GlassCard className="p-4">
+                            <div className="flex items-center justify-between mb-3">
+                              <h4 className="font-medium flex items-center gap-2">
+                                <DollarSign className="h-4 w-4 text-emerald-600" /> Budget
+                              </h4>
+                              {!editingBudget ? (
+                                <Button variant="ghost" size="sm" onClick={startEditingBudget}>
+                                  <Edit className="h-4 w-4" />
+                                </Button>
+                              ) : (
+                                <div className="flex gap-1">
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={() => setEditingBudget(false)}
+                                    disabled={savingField === 'budget'}
+                                  >
+                                    <X className="h-4 w-4 text-slate-500" />
+                                  </Button>
+                                  <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={handleSaveBudget}
+                                    disabled={savingField === 'budget'}
+                                  >
+                                    {savingField === 'budget' ? (
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                    ) : (
+                                      <Check className="h-4 w-4 text-emerald-600" />
+                                    )}
+                                  </Button>
+                                </div>
+                              )}
+                            </div>
+                            <div className="space-y-3">
+                              <div className="flex justify-between items-end">
+                                <div>
+                                  <p className="text-xs text-slate-500">Budget</p>
+                                  {editingBudget ? (
+                                    <div className="flex items-center gap-1 mt-1">
+                                      <span className="text-lg">₹</span>
+                                      <Input
+                                        type="number"
+                                        value={editBudgetValue}
+                                        onChange={(e) => setEditBudgetValue(e.target.value)}
+                                        className="w-32 h-8 text-lg font-bold"
+                                        autoFocus
+                                      />
+                                    </div>
+                                  ) : (
+                                    <p className="text-xl font-bold text-emerald-600">{formatCurrency(projectDetail.project.budget)}</p>
+                                  )}
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-xs text-slate-500">Spent</p>
+                                  <p className="text-lg font-medium text-slate-700">{formatCurrency(projectDetail.project.budgetMetrics?.spent || 0)}</p>
+                                </div>
+                              </div>
+                              <Progress 
+                                value={projectDetail.project.budgetMetrics?.percentUsed || 0} 
+                                className={`h-2 ${(projectDetail.project.budgetMetrics?.percentUsed || 0) > 100 ? '[&>div]:bg-red-500' : '[&>div]:bg-emerald-500'}`}
+                              />
+                              <div className="flex justify-between text-xs">
+                                <span className={`${(projectDetail.project.budgetMetrics?.percentUsed || 0) > 100 ? 'text-red-600 font-medium' : 'text-slate-500'}`}>
+                                  {projectDetail.project.budgetMetrics?.percentUsed || 0}% used
+                                </span>
+                                <span className="text-emerald-600 font-medium">
+                                  {formatCurrency(projectDetail.project.budgetMetrics?.remaining || projectDetail.project.budget || 0)} remaining
+                                </span>
+                              </div>
+                            </div>
+                          </GlassCard>
                         </div>
-                        <Progress value={projectDetail.project.progress || 0} className="h-3" />
-                      </div>
-                    </GlassCard>
 
-                    {/* Budget Card */}
-                    <GlassCard className="p-4">
-                      <h4 className="font-medium mb-3 flex items-center gap-2">
-                        <DollarSign className="h-4 w-4" /> Budget
-                      </h4>
-                      <div className="space-y-2">
-                        <div className="flex justify-between items-end">
-                          <div>
-                            <p className="text-xs text-slate-500">Budget</p>
-                            <p className="text-xl font-bold text-emerald-600">{formatCurrency(projectDetail.project.budget)}</p>
+                        {/* Enhanced Timeline with Planned vs Actual */}
+                        <GlassCard className="p-4">
+                          <div className="flex items-center justify-between mb-4">
+                            <h4 className="font-medium flex items-center gap-2">
+                              <CalendarDays className="h-4 w-4 text-blue-600" /> Timeline Performance
+                            </h4>
+                            {!editingTimeline ? (
+                              <Button variant="ghost" size="sm" onClick={startEditingTimeline}>
+                                <Edit className="h-4 w-4" />
+                              </Button>
+                            ) : (
+                              <div className="flex gap-1">
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={() => setEditingTimeline(false)}
+                                  disabled={savingField === 'timeline'}
+                                >
+                                  <X className="h-4 w-4 text-slate-500" />
+                                </Button>
+                                <Button 
+                                  variant="ghost" 
+                                  size="sm" 
+                                  onClick={handleSaveTimeline}
+                                  disabled={savingField === 'timeline'}
+                                >
+                                  {savingField === 'timeline' ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    <Check className="h-4 w-4 text-emerald-600" />
+                                  )}
+                                </Button>
+                              </div>
+                            )}
                           </div>
-                          <div className="text-right">
-                            <p className="text-xs text-slate-500">Spent</p>
-                            <p className="text-lg font-medium text-slate-700">{formatCurrency(projectDetail.project.budgetMetrics?.spent || 0)}</p>
+                          
+                          {/* Schedule Performance Score */}
+                          <div className="flex items-center gap-4 mb-4 p-3 rounded-lg bg-gradient-to-r from-blue-50 to-indigo-50">
+                            <div className="flex items-center gap-2">
+                              <Activity className="h-5 w-5 text-blue-600" />
+                              <span className="font-medium">Schedule Performance</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className={`text-2xl font-bold ${
+                                timelinePerf.scheduleScore >= 100 ? 'text-emerald-600' : 
+                                timelinePerf.scheduleScore >= 80 ? 'text-amber-600' : 'text-red-600'
+                              }`}>
+                                {timelinePerf.scheduleScore}%
+                              </span>
+                              {timelinePerf.scheduleScore >= 100 ? (
+                                <Badge className="bg-emerald-100 text-emerald-700">
+                                  <ArrowUpRight className="h-3 w-3 mr-1" /> On Track
+                                </Badge>
+                              ) : (
+                                <Badge className="bg-red-100 text-red-700">
+                                  <ArrowDownRight className="h-3 w-3 mr-1" /> Behind
+                                </Badge>
+                              )}
+                            </div>
+                            {timelinePerf.isOverdue && (
+                              <Badge className="bg-red-100 text-red-700 ml-auto">
+                                <AlertTriangle className="h-3 w-3 mr-1" /> Overdue
+                              </Badge>
+                            )}
+                            {timelinePerf.daysRemaining !== null && timelinePerf.daysRemaining > 0 && (
+                              <Badge className="bg-blue-100 text-blue-700 ml-auto">
+                                <Clock className="h-3 w-3 mr-1" /> {timelinePerf.daysRemaining} days left
+                              </Badge>
+                            )}
                           </div>
-                        </div>
-                        <Progress 
-                          value={projectDetail.project.budgetMetrics?.percentUsed || 0} 
-                          className={`h-2 ${(projectDetail.project.budgetMetrics?.percentUsed || 0) > 100 ? '[&>div]:bg-red-500' : ''}`}
-                        />
-                        <p className="text-xs text-slate-500">
-                          {projectDetail.project.budgetMetrics?.percentUsed || 0}% used • {formatCurrency(projectDetail.project.budgetMetrics?.remaining || 0)} remaining
-                        </p>
-                      </div>
-                    </GlassCard>
-                  </div>
 
-                  {/* Client Info */}
-                  <GlassCard className="p-4">
-                    <h4 className="font-medium mb-3 flex items-center gap-2">
-                      <Building2 className="h-4 w-4" /> Client Information
-                    </h4>
-                    <div className="grid grid-cols-2 gap-4">
-                      <div>
-                        <p className="text-xs text-slate-500">Client Name</p>
-                        <p className="font-medium">{projectDetail.project.clientName || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500">Email</p>
-                        <p className="font-medium">{projectDetail.project.clientEmail || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500">Phone</p>
-                        <p className="font-medium">{projectDetail.project.clientPhone || '-'}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500">Site Address</p>
-                        <p className="font-medium">{projectDetail.project.siteAddress || '-'}</p>
-                      </div>
-                    </div>
-                  </GlassCard>
+                          {/* Dates Comparison Grid */}
+                          <div className="grid grid-cols-2 gap-4">
+                            {/* Planned Dates */}
+                            <div className="space-y-3">
+                              <h5 className="text-sm font-medium text-slate-600 flex items-center gap-2">
+                                <Target className="h-4 w-4" /> Planned
+                              </h5>
+                              <div className="space-y-2">
+                                <div className="bg-slate-50 rounded-lg p-3">
+                                  <p className="text-xs text-slate-500">Start Date</p>
+                                  {editingTimeline ? (
+                                    <Input
+                                      type="date"
+                                      value={editTimelineValues.startDate}
+                                      onChange={(e) => setEditTimelineValues({...editTimelineValues, startDate: e.target.value})}
+                                      className="h-8 mt-1"
+                                    />
+                                  ) : (
+                                    <p className="font-medium">{formatDate(projectDetail.project.startDate)}</p>
+                                  )}
+                                </div>
+                                <div className="bg-slate-50 rounded-lg p-3">
+                                  <p className="text-xs text-slate-500">End Date</p>
+                                  {editingTimeline ? (
+                                    <Input
+                                      type="date"
+                                      value={editTimelineValues.endDate}
+                                      onChange={(e) => setEditTimelineValues({...editTimelineValues, endDate: e.target.value})}
+                                      className="h-8 mt-1"
+                                    />
+                                  ) : (
+                                    <p className="font-medium">{formatDate(projectDetail.project.endDate)}</p>
+                                  )}
+                                </div>
+                                <div className="bg-blue-50 rounded-lg p-3">
+                                  <p className="text-xs text-slate-500">Planned Duration</p>
+                                  <p className="font-medium text-blue-600">{timelinePerf.plannedDuration} days</p>
+                                </div>
+                              </div>
+                            </div>
 
-                  {/* Dates */}
-                  <GlassCard className="p-4">
-                    <h4 className="font-medium mb-3 flex items-center gap-2">
-                      <CalendarDays className="h-4 w-4" /> Timeline
-                    </h4>
-                    <div className="grid grid-cols-4 gap-4">
-                      <div>
-                        <p className="text-xs text-slate-500">Start Date</p>
-                        <p className="font-medium">{formatDate(projectDetail.project.startDate)}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500">End Date</p>
-                        <p className="font-medium">{formatDate(projectDetail.project.endDate)}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500">Actual Start</p>
-                        <p className="font-medium">{formatDate(projectDetail.project.actualStartDate)}</p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-slate-500">Actual End</p>
-                        <p className="font-medium">{formatDate(projectDetail.project.actualEndDate)}</p>
-                      </div>
-                    </div>
-                  </GlassCard>
+                            {/* Actual Dates */}
+                            <div className="space-y-3">
+                              <h5 className="text-sm font-medium text-slate-600 flex items-center gap-2">
+                                <Activity className="h-4 w-4" /> Actual
+                              </h5>
+                              <div className="space-y-2">
+                                <div className={`rounded-lg p-3 ${
+                                  timelinePerf.startDelay === null ? 'bg-slate-50' :
+                                  timelinePerf.startDelay <= 0 ? 'bg-emerald-50' : 'bg-amber-50'
+                                }`}>
+                                  <p className="text-xs text-slate-500">Actual Start</p>
+                                  {editingTimeline ? (
+                                    <Input
+                                      type="date"
+                                      value={editTimelineValues.actualStartDate}
+                                      onChange={(e) => setEditTimelineValues({...editTimelineValues, actualStartDate: e.target.value})}
+                                      className="h-8 mt-1"
+                                    />
+                                  ) : (
+                                    <>
+                                      <p className="font-medium">{formatDate(projectDetail.project.actualStartDate)}</p>
+                                      {timelinePerf.startDelay !== null && (
+                                        <p className={`text-xs mt-1 ${timelinePerf.startDelay <= 0 ? 'text-emerald-600' : 'text-amber-600'}`}>
+                                          {timelinePerf.startDelay <= 0 
+                                            ? `${Math.abs(timelinePerf.startDelay)} days early` 
+                                            : `${timelinePerf.startDelay} days late`}
+                                        </p>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                                <div className={`rounded-lg p-3 ${
+                                  !timelinePerf.isCompleted ? 'bg-slate-50' :
+                                  timelinePerf.endVariance <= 0 ? 'bg-emerald-50' : 'bg-red-50'
+                                }`}>
+                                  <p className="text-xs text-slate-500">Actual End</p>
+                                  {editingTimeline ? (
+                                    <Input
+                                      type="date"
+                                      value={editTimelineValues.actualEndDate}
+                                      onChange={(e) => setEditTimelineValues({...editTimelineValues, actualEndDate: e.target.value})}
+                                      className="h-8 mt-1"
+                                    />
+                                  ) : (
+                                    <>
+                                      <p className="font-medium">{formatDate(projectDetail.project.actualEndDate)}</p>
+                                      {timelinePerf.isCompleted && timelinePerf.endVariance !== null && (
+                                        <p className={`text-xs mt-1 ${timelinePerf.endVariance <= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                                          {timelinePerf.endVariance <= 0 
+                                            ? `${Math.abs(timelinePerf.endVariance)} days early` 
+                                            : `${timelinePerf.endVariance} days late`}
+                                        </p>
+                                      )}
+                                    </>
+                                  )}
+                                </div>
+                                <div className={`rounded-lg p-3 ${
+                                  timelinePerf.isCompleted && timelinePerf.actualDuration <= timelinePerf.plannedDuration 
+                                    ? 'bg-emerald-50' 
+                                    : timelinePerf.actualDuration > timelinePerf.plannedDuration 
+                                    ? 'bg-amber-50' 
+                                    : 'bg-slate-50'
+                                }`}>
+                                  <p className="text-xs text-slate-500">Actual Duration</p>
+                                  <p className={`font-medium ${
+                                    timelinePerf.isCompleted && timelinePerf.actualDuration <= timelinePerf.plannedDuration 
+                                      ? 'text-emerald-600' 
+                                      : timelinePerf.actualDuration > timelinePerf.plannedDuration 
+                                      ? 'text-amber-600' 
+                                      : ''
+                                  }`}>
+                                    {timelinePerf.actualDuration} days {!timelinePerf.isCompleted && '(ongoing)'}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </GlassCard>
 
-                  {/* Description */}
-                  {projectDetail.project.description && (
-                    <GlassCard className="p-4">
-                      <h4 className="font-medium mb-2">Description</h4>
-                      <p className="text-slate-600">{projectDetail.project.description}</p>
-                    </GlassCard>
-                  )}
+                        {/* Team Performance */}
+                        {teamPerf.length > 0 && (
+                          <GlassCard className="p-4">
+                            <h4 className="font-medium mb-4 flex items-center gap-2">
+                              <Users className="h-4 w-4 text-purple-600" /> Team Performance
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                              {teamPerf.map((member, idx) => (
+                                <div key={idx} className="bg-slate-50 rounded-lg p-3">
+                                  <div className="flex items-center gap-3 mb-2">
+                                    <Avatar className="h-8 w-8">
+                                      <AvatarFallback className="bg-gradient-to-br from-indigo-400 to-purple-400 text-white text-sm">
+                                        {(member.userName || member.userEmail || '?')[0].toUpperCase()}
+                                      </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 min-w-0">
+                                      <p className="font-medium text-sm truncate">{member.userName || member.userEmail}</p>
+                                      <Badge className={getRoleInfo(member.role).color} variant="outline" className="text-xs">
+                                        {getRoleInfo(member.role).label}
+                                      </Badge>
+                                    </div>
+                                  </div>
+                                  <div className="space-y-2">
+                                    <div className="flex justify-between text-xs">
+                                      <span className="text-slate-500">Tasks: {member.completedTasks}/{member.totalTasks}</span>
+                                      <span className={`font-medium ${
+                                        member.completionRate >= 80 ? 'text-emerald-600' :
+                                        member.completionRate >= 50 ? 'text-amber-600' : 'text-red-600'
+                                      }`}>
+                                        {member.completionRate}%
+                                      </span>
+                                    </div>
+                                    <Progress 
+                                      value={member.completionRate} 
+                                      className={`h-1.5 ${
+                                        member.completionRate >= 80 ? '[&>div]:bg-emerald-500' :
+                                        member.completionRate >= 50 ? '[&>div]:bg-amber-500' : '[&>div]:bg-red-500'
+                                      }`}
+                                    />
+                                    {member.overdueTasks > 0 && (
+                                      <p className="text-xs text-red-600 flex items-center gap-1">
+                                        <AlertTriangle className="h-3 w-3" /> {member.overdueTasks} overdue
+                                      </p>
+                                    )}
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </GlassCard>
+                        )}
+
+                        {/* Client Info */}
+                        <GlassCard className="p-4">
+                          <h4 className="font-medium mb-3 flex items-center gap-2">
+                            <Building2 className="h-4 w-4" /> Client Information
+                          </h4>
+                          <div className="grid grid-cols-2 gap-4">
+                            <div>
+                              <p className="text-xs text-slate-500">Client Name</p>
+                              <p className="font-medium">{projectDetail.project.clientName || '-'}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500">Email</p>
+                              <p className="font-medium">{projectDetail.project.clientEmail || '-'}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500">Phone</p>
+                              <p className="font-medium">{projectDetail.project.clientPhone || '-'}</p>
+                            </div>
+                            <div>
+                              <p className="text-xs text-slate-500">Site Address</p>
+                              <p className="font-medium">{projectDetail.project.siteAddress || '-'}</p>
+                            </div>
+                          </div>
+                        </GlassCard>
+
+                        {/* Description */}
+                        {projectDetail.project.description && (
+                          <GlassCard className="p-4">
+                            <h4 className="font-medium mb-2">Description</h4>
+                            <p className="text-slate-600">{projectDetail.project.description}</p>
+                          </GlassCard>
+                        )}
+                      </>
+                    )
+                  })()}
                 </TabsContent>
 
                 <TabsContent value="milestones" className="mt-4">
