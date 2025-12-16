@@ -66,7 +66,7 @@ const GlassCard = ({ children, className = '', ...props }) => (
   </div>
 )
 
-export function EnterpriseProjects({ authToken, onProjectSelect }) {
+export function EnterpriseProjects({ authToken, onProjectSelect, onRefresh }) {
   const [projects, setProjects] = useState([])
   const [stats, setStats] = useState(null)
   const [loading, setLoading] = useState(true)
