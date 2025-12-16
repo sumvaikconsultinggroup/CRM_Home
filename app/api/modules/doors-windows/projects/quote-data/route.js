@@ -94,17 +94,29 @@ export async function GET(request) {
       fromSurvey: true
     }))
 
-    // Prepare the response
+    // Prepare the response - include multiple field name variations for compatibility
+    // Extract customer info from project or linked survey
+    const customerName = project.contactPerson || project.customerName || project.clientName || 
+                        project.name || completedSurvey?.contactPerson || ''
+    const customerPhone = project.contactPhone || project.phone || project.mobile ||
+                         completedSurvey?.contactPhone || ''
+    const customerEmail = project.contactEmail || project.email ||
+                         completedSurvey?.contactEmail || ''
+    const siteAddress = project.siteAddress || project.address || project.location ||
+                       completedSurvey?.siteAddress || ''
+    
     const quoteData = {
       project: sanitizeDocument({
         id: project.id,
         name: project.name,
         projectNumber: project.projectNumber,
         siteName: project.siteName,
-        siteAddress: project.siteAddress,
-        contactPerson: project.contactPerson,
-        contactPhone: project.contactPhone,
-        contactEmail: project.contactEmail,
+        siteAddress: siteAddress,
+        // Include contactPerson with fallbacks for customer name
+        contactPerson: customerName,
+        customerName: customerName,  // Also provide as customerName for flexibility
+        contactPhone: customerPhone,
+        contactEmail: customerEmail,
         buildingType: project.buildingType,
         expectedValue: project.expectedValue,
         paymentTerms: project.paymentTerms,
