@@ -2239,17 +2239,32 @@ export default function EnterpriseLanding({ onLogin }) {
                 </div>
 
                 <div className="text-center mb-6">
-                  <div className="flex items-baseline justify-center gap-1">
-                    <span className="text-lg">₹</span>
-                    <span className="text-4xl lg:text-5xl font-bold">
-                      {calculatePrice(plan.price).toLocaleString()}
-                    </span>
-                  </div>
-                  <span className={`text-sm ${plan.popular ? 'text-indigo-200' : 'text-gray-500'}`}>/month</span>
-                  {isAnnual && (
-                    <p className={`text-xs mt-1 ${plan.popular ? 'text-indigo-200' : 'text-gray-500'}`}>
-                      Billed annually
-                    </p>
+                  {plan.isCustom ? (
+                    <div>
+                      <div className="text-4xl lg:text-5xl font-bold mb-2">
+                        Custom
+                      </div>
+                      <span className={`text-sm ${plan.popular ? 'text-indigo-200' : 'text-gray-500'}`}>
+                        Contact Sales
+                      </span>
+                    </div>
+                  ) : (
+                    <div>
+                      <div className="flex items-baseline justify-center gap-1">
+                        <span className="text-lg">{getCurrencySymbol()}</span>
+                        <span className="text-4xl lg:text-5xl font-bold">
+                          {calculatePrice(plan)?.toLocaleString()}
+                        </span>
+                      </div>
+                      <span className={`text-sm ${plan.popular ? 'text-indigo-200' : 'text-gray-500'}`}>
+                        {getPriceLabel(plan)}
+                      </span>
+                      {isAnnual && (
+                        <p className={`text-xs mt-1 ${plan.popular ? 'text-indigo-200' : 'text-gray-500'}`}>
+                          Billed annually (15% off)
+                        </p>
+                      )}
+                    </div>
                   )}
                 </div>
 
