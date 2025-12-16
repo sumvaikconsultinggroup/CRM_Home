@@ -52,8 +52,11 @@ const glassStyles = {
   tab: 'backdrop-blur-sm data-[state=active]:bg-white/90 data-[state=active]:shadow-lg',
 }
 
-// Tab groups for better organization
-const TAB_GROUPS = {
+// Tab groups for better organization - MODE SPECIFIC
+// Fabricator/Dealer: Full customer-facing workflow with site surveys
+// Manufacturer: B2B production-focused, no site surveys, dealer network management
+
+const TAB_GROUPS_FABRICATOR = {
   main: [
     { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
     { id: 'projects', label: 'Projects', icon: FolderKanban },
@@ -75,6 +78,33 @@ const TAB_GROUPS = {
     { id: 'settings', label: 'Settings', icon: Settings },
   ]
 }
+
+const TAB_GROUPS_MANUFACTURER = {
+  main: [
+    { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
+    { id: 'dealers', label: 'Dealer Network', icon: Users, highlight: true },
+    { id: 'price-lists', label: 'Price Lists', icon: FileText },
+    { id: 'orders', label: 'Dealer Orders', icon: ShoppingCart },
+  ],
+  operations: [
+    { id: 'invoices', label: 'Invoices', icon: Receipt },
+    { id: 'post-invoicing', label: 'Post-Invoicing', icon: ScrollText },
+    { id: 'products', label: 'Product Catalog', icon: Package },
+    { id: 'production', label: 'Production', icon: Factory, highlight: true },
+    { id: 'quality', label: 'Quality Control', icon: CheckCircle2 },
+    { id: 'dispatch', label: 'Dispatch', icon: Truck },
+  ],
+  support: [
+    { id: 'inventory', label: 'Inventory', icon: Box },
+    { id: 'warranty', label: 'Warranty', icon: Shield },
+    { id: 'finance-sync', label: 'Finance Sync', icon: RefreshCw },
+    { id: 'reports', label: 'Reports', icon: BarChart3 },
+    { id: 'settings', label: 'Settings', icon: Settings },
+  ]
+}
+
+// Legacy constant for backward compatibility
+const TAB_GROUPS = TAB_GROUPS_FABRICATOR
 
 export function DoorsWindowsModule({ client, user }) {
   const [activeTab, setActiveTab] = useState('dashboard')
