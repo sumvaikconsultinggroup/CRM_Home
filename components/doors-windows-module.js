@@ -470,6 +470,97 @@ export function DoorsWindowsModule({ client, user }) {
     }
   }
 
+  // Fetch Post-Invoicing Data
+  const fetchPostInvoicingData = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/post-invoicing?type=all`, { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setPostInvoicingData(data)
+        setPostInvoicingStats({
+          challans: data.challanStats,
+          installations: data.installationStats,
+          payments: data.paymentStats,
+          warranties: data.warrantyStats,
+          amcs: data.amcStats
+        })
+      }
+    } catch (error) {
+      console.error('Failed to fetch post-invoicing data:', error)
+    }
+  }
+
+  // Fetch Finance Sync Status
+  const fetchFinanceSyncStatus = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/sync-finance`, { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setFinanceSyncStatus(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch finance sync status:', error)
+    }
+  }
+
+  // Sync All to Finance
+  const syncAllToFinance = async () => {
+    try {
+      setSyncingToFinance(true)
+      const res = await fetch(`${API_BASE}/sync-finance`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ action: 'bulk-sync' })
+      })
+      if (res.ok) {
+        const data = await res.json()
+        toast.success(`Synced ${data.synced?.quotes || 0} quotes, ${data.synced?.invoices || 0} invoices, ${data.synced?.payments || 0} payments`)
+        fetchFinanceSyncStatus()
+      } else {
+        toast.error('Sync failed')
+      }
+    } catch (error) {
+      toast.error('Failed to sync to Finance')
+    } finally {
+      setSyncingToFinance(false)
+    }
+  }
+
+  // Update Challan Status
+  const updateChallanStatus = async (challanId, status) => {
+    try {
+      const res = await fetch(`${API_BASE}/post-invoicing`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ id: challanId, type: 'challan', status })
+      })
+      if (res.ok) {
+        toast.success(`Challan ${status}`)
+        fetchPostInvoicingData()
+      }
+    } catch (error) {
+      toast.error('Failed to update challan')
+    }
+  }
+
+  // Generate Receipt
+  const generateReceipt = async (paymentId) => {
+    try {
+      const res = await fetch(`${API_BASE}/post-invoicing`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ action: 'generate-receipt', paymentId })
+      })
+      if (res.ok) {
+        const data = await res.json()
+        toast.success(`Receipt ${data.receipt?.receiptNumber} generated`)
+        fetchPostInvoicingData()
+      }
+    } catch (error) {
+      toast.error('Failed to generate receipt')
+    }
+  }
+
   // Sync from CRM
   const handleSyncFromCRM = async (syncType) => {
     try {
