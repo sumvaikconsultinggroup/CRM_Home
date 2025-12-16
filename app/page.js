@@ -903,113 +903,185 @@ function ClientDashboard({ user, client, onLogout }) {
     )
   }
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 flex">
-      {/* Sidebar */}
-      <motion.aside 
-        className={`${sidebarOpen ? 'w-72' : 'w-20'} bg-white border-r transition-all duration-300 flex flex-col shadow-xl`}
-        initial={{ x: -100 }}
-        animate={{ x: 0 }}
-      >
-        <div className="p-6 flex items-center gap-3 border-b">
-          <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-indigo-600">
-            <Building2 className="h-6 w-6 text-white" />
-          </div>
-          {sidebarOpen && <span className="text-xl font-bold">BuildCRM</span>}
+  // Responsive state for client dashboard
+  const [mobileMenuOpenClient, setMobileMenuOpenClient] = useState(false)
+  const [windowWidthClient, setWindowWidthClient] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
+
+  useEffect(() => {
+    const handleResize = () => setWindowWidthClient(window.innerWidth)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  const isMobileClient = windowWidthClient < 768
+  const isTabletClient = windowWidthClient >= 768 && windowWidthClient < 1024
+
+  // Auto-collapse sidebar on tablet
+  useEffect(() => {
+    if (isTabletClient) setSidebarOpen(false)
+    else if (!isMobileClient) setSidebarOpen(true)
+  }, [isMobileClient, isTabletClient])
+
+  const handleMenuItemClick = (item) => {
+    if (item.isModule && item.id === 'flooring-module') {
+      setActiveModule('flooring')
+    } else if (item.isModule && item.id === 'furniture-module') {
+      setActiveModule('furniture')
+    } else if (item.isModule && item.id === 'paints-module') {
+      setActiveModule('paints')
+    } else if (item.isModule && item.id === 'doors-windows-module') {
+      setActiveModule('doors-windows')
+    } else if (item.isChat) {
+      setActiveTab('teams')
+    } else {
+      setActiveTab(item.id)
+    }
+    if (isMobileClient) setMobileMenuOpenClient(false)
+  }
+
+  const ClientSidebarContent = ({ collapsed = false }) => (
+    <>
+      <div className="p-4 lg:p-6 flex items-center gap-3 border-b">
+        <div className="p-2 rounded-xl bg-gradient-to-br from-primary to-indigo-600">
+          <Building2 className="h-5 w-5 lg:h-6 lg:w-6 text-white" />
         </div>
-        <nav className="flex-1 p-4 space-y-1">
-          {menuItems.map((item) => (
-            <motion.button
-              key={item.id}
-              onClick={() => {
-                if (item.isModule && item.id === 'flooring-module') {
-                  setActiveModule('flooring')
-                } else if (item.isModule && item.id === 'furniture-module') {
-                  setActiveModule('furniture')
-                } else if (item.isModule && item.id === 'paints-module') {
-                  setActiveModule('paints')
-                } else if (item.isModule && item.id === 'doors-windows-module') {
-                  setActiveModule('doors-windows')
-                } else if (item.isChat) {
-                  setActiveTab('teams') // Redirect chat to Teams Hub
-                } else {
-                  setActiveTab(item.id)
-                }
-              }}
-              className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                activeTab === item.id 
-                  ? 'bg-gradient-to-r from-primary to-indigo-600 text-white shadow-lg shadow-primary/25' 
-                  : item.isModule 
-                    ? 'hover:bg-amber-100 text-amber-700 bg-amber-50 border border-amber-200'
-                    : item.isChat
-                      ? 'hover:bg-emerald-100 text-emerald-700 bg-emerald-50 border border-emerald-200'
-                      : 'hover:bg-slate-100 text-slate-600'
-              }`}
-              whileHover={{ x: 5 }}
-              whileTap={{ scale: 0.98 }}
-            >
-              <item.icon className="h-5 w-5" />
-              {sidebarOpen && (
-                <span className="flex-1 text-left">{item.label}</span>
-              )}
-              {sidebarOpen && item.isModule && (
-                <ExternalLink className="h-4 w-4 opacity-60" />
-              )}
-            </motion.button>
-          ))}
-        </nav>
-        <div className="p-4 border-t">
+        {!collapsed && <span className="text-lg lg:text-xl font-bold truncate">{client?.businessName || 'BuildCRM'}</span>}
+      </div>
+      <nav className="flex-1 p-2 lg:p-4 space-y-1 overflow-y-auto">
+        {menuItems.map((item) => (
           <motion.button
-            onClick={onLogout}
-            className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-50 text-red-600 transition-colors"
-            whileHover={{ x: 5 }}
+            key={item.id}
+            onClick={() => handleMenuItemClick(item)}
+            className={`w-full flex items-center gap-2 lg:gap-3 px-3 lg:px-4 py-2.5 lg:py-3 rounded-xl transition-all ${
+              activeTab === item.id 
+                ? 'bg-gradient-to-r from-primary to-indigo-600 text-white shadow-lg shadow-primary/25' 
+                : item.isModule 
+                  ? 'hover:bg-amber-100 text-amber-700 bg-amber-50 border border-amber-200'
+                  : item.isChat
+                    ? 'hover:bg-emerald-100 text-emerald-700 bg-emerald-50 border border-emerald-200'
+                    : 'hover:bg-slate-100 text-slate-600'
+            }`}
+            whileHover={{ x: collapsed ? 0 : 5 }}
+            whileTap={{ scale: 0.98 }}
           >
-            <LogOut className="h-5 w-5" />
-            {sidebarOpen && <span>Logout</span>}
+            <item.icon className="h-5 w-5 flex-shrink-0" />
+            {!collapsed && (
+              <span className="flex-1 text-left text-sm lg:text-base truncate">{item.label}</span>
+            )}
+            {!collapsed && item.isModule && (
+              <ExternalLink className="h-4 w-4 opacity-60 flex-shrink-0" />
+            )}
           </motion.button>
+        ))}
+      </nav>
+      <div className="p-2 lg:p-4 border-t">
+        <motion.button
+          onClick={onLogout}
+          className="w-full flex items-center gap-3 px-3 lg:px-4 py-2.5 lg:py-3 rounded-xl hover:bg-red-50 text-red-600 transition-colors"
+          whileHover={{ x: collapsed ? 0 : 5 }}
+        >
+          <LogOut className="h-5 w-5 flex-shrink-0" />
+          {!collapsed && <span className="text-sm lg:text-base">Logout</span>}
+        </motion.button>
+      </div>
+    </>
+  )
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-50 flex flex-col md:flex-row">
+      {/* Mobile Header */}
+      {isMobileClient && (
+        <div className="fixed top-0 left-0 right-0 z-50 bg-white border-b px-4 py-3 flex items-center justify-between shadow-sm">
+          <div className="flex items-center gap-3">
+            <Button variant="ghost" size="icon" onClick={() => setMobileMenuOpenClient(true)} className="h-9 w-9">
+              <Menu className="h-5 w-5" />
+            </Button>
+            <div className="p-1.5 rounded-lg bg-gradient-to-br from-primary to-indigo-600">
+              <Building2 className="h-4 w-4 text-white" />
+            </div>
+            <span className="font-bold text-sm truncate max-w-[120px]">{client?.businessName || 'BuildCRM'}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="icon" onClick={fetchData} className="h-8 w-8">
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+            <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white text-xs font-medium">
+              {user.name?.charAt(0)}
+            </div>
+          </div>
         </div>
-      </motion.aside>
+      )}
+
+      {/* Mobile Drawer */}
+      <Sheet open={mobileMenuOpenClient} onOpenChange={setMobileMenuOpenClient}>
+        <SheetContent side="left" className="p-0 w-[280px] bg-white">
+          <ClientSidebarContent collapsed={false} />
+        </SheetContent>
+      </Sheet>
+
+      {/* Desktop/Tablet Sidebar */}
+      {!isMobileClient && (
+        <motion.aside 
+          className={`${sidebarOpen ? 'w-64 lg:w-72' : 'w-16 lg:w-20'} bg-white border-r transition-all duration-300 flex flex-col shadow-xl relative`}
+          initial={{ x: -100 }}
+          animate={{ x: 0 }}
+        >
+          <ClientSidebarContent collapsed={!sidebarOpen} />
+          <button
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+            className="absolute -right-3 top-20 w-6 h-6 rounded-full bg-white border text-slate-600 flex items-center justify-center shadow-lg hover:bg-slate-50"
+          >
+            {sidebarOpen ? <ChevronLeft className="h-3 w-3" /> : <ChevronRight className="h-3 w-3" />}
+          </button>
+        </motion.aside>
+      )}
 
       {/* Main Content */}
-      <main className="flex-1 overflow-auto">
+      <main className={`flex-1 overflow-auto ${isMobileClient ? 'pt-14' : ''}`}>
         {/* Header */}
         <motion.header 
-          className="bg-white/80 backdrop-blur-xl border-b px-6 py-4 flex justify-between items-center sticky top-0 z-10"
+          className="bg-white/80 backdrop-blur-xl border-b px-3 lg:px-6 py-3 lg:py-4 flex justify-between items-center sticky top-0 z-10"
           initial={{ y: -50, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
         >
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)}>
-              <Menu className="h-5 w-5" />
-            </Button>
+          <div className="flex items-center gap-2 lg:gap-4 min-w-0">
+            {!isMobileClient && (
+              <Button variant="ghost" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)} className="flex-shrink-0">
+                <Menu className="h-5 w-5" />
+              </Button>
+            )}
             {/* Product Switcher */}
-            <ProductSwitcher 
-              token={authToken}
-              currentProduct={activeProduct}
-              onProductChange={(productId) => {
-                setActiveProduct(productId)
-                setActiveModule(null)
-                setActiveTab('dashboard')
-              }}
-            />
-            <div>
-              <h1 className="text-xl font-bold">{client?.businessName || 'Dashboard'}</h1>
-              <p className="text-sm text-muted-foreground">
+            <div className="hidden sm:block">
+              <ProductSwitcher 
+                token={authToken}
+                currentProduct={activeProduct}
+                onProductChange={(productId) => {
+                  setActiveProduct(productId)
+                  setActiveModule(null)
+                  setActiveTab('dashboard')
+                }}
+              />
+            </div>
+            <div className="min-w-0">
+              <h1 className="text-base lg:text-xl font-bold truncate">{client?.businessName || 'Dashboard'}</h1>
+              <p className="text-xs lg:text-sm text-muted-foreground truncate hidden sm:block">
                 {activeProduct === 'build-inventory' ? 'Build Inventory' : menuItems.find(m => m.id === activeTab)?.label}
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" onClick={fetchData}>
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-            {/* Client ID Badge */}
+          <div className="flex items-center gap-2 lg:gap-4 flex-shrink-0">
+            {!isMobileClient && (
+              <Button variant="outline" size="icon" onClick={fetchData} className="h-8 w-8 lg:h-10 lg:w-10">
+                <RefreshCw className="h-4 w-4" />
+              </Button>
+            )}
+            {/* Client ID Badge - hidden on mobile */}
             {(client?.clientId || client?.clientCode) && (
-              <Badge variant="secondary" className="px-3 py-1 bg-slate-100 text-slate-700 font-mono">
+              <Badge variant="secondary" className="px-2 py-1 bg-slate-100 text-slate-700 font-mono text-xs hidden lg:flex">
                 {client.clientId || client.clientCode}
               </Badge>
             )}
-            <Badge variant="outline" className="px-3 py-1">
+            <Badge variant="outline" className="px-2 py-1 text-xs">
               {client?.planId?.toUpperCase() || 'BASIC'}
             </Badge>
             {/* Teams Hub Quick Access */}
@@ -1017,17 +1089,19 @@ function ClientDashboard({ user, client, onLogout }) {
               variant="outline" 
               size="icon" 
               onClick={() => setActiveTab('teams')} 
-              className="relative"
+              className="relative h-8 w-8 lg:h-10 lg:w-10"
               title="Teams Hub"
             >
               <MessageSquare className="h-4 w-4" />
             </Button>
-            <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white font-medium">
-                {user.name?.charAt(0)}
+            {!isMobileClient && (
+              <div className="flex items-center gap-2">
+                <div className="h-8 w-8 rounded-full bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white font-medium text-sm">
+                  {user.name?.charAt(0)}
+                </div>
+                <span className="text-sm font-medium hidden lg:inline">{user.name}</span>
               </div>
-              <span className="text-sm font-medium">{user.name}</span>
-            </div>
+            )}
           </div>
         </motion.header>
 
