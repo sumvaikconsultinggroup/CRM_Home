@@ -23,44 +23,55 @@ const slideUp = {
   animate: { opacity: 1, y: 0 }
 }
 
-// Shared Layout Component
+// Shared Layout Component - Fully Responsive
 const AuthLayout = ({ children, title, subtitle, image = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=1200" }) => (
-  <div className="min-h-screen flex w-full bg-slate-50">
+  <div className="min-h-screen flex flex-col lg:flex-row w-full bg-slate-50">
+    {/* Mobile Header - Gradient Banner */}
+    <div className="lg:hidden relative bg-gradient-to-br from-indigo-600 to-purple-700 text-white p-6 pb-12">
+      <div className="flex justify-center mb-4">
+        <div className="p-3 rounded-xl bg-white/20 backdrop-blur-sm">
+          <Building2 className="h-8 w-8 text-white" />
+        </div>
+      </div>
+      <h1 className="text-2xl font-bold text-center">BuildCRM</h1>
+      <p className="text-sm text-center text-indigo-200 mt-1">Enterprise Grade Construction CRM</p>
+    </div>
+
     {/* Left Side - Form */}
-    <div className="flex-1 flex items-center justify-center p-8 lg:p-12">
-      <div className="w-full max-w-md space-y-8">
+    <div className="flex-1 flex items-center justify-center p-4 sm:p-6 lg:p-12 -mt-8 lg:mt-0">
+      <div className="w-full max-w-md space-y-6 lg:space-y-8 bg-white lg:bg-transparent rounded-2xl lg:rounded-none shadow-xl lg:shadow-none p-6 lg:p-0">
         <div className="text-center lg:text-left">
-          <div className="flex justify-center lg:justify-start mb-6">
+          <div className="hidden lg:flex justify-start mb-6">
             <div className="p-2.5 rounded-xl bg-gradient-to-br from-primary to-indigo-600 shadow-lg shadow-primary/25">
               <Building2 className="h-6 w-6 text-white" />
             </div>
           </div>
-          <h2 className="text-3xl font-bold tracking-tight text-slate-900">{title}</h2>
-          <p className="mt-2 text-slate-600">{subtitle}</p>
+          <h2 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900">{title}</h2>
+          <p className="mt-2 text-sm sm:text-base text-slate-600">{subtitle}</p>
         </div>
         
         {children}
 
-        <div className="text-center text-xs text-slate-400 mt-8">
+        <div className="text-center text-xs text-slate-400 mt-6 lg:mt-8">
           &copy; 2025 BuildCRM. All rights reserved.
         </div>
       </div>
     </div>
 
-    {/* Right Side - Image/Branding (Hidden on mobile) */}
+    {/* Right Side - Image/Branding (Hidden on mobile/tablet) */}
     <div className="hidden lg:flex flex-1 relative bg-slate-900 text-white overflow-hidden">
       <div className="absolute inset-0 z-0">
         <img src={image} alt="Background" className="w-full h-full object-cover opacity-40" />
         <div className="absolute inset-0 bg-gradient-to-br from-indigo-900/90 to-slate-900/90" />
       </div>
-      <div className="relative z-10 flex flex-col justify-between p-12 w-full">
+      <div className="relative z-10 flex flex-col justify-between p-8 xl:p-12 w-full">
         <div className="flex justify-end">
           <div className="glass px-4 py-2 rounded-full text-sm font-medium bg-white/10 backdrop-blur-md border border-white/10">
             Enterprise Grade CRM
           </div>
         </div>
         <div className="max-w-md">
-          <blockquote className="text-2xl font-medium leading-relaxed mb-6">
+          <blockquote className="text-xl xl:text-2xl font-medium leading-relaxed mb-6">
             "BuildCRM transformed how we manage our construction projects. The efficiency gains were immediate."
           </blockquote>
           <div className="flex items-center gap-4">
