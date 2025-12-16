@@ -732,27 +732,27 @@ export function EnterpriseLeads({
   )
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-4">
+    <div className="space-y-4 sm:space-y-6">
+      {/* Header - Responsive */}
+      <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-3 sm:gap-4">
         <div>
-          <h2 className="text-2xl font-bold flex items-center gap-2">
-            <Target className="h-6 w-6 text-primary" />
-            Sales Pipeline
-            <Badge variant="outline" className="ml-2">
+          <h2 className="text-lg sm:text-xl lg:text-2xl font-bold flex items-center gap-2 flex-wrap">
+            <Target className="h-5 w-5 sm:h-6 sm:w-6 text-primary" />
+            <span>Sales Pipeline</span>
+            <Badge variant="outline" className="text-xs sm:text-sm">
               {planId.charAt(0).toUpperCase() + planId.slice(1)}
             </Badge>
           </h2>
-          <p className="text-muted-foreground">Manage and track your leads efficiently</p>
+          <p className="text-sm text-muted-foreground hidden sm:block">Manage and track your leads efficiently</p>
         </div>
-        <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={onRefresh}>
-            <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+        <div className="flex items-center gap-2 w-full sm:w-auto flex-wrap">
+          <Button variant="outline" onClick={onRefresh} size="sm" className="h-8 sm:h-9">
+            <RefreshCw className="h-4 w-4 sm:mr-2" /> <span className="hidden sm:inline">Refresh</span>
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline">
-                <Download className="h-4 w-4 mr-2" /> Export
+              <Button variant="outline" size="sm" className="h-8 sm:h-9">
+                <Download className="h-4 w-4 sm:mr-2" /> <span className="hidden sm:inline">Export</span>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent>
@@ -779,14 +779,14 @@ export function EnterpriseLeads({
               )}
             </DropdownMenuContent>
           </DropdownMenu>
-          <Button onClick={onAddLead}>
-            <Plus className="h-4 w-4 mr-2" /> Add Lead
+          <Button onClick={onAddLead} size="sm" className="h-8 sm:h-9 flex-1 sm:flex-none">
+            <Plus className="h-4 w-4 sm:mr-2" /> <span className="sm:inline">Add Lead</span>
           </Button>
         </div>
       </div>
 
-      {/* Stats Row */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+      {/* Stats Row - Responsive */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
         <Card className="p-4">
           <div className="flex items-center gap-3">
             <div className="p-2 rounded-lg bg-blue-100">
