@@ -63,12 +63,14 @@ const TAB_GROUPS = {
   operations: [
     { id: 'orders', label: 'Orders', icon: ShoppingCart },
     { id: 'invoices', label: 'Invoices', icon: Receipt },
+    { id: 'post-invoicing', label: 'Post-Invoicing', icon: ScrollText, highlight: true },
     { id: 'products', label: 'Products', icon: Package },
     { id: 'production', label: 'Production', icon: Factory },
     { id: 'installation', label: 'Installation', icon: Wrench },
   ],
   support: [
     { id: 'warranty', label: 'Warranty', icon: Shield },
+    { id: 'finance-sync', label: 'Finance Sync', icon: RefreshCw },
     { id: 'reports', label: 'Reports', icon: BarChart3 },
     { id: 'settings', label: 'Settings', icon: Settings },
   ]
