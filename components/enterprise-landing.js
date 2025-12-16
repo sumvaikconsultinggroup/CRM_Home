@@ -719,6 +719,28 @@ export default function EnterpriseLanding({ onLogin }) {
     return () => clearInterval(interval)
   }, [])
 
+  // Detect user location for currency
+  useEffect(() => {
+    const detectLocation = async () => {
+      try {
+        const response = await fetch('https://ipapi.co/json/')
+        const data = await response.json()
+        setDetectedCountry(data.country_code)
+        
+        // Set currency based on country
+        if (data.country_code === 'IN') {
+          setCurrency('INR')
+        } else {
+          setCurrency('USD')
+        }
+      } catch (error) {
+        console.log('Could not detect location, defaulting to INR')
+        setCurrency('INR')
+      }
+    }
+    detectLocation()
+  }, [])
+
   const calculatePrice = (price) => isAnnual ? Math.round(price * 0.85) : price
 
   const scrollToSection = (id) => {
