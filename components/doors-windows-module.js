@@ -24,7 +24,9 @@ import {
   AlertTriangle, Calendar, MapPin, Phone, Mail, User, Building2, Ruler,
   Layers, Grid3X3, Box, Palette, Cog, Hammer, Glasses, DoorOpen, Maximize2,
   MoreHorizontal, Send, FileCheck, Loader2, TrendingUp, TrendingDown,
-  Brain, MessageSquare, Sparkles, Zap, Save, Printer, FolderKanban
+  Brain, MessageSquare, Sparkles, Zap, Save, Printer, FolderKanban,
+  Receipt, CreditCard, IndianRupee, FileSignature, ClipboardCheck, Banknote,
+  ScrollText, Award, QrCode, Camera, Signature, CircleDollarSign, Wallet
 } from 'lucide-react'
 import { toast } from 'sonner'
 
