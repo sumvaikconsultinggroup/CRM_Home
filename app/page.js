@@ -1249,49 +1249,19 @@ function ClientDashboard({ user, client, onLogout }) {
               </motion.div>
             )}
 
-            {/* Users Tab - User Management */}
+            {/* Users Tab - Enterprise User Management */}
             {activeTab === 'users' && (
               <motion.div
                 key="users"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="space-y-6"
               >
-                <div className="flex justify-between items-center">
-                  <div>
-                    <h2 className="text-2xl font-bold">User Management</h2>
-                    <p className="text-muted-foreground">Manage organization users and their roles</p>
-                  </div>
-                  <Button onClick={() => { setDialogType('user'); setEditingItem(null); setShowDialog(true); }}>
-                    <UserPlus className="h-4 w-4 mr-2" /> Add User
-                  </Button>
-                </div>
-
-                <GlassCard className="p-6">
-                  <div className="space-y-3">
-                    {users.map((u, i) => (
-                      <motion.div
-                        key={u.id}
-                        className="flex items-center justify-between p-4 rounded-lg bg-slate-50 hover:bg-slate-100 transition-colors"
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: i * 0.05 }}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="h-12 w-12 rounded-full bg-gradient-to-br from-primary to-indigo-600 flex items-center justify-center text-white font-bold">
-                            {u.name?.charAt(0)?.toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="font-medium">{u.name}</p>
-                            <p className="text-sm text-muted-foreground">{u.email}</p>
-                          </div>
-                        </div>
-                        <Badge variant="outline">{u.role?.replace('_', ' ')}</Badge>
-                      </motion.div>
-                    ))}
-                  </div>
-                </GlassCard>
+                <EnterpriseUserManagement 
+                  authToken={authToken} 
+                  currentUser={user}
+                  onRefresh={fetchData}
+                />
               </motion.div>
             )}
 
