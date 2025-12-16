@@ -48,7 +48,10 @@ export async function PUT(request, { params }) {
     const updateData = { updatedAt: new Date() }
     if (body.name) updateData.name = body.name
     if (body.role) updateData.role = body.role
-    if (body.permissions) updateData.permissions = body.permissions
+    if (body.status) updateData.status = body.status
+    if (body.phone !== undefined) updateData.phone = body.phone
+    if (body.department !== undefined) updateData.department = body.department
+    if (body.permissions !== undefined) updateData.permissions = body.permissions
     if (body.password) updateData.password = hashPassword(body.password)
     if (body.avatar !== undefined) updateData.avatar = body.avatar
 
