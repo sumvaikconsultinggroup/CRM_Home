@@ -612,7 +612,188 @@ export function EnterpriseProjects({ authToken, onProjectSelect }) {
 
   const formatCurrency = (amount) => `₹${(amount || 0).toLocaleString()}`
   const formatDate = (date) => date ? new Date(date).toLocaleDateString() : '-'
+  const formatDateForInput = (date) => date ? new Date(date).toISOString().split('T')[0] : ''
   const getRoleInfo = (role) => TEAM_ROLES.find(r => r.id === role) || TEAM_ROLES[3]
+
+  // Calculate dynamic progress from tasks and milestones
+  const calculateDynamicProgress = (project, tasks) => {
+    const taskWeight = 0.6 // 60% weight to tasks
+    const milestoneWeight = 0.4 // 40% weight to milestones
+    
+    // Task progress
+    const totalTasks = tasks?.length || 0
+    const completedTasks = tasks?.filter(t => t.status === 'completed').length || 0
+    const taskProgress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0
+    
+    // Milestone progress
+    const totalMilestones = project?.milestones?.length || 0
+    const completedMilestones = project?.milestones?.filter(m => m.status === 'completed').length || 0
+    const milestoneProgress = totalMilestones > 0 ? (completedMilestones / totalMilestones) * 100 : 0
+    
+    // Combined progress (weighted average)
+    let combinedProgress = 0
+    if (totalTasks > 0 && totalMilestones > 0) {
+      combinedProgress = (taskProgress * taskWeight) + (milestoneProgress * milestoneWeight)
+    } else if (totalTasks > 0) {
+      combinedProgress = taskProgress
+    } else if (totalMilestones > 0) {
+      combinedProgress = milestoneProgress
+    }
+    
+    return {
+      taskProgress: Math.round(taskProgress),
+      milestoneProgress: Math.round(milestoneProgress),
+      combinedProgress: Math.round(combinedProgress),
+      totalTasks,
+      completedTasks,
+      totalMilestones,
+      completedMilestones
+    }
+  }
+
+  // Calculate timeline performance
+  const calculateTimelinePerformance = (project) => {
+    const now = new Date()
+    const plannedStart = project?.startDate ? new Date(project.startDate) : null
+    const plannedEnd = project?.endDate ? new Date(project.endDate) : null
+    const actualStart = project?.actualStartDate ? new Date(project.actualStartDate) : null
+    const actualEnd = project?.actualEndDate ? new Date(project.actualEndDate) : null
+    
+    // Calculate planned duration
+    const plannedDuration = plannedStart && plannedEnd 
+      ? Math.ceil((plannedEnd - plannedStart) / (1000 * 60 * 60 * 24)) 
+      : 0
+    
+    // Calculate actual duration (if completed) or elapsed time
+    let actualDuration = 0
+    let isCompleted = project?.status === 'completed' || project?.status === 'closed'
+    
+    if (actualStart && actualEnd) {
+      actualDuration = Math.ceil((actualEnd - actualStart) / (1000 * 60 * 60 * 24))
+    } else if (actualStart) {
+      actualDuration = Math.ceil((now - actualStart) / (1000 * 60 * 60 * 24))
+    }
+    
+    // Calculate start delay (positive = late start, negative = early start)
+    const startDelay = actualStart && plannedStart 
+      ? Math.ceil((actualStart - plannedStart) / (1000 * 60 * 60 * 24)) 
+      : null
+    
+    // Calculate end variance (positive = late finish, negative = early finish)
+    let endVariance = null
+    if (isCompleted && actualEnd && plannedEnd) {
+      endVariance = Math.ceil((actualEnd - plannedEnd) / (1000 * 60 * 60 * 24))
+    } else if (!isCompleted && plannedEnd) {
+      // Days remaining or overdue
+      endVariance = Math.ceil((now - plannedEnd) / (1000 * 60 * 60 * 24))
+    }
+    
+    // Calculate schedule performance score (100 = on time, >100 = ahead, <100 = behind)
+    let scheduleScore = 100
+    if (plannedDuration > 0 && actualDuration > 0) {
+      if (isCompleted) {
+        scheduleScore = Math.round((plannedDuration / actualDuration) * 100)
+      } else {
+        // For ongoing projects, compare elapsed vs expected progress
+        const expectedElapsed = plannedStart ? Math.ceil((now - plannedStart) / (1000 * 60 * 60 * 24)) : 0
+        const progress = project?.progress || 0
+        const expectedProgress = plannedDuration > 0 ? Math.min(100, (expectedElapsed / plannedDuration) * 100) : 0
+        scheduleScore = expectedProgress > 0 ? Math.round((progress / expectedProgress) * 100) : 100
+      }
+    }
+    
+    return {
+      plannedDuration,
+      actualDuration,
+      startDelay,
+      endVariance,
+      scheduleScore,
+      isCompleted,
+      daysRemaining: plannedEnd && !isCompleted ? Math.ceil((plannedEnd - now) / (1000 * 60 * 60 * 24)) : null,
+      isOverdue: plannedEnd && !isCompleted && now > plannedEnd
+    }
+  }
+
+  // Calculate team performance based on task completion
+  const calculateTeamPerformance = (team, tasks) => {
+    if (!team || team.length === 0) return []
+    
+    return team.map(member => {
+      const memberTasks = tasks?.filter(t => t.assignedTo === member.userId) || []
+      const completedTasks = memberTasks.filter(t => t.status === 'completed').length
+      const overdueTasks = memberTasks.filter(t => 
+        t.status !== 'completed' && t.dueDate && new Date(t.dueDate) < new Date()
+      ).length
+      
+      const completionRate = memberTasks.length > 0 
+        ? Math.round((completedTasks / memberTasks.length) * 100) 
+        : 0
+      
+      return {
+        ...member,
+        totalTasks: memberTasks.length,
+        completedTasks,
+        overdueTasks,
+        completionRate
+      }
+    })
+  }
+
+  // Save budget
+  const handleSaveBudget = async () => {
+    if (!projectDetail?.project?.id) return
+    
+    setSavingField('budget')
+    try {
+      await handleUpdateProject(projectDetail.project.id, { 
+        budget: parseFloat(editBudgetValue) || 0 
+      })
+      setEditingBudget(false)
+      toast.success('Budget updated successfully')
+    } catch (error) {
+      toast.error('Failed to update budget')
+    } finally {
+      setSavingField(null)
+    }
+  }
+
+  // Save timeline
+  const handleSaveTimeline = async () => {
+    if (!projectDetail?.project?.id) return
+    
+    setSavingField('timeline')
+    try {
+      const updates = {}
+      if (editTimelineValues.startDate) updates.startDate = editTimelineValues.startDate
+      if (editTimelineValues.endDate) updates.endDate = editTimelineValues.endDate
+      if (editTimelineValues.actualStartDate) updates.actualStartDate = editTimelineValues.actualStartDate
+      if (editTimelineValues.actualEndDate) updates.actualEndDate = editTimelineValues.actualEndDate
+      
+      await handleUpdateProject(projectDetail.project.id, updates)
+      setEditingTimeline(false)
+      toast.success('Timeline updated successfully')
+    } catch (error) {
+      toast.error('Failed to update timeline')
+    } finally {
+      setSavingField(null)
+    }
+  }
+
+  // Initialize edit values when opening edit mode
+  const startEditingBudget = () => {
+    setEditBudgetValue(projectDetail?.project?.budget?.toString() || '0')
+    setEditingBudget(true)
+  }
+
+  const startEditingTimeline = () => {
+    setEditTimelineValues({
+      startDate: formatDateForInput(projectDetail?.project?.startDate),
+      endDate: formatDateForInput(projectDetail?.project?.endDate),
+      actualStartDate: formatDateForInput(projectDetail?.project?.actualStartDate),
+      actualEndDate: formatDateForInput(projectDetail?.project?.actualEndDate)
+    })
+    setEditingTimeline(true)
+  }
 
   return (
     <div className="space-y-6">
