@@ -165,29 +165,27 @@ const LineChart = ({ data = [], height = 150, color = '#6366f1', showArea = true
 const DonutChart = ({ data = [], size = 150 }) => {
   const total = data.reduce((sum, d) => sum + d.value, 0) || 1
   
-  // Pre-calculate all angles
-  const segments = useMemo(() => {
-    let runningAngle = 0
-    return data.map((item) => {
-      const angle = (item.value / total) * 360
-      const startAngle = runningAngle
-      runningAngle += angle
-      
-      const startRad = (startAngle - 90) * Math.PI / 180
-      const endRad = (runningAngle - 90) * Math.PI / 180
-      
-      const radius = 40
-      const x1 = 50 + radius * Math.cos(startRad)
-      const y1 = 50 + radius * Math.sin(startRad)
-      const x2 = 50 + radius * Math.cos(endRad)
-      const y2 = 50 + radius * Math.sin(endRad)
-      
-      const largeArc = angle > 180 ? 1 : 0
-      const pathD = `M 50 50 L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`
-      
-      return { ...item, pathD }
-    })
-  }, [data, total])
+  // Calculate segments with cumulative angles using reduce
+  const segments = data.reduce((acc, item, i) => {
+    const angle = (item.value / total) * 360
+    const startAngle = i === 0 ? 0 : acc[i - 1].endAngle
+    const endAngle = startAngle + angle
+    
+    const startRad = (startAngle - 90) * Math.PI / 180
+    const endRad = (endAngle - 90) * Math.PI / 180
+    
+    const radius = 40
+    const x1 = 50 + radius * Math.cos(startRad)
+    const y1 = 50 + radius * Math.sin(startRad)
+    const x2 = 50 + radius * Math.cos(endRad)
+    const y2 = 50 + radius * Math.sin(endRad)
+    
+    const largeArc = angle > 180 ? 1 : 0
+    const pathD = `M 50 50 L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`
+    
+    acc.push({ ...item, pathD, endAngle })
+    return acc
+  }, [])
 
   return (
     <svg width={size} height={size} viewBox="0 0 100 100">
