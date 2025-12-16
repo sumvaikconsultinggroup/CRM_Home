@@ -741,7 +741,20 @@ export default function EnterpriseLanding({ onLogin }) {
     detectLocation()
   }, [])
 
-  const calculatePrice = (price) => isAnnual ? Math.round(price * 0.85) : price
+  const calculatePrice = (plan) => {
+    const config = PRICING_CONFIG[currency]
+    const planPrice = config.plans[plan.priceKey]
+    if (!planPrice || planPrice.price === null) return null
+    return isAnnual ? Math.round(planPrice.price * 0.85) : planPrice.price
+  }
+
+  const getPriceLabel = (plan) => {
+    const config = PRICING_CONFIG[currency]
+    const planPrice = config.plans[plan.priceKey]
+    return planPrice?.label || 'Per User/Month'
+  }
+
+  const getCurrencySymbol = () => PRICING_CONFIG[currency].symbol
 
   const scrollToSection = (id) => {
     document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' })
