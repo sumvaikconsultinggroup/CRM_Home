@@ -141,7 +141,7 @@ const BarChart = ({ data = [], height = 200, showLabels = true, color = 'indigo'
   )
 }
 
-// Animated line chart
+// Animated line chart with enhanced effects
 const LineChart = ({ data = [], height = 150, color = '#6366f1', showArea = true }) => {
   const max = Math.max(...data.map(d => d.value), 1)
   const points = data.map((d, i) => ({
@@ -159,38 +159,70 @@ const LineChart = ({ data = [], height = 150, color = '#6366f1', showArea = true
 
   return (
     <svg width="100%" height={height} viewBox="0 0 100 100" preserveAspectRatio="none" className="overflow-visible">
+      <defs>
+        <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+          <stop offset="0%" stopColor={color} stopOpacity="0.8" />
+          <stop offset="50%" stopColor={color} stopOpacity="1" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.8" />
+        </linearGradient>
+        <linearGradient id="areaGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+          <stop offset="0%" stopColor={color} stopOpacity="0.3" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.02" />
+        </linearGradient>
+        <filter id="glow">
+          <feGaussianBlur stdDeviation="2" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
       {showArea && (
         <motion.path
           d={areaD}
-          fill={`${color}20`}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 1 }}
+          fill="url(#areaGradient)"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1.2, ease: "easeOut" }}
         />
       )}
       <motion.path
         d={pathD}
         fill="none"
-        stroke={color}
-        strokeWidth="2"
+        stroke="url(#lineGradient)"
+        strokeWidth="3"
         strokeLinecap="round"
         strokeLinejoin="round"
-        initial={{ pathLength: 0 }}
-        animate={{ pathLength: 1 }}
-        transition={{ duration: 1.5, ease: "easeOut" }}
+        filter="url(#glow)"
+        initial={{ pathLength: 0, opacity: 0 }}
+        animate={{ pathLength: 1, opacity: 1 }}
+        transition={{ duration: 2, ease: [0.34, 1.56, 0.64, 1] }}
       />
       {points.map((point, i) => (
-        <motion.circle
-          key={i}
-          cx={point.x}
-          cy={point.y}
-          r="3"
-          fill={color}
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ delay: 0.5 + i * 0.1 }}
-          className="cursor-pointer hover:r-5"
-        />
+        <motion.g key={i}>
+          <motion.circle
+            cx={point.x}
+            cy={point.y}
+            r="6"
+            fill={color}
+            opacity="0.2"
+            initial={{ scale: 0 }}
+            animate={{ scale: [0, 1.5, 1] }}
+            transition={{ delay: 0.8 + i * 0.15, duration: 0.5 }}
+          />
+          <motion.circle
+            cx={point.x}
+            cy={point.y}
+            r="4"
+            fill="white"
+            stroke={color}
+            strokeWidth="2"
+            initial={{ scale: 0 }}
+            animate={{ scale: 1 }}
+            transition={{ delay: 0.8 + i * 0.15, duration: 0.4, ease: [0.34, 1.56, 0.64, 1] }}
+            className="cursor-pointer"
+          />
+        </motion.g>
       ))}
     </svg>
   )
