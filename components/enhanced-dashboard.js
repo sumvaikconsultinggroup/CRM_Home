@@ -45,14 +45,28 @@ const AnimatedNumber = ({ value, prefix = '', suffix = '', decimals = 0 }) => {
   return <span>{prefix}{count.toLocaleString()}{suffix}</span>
 }
 
-// Animated progress ring
+// Animated progress ring with enhanced effects
 const ProgressRing = ({ progress = 0, size = 120, strokeWidth = 10, color = '#6366f1' }) => {
   const radius = (size - strokeWidth) / 2
   const circumference = radius * 2 * Math.PI
   const offset = circumference - (progress / 100) * circumference
 
   return (
-    <svg width={size} height={size} className="transform -rotate-90">
+    <svg width={size} height={size} className="transform -rotate-90 drop-shadow-lg">
+      <defs>
+        <linearGradient id={`ringGradient-${color.replace('#','')}`} x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" stopColor={color} stopOpacity="1" />
+          <stop offset="100%" stopColor={color} stopOpacity="0.6" />
+        </linearGradient>
+        <filter id="ringGlow">
+          <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+          <feMerge>
+            <feMergeNode in="coloredBlur"/>
+            <feMergeNode in="SourceGraphic"/>
+          </feMerge>
+        </filter>
+      </defs>
+      {/* Background track */}
       <circle
         cx={size / 2}
         cy={size / 2}
@@ -60,20 +74,35 @@ const ProgressRing = ({ progress = 0, size = 120, strokeWidth = 10, color = '#63
         fill="none"
         stroke="#e5e7eb"
         strokeWidth={strokeWidth}
+        opacity="0.5"
       />
+      {/* Animated progress */}
       <motion.circle
         cx={size / 2}
         cy={size / 2}
         r={radius}
         fill="none"
-        stroke={color}
+        stroke={`url(#ringGradient-${color.replace('#','')})`}
         strokeWidth={strokeWidth}
         strokeDasharray={circumference}
-        initial={{ strokeDashoffset: circumference }}
-        animate={{ strokeDashoffset: offset }}
-        transition={{ duration: 1.5, ease: "easeOut" }}
+        initial={{ strokeDashoffset: circumference, opacity: 0 }}
+        animate={{ strokeDashoffset: offset, opacity: 1 }}
+        transition={{ duration: 2, ease: [0.34, 1.56, 0.64, 1] }}
         strokeLinecap="round"
+        filter="url(#ringGlow)"
       />
+      {/* Animated end cap */}
+      {progress > 0 && (
+        <motion.circle
+          cx={size / 2 + radius * Math.cos((progress / 100) * 2 * Math.PI - Math.PI / 2)}
+          cy={size / 2 + radius * Math.sin((progress / 100) * 2 * Math.PI - Math.PI / 2)}
+          r={strokeWidth / 2 + 2}
+          fill={color}
+          initial={{ scale: 0 }}
+          animate={{ scale: [0, 1.3, 1] }}
+          transition={{ delay: 1.8, duration: 0.4 }}
+        />
+      )}
     </svg>
   )
 }
