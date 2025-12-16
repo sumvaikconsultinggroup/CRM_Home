@@ -78,27 +78,62 @@ const ProgressRing = ({ progress = 0, size = 120, strokeWidth = 10, color = '#63
   )
 }
 
-// Animated bar chart
+// Animated bar chart with enhanced effects
 const BarChart = ({ data = [], height = 200, showLabels = true, color = 'indigo' }) => {
   const max = Math.max(...data.map(d => d.value), 1)
+  const colorMap = {
+    indigo: 'from-indigo-600 to-indigo-400',
+    emerald: 'from-emerald-600 to-emerald-400',
+    blue: 'from-blue-600 to-blue-400',
+    purple: 'from-purple-600 to-purple-400',
+    pink: 'from-pink-600 to-pink-400',
+    amber: 'from-amber-600 to-amber-400'
+  }
   
   return (
     <div className="flex items-end justify-between gap-2" style={{ height }}>
       {data.map((item, i) => (
         <div key={i} className="flex-1 flex flex-col items-center gap-2">
           <motion.div
-            className={`w-full rounded-t-lg bg-gradient-to-t from-${color}-600 to-${color}-400 relative group cursor-pointer`}
-            initial={{ height: 0 }}
-            animate={{ height: `${(item.value / max) * 100}%` }}
-            transition={{ delay: i * 0.1, duration: 0.6, ease: "easeOut" }}
-            whileHover={{ scale: 1.05 }}
+            className={`w-full rounded-t-lg bg-gradient-to-t ${colorMap[color] || colorMap.indigo} relative group cursor-pointer shadow-lg`}
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: `${(item.value / max) * 100}%`, opacity: 1 }}
+            transition={{ 
+              delay: i * 0.12, 
+              duration: 0.8, 
+              ease: [0.34, 1.56, 0.64, 1], // Bouncy easing
+              opacity: { duration: 0.4 }
+            }}
+            whileHover={{ 
+              scale: 1.08, 
+              boxShadow: "0 10px 40px rgba(0,0,0,0.2)",
+              transition: { duration: 0.2 }
+            }}
           >
-            <div className="absolute -top-8 left-1/2 -translate-x-1/2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">
+            <motion.div 
+              className="absolute inset-0 bg-white/20 rounded-t-lg"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: [0, 0.5, 0] }}
+              transition={{ delay: i * 0.12 + 0.3, duration: 0.6 }}
+            />
+            <motion.div 
+              className="absolute -top-10 left-1/2 -translate-x-1/2 bg-slate-900 text-white text-xs px-3 py-1.5 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-all whitespace-nowrap z-10"
+              initial={{ y: 5 }}
+              whileHover={{ y: 0 }}
+            >
               {item.value.toLocaleString()}
-            </div>
+              <div className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-2 h-2 bg-slate-900 rotate-45" />
+            </motion.div>
           </motion.div>
           {showLabels && (
-            <span className="text-xs text-slate-500 truncate max-w-full">{item.label}</span>
+            <motion.span 
+              className="text-xs text-slate-500 truncate max-w-full font-medium"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.12 + 0.4 }}
+            >
+              {item.label}
+            </motion.span>
           )}
         </div>
       ))}
