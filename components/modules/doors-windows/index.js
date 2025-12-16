@@ -797,13 +797,19 @@ export function DoorsWindowsModule({ client, user }) {
                                 )}
                               </div>
                             </div>
-                            <div className="ml-4 flex gap-2">
+                            <div className="ml-4 flex flex-wrap gap-2">
                               <Button size="sm" variant="outline" className="text-xs">
                                 <Download className="h-3 w-3 mr-1" /> PDF
                               </Button>
+                              <Button size="sm" variant="outline" className="text-xs" onClick={() => syncToFinance('invoice', invoice.id)}>
+                                <RefreshCw className="h-3 w-3 mr-1" /> Sync
+                              </Button>
+                              <Button size="sm" variant="outline" className="text-xs" onClick={() => createChallan({ invoiceId: invoice.id, invoiceNumber: invoice.invoiceNumber, customerName: invoice.customerName })}>
+                                <Truck className="h-3 w-3 mr-1" /> Challan
+                              </Button>
                               {invoice.paymentStatus !== 'paid' && (
-                                <Button size="sm" className="text-xs bg-emerald-600 hover:bg-emerald-700">
-                                  <Plus className="h-3 w-3 mr-1" /> Add Payment
+                                <Button size="sm" className="text-xs bg-emerald-600 hover:bg-emerald-700" onClick={() => recordPayment({ invoiceId: invoice.id, customerName: invoice.customerName, amount: invoice.balanceAmount || invoice.grandTotal })}>
+                                  <IndianRupee className="h-3 w-3 mr-1" /> Pay
                                 </Button>
                               )}
                             </div>
