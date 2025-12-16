@@ -121,6 +121,18 @@ export function EnterpriseProjects({ authToken, onProjectSelect }) {
     role: 'worker'
   })
   
+  // Edit mode states for project detail
+  const [editingBudget, setEditingBudget] = useState(false)
+  const [editBudgetValue, setEditBudgetValue] = useState('')
+  const [editingTimeline, setEditingTimeline] = useState(false)
+  const [editTimelineValues, setEditTimelineValues] = useState({
+    startDate: '',
+    endDate: '',
+    actualStartDate: '',
+    actualEndDate: ''
+  })
+  const [savingField, setSavingField] = useState(null)
+  
   // Form state
   const [formData, setFormData] = useState({
     name: '',
