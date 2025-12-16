@@ -328,53 +328,53 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
   ]
 
   return (
-    <div className="space-y-6">
-      {/* Welcome Banner */}
+    <div className="space-y-4 sm:space-y-6">
+      {/* Welcome Banner - Responsive */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary via-indigo-600 to-purple-600 text-white p-8"
+        className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-r from-primary via-indigo-600 to-purple-600 text-white p-4 sm:p-6 lg:p-8"
       >
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.1)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.1)_1px,transparent_1px)] bg-[size:20px_20px]" />
-        <div className="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+        <div className="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-4 sm:gap-6">
           <div>
-            <div className="flex items-center gap-3 mb-2">
-              <Sparkles className="h-6 w-6 text-yellow-300" />
-              <Badge className="bg-white/20 text-white border-0">
+            <div className="flex items-center gap-2 sm:gap-3 mb-2">
+              <Sparkles className="h-5 w-5 sm:h-6 sm:w-6 text-yellow-300" />
+              <Badge className="bg-white/20 text-white border-0 text-xs sm:text-sm">
                 {client?.planId?.toUpperCase() || 'PROFESSIONAL'} Plan
               </Badge>
             </div>
-            <h1 className="text-3xl font-bold mb-2">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold mb-2">
               Welcome back, {client?.businessName?.split(' ')[0] || 'Builder'}! 👋
             </h1>
-            <p className="text-white/80 max-w-lg">
-              Here is what is happening with your business today. You have {pendingTasks} pending tasks and {newLeads} new leads waiting for your attention.
+            <p className="text-white/80 text-sm sm:text-base max-w-lg">
+              You have {pendingTasks} pending tasks and {newLeads} new leads waiting.
             </p>
           </div>
-          <div className="flex gap-3">
+          <div className="flex flex-wrap gap-2 sm:gap-3 w-full md:w-auto">
             <Button 
-              className="bg-white text-primary hover:bg-white/90 shadow-lg"
+              className="bg-white text-primary hover:bg-white/90 shadow-lg flex-1 md:flex-none text-sm sm:text-base h-9 sm:h-10"
               onClick={() => onNavigate?.('leads')}
             >
-              <Plus className="h-4 w-4 mr-2" /> Add Lead
+              <Plus className="h-4 w-4 mr-1 sm:mr-2" /> <span className="hidden xs:inline">Add</span> Lead
             </Button>
             <Button 
               variant="outline" 
-              className="border-white/30 text-white hover:bg-white/10"
+              className="border-white/30 text-white hover:bg-white/10 flex-1 md:flex-none text-sm sm:text-base h-9 sm:h-10"
               onClick={() => onNavigate?.('reports')}
             >
-              <BarChart3 className="h-4 w-4 mr-2" /> View Reports
+              <BarChart3 className="h-4 w-4 mr-1 sm:mr-2" /> Reports
             </Button>
           </div>
         </div>
 
-        {/* Floating decorative elements */}
-        <div className="absolute -right-10 -bottom-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
-        <div className="absolute right-20 top-0 h-20 w-20 rounded-full bg-yellow-300/20 blur-xl" />
+        {/* Floating decorative elements - Hidden on mobile for performance */}
+        <div className="hidden sm:block absolute -right-10 -bottom-10 h-40 w-40 rounded-full bg-white/10 blur-2xl" />
+        <div className="hidden sm:block absolute right-20 top-0 h-20 w-20 rounded-full bg-yellow-300/20 blur-xl" />
       </motion.div>
 
-      {/* Stats Grid */}
-      <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Stats Grid - Responsive */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
         {statCards.map((stat, i) => (
           <motion.div
             key={stat.title}
