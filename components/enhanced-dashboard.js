@@ -426,7 +426,7 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
       </div>
 
       {/* Main Content Grid */}
-      <div className="grid lg:grid-cols-3 gap-6">
+      <div className="grid lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Performance Overview */}
         <motion.div
           initial={{ opacity: 0, x: -20 }}
@@ -434,20 +434,20 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
           transition={{ delay: 0.3 }}
           className="lg:col-span-2"
         >
-          <Card className="p-6 shadow-lg border-0">
-            <div className="flex items-center justify-between mb-6">
+          <Card className="p-3 sm:p-4 lg:p-6 shadow-lg border-0">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4 sm:mb-6">
               <div>
-                <h3 className="text-lg font-bold">Performance Overview</h3>
-                <p className="text-sm text-muted-foreground">Track your business metrics</p>
+                <h3 className="text-base sm:text-lg font-bold">Performance Overview</h3>
+                <p className="text-xs sm:text-sm text-muted-foreground">Track your business metrics</p>
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-1 sm:gap-2">
                 {['week', 'month', 'year'].map((range) => (
                   <Button
                     key={range}
                     size="sm"
                     variant={timeRange === range ? 'default' : 'outline'}
                     onClick={() => setTimeRange(range)}
-                    className="capitalize"
+                    className="capitalize text-xs sm:text-sm h-8 px-2 sm:px-3"
                   >
                     {range}
                   </Button>
@@ -456,7 +456,7 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
             </div>
 
             {/* Revenue Chart Placeholder */}
-            <div className="h-64 bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-6 relative overflow-hidden">
+            <div className="h-48 sm:h-56 lg:h-64 bg-gradient-to-br from-slate-50 to-slate-100 rounded-xl sm:rounded-2xl p-3 sm:p-6 relative overflow-hidden">
               <div className="absolute inset-0 flex items-end justify-around px-4 pb-8">
                 {revenueData.map((val, i) => {
                   const max = Math.max(...revenueData)
