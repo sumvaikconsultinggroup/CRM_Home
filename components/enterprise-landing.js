@@ -842,7 +842,39 @@ export default function EnterpriseLanding({ onLogin }) {
               className="lg:hidden bg-white border-t"
             >
               <div className="px-4 py-6 space-y-4">
-                {['Features', 'Modules', 'Pricing', 'Integrations'].map((item) => (
+                <button
+                  onClick={() => scrollToSection('features')}
+                  className="block w-full text-left py-2 font-medium"
+                >
+                  Features
+                </button>
+                
+                {/* Products Section in Mobile */}
+                <div className="py-2">
+                  <div className="font-medium text-gray-900 mb-3">Products</div>
+                  <div className="pl-4 space-y-2 border-l-2 border-gray-100">
+                    <a href="/products/buildcrm" className="flex items-center gap-3 py-2 text-gray-600 hover:text-gray-900">
+                      <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                        <Target className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <span>BuilDCRM</span>
+                    </a>
+                    <a href="/products/build-inventory" className="flex items-center gap-3 py-2 text-gray-600 hover:text-gray-900">
+                      <div className="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                        <Package className="h-4 w-4 text-orange-600" />
+                      </div>
+                      <span>BuilD Inventory</span>
+                    </a>
+                    <a href="/products/build-finance" className="flex items-center gap-3 py-2 text-gray-600 hover:text-gray-900">
+                      <div className="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                        <Receipt className="h-4 w-4 text-green-600" />
+                      </div>
+                      <span>BuilD Finance</span>
+                    </a>
+                  </div>
+                </div>
+                
+                {['Modules', 'Pricing', 'Integrations'].map((item) => (
                   <button
                     key={item}
                     onClick={() => scrollToSection(item.toLowerCase())}
