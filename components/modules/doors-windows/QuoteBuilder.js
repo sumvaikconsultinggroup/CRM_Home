@@ -947,12 +947,17 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
         
         // Update form with complete project details from API
         if (projectData) {
-          // Extract customer name from API response with multiple fallbacks
-          const apiCustomerName = projectData.contactPerson || projectData.customerName || 
-                                  projectData.clientName || projectData.name || ''
-          const apiCustomerPhone = projectData.contactPhone || projectData.phone || projectData.mobile || ''
-          const apiCustomerEmail = projectData.contactEmail || projectData.email || ''
-          const apiSiteAddress = projectData.siteAddress || projectData.address || projectData.location || ''
+          // Extract customer name from API response - check nested customer object and flat fields
+          const apiCustomerName = projectData.customer?.name || projectData.clientName || 
+                                  projectData.contactPerson || projectData.customerName || ''
+          const apiCustomerPhone = projectData.customer?.phone || projectData.clientPhone ||
+                                   projectData.contactPhone || projectData.phone || projectData.mobile || ''
+          const apiCustomerEmail = projectData.customer?.email || projectData.clientEmail ||
+                                   projectData.contactEmail || projectData.email || ''
+          const apiSiteAddress = projectData.siteAddress || projectData.customer?.address ||
+                                 projectData.address || projectData.location || ''
+          
+          console.log('API project data:', { apiCustomerName, apiCustomerPhone, apiCustomerEmail, apiSiteAddress })
           
           setQuoteForm(prev => ({
             ...prev,
