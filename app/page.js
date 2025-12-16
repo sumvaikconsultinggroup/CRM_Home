@@ -1107,7 +1107,7 @@ function ClientDashboard({ user, client, onLogout }) {
 
         {/* Build Inventory Product View */}
         {activeProduct === 'build-inventory' && (
-          <div className="p-6">
+          <div className="p-3 sm:p-4 lg:p-6">
             <BuildInventory 
               token={authToken}
               user={user}
@@ -1118,7 +1118,7 @@ function ClientDashboard({ user, client, onLogout }) {
 
         {/* Build Finance Product View */}
         {activeProduct === 'build-finance' && (
-          <div className="p-6">
+          <div className="p-3 sm:p-4 lg:p-6">
             <BuildFinance 
               token={authToken}
               user={user}
@@ -1130,7 +1130,7 @@ function ClientDashboard({ user, client, onLogout }) {
         {activeProduct === 'build-crm' && (
           <>
         {/* Content */}
-        <div className="p-6">
+        <div className="p-3 sm:p-4 lg:p-6">
           <AnimatePresence mode="wait">
             {/* Dashboard Tab - Enhanced */}
             {activeTab === 'dashboard' && (
