@@ -69,6 +69,7 @@ import { ProductAssignment } from '@/components/super-admin/product-assignment'
 import { DoorsWindowsModule } from '@/components/modules/doors-windows'
 import { EnterpriseWhiteLabel } from '@/components/enterprise-whitelabel'
 import { EnterpriseSettings } from '@/components/enterprise-settings'
+import { EnterpriseUserManagement } from '@/components/enterprise-user-management'
 import { useResponsive } from '@/hooks/use-responsive'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
 
