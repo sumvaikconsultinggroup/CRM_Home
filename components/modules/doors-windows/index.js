@@ -471,8 +471,17 @@ export function DoorsWindowsModule({ client, user }) {
     window.location.href = '/'
   }
 
-  // Get all tabs flat list
-  const allTabs = [...TAB_GROUPS.main, ...TAB_GROUPS.operations, ...TAB_GROUPS.support]
+  // Get mode-specific tabs
+  const currentTabGroups = businessMode === 'manufacturer' ? TAB_GROUPS_MANUFACTURER : TAB_GROUPS_FABRICATOR
+  const allTabs = [...currentTabGroups.main, ...currentTabGroups.operations, ...currentTabGroups.support]
+  
+  // Reset to dashboard when switching modes if current tab doesn't exist in new mode
+  useEffect(() => {
+    const tabExists = allTabs.some(t => t.id === activeTab)
+    if (!tabExists) {
+      setActiveTab('dashboard')
+    }
+  }, [businessMode])
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-100">
