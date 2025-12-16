@@ -1599,20 +1599,46 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
             <ScrollArea className="flex-1 mt-4 pr-4" style={{ height: 'calc(95vh - 200px)' }}>
               {/* Customer Tab */}
               <TabsContent value="customer" className="space-y-4 p-1">
+                {/* Auto-populate notice */}
+                <div className="p-3 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-lg">
+                  <p className="text-sm text-indigo-700 flex items-center gap-2">
+                    <RefreshCw className={`h-4 w-4 ${loadingProjectData ? 'animate-spin' : ''}`} />
+                    <strong>Smart Quote Builder:</strong> Select a project to auto-fill customer details and import site survey measurements
+                  </p>
+                </div>
+                
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <Label>Link to Project</Label>
-                    <Select value={quoteForm.projectId || '__none__'} onValueChange={handleSelectProject}>
-                      <SelectTrigger>
+                    <Label className="flex items-center gap-2">
+                      Link to Project
+                      {loadingProjectData && (
+                        <Loader2 className="h-3 w-3 animate-spin text-indigo-600" />
+                      )}
+                    </Label>
+                    <Select 
+                      value={quoteForm.projectId || '__none__'} 
+                      onValueChange={handleSelectProject}
+                      disabled={loadingProjectData}
+                    >
+                      <SelectTrigger className={loadingProjectData ? 'opacity-70' : ''}>
                         <SelectValue placeholder="Select a project (optional)" />
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="__none__">No Project</SelectItem>
                         {projects?.map(p => (
-                          <SelectItem key={p.id} value={p.id}>{p.name || p.siteName}</SelectItem>
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.name || p.siteName}
+                            {p.projectNumber && <span className="text-slate-400 ml-2">({p.projectNumber})</span>}
+                          </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
+                    {quoteForm.projectId && quoteItems.length > 0 && (
+                      <p className="text-xs text-emerald-600 flex items-center gap-1">
+                        <CheckCircle2 className="h-3 w-3" />
+                        {quoteItems.filter(i => i.fromSurvey).length} items loaded from survey
+                      </p>
+                    )}
                   </div>
                   <div className="space-y-2">
                     <Label>Customer Name *</Label>
