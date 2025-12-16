@@ -678,6 +678,12 @@ function ClientDashboard({ user, client, onLogout }) {
   const [activeModule, setActiveModule] = useState(null) // Track which module is open
   const [showUpgradeFlow, setShowUpgradeFlow] = useState(false)
   // Teams Hub integrated into main navigation
+  
+  // Responsive state - moved to top of component
+  const [mobileMenuOpenClient, setMobileMenuOpenClient] = useState(false)
+  const [windowWidthClient, setWindowWidthClient] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
+  const isMobileClient = windowWidthClient < 768
+  const isTabletClient = windowWidthClient >= 768 && windowWidthClient < 1024
   const authToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null
 
   const fetchData = useCallback(async () => {
