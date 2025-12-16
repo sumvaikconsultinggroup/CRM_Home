@@ -1451,6 +1451,472 @@ export function DoorsWindowsModule({ client, user }) {
               glassStyles={glassStyles}
             />
           </TabsContent>
+
+          {/* ========== MANUFACTURER-SPECIFIC TABS ========== */}
+          
+          {/* Dealer Network Tab (Manufacturer Only) */}
+          <TabsContent value="dealers" className="space-y-6">
+            <Card className={glassStyles.card}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Users className="h-5 w-5 text-purple-600" />
+                      Dealer Network Management
+                    </CardTitle>
+                    <CardDescription>Manage your authorized dealers, distributors, and fabricators</CardDescription>
+                  </div>
+                  <Button className="bg-gradient-to-r from-purple-600 to-indigo-600">
+                    <Plus className="h-4 w-4 mr-2" /> Add Dealer
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                  <Card className="bg-purple-50 border-purple-200">
+                    <CardContent className="p-4 text-center">
+                      <Users className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                      <p className="text-2xl font-bold text-purple-700">24</p>
+                      <p className="text-sm text-purple-600">Active Dealers</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-emerald-50 border-emerald-200">
+                    <CardContent className="p-4 text-center">
+                      <TrendingUp className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
+                      <p className="text-2xl font-bold text-emerald-700">₹2.4Cr</p>
+                      <p className="text-sm text-emerald-600">Monthly Sales</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-blue-50 border-blue-200">
+                    <CardContent className="p-4 text-center">
+                      <ShoppingCart className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                      <p className="text-2xl font-bold text-blue-700">156</p>
+                      <p className="text-sm text-blue-600">Active Orders</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-amber-50 border-amber-200">
+                    <CardContent className="p-4 text-center">
+                      <MapPin className="h-8 w-8 text-amber-600 mx-auto mb-2" />
+                      <p className="text-2xl font-bold text-amber-700">12</p>
+                      <p className="text-sm text-amber-600">Cities Covered</p>
+                    </CardContent>
+                  </Card>
+                </div>
+                
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border hover:shadow-md transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center">
+                        <Building2 className="h-6 w-6 text-purple-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold">Royal Windows & Doors</h4>
+                        <p className="text-sm text-slate-500">Mumbai • Gold Partner</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="font-semibold text-emerald-600">₹45L</p>
+                        <p className="text-xs text-slate-500">This Month</p>
+                      </div>
+                      <Badge className="bg-amber-100 text-amber-700">Gold</Badge>
+                      <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border hover:shadow-md transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Building2 className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold">Delhi Glass House</h4>
+                        <p className="text-sm text-slate-500">Delhi • Silver Partner</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="font-semibold text-emerald-600">₹28L</p>
+                        <p className="text-xs text-slate-500">This Month</p>
+                      </div>
+                      <Badge className="bg-slate-100 text-slate-700">Silver</Badge>
+                      <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border hover:shadow-md transition-all">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-emerald-100 rounded-full flex items-center justify-center">
+                        <Building2 className="h-6 w-6 text-emerald-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold">Bangalore Fenestration</h4>
+                        <p className="text-sm text-slate-500">Bangalore • Platinum Partner</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <div className="text-right">
+                        <p className="font-semibold text-emerald-600">₹62L</p>
+                        <p className="text-xs text-slate-500">This Month</p>
+                      </div>
+                      <Badge className="bg-purple-100 text-purple-700">Platinum</Badge>
+                      <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Price Lists Tab (Manufacturer Only) */}
+          <TabsContent value="price-lists" className="space-y-6">
+            <Card className={glassStyles.card}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <FileText className="h-5 w-5 text-indigo-600" />
+                      Dealer Price Lists
+                    </CardTitle>
+                    <CardDescription>Manage wholesale pricing for dealer tiers</CardDescription>
+                  </div>
+                  <Button className="bg-gradient-to-r from-indigo-600 to-purple-600">
+                    <Plus className="h-4 w-4 mr-2" /> Create Price List
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <Card className="border-l-4 border-l-purple-500">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-semibold flex items-center gap-2">
+                            Platinum Dealer Rates
+                            <Badge className="bg-purple-100 text-purple-700">Active</Badge>
+                          </h4>
+                          <p className="text-sm text-slate-500">30% discount on MRP • Valid till Mar 2025</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1" /> Export</Button>
+                          <Button variant="outline" size="sm"><Edit className="h-4 w-4" /></Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-l-4 border-l-amber-500">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-semibold flex items-center gap-2">
+                            Gold Dealer Rates
+                            <Badge className="bg-amber-100 text-amber-700">Active</Badge>
+                          </h4>
+                          <p className="text-sm text-slate-500">25% discount on MRP • Valid till Mar 2025</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1" /> Export</Button>
+                          <Button variant="outline" size="sm"><Edit className="h-4 w-4" /></Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="border-l-4 border-l-slate-400">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-semibold flex items-center gap-2">
+                            Silver Dealer Rates
+                            <Badge className="bg-slate-100 text-slate-700">Active</Badge>
+                          </h4>
+                          <p className="text-sm text-slate-500">20% discount on MRP • Valid till Mar 2025</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button variant="outline" size="sm"><Download className="h-4 w-4 mr-1" /> Export</Button>
+                          <Button variant="outline" size="sm"><Edit className="h-4 w-4" /></Button>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Quality Control Tab (Manufacturer Only) */}
+          <TabsContent value="quality" className="space-y-6">
+            <Card className={glassStyles.card}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                      Quality Control
+                    </CardTitle>
+                    <CardDescription>Production quality assurance and inspection tracking</CardDescription>
+                  </div>
+                  <Button className="bg-gradient-to-r from-emerald-600 to-green-600">
+                    <Plus className="h-4 w-4 mr-2" /> New QC Batch
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                  <Card className="bg-emerald-50 border-emerald-200">
+                    <CardContent className="p-4 text-center">
+                      <CheckCircle2 className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
+                      <p className="text-2xl font-bold text-emerald-700">98.5%</p>
+                      <p className="text-sm text-emerald-600">Pass Rate</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-blue-50 border-blue-200">
+                    <CardContent className="p-4 text-center">
+                      <ClipboardList className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                      <p className="text-2xl font-bold text-blue-700">45</p>
+                      <p className="text-sm text-blue-600">Pending Inspection</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-amber-50 border-amber-200">
+                    <CardContent className="p-4 text-center">
+                      <AlertTriangle className="h-8 w-8 text-amber-600 mx-auto mb-2" />
+                      <p className="text-2xl font-bold text-amber-700">3</p>
+                      <p className="text-sm text-amber-600">Rework Required</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-red-50 border-red-200">
+                    <CardContent className="p-4 text-center">
+                      <XCircle className="h-8 w-8 text-red-600 mx-auto mb-2" />
+                      <p className="text-2xl font-bold text-red-700">1</p>
+                      <p className="text-sm text-red-600">Rejected</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 bg-emerald-100 rounded-lg">
+                        <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold">QC-2024-1256</h4>
+                        <p className="text-sm text-slate-500">Aluminium Sliding Windows • Batch of 50</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge className="bg-emerald-100 text-emerald-700">Passed</Badge>
+                      <span className="text-sm text-slate-500">2 hours ago</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 bg-amber-100 rounded-lg">
+                        <Clock className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold">QC-2024-1257</h4>
+                        <p className="text-sm text-slate-500">uPVC Casement Doors • Batch of 25</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge className="bg-amber-100 text-amber-700">In Progress</Badge>
+                      <span className="text-sm text-slate-500">Inspector: Ravi Kumar</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Dispatch Tab (Manufacturer Only) */}
+          <TabsContent value="dispatch" className="space-y-6">
+            <Card className={glassStyles.card}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Truck className="h-5 w-5 text-blue-600" />
+                      Dispatch & Logistics
+                    </CardTitle>
+                    <CardDescription>Manage shipments to dealers and track deliveries</CardDescription>
+                  </div>
+                  <Button className="bg-gradient-to-r from-blue-600 to-indigo-600">
+                    <Plus className="h-4 w-4 mr-2" /> Create Dispatch
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                  <Card className="bg-blue-50 border-blue-200">
+                    <CardContent className="p-4 text-center">
+                      <Truck className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+                      <p className="text-2xl font-bold text-blue-700">12</p>
+                      <p className="text-sm text-blue-600">In Transit</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-emerald-50 border-emerald-200">
+                    <CardContent className="p-4 text-center">
+                      <CheckCircle2 className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
+                      <p className="text-2xl font-bold text-emerald-700">156</p>
+                      <p className="text-sm text-emerald-600">Delivered (MTD)</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-amber-50 border-amber-200">
+                    <CardContent className="p-4 text-center">
+                      <Clock className="h-8 w-8 text-amber-600 mx-auto mb-2" />
+                      <p className="text-2xl font-bold text-amber-700">8</p>
+                      <p className="text-sm text-amber-600">Ready to Ship</p>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-purple-50 border-purple-200">
+                    <CardContent className="p-4 text-center">
+                      <MapPin className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                      <p className="text-2xl font-bold text-purple-700">24</p>
+                      <p className="text-sm text-purple-600">Destinations</p>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 bg-blue-100 rounded-lg">
+                        <Truck className="h-5 w-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold">DSP-2024-0892</h4>
+                        <p className="text-sm text-slate-500">To: Royal Windows, Mumbai • 25 units</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge className="bg-blue-100 text-blue-700">In Transit</Badge>
+                      <span className="text-sm text-slate-500">ETA: Tomorrow</span>
+                      <Button variant="ghost" size="sm"><MapPin className="h-4 w-4" /></Button>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 bg-amber-100 rounded-lg">
+                        <Package className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold">DSP-2024-0893</h4>
+                        <p className="text-sm text-slate-500">To: Delhi Glass House • 40 units</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge className="bg-amber-100 text-amber-700">Ready</Badge>
+                      <span className="text-sm text-slate-500">Pickup scheduled</span>
+                      <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Inventory Tab (Manufacturer Only - Raw Materials Focus) */}
+          <TabsContent value="inventory" className="space-y-6">
+            <Card className={glassStyles.card}>
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2">
+                      <Box className="h-5 w-5 text-indigo-600" />
+                      Raw Materials Inventory
+                    </CardTitle>
+                    <CardDescription>Track raw materials, WIP, and finished goods inventory</CardDescription>
+                  </div>
+                  <Button className="bg-gradient-to-r from-indigo-600 to-purple-600">
+                    <Plus className="h-4 w-4 mr-2" /> Add Stock
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                  <Card className="bg-indigo-50 border-indigo-200">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-indigo-600">Raw Materials</p>
+                          <p className="text-xl font-bold text-indigo-700">₹45.2L</p>
+                        </div>
+                        <Box className="h-8 w-8 text-indigo-400" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-amber-50 border-amber-200">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-amber-600">Work in Progress</p>
+                          <p className="text-xl font-bold text-amber-700">₹18.6L</p>
+                        </div>
+                        <Factory className="h-8 w-8 text-amber-400" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card className="bg-emerald-50 border-emerald-200">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm text-emerald-600">Finished Goods</p>
+                          <p className="text-xl font-bold text-emerald-700">₹32.8L</p>
+                        </div>
+                        <Package className="h-8 w-8 text-emerald-400" />
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 bg-slate-100 rounded-lg">
+                        <Layers className="h-5 w-5 text-slate-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold">Aluminium Profiles - Series 50</h4>
+                        <p className="text-sm text-slate-500">In Stock: 2,450 running ft</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Progress value={75} className="w-24 h-2" />
+                      <Badge className="bg-green-100 text-green-700">Healthy</Badge>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 bg-slate-100 rounded-lg">
+                        <Layers className="h-5 w-5 text-slate-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold">Float Glass 5mm Clear</h4>
+                        <p className="text-sm text-slate-500">In Stock: 850 sq.ft</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Progress value={35} className="w-24 h-2" />
+                      <Badge className="bg-amber-100 text-amber-700">Low Stock</Badge>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border">
+                    <div className="flex items-center gap-4">
+                      <div className="p-2 bg-slate-100 rounded-lg">
+                        <Cog className="h-5 w-5 text-slate-600" />
+                      </div>
+                      <div>
+                        <h4 className="font-semibold">Multi-Point Lock Sets</h4>
+                        <p className="text-sm text-slate-500">In Stock: 320 units</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <Progress value={90} className="w-24 h-2" />
+                      <Badge className="bg-green-100 text-green-700">Healthy</Badge>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
         </Tabs>
       </div>
 
