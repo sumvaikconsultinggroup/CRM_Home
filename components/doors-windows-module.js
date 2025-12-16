@@ -1431,6 +1431,684 @@ export function DoorsWindowsModule({ client, user }) {
             </motion.div>
           )}
 
+          {/* ==================== ENTERPRISE POST-INVOICING TAB ==================== */}
+          {activeTab === 'post-invoicing' && (
+            <motion.div
+              key="post-invoicing"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="p-4 lg:p-6 space-y-6"
+            >
+              {/* Header */}
+              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-xl lg:text-2xl font-bold flex items-center gap-2">
+                    <Receipt className="h-6 w-6 text-green-600" />
+                    Enterprise Post-Invoicing
+                  </h2>
+                  <p className="text-muted-foreground">Complete lifecycle management after invoicing</p>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button variant="outline" onClick={refresh}>
+                    <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+                  </Button>
+                  <Button onClick={() => setShowPostInvoicingDialog({ type: 'challan' })}>
+                    <Truck className="h-4 w-4 mr-2" /> New Challan
+                  </Button>
+                  <Button onClick={() => setShowPostInvoicingDialog({ type: 'payment' })} className="bg-green-600 hover:bg-green-700">
+                    <IndianRupee className="h-4 w-4 mr-2" /> Record Payment
+                  </Button>
+                </div>
+              </div>
+
+              {/* Stats Grid */}
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-3 lg:gap-4">
+                <Card className="p-3 lg:p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-500 text-white">
+                      <ScrollText className="h-4 w-4 lg:h-5 lg:w-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-blue-600">Challans</p>
+                      <p className="text-lg lg:text-xl font-bold text-blue-700">{postInvoicingStats?.challans?.total || 0}</p>
+                    </div>
+                  </div>
+                </Card>
+                <Card className="p-3 lg:p-4 bg-gradient-to-br from-orange-50 to-orange-100 border-orange-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-orange-500 text-white">
+                      <Truck className="h-4 w-4 lg:h-5 lg:w-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-orange-600">In Transit</p>
+                      <p className="text-lg lg:text-xl font-bold text-orange-700">{postInvoicingStats?.challans?.dispatched || 0}</p>
+                    </div>
+                  </div>
+                </Card>
+                <Card className="p-3 lg:p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-purple-500 text-white">
+                      <Wrench className="h-4 w-4 lg:h-5 lg:w-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-purple-600">Installations</p>
+                      <p className="text-lg lg:text-xl font-bold text-purple-700">{postInvoicingStats?.installations?.total || 0}</p>
+                    </div>
+                  </div>
+                </Card>
+                <Card className="p-3 lg:p-4 bg-gradient-to-br from-green-50 to-green-100 border-green-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-green-500 text-white">
+                      <IndianRupee className="h-4 w-4 lg:h-5 lg:w-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-green-600">Collected</p>
+                      <p className="text-lg lg:text-xl font-bold text-green-700">₹{((postInvoicingStats?.payments?.totalCollected || 0) / 1000).toFixed(0)}K</p>
+                    </div>
+                  </div>
+                </Card>
+                <Card className="p-3 lg:p-4 bg-gradient-to-br from-cyan-50 to-cyan-100 border-cyan-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-cyan-500 text-white">
+                      <Shield className="h-4 w-4 lg:h-5 lg:w-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-cyan-600">Warranties</p>
+                      <p className="text-lg lg:text-xl font-bold text-cyan-700">{postInvoicingStats?.warranties?.active || 0}</p>
+                    </div>
+                  </div>
+                </Card>
+                <Card className="p-3 lg:p-4 bg-gradient-to-br from-pink-50 to-pink-100 border-pink-200">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-pink-500 text-white">
+                      <Award className="h-4 w-4 lg:h-5 lg:w-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-pink-600">AMC Active</p>
+                      <p className="text-lg lg:text-xl font-bold text-pink-700">{postInvoicingStats?.amcs?.active || 0}</p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              {/* Tabs for different post-invoicing sections */}
+              <Tabs defaultValue="challans" className="space-y-4">
+                <TabsList className="flex flex-wrap gap-1 h-auto p-1">
+                  <TabsTrigger value="challans" className="text-xs lg:text-sm">
+                    <Truck className="h-3 w-3 lg:h-4 lg:w-4 mr-1" /> Delivery Challans
+                  </TabsTrigger>
+                  <TabsTrigger value="installations" className="text-xs lg:text-sm">
+                    <Wrench className="h-3 w-3 lg:h-4 lg:w-4 mr-1" /> Installations
+                  </TabsTrigger>
+                  <TabsTrigger value="payments" className="text-xs lg:text-sm">
+                    <CreditCard className="h-3 w-3 lg:h-4 lg:w-4 mr-1" /> Payments
+                  </TabsTrigger>
+                  <TabsTrigger value="receipts" className="text-xs lg:text-sm">
+                    <Receipt className="h-3 w-3 lg:h-4 lg:w-4 mr-1" /> Receipts
+                  </TabsTrigger>
+                  <TabsTrigger value="warranties" className="text-xs lg:text-sm">
+                    <Shield className="h-3 w-3 lg:h-4 lg:w-4 mr-1" /> Warranties
+                  </TabsTrigger>
+                  <TabsTrigger value="amc" className="text-xs lg:text-sm">
+                    <Award className="h-3 w-3 lg:h-4 lg:w-4 mr-1" /> AMC
+                  </TabsTrigger>
+                </TabsList>
+
+                {/* Delivery Challans Tab */}
+                <TabsContent value="challans" className="space-y-4">
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">Delivery Challans</CardTitle>
+                        <Button size="sm" onClick={() => setShowPostInvoicingDialog({ type: 'challan' })}>
+                          <Plus className="h-4 w-4 mr-1" /> Create Challan
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Challan #</TableHead>
+                            <TableHead>Invoice</TableHead>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Items</TableHead>
+                            <TableHead>Dispatch Date</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {(postInvoicingData?.challans || []).map((challan) => (
+                            <TableRow key={challan.id}>
+                              <TableCell className="font-medium">{challan.challanNumber}</TableCell>
+                              <TableCell>{challan.invoiceNumber}</TableCell>
+                              <TableCell>{challan.customerName}</TableCell>
+                              <TableCell>{challan.totalItems || challan.items?.length || 0}</TableCell>
+                              <TableCell>{challan.dispatchDate ? new Date(challan.dispatchDate).toLocaleDateString() : '-'}</TableCell>
+                              <TableCell>
+                                <Badge className={
+                                  challan.status === 'delivered' ? 'bg-green-100 text-green-700' :
+                                  challan.status === 'dispatched' ? 'bg-blue-100 text-blue-700' :
+                                  challan.status === 'in-transit' ? 'bg-orange-100 text-orange-700' :
+                                  'bg-gray-100 text-gray-700'
+                                }>{challan.status}</Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  <Button size="sm" variant="ghost" onClick={() => setShowPostInvoicingDialog({ type: 'view-challan', data: challan })}>
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost">
+                                    <Printer className="h-4 w-4" />
+                                  </Button>
+                                  {challan.status === 'pending' && (
+                                    <Button size="sm" variant="ghost" className="text-blue-600" onClick={() => updateChallanStatus(challan.id, 'dispatched')}>
+                                      <Send className="h-4 w-4" />
+                                    </Button>
+                                  )}
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          {(!postInvoicingData?.challans || postInvoicingData.challans.length === 0) && (
+                            <TableRow>
+                              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                                No delivery challans yet. Create one from an invoice.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Installations Tab */}
+                <TabsContent value="installations" className="space-y-4">
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">Installation Schedule</CardTitle>
+                        <Button size="sm" onClick={() => setShowPostInvoicingDialog({ type: 'installation' })}>
+                          <Plus className="h-4 w-4 mr-1" /> Schedule Installation
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Install #</TableHead>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Scheduled</TableHead>
+                            <TableHead>Time Slot</TableHead>
+                            <TableHead>Team</TableHead>
+                            <TableHead>Progress</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {(postInvoicingData?.installations || []).map((inst) => (
+                            <TableRow key={inst.id}>
+                              <TableCell className="font-medium">{inst.installationNumber}</TableCell>
+                              <TableCell>{inst.customerName}</TableCell>
+                              <TableCell>{inst.scheduledDate ? new Date(inst.scheduledDate).toLocaleDateString() : '-'}</TableCell>
+                              <TableCell className="capitalize">{inst.scheduledTimeSlot}</TableCell>
+                              <TableCell>{inst.teamLeader || 'Unassigned'}</TableCell>
+                              <TableCell>
+                                <div className="flex items-center gap-2">
+                                  <Progress value={inst.completionPercentage || 0} className="w-16 h-2" />
+                                  <span className="text-xs">{inst.completionPercentage || 0}%</span>
+                                </div>
+                              </TableCell>
+                              <TableCell>
+                                <Badge className={
+                                  inst.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                  inst.status === 'in-progress' ? 'bg-blue-100 text-blue-700' :
+                                  inst.status === 'scheduled' ? 'bg-purple-100 text-purple-700' :
+                                  'bg-gray-100 text-gray-700'
+                                }>{inst.status}</Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  <Button size="sm" variant="ghost">
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost">
+                                    <Edit className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          {(!postInvoicingData?.installations || postInvoicingData.installations.length === 0) && (
+                            <TableRow>
+                              <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                                No installations scheduled yet.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Payments Tab */}
+                <TabsContent value="payments" className="space-y-4">
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="text-lg">Payment Collections</CardTitle>
+                          <CardDescription>Track all payments and reconciliations</CardDescription>
+                        </div>
+                        <Button size="sm" onClick={() => setShowPostInvoicingDialog({ type: 'payment' })} className="bg-green-600 hover:bg-green-700">
+                          <IndianRupee className="h-4 w-4 mr-1" /> Record Payment
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      {/* Payment Method Summary */}
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mb-4">
+                        <div className="p-3 bg-green-50 rounded-lg">
+                          <p className="text-xs text-green-600">Cash</p>
+                          <p className="font-bold text-green-700">₹{((postInvoicingStats?.payments?.cash || 0) / 1000).toFixed(1)}K</p>
+                        </div>
+                        <div className="p-3 bg-blue-50 rounded-lg">
+                          <p className="text-xs text-blue-600">UPI</p>
+                          <p className="font-bold text-blue-700">₹{((postInvoicingStats?.payments?.upi || 0) / 1000).toFixed(1)}K</p>
+                        </div>
+                        <div className="p-3 bg-purple-50 rounded-lg">
+                          <p className="text-xs text-purple-600">Bank Transfer</p>
+                          <p className="font-bold text-purple-700">₹{((postInvoicingStats?.payments?.bank || 0) / 1000).toFixed(1)}K</p>
+                        </div>
+                        <div className="p-3 bg-orange-50 rounded-lg">
+                          <p className="text-xs text-orange-600">Cheque</p>
+                          <p className="font-bold text-orange-700">₹{((postInvoicingStats?.payments?.cheque || 0) / 1000).toFixed(1)}K</p>
+                        </div>
+                      </div>
+                      
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Payment ID</TableHead>
+                            <TableHead>Invoice</TableHead>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Method</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Receipt</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {(postInvoicingData?.payments || []).map((payment) => (
+                            <TableRow key={payment.id}>
+                              <TableCell className="font-medium">{payment.paymentId}</TableCell>
+                              <TableCell>{payment.invoiceNumber}</TableCell>
+                              <TableCell>{payment.customerName}</TableCell>
+                              <TableCell className="font-bold text-green-600">₹{payment.amount?.toLocaleString()}</TableCell>
+                              <TableCell className="capitalize">{payment.method?.replace('_', ' ')}</TableCell>
+                              <TableCell>{payment.date ? new Date(payment.date).toLocaleDateString() : '-'}</TableCell>
+                              <TableCell>
+                                <Badge className={payment.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-yellow-100 text-yellow-700'}>
+                                  {payment.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {payment.receiptNumber ? (
+                                  <Button size="sm" variant="ghost">
+                                    <Receipt className="h-4 w-4 mr-1" /> {payment.receiptNumber}
+                                  </Button>
+                                ) : (
+                                  <Button size="sm" variant="outline" onClick={() => generateReceipt(payment.id)}>
+                                    Generate
+                                  </Button>
+                                )}
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          {(!postInvoicingData?.payments || postInvoicingData.payments.length === 0) && (
+                            <TableRow>
+                              <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                                No payments recorded yet.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Receipts Tab */}
+                <TabsContent value="receipts" className="space-y-4">
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-lg">Payment Receipts</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Receipt #</TableHead>
+                            <TableHead>Invoice</TableHead>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Payment Method</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {(postInvoicingData?.receipts || []).map((receipt) => (
+                            <TableRow key={receipt.id}>
+                              <TableCell className="font-medium">{receipt.receiptNumber}</TableCell>
+                              <TableCell>{receipt.invoiceNumber}</TableCell>
+                              <TableCell>{receipt.customerName}</TableCell>
+                              <TableCell className="font-bold">₹{receipt.amount?.toLocaleString()}</TableCell>
+                              <TableCell className="capitalize">{receipt.paymentMethod?.replace('_', ' ')}</TableCell>
+                              <TableCell>{receipt.receivedAt ? new Date(receipt.receivedAt).toLocaleDateString() : '-'}</TableCell>
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  <Button size="sm" variant="ghost">
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost">
+                                    <Printer className="h-4 w-4" />
+                                  </Button>
+                                  <Button size="sm" variant="ghost">
+                                    <Download className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          {(!postInvoicingData?.receipts || postInvoicingData.receipts.length === 0) && (
+                            <TableRow>
+                              <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                                No receipts generated yet.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* Warranties Tab */}
+                <TabsContent value="warranties" className="space-y-4">
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <CardTitle className="text-lg">Warranty Registration</CardTitle>
+                        <Button size="sm" onClick={() => setShowPostInvoicingDialog({ type: 'warranty' })}>
+                          <Plus className="h-4 w-4 mr-1" /> Register Warranty
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Warranty #</TableHead>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Items</TableHead>
+                            <TableHead>Valid Until</TableHead>
+                            <TableHead>Claims</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {(postInvoicingData?.warranties || []).map((warranty) => (
+                            <TableRow key={warranty.id}>
+                              <TableCell className="font-medium">{warranty.warrantyNumber}</TableCell>
+                              <TableCell>{warranty.customerName}</TableCell>
+                              <TableCell className="capitalize">{warranty.warrantyType}</TableCell>
+                              <TableCell>{warranty.itemsCovered || 0}</TableCell>
+                              <TableCell>{warranty.endDate ? new Date(warranty.endDate).toLocaleDateString() : '-'}</TableCell>
+                              <TableCell>{warranty.claimsCount || 0}</TableCell>
+                              <TableCell>
+                                <Badge className={warranty.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
+                                  {warranty.status}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                <div className="flex gap-1">
+                                  <Button size="sm" variant="ghost">
+                                    <Eye className="h-4 w-4" />
+                                  </Button>
+                                  <Button size="sm" variant="outline" onClick={() => setShowPostInvoicingDialog({ type: 'warranty-claim', data: warranty })}>
+                                    File Claim
+                                  </Button>
+                                </div>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          {(!postInvoicingData?.warranties || postInvoicingData.warranties.length === 0) && (
+                            <TableRow>
+                              <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                                No warranties registered yet.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+
+                {/* AMC Tab */}
+                <TabsContent value="amc" className="space-y-4">
+                  <Card>
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <CardTitle className="text-lg">AMC Contracts</CardTitle>
+                          <CardDescription>Annual Maintenance Contract management</CardDescription>
+                        </div>
+                        <Button size="sm" onClick={() => setShowPostInvoicingDialog({ type: 'amc' })}>
+                          <Plus className="h-4 w-4 mr-1" /> Create AMC
+                        </Button>
+                      </div>
+                    </CardHeader>
+                    <CardContent>
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>AMC #</TableHead>
+                            <TableHead>Customer</TableHead>
+                            <TableHead>Type</TableHead>
+                            <TableHead>Value</TableHead>
+                            <TableHead>Period</TableHead>
+                            <TableHead>Visits Used</TableHead>
+                            <TableHead>Next Service</TableHead>
+                            <TableHead>Status</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {(postInvoicingData?.amcs || []).map((amc) => (
+                            <TableRow key={amc.id}>
+                              <TableCell className="font-medium">{amc.amcNumber}</TableCell>
+                              <TableCell>{amc.customerName}</TableCell>
+                              <TableCell className="capitalize">{amc.contractType}</TableCell>
+                              <TableCell className="font-bold">₹{amc.value?.toLocaleString()}</TableCell>
+                              <TableCell>{amc.contractPeriod} months</TableCell>
+                              <TableCell>{amc.usedVisits || 0}/{amc.freeVisits || 4}</TableCell>
+                              <TableCell>{amc.nextServiceDate ? new Date(amc.nextServiceDate).toLocaleDateString() : '-'}</TableCell>
+                              <TableCell>
+                                <Badge className={amc.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}>
+                                  {amc.status}
+                                </Badge>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                          {(!postInvoicingData?.amcs || postInvoicingData.amcs.length === 0) && (
+                            <TableRow>
+                              <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                                No AMC contracts yet.
+                              </TableCell>
+                            </TableRow>
+                          )}
+                        </TableBody>
+                      </Table>
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </motion.div>
+          )}
+
+          {/* ==================== FINANCE SYNC TAB ==================== */}
+          {activeTab === 'finance-sync' && (
+            <motion.div
+              key="finance-sync"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="p-4 lg:p-6 space-y-6"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl lg:text-2xl font-bold flex items-center gap-2">
+                    <RefreshCw className="h-6 w-6 text-blue-600" />
+                    BuilD Finance Sync
+                  </h2>
+                  <p className="text-muted-foreground">Sync quotes, invoices, and payments to BuilD Finance</p>
+                </div>
+                <Button onClick={syncAllToFinance} disabled={syncingToFinance}>
+                  {syncingToFinance ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <RefreshCw className="h-4 w-4 mr-2" />}
+                  Sync All Pending
+                </Button>
+              </div>
+
+              <div className="grid md:grid-cols-3 gap-6">
+                <Card className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 rounded-xl bg-purple-100">
+                        <FileText className="h-6 w-6 text-purple-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">Quotes</h3>
+                        <p className="text-sm text-muted-foreground">Sync approved quotes</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm">Total</span>
+                      <span className="font-medium">{financeSyncStatus?.quotes?.total || 0}</span>
+                    </div>
+                    <div className="flex justify-between text-green-600">
+                      <span className="text-sm">Synced</span>
+                      <span className="font-medium">{financeSyncStatus?.quotes?.synced || 0}</span>
+                    </div>
+                    <div className="flex justify-between text-orange-600">
+                      <span className="text-sm">Pending</span>
+                      <span className="font-medium">{financeSyncStatus?.quotes?.pending || 0}</span>
+                    </div>
+                    <Progress value={financeSyncStatus?.quotes?.total ? (financeSyncStatus.quotes.synced / financeSyncStatus.quotes.total) * 100 : 0} className="h-2 mt-2" />
+                  </div>
+                </Card>
+
+                <Card className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 rounded-xl bg-blue-100">
+                        <Receipt className="h-6 w-6 text-blue-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">Invoices</h3>
+                        <p className="text-sm text-muted-foreground">Sync to finance</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm">Total</span>
+                      <span className="font-medium">{financeSyncStatus?.invoices?.total || 0}</span>
+                    </div>
+                    <div className="flex justify-between text-green-600">
+                      <span className="text-sm">Synced</span>
+                      <span className="font-medium">{financeSyncStatus?.invoices?.synced || 0}</span>
+                    </div>
+                    <div className="flex justify-between text-orange-600">
+                      <span className="text-sm">Pending</span>
+                      <span className="font-medium">{financeSyncStatus?.invoices?.pending || 0}</span>
+                    </div>
+                    <Progress value={financeSyncStatus?.invoices?.total ? (financeSyncStatus.invoices.synced / financeSyncStatus.invoices.total) * 100 : 0} className="h-2 mt-2" />
+                  </div>
+                </Card>
+
+                <Card className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-3 rounded-xl bg-green-100">
+                        <IndianRupee className="h-6 w-6 text-green-600" />
+                      </div>
+                      <div>
+                        <h3 className="font-semibold">Payments</h3>
+                        <p className="text-sm text-muted-foreground">Sync collections</p>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm">Total</span>
+                      <span className="font-medium">{financeSyncStatus?.payments?.total || 0}</span>
+                    </div>
+                    <div className="flex justify-between text-green-600">
+                      <span className="text-sm">Synced</span>
+                      <span className="font-medium">{financeSyncStatus?.payments?.synced || 0}</span>
+                    </div>
+                    <div className="flex justify-between text-orange-600">
+                      <span className="text-sm">Pending</span>
+                      <span className="font-medium">{financeSyncStatus?.payments?.pending || 0}</span>
+                    </div>
+                    <Progress value={financeSyncStatus?.payments?.total ? (financeSyncStatus.payments.synced / financeSyncStatus.payments.total) * 100 : 0} className="h-2 mt-2" />
+                  </div>
+                </Card>
+              </div>
+
+              <Card className="p-6">
+                <h3 className="font-semibold mb-4">Auto-Sync Settings</h3>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Auto-sync quotes when approved</p>
+                      <p className="text-sm text-muted-foreground">Automatically sync quotes to Finance when status changes to approved</p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Auto-sync invoices on creation</p>
+                      <p className="text-sm text-muted-foreground">Automatically sync new invoices to BuilD Finance</p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                  <Separator />
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="font-medium">Auto-sync payments</p>
+                      <p className="text-sm text-muted-foreground">Sync payment collections to Finance immediately</p>
+                    </div>
+                    <Switch defaultChecked />
+                  </div>
+                </div>
+              </Card>
+            </motion.div>
+          )}
+
           {/* Catalog Tab */}
           {activeTab === 'catalog' && (
             <motion.div
