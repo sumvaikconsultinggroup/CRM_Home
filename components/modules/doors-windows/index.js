@@ -481,6 +481,7 @@ export function DoorsWindowsModule({ client, user }) {
     if (!tabExists) {
       setActiveTab('dashboard')
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [businessMode])
 
   return (
