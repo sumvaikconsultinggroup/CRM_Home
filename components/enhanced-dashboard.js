@@ -759,7 +759,7 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
         <StatCard
           title="Active Projects"
           value={activeProjects}
-          change={`${projects.length} total`}
+          change={activeProjects > 0 ? `${completedProjects} completed` : `${projects.length} total`}
           positive={activeProjects > 0}
           icon={Briefcase}
           color="from-purple-500 to-pink-600"
