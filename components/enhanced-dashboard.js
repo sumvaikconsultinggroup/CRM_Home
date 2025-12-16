@@ -360,7 +360,7 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
               className="bg-white text-primary hover:bg-white/90 shadow-lg flex-1 md:flex-none text-sm sm:text-base h-9 sm:h-10"
               onClick={() => onNavigate?.('leads')}
             >
-              <Plus className="h-4 w-4 mr-1 sm:mr-2" /> <span className="hidden xs:inline">Add</span> Lead
+              <Plus className="h-4 w-4 mr-1 sm:mr-2" /> Add Lead
             </Button>
             <Button 
               variant="outline" 
