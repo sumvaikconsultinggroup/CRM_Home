@@ -1170,7 +1170,7 @@ export function EnterpriseProjects({ authToken, onProjectSelect }) {
                                 <p className="font-medium text-sm line-clamp-1">{project.name}</p>
                                 <p className="text-xs text-slate-400 font-mono">{project.projectNumber}</p>
                               </div>
-                              <Badge className={priorityInfo.color} variant="outline" className="text-xs">
+                              <Badge className={`${priorityInfo.color} text-xs`} variant="outline">
                                 {project.priority}
                               </Badge>
                             </div>
@@ -1987,7 +1987,7 @@ export function EnterpriseProjects({ authToken, onProjectSelect }) {
                                     </Avatar>
                                     <div className="flex-1 min-w-0">
                                       <p className="font-medium text-sm truncate">{member.userName || member.userEmail}</p>
-                                      <Badge className={getRoleInfo(member.role).color} variant="outline" className="text-xs">
+                                      <Badge className={`${getRoleInfo(member.role).color} text-xs`} variant="outline">
                                         {getRoleInfo(member.role).label}
                                       </Badge>
                                     </div>
