@@ -449,39 +449,68 @@ const Sparkline = ({ data = [], color = '#6366f1', height = 30 }) => {
   )
 }
 
-// Stat card with animation
+// Stat card with enhanced animations
 const StatCard = ({ title, value, prefix = '', suffix = '', change, positive, icon: Icon, color, bgColor, sparkData = [], onClick }) => (
   <motion.div
-    whileHover={{ y: -4, scale: 1.02 }}
-    whileTap={{ scale: 0.98 }}
+    initial={{ opacity: 0, y: 30 }}
+    animate={{ opacity: 1, y: 0 }}
+    whileHover={{ 
+      y: -8, 
+      scale: 1.03,
+      boxShadow: "0 20px 40px rgba(0,0,0,0.15)",
+      transition: { duration: 0.3, ease: "easeOut" }
+    }}
+    whileTap={{ scale: 0.97 }}
     onClick={onClick}
-    className={`${bgColor} rounded-2xl p-5 cursor-pointer transition-shadow hover:shadow-lg border border-slate-100`}
+    className={`${bgColor} rounded-2xl p-5 cursor-pointer border border-slate-100 relative overflow-hidden`}
   >
-    <div className="flex items-start justify-between mb-3">
-      <div className={`p-2.5 rounded-xl bg-gradient-to-br ${color} text-white shadow-lg`}>
-        <Icon className="h-5 w-5" />
+    {/* Animated background shimmer */}
+    <motion.div
+      className="absolute inset-0 bg-gradient-to-r from-transparent via-white/30 to-transparent"
+      initial={{ x: '-100%' }}
+      animate={{ x: '100%' }}
+      transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
+    />
+    <div className="relative z-10">
+      <div className="flex items-start justify-between mb-3">
+        <motion.div 
+          className={`p-2.5 rounded-xl bg-gradient-to-br ${color} text-white shadow-lg`}
+          whileHover={{ rotate: [0, -10, 10, 0], transition: { duration: 0.5 } }}
+        >
+          <Icon className="h-5 w-5" />
+        </motion.div>
+        {sparkData.length > 0 && (
+          <div className="w-20 h-8">
+            <Sparkline data={sparkData} color={positive ? '#10b981' : '#ef4444'} />
+          </div>
+        )}
       </div>
-      {sparkData.length > 0 && (
-        <div className="w-20 h-8">
-          <Sparkline data={sparkData} color={positive ? '#10b981' : '#ef4444'} />
-        </div>
-      )}
-    </div>
-    <div className="mt-2">
-      <p className="text-2xl font-bold text-slate-800">
-        <AnimatedNumber value={value} prefix={prefix} suffix={suffix} />
-      </p>
-      <p className="text-sm text-slate-600 mt-1">{title}</p>
-    </div>
-    <div className="flex items-center gap-1 mt-3">
-      {positive ? (
-        <ArrowUp className="h-3 w-3 text-emerald-600" />
-      ) : (
-        <ArrowDown className="h-3 w-3 text-red-500" />
-      )}
-      <span className={`text-xs font-medium ${positive ? 'text-emerald-600' : 'text-red-500'}`}>
-        {change}
-      </span>
+      <div className="mt-2">
+        <p className="text-2xl font-bold text-slate-800">
+          <AnimatedNumber value={value} prefix={prefix} suffix={suffix} />
+        </p>
+        <p className="text-sm text-slate-600 mt-1">{title}</p>
+      </div>
+      <motion.div 
+        className="flex items-center gap-1 mt-3"
+        initial={{ opacity: 0, x: -10 }}
+        animate={{ opacity: 1, x: 0 }}
+        transition={{ delay: 0.5 }}
+      >
+        <motion.div
+          animate={positive ? { y: [0, -3, 0] } : { y: [0, 3, 0] }}
+          transition={{ duration: 1, repeat: Infinity, repeatDelay: 2 }}
+        >
+          {positive ? (
+            <ArrowUp className="h-3 w-3 text-emerald-600" />
+          ) : (
+            <ArrowDown className="h-3 w-3 text-red-500" />
+          )}
+        </motion.div>
+        <span className={`text-xs font-medium ${positive ? 'text-emerald-600' : 'text-red-500'}`}>
+          {change}
+        </span>
+      </motion.div>
     </div>
   </motion.div>
 )
