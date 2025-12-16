@@ -909,25 +909,6 @@ function ClientDashboard({ user, client, onLogout }) {
     )
   }
 
-  // Responsive state for client dashboard
-  const [mobileMenuOpenClient, setMobileMenuOpenClient] = useState(false)
-  const [windowWidthClient, setWindowWidthClient] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
-
-  useEffect(() => {
-    const handleResize = () => setWindowWidthClient(window.innerWidth)
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
-
-  const isMobileClient = windowWidthClient < 768
-  const isTabletClient = windowWidthClient >= 768 && windowWidthClient < 1024
-
-  // Auto-collapse sidebar on tablet
-  useEffect(() => {
-    if (isTabletClient) setSidebarOpen(false)
-    else if (!isMobileClient) setSidebarOpen(true)
-  }, [isMobileClient, isTabletClient])
-
   const handleMenuItemClick = (item) => {
     if (item.isModule && item.id === 'flooring-module') {
       setActiveModule('flooring')
