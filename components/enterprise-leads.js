@@ -313,27 +313,27 @@ const LeadCard = ({ lead, onEdit, onDelete, onView, onStatusChange, onAddRemark,
   )
 }
 
-// Kanban Column Component
+// Kanban Column Component - Responsive
 const KanbanColumn = ({ status, leads, onStatusChange, onEdit, onDelete, onView, onAddRemark, showScore }) => {
   const statusConfig = LEAD_STATUSES.find(s => s.id === status) || LEAD_STATUSES[0]
   const columnLeads = leads.filter(l => l.status === status)
   const totalValue = columnLeads.reduce((sum, l) => sum + (l.value || 0), 0)
 
   return (
-    <div className="flex-1 min-w-[300px] max-w-[350px]">
-      <div className={`rounded-t-xl p-4 ${statusConfig.bgLight}`}>
+    <div className="flex-1 min-w-[260px] sm:min-w-[280px] lg:min-w-[300px] max-w-[350px]">
+      <div className={`rounded-t-xl p-2 sm:p-3 lg:p-4 ${statusConfig.bgLight}`}>
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className={`h-3 w-3 rounded-full ${statusConfig.color}`} />
-            <h3 className={`font-semibold ${statusConfig.text}`}>{statusConfig.label}</h3>
-            <Badge variant="secondary" className="ml-2">{columnLeads.length}</Badge>
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            <div className={`h-2.5 w-2.5 sm:h-3 sm:w-3 rounded-full ${statusConfig.color}`} />
+            <h3 className={`font-semibold text-sm sm:text-base ${statusConfig.text}`}>{statusConfig.label}</h3>
+            <Badge variant="secondary" className="ml-1 sm:ml-2 text-xs">{columnLeads.length}</Badge>
           </div>
-          <span className="text-sm font-medium text-muted-foreground">
-            ₹{totalValue.toLocaleString()}
+          <span className="text-xs sm:text-sm font-medium text-muted-foreground">
+            ₹{(totalValue / 1000).toFixed(0)}K
           </span>
         </div>
       </div>
-      <div className="bg-slate-100 rounded-b-xl p-3 min-h-[500px] space-y-3">
+      <div className="bg-slate-100 rounded-b-xl p-2 sm:p-3 min-h-[400px] sm:min-h-[500px] space-y-2 sm:space-y-3">
         <AnimatePresence>
           {columnLeads.map(lead => (
             <LeadCard
