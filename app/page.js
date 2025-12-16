@@ -69,6 +69,8 @@ import { ProductAssignment } from '@/components/super-admin/product-assignment'
 import { DoorsWindowsModule } from '@/components/modules/doors-windows'
 import { EnterpriseWhiteLabel } from '@/components/enterprise-whitelabel'
 import { EnterpriseSettings } from '@/components/enterprise-settings'
+import { useResponsive } from '@/hooks/use-responsive'
+import { Sheet, SheetContent } from '@/components/ui/sheet'
 
 // Animation variants
 const fadeIn = {
