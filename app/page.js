@@ -686,6 +686,19 @@ function ClientDashboard({ user, client, onLogout }) {
   const isTabletClient = windowWidthClient >= 768 && windowWidthClient < 1024
   const authToken = typeof window !== 'undefined' ? localStorage.getItem('token') : null
 
+  // Responsive resize listener
+  useEffect(() => {
+    const handleResize = () => setWindowWidthClient(window.innerWidth)
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
+
+  // Auto-collapse sidebar on tablet
+  useEffect(() => {
+    if (isTabletClient) setSidebarOpen(false)
+    else if (!isMobileClient) setSidebarOpen(true)
+  }, [isMobileClient, isTabletClient])
+
   const fetchData = useCallback(async () => {
     setLoading(true)
     try {
