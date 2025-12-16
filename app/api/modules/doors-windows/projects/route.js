@@ -17,27 +17,27 @@ export async function GET(request) {
     const db = await getClientDb(dbName)
     const collection = db.collection('doors_windows_projects')
     
-    // FIXED: Only fetch ACTUAL projects, NOT lead-sourced ones
-    // Projects come from: 1) Manual creation, 2) CRM Projects sync (NOT Leads)
-    // Leads that are "Won" get converted to Projects in CRM, then synced as Projects
+    // FIXED: Fetch ALL D&W projects that come from:
+    // 1) Manual creation
+    // 2) CRM Projects sync (including projects converted from leads in CRM)
+    // Only EXCLUDE projects that were directly synced from leads (syncedFrom.type === 'lead')
     const projects = await collection.find({
       $or: [
         { source: 'manual' },
         { source: { $exists: false } }, // Legacy projects
-        { crmProjectId: { $ne: null, $exists: true } }, // Synced from CRM Projects
+        { source: 'crm_sync' }, // All CRM synced projects
+        { crmProjectId: { $ne: null, $exists: true } }, // Has CRM project link
         { 'syncedFrom.type': 'project' } // Explicitly synced from Projects
-      ],
-      // Exclude anything that was synced from a lead
-      'syncedFrom.type': { $ne: 'lead' },
-      leadId: { $in: [null, undefined] } // No lead association OR legacy
+      ]
     }).toArray()
     
-    // Double-check filter: remove any that have "Lead -" in name or came from leads
+    // Filter out ONLY projects that were directly synced from leads
+    // Projects converted from leads in CRM are VALID - they have syncedFrom.type === 'project'
     const filteredProjects = projects.filter(p => {
-      // Skip if name starts with "Lead -"
-      if (p.name?.startsWith('Lead -') || p.name?.startsWith('Lead-')) return false
-      // Skip if syncedFrom type is 'lead'
+      // Skip if directly synced from a lead (NOT a converted lead-to-project)
       if (p.syncedFrom?.type === 'lead') return false
+      // Skip if name indicates it's a raw lead
+      if (p.name?.startsWith('Lead -') || p.name?.startsWith('Lead-')) return false
       return true
     })
     
