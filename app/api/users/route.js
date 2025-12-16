@@ -82,8 +82,12 @@ export async function POST(request) {
       password: hashPassword(body.password),
       name: body.name,
       role: body.role || 'sales_rep',
-      permissions: body.permissions || [],
+      status: body.status || 'active',
+      phone: body.phone || null,
+      department: body.department || null,
+      permissions: body.permissions || null, // null means inherit from role
       avatar: null,
+      lastLogin: null,
       createdBy: user.id,
       createdAt: new Date(),
       updatedAt: new Date()
