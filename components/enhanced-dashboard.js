@@ -162,42 +162,46 @@ const LineChart = ({ data = [], height = 150, color = '#6366f1', showArea = true
 }
 
 // Donut chart component
-const DonutChart = ({ data = [], size = 150, thickness = 25 }) => {
+const DonutChart = ({ data = [], size = 150 }) => {
   const total = data.reduce((sum, d) => sum + d.value, 0) || 1
-  let currentAngle = 0
+  
+  // Pre-calculate all angles
+  const segments = useMemo(() => {
+    let runningAngle = 0
+    return data.map((item) => {
+      const angle = (item.value / total) * 360
+      const startAngle = runningAngle
+      runningAngle += angle
+      
+      const startRad = (startAngle - 90) * Math.PI / 180
+      const endRad = (runningAngle - 90) * Math.PI / 180
+      
+      const radius = 40
+      const x1 = 50 + radius * Math.cos(startRad)
+      const y1 = 50 + radius * Math.sin(startRad)
+      const x2 = 50 + radius * Math.cos(endRad)
+      const y2 = 50 + radius * Math.sin(endRad)
+      
+      const largeArc = angle > 180 ? 1 : 0
+      const pathD = `M 50 50 L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`
+      
+      return { ...item, pathD }
+    })
+  }, [data, total])
 
   return (
     <svg width={size} height={size} viewBox="0 0 100 100">
-      {data.map((item, i) => {
-        const angle = (item.value / total) * 360
-        const startAngle = currentAngle
-        currentAngle += angle
-        
-        const startRad = (startAngle - 90) * Math.PI / 180
-        const endRad = (currentAngle - 90) * Math.PI / 180
-        
-        const radius = 40
-        const x1 = 50 + radius * Math.cos(startRad)
-        const y1 = 50 + radius * Math.sin(startRad)
-        const x2 = 50 + radius * Math.cos(endRad)
-        const y2 = 50 + radius * Math.sin(endRad)
-        
-        const largeArc = angle > 180 ? 1 : 0
-        
-        const pathD = `M 50 50 L ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} Z`
-        
-        return (
-          <motion.path
-            key={i}
-            d={pathD}
-            fill={item.color}
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ delay: i * 0.1, duration: 0.5 }}
-            className="cursor-pointer hover:opacity-80 transition-opacity"
-          />
-        )
-      })}
+      {segments.map((segment, i) => (
+        <motion.path
+          key={i}
+          d={segment.pathD}
+          fill={segment.color}
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: i * 0.1, duration: 0.5 }}
+          className="cursor-pointer hover:opacity-80 transition-opacity"
+        />
+      ))}
       <circle cx="50" cy="50" r="25" fill="white" />
     </svg>
   )
