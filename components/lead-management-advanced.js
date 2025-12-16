@@ -2174,7 +2174,8 @@ export function AdvancedLeadManagement({
     if (!markWonDialog) return
     
     try {
-      await handleStatusChange(markWonDialog.id, 'won')
+      // Pass skipDialog=true to bypass the dialog check since we're already in the dialog
+      await handleStatusChange(markWonDialog.id, 'won', true)
       setMarkWonDialog(null)
     } catch (error) {
       toast.error('Failed to convert lead')
