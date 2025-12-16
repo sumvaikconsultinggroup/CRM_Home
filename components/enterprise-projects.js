@@ -24,7 +24,7 @@ import {
   CalendarDays, MapPin, Phone, Mail, Building2, FileText, Activity,
   Milestone, Flag, Play, Pause, Check, X, RefreshCw, Download,
   BarChart3, PieChart, User, Settings, Link2, ExternalLink,
-  GanttChart, Copy, UserPlus, FileUp, Folder, FilePlus, UserCheck
+  GanttChart, Copy, UserPlus, FileUp, Folder, FilePlus, UserCheck, Sparkles
 } from 'lucide-react'
 import { toast } from 'sonner'
 
