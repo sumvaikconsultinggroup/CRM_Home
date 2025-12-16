@@ -443,7 +443,7 @@ function SuperAdminDashboard({ user, onLogout }) {
         </motion.header>
 
         {/* Content */}
-        <div className="p-6">
+        <div className="p-3 sm:p-4 lg:p-6">
           <AnimatePresence mode="wait">
             {activeTab === 'overview' && stats && (
               <motion.div
