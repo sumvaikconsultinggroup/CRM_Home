@@ -2322,6 +2322,42 @@ export default function EnterpriseLanding({ onLogin }) {
               </motion.div>
             ))}
           </div>
+
+          {/* Module Add-on Pricing */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            className="mt-12 max-w-3xl mx-auto"
+          >
+            <div className="bg-gradient-to-r from-indigo-50 via-purple-50 to-pink-50 rounded-3xl p-8 border border-indigo-100">
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div>
+                  <h3 className="text-xl font-bold text-gray-900 mb-2">Industry Module Add-ons</h3>
+                  <p className="text-gray-600">Add specialized modules for Doors & Windows, Flooring, Kitchens, and more</p>
+                </div>
+                <div className="text-center md:text-right">
+                  <div className="flex items-baseline justify-center md:justify-end gap-1">
+                    <span className="text-lg text-gray-600">{getCurrencySymbol()}</span>
+                    <span className="text-4xl font-bold text-indigo-600">
+                      {PRICING_CONFIG[currency].module.price.toLocaleString()}
+                    </span>
+                  </div>
+                  <span className="text-sm text-gray-500">{PRICING_CONFIG[currency].module.label}</span>
+                </div>
+              </div>
+              <div className="mt-6 flex flex-wrap gap-3 justify-center">
+                {defaultModules.slice(0, 6).map((mod, i) => (
+                  <span key={i} className="px-4 py-2 bg-white rounded-full text-sm font-medium text-gray-700 border border-gray-200">
+                    {mod.name}
+                  </span>
+                ))}
+                <span className="px-4 py-2 bg-indigo-100 rounded-full text-sm font-medium text-indigo-700 border border-indigo-200">
+                  +2 more
+                </span>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </section>
 
