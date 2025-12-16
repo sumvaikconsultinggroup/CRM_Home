@@ -2389,7 +2389,7 @@ export function EnterpriseProjects({ authToken, onProjectSelect }) {
                   <SelectValue placeholder="Select assignee (optional)" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Unassigned</SelectItem>
+                  <SelectItem value="unassigned">Unassigned</SelectItem>
                   {users.map(user => (
                     <SelectItem key={user.id} value={user.id}>
                       {user.name || user.email}
