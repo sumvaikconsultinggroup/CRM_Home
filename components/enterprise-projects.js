@@ -982,72 +982,137 @@ export function EnterpriseProjects({ authToken, onProjectSelect }) {
 
         {/* Templates Tab */}
         <TabsContent value="templates" className="space-y-6 mt-6">
-          <div className="flex justify-between items-center">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h3 className="text-lg font-semibold">Project Templates</h3>
               <p className="text-sm text-slate-500">Create projects quickly from saved templates</p>
             </div>
-            <Button onClick={() => setShowTemplateDialog(true)}>
-              <Plus className="h-4 w-4 mr-2" /> New Template
-            </Button>
+            <div className="flex gap-2">
+              <Button variant="outline" onClick={handleLoadPreBuiltTemplates}>
+                <Sparkles className="h-4 w-4 mr-2" /> Load 15 Pre-built Templates
+              </Button>
+              <Button onClick={() => setShowTemplateDialog(true)}>
+                <Plus className="h-4 w-4 mr-2" /> New Template
+              </Button>
+            </div>
           </div>
 
           {templates.length === 0 ? (
             <GlassCard className="p-12 text-center">
               <Copy className="h-16 w-16 text-slate-300 mx-auto mb-4" />
-              <p className="text-slate-500 mb-4">No templates yet. Create your first template to speed up project creation.</p>
-              <Button onClick={() => setShowTemplateDialog(true)}>
-                <Plus className="h-4 w-4 mr-2" /> Create Template
-              </Button>
+              <h4 className="text-lg font-semibold text-slate-700 mb-2">No templates yet</h4>
+              <p className="text-slate-500 mb-6 max-w-md mx-auto">
+                Templates help you create projects faster with predefined milestones, tasks, and budgets.
+              </p>
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Button onClick={handleLoadPreBuiltTemplates} className="bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700">
+                  <Sparkles className="h-4 w-4 mr-2" /> Load 15 Professional Templates
+                </Button>
+                <Button variant="outline" onClick={() => setShowTemplateDialog(true)}>
+                  <Plus className="h-4 w-4 mr-2" /> Create Custom Template
+                </Button>
+              </div>
             </GlassCard>
           ) : (
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-              {templates.map((template, idx) => (
-                <motion.div
-                  key={template.id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: idx * 0.05 }}
+            <>
+              {/* Category Filter */}
+              <div className="flex flex-wrap gap-2 mb-4">
+                <Badge 
+                  variant={selectedTemplateCategory === 'all' ? 'default' : 'outline'}
+                  className="cursor-pointer hover:bg-primary/10"
+                  onClick={() => setSelectedTemplateCategory('all')}
                 >
-                  <GlassCard className="p-5 hover:shadow-xl transition-all">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h3 className="font-semibold text-slate-800">{template.name}</h3>
-                        <Badge variant="outline" className="mt-1">{getTypeLabel(template.projectType)}</Badge>
+                  All ({templates.length})
+                </Badge>
+                {[...new Set(templates.map(t => t.category).filter(Boolean))].map(cat => (
+                  <Badge 
+                    key={cat}
+                    variant={selectedTemplateCategory === cat ? 'default' : 'outline'}
+                    className="cursor-pointer hover:bg-primary/10"
+                    onClick={() => setSelectedTemplateCategory(cat)}
+                  >
+                    {cat} ({templates.filter(t => t.category === cat).length})
+                  </Badge>
+                ))}
+              </div>
+
+              {/* Templates Grid */}
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {templates
+                  .filter(t => selectedTemplateCategory === 'all' || t.category === selectedTemplateCategory)
+                  .map((template, idx) => (
+                  <motion.div
+                    key={template.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: idx * 0.03 }}
+                  >
+                    <GlassCard className="p-5 hover:shadow-xl transition-all h-full flex flex-col">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xl" style={{ backgroundColor: `${template.color}20` }}>
+                            {template.icon || '📋'}
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-slate-800 line-clamp-1">{template.name}</h3>
+                            <div className="flex items-center gap-2 mt-1">
+                              <Badge variant="outline" className="text-xs">{template.category || getTypeLabel(template.projectType)}</Badge>
+                              {template.isPreBuilt && (
+                                <Badge className="bg-purple-100 text-purple-700 text-xs">Pro</Badge>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        {!template.isPreBuilt && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteTemplate(template.id)}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        )}
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteTemplate(template.id)}
+                      <p className="text-sm text-slate-500 mb-4 line-clamp-2 flex-1">{template.description || 'No description'}</p>
+                      
+                      {/* Template Stats */}
+                      <div className="grid grid-cols-3 gap-2 mb-4 text-center">
+                        <div className="bg-slate-50 rounded-lg p-2">
+                          <p className="text-lg font-bold text-slate-800">{template.milestones?.length || 0}</p>
+                          <p className="text-xs text-slate-500">Milestones</p>
+                        </div>
+                        <div className="bg-slate-50 rounded-lg p-2">
+                          <p className="text-lg font-bold text-slate-800">{template.defaultTasks?.length || 0}</p>
+                          <p className="text-xs text-slate-500">Tasks</p>
+                        </div>
+                        <div className="bg-slate-50 rounded-lg p-2">
+                          <p className="text-lg font-bold text-slate-800">{template.estimatedDuration || 30}</p>
+                          <p className="text-xs text-slate-500">Days</p>
+                        </div>
+                      </div>
+                      
+                      {/* Budget */}
+                      <div className="flex items-center justify-between text-sm mb-4 p-2 bg-emerald-50 rounded-lg">
+                        <span className="text-emerald-700 font-medium">Est. Budget</span>
+                        <span className="font-bold text-emerald-700">₹{(template.defaultBudget || 0).toLocaleString()}</span>
+                      </div>
+                      
+                      <Button 
+                        className="w-full" 
+                        style={{ backgroundColor: template.color || '#6366f1' }}
+                        onClick={() => {
+                          resetForm()
+                          setFormData({ ...formData, projectType: template.projectType })
+                          handleCreateFromTemplate(template.id)
+                        }}
                       >
-                        <Trash2 className="h-4 w-4 text-red-500" />
+                        <FilePlus className="h-4 w-4 mr-2" /> Use Template
                       </Button>
-                    </div>
-                    <p className="text-sm text-slate-500 mb-4 line-clamp-2">{template.description || 'No description'}</p>
-                    <div className="flex items-center justify-between text-sm text-slate-500 mb-4">
-                      <span className="flex items-center gap-1">
-                        <Milestone className="h-4 w-4" />
-                        {template.milestones?.length || 0} milestones
-                      </span>
-                      <span className="flex items-center gap-1">
-                        <DollarSign className="h-4 w-4" />
-                        {formatCurrency(template.defaultBudget)}
-                      </span>
-                    </div>
-                    <Button 
-                      className="w-full" 
-                      onClick={() => {
-                        resetForm()
-                        setFormData({ ...formData, projectType: template.projectType })
-                        handleCreateFromTemplate(template.id)
-                      }}
-                    >
-                      <FilePlus className="h-4 w-4 mr-2" /> Use Template
-                    </Button>
-                  </GlassCard>
-                </motion.div>
-              ))}
-            </div>
+                    </GlassCard>
+                  </motion.div>
+                ))}
+              </div>
+            </>
           )}
         </TabsContent>
 
