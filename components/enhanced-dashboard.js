@@ -165,13 +165,17 @@ const LeadCard = ({ lead, index }) => {
 export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = [], expenses = [], users = [], client, onNavigate }) {
   const [timeRange, setTimeRange] = useState('week')
   
-  // Calculate metrics from REAL data
-  const totalRevenue = expenses.filter(e => e.type === 'income').reduce((sum, e) => sum + (e.amount || 0), 0)
+  // Calculate metrics from REAL data - NO HARDCODED FALLBACKS
+  // Revenue = Income from expenses + Value of won leads
+  const incomeFromExpenses = expenses.filter(e => e.type === 'income').reduce((sum, e) => sum + (e.amount || 0), 0)
+  const revenueFromWonLeads = leads.filter(l => l.status === 'won').reduce((sum, l) => sum + (l.value || 0), 0)
+  const totalRevenue = incomeFromExpenses + revenueFromWonLeads
+  
   const totalExpensesAmount = expenses.filter(e => e.type === 'expense').reduce((sum, e) => sum + (e.amount || 0), 0)
   const pendingTasks = tasks.filter(t => t.status !== 'completed').length
   const completedTasks = tasks.filter(t => t.status === 'completed').length
   const taskCompletionRate = tasks.length > 0 ? Math.round((completedTasks / tasks.length) * 100) : 0
-  const activeProjects = projects.filter(p => p.status === 'in_progress').length
+  const activeProjects = projects.filter(p => p.status === 'in_progress' || p.status === 'active').length
   const newLeads = leads.filter(l => l.status === 'new').length
   const wonLeads = leads.filter(l => l.status === 'won').length
   const conversionRate = leads.length > 0 ? Math.round((wonLeads / leads.length) * 100) : 0
