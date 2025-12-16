@@ -383,28 +383,28 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
             transition={{ delay: i * 0.1 }}
           >
             <Card 
-              className="p-6 hover:shadow-xl transition-all duration-300 border-0 shadow-lg group cursor-pointer overflow-hidden relative"
+              className="p-3 sm:p-4 lg:p-6 hover:shadow-xl transition-all duration-300 border-0 shadow-lg group cursor-pointer overflow-hidden relative"
               onClick={stat.onClick}
             >
               <div className={`absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity bg-gradient-to-br ${stat.color} blur-3xl`} style={{ transform: 'scale(0.5)', transformOrigin: 'top left' }} />
               <div className="relative">
-                <div className="flex justify-between items-start mb-4">
-                  <div className={`p-3 rounded-2xl ${stat.bgColor}`}>
-                    <stat.icon className={`h-6 w-6 bg-gradient-to-br ${stat.color} bg-clip-text text-transparent`} style={{ color: stat.color.includes('emerald') ? '#10b981' : stat.color.includes('blue') ? '#3b82f6' : stat.color.includes('purple') ? '#a855f7' : '#f97316' }} />
+                <div className="flex justify-between items-start mb-2 sm:mb-4">
+                  <div className={`p-2 sm:p-3 rounded-xl sm:rounded-2xl ${stat.bgColor}`}>
+                    <stat.icon className={`h-4 w-4 sm:h-5 sm:w-5 lg:h-6 lg:w-6 bg-gradient-to-br ${stat.color} bg-clip-text text-transparent`} style={{ color: stat.color.includes('emerald') ? '#10b981' : stat.color.includes('blue') ? '#3b82f6' : stat.color.includes('purple') ? '#a855f7' : '#f97316' }} />
                   </div>
-                  <div className={`flex items-center gap-1 text-sm font-medium ${stat.positive ? 'text-green-600' : 'text-red-600'}`}>
-                    {stat.positive ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
-                    {stat.change}
+                  <div className={`flex items-center gap-1 text-xs sm:text-sm font-medium ${stat.positive ? 'text-green-600' : 'text-red-600'}`}>
+                    {stat.positive ? <TrendingUp className="h-3 w-3 sm:h-4 sm:w-4" /> : <TrendingDown className="h-3 w-3 sm:h-4 sm:w-4" />}
+                    <span className="hidden sm:inline">{stat.change}</span>
                   </div>
                 </div>
-                <div className="mb-3">
-                  <p className="text-sm text-muted-foreground mb-1">{stat.title}</p>
-                  <p className="text-3xl font-bold">
+                <div className="mb-2 sm:mb-3">
+                  <p className="text-xs sm:text-sm text-muted-foreground mb-1 truncate">{stat.title}</p>
+                  <p className="text-lg sm:text-xl lg:text-3xl font-bold">
                     <AnimatedNumber value={stat.value} prefix={stat.prefix || ''} suffix={stat.suffix || ''} />
                   </p>
                 </div>
-                <div className="h-10 opacity-50">
-                  <div className="flex items-end gap-1 h-full">
+                <div className="h-6 sm:h-8 lg:h-10 opacity-50">
+                  <div className="flex items-end gap-0.5 sm:gap-1 h-full">
                     {stat.chartData.map((val, j) => {
                       const max = Math.max(...stat.chartData)
                       return (
