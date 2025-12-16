@@ -22,7 +22,8 @@ import {
   Layers, Grid3X3, Box, Palette, Cog, Hammer, DoorOpen, Maximize2,
   MoreHorizontal, Send, FileCheck, Loader2, TrendingUp, TrendingDown,
   Brain, MessageSquare, Sparkles, Zap, Save, Printer, FolderKanban,
-  Cloud, Link2, Users, Home, Activity, Receipt, Ticket
+  Cloud, Link2, Users, Home, Activity, Receipt, Ticket,
+  IndianRupee, CreditCard, Award, ScrollText, Wallet, Banknote
 } from 'lucide-react'
 import { toast } from 'sonner'
 
