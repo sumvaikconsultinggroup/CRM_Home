@@ -2184,6 +2184,8 @@ export function JiraTaskManager({ token, currentUser, onRefresh }) {
           const detailData = await detailRes.json()
           setSelectedTask(detailData)
         }
+        // Notify parent to refresh dashboard data
+        onRefresh?.()
         return data
       }
     } catch (error) {
