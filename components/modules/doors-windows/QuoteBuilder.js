@@ -905,22 +905,23 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
     // First, set basic project info from local data immediately
     const project = projects?.find(p => p.id === projectId)
     if (project) {
-      // Extract customer name from various possible field names
-      const customerName = project.contactPerson || project.customerName || project.clientName || 
-                          project.customer?.name || project.contact?.name || 
-                          project.name || quoteForm.customerName
+      // Extract customer name - check nested customer object first, then flat fields
+      const customerName = project.customer?.name || project.clientName || project.contactPerson || 
+                          project.customerName || quoteForm.customerName
       
-      // Extract phone from various possible field names  
-      const customerPhone = project.contactPhone || project.phone || project.mobile ||
-                           project.customer?.phone || project.contact?.phone || quoteForm.customerPhone
+      // Extract phone - check nested customer object first, then flat fields
+      const customerPhone = project.customer?.phone || project.clientPhone || project.contactPhone || 
+                           project.phone || project.mobile || quoteForm.customerPhone
       
-      // Extract email from various possible field names
-      const customerEmail = project.contactEmail || project.email || 
-                           project.customer?.email || project.contact?.email || quoteForm.customerEmail
+      // Extract email - check nested customer object first, then flat fields
+      const customerEmail = project.customer?.email || project.clientEmail || project.contactEmail || 
+                           project.email || quoteForm.customerEmail
       
-      // Extract address from various possible field names
-      const siteAddress = project.siteAddress || project.address || project.location ||
-                         project.site?.address || quoteForm.siteAddress
+      // Extract address - check nested customer object first, then flat fields
+      const siteAddress = project.siteAddress || project.customer?.address || project.address || 
+                         project.location || quoteForm.siteAddress
+      
+      console.log('Project data:', { customerName, customerPhone, customerEmail, siteAddress })
       
       setQuoteForm({
         ...quoteForm,
