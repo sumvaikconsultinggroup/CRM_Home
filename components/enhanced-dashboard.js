@@ -285,10 +285,10 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
   const statCards = [
     { 
       title: 'Total Revenue', 
-      value: totalRevenue || stats?.totalRevenue || 125000,
+      value: totalRevenue, // Dynamic - from won leads + income expenses
       prefix: '₹',
-      change: '+12.5%',
-      positive: true,
+      change: wonLeads > 0 ? `${wonLeads} won deals` : 'No deals won yet',
+      positive: totalRevenue > 0,
       icon: DollarSign,
       color: 'from-emerald-500 to-green-600',
       bgColor: 'bg-emerald-50',
@@ -297,9 +297,9 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
     },
     { 
       title: 'Active Leads', 
-      value: leads.length || stats?.totalLeads || 48,
-      change: `${newLeads} new`,
-      positive: true,
+      value: leads.length, // Dynamic - actual count
+      change: newLeads > 0 ? `${newLeads} new` : 'Add your first lead',
+      positive: leads.length > 0,
       icon: Target,
       color: 'from-blue-500 to-indigo-600',
       bgColor: 'bg-blue-50',
@@ -308,25 +308,25 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
     },
     { 
       title: 'Active Projects', 
-      value: activeProjects || stats?.activeProjects || 12,
-      change: `${projects.length} total`,
-      positive: true,
+      value: activeProjects, // Dynamic - only active/in_progress projects
+      change: projects.length > 0 ? `${projects.length} total` : 'No projects yet',
+      positive: activeProjects > 0,
       icon: Briefcase,
       color: 'from-purple-500 to-pink-600',
       bgColor: 'bg-purple-50',
-      chartData: [20, 35, 25, 40, 30, 45, 35],
+      chartData: [0, 0, 0, 0, 0, 0, activeProjects],
       onClick: () => onNavigate?.('projects')
     },
     { 
       title: 'Task Completion', 
-      value: taskCompletionRate,
+      value: taskCompletionRate, // Dynamic - calculated percentage
       suffix: '%',
-      change: `${completedTasks}/${tasks.length} done`,
+      change: tasks.length > 0 ? `${completedTasks}/${tasks.length} done` : 'No tasks yet',
       positive: taskCompletionRate >= 50,
       icon: CheckCircle2,
       color: 'from-orange-500 to-red-500',
       bgColor: 'bg-orange-50',
-      chartData: [60, 65, 55, 70, 75, 68, taskCompletionRate],
+      chartData: [0, 0, 0, 0, 0, 0, taskCompletionRate],
       onClick: () => onNavigate?.('tasks')
     },
   ]
