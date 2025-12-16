@@ -680,6 +680,8 @@ export default function EnterpriseLanding({ onLogin }) {
   const [modules, setModules] = useState(defaultModules)
   const [plans, setPlans] = useState(defaultPlans)
   const [loading, setLoading] = useState(true)
+  const [currency, setCurrency] = useState('INR')
+  const [detectedCountry, setDetectedCountry] = useState(null)
   
   const { scrollYProgress } = useScroll()
   const heroRef = useRef(null)
