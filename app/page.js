@@ -316,26 +316,6 @@ function SuperAdminDashboard({ user, onLogout }) {
     )
   }
 
-  // Responsive state
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
-  const isMobile = typeof window !== 'undefined' && window.innerWidth < 768
-  const [windowWidth, setWindowWidth] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
-
-  useEffect(() => {
-    const handleResize = () => setWindowWidth(window.innerWidth)
-    window.addEventListener('resize', handleResize)
-    return () => window.removeEventListener('resize', handleResize)
-  }, [])
-
-  const isMobileView = windowWidth < 768
-  const isTabletView = windowWidth >= 768 && windowWidth < 1024
-
-  // Auto-collapse sidebar on tablet
-  useEffect(() => {
-    if (isTabletView) setSidebarOpen(false)
-    else if (!isMobileView) setSidebarOpen(true)
-  }, [isMobileView, isTabletView])
-
   const SidebarContent = ({ collapsed = false }) => (
     <>
       <div className="p-4 lg:p-6 flex items-center gap-3 border-b border-white/10">
