@@ -405,7 +405,7 @@ const faqs = [
   },
   {
     question: 'How does pricing work for modules?',
-    answer: 'Our base plans include a set number of industry modules. Starter gets 1 module, Professional gets 3, and Enterprise gets all modules. Additional modules can be added for ₹999/month each.'
+    answer: 'Our base plans include a set number of industry modules. Basic gets 1 module, Professional gets 3, and Enterprise gets all modules. Additional modules can be added for ₹2,999/month (INR) or $99/month (USD) per organization.'
   },
   {
     question: 'What support do you offer?',
