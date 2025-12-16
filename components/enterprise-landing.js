@@ -96,30 +96,65 @@ const moduleColors = [
 // ============================================
 // DEFAULT DATA
 // ============================================
+// Multi-currency pricing configuration
+const PRICING_CONFIG = {
+  INR: {
+    symbol: '₹',
+    locale: 'en-IN',
+    plans: {
+      basic: { price: 300, label: 'Per User/Month' },
+      professional: { price: 550, label: 'Per User/Month' },
+      enterprise: { price: 900, label: 'Per User/Month' },
+      custom: { price: null, label: 'Contact Sales' }
+    },
+    module: { price: 2999, label: 'Per Org/Month' }
+  },
+  USD: {
+    symbol: '$',
+    locale: 'en-US',
+    plans: {
+      basic: { price: 5, label: 'Per User/Month' },
+      professional: { price: 9, label: 'Per User/Month' },
+      enterprise: { price: 25, label: 'Per User/Month' },
+      custom: { price: null, label: 'Contact Sales' }
+    },
+    module: { price: 99, label: 'Per Org/Month' }
+  }
+}
+
 const defaultPlans = [
   {
-    id: 'starter',
-    name: 'Starter',
+    id: 'basic',
+    name: 'Basic',
     description: 'Perfect for small teams',
-    price: 2999,
-    features: ['5 Team Members', 'Basic CRM', 'Lead Management', 'Email Support', '5GB Storage', '1 Industry Module'],
+    priceKey: 'basic',
+    features: ['Up to 5 Users', 'Basic CRM', 'Lead Management', 'Email Support', '5GB Storage', '1 Industry Module'],
     popular: false
   },
   {
     id: 'professional',
     name: 'Professional',
     description: 'Best for growing businesses',
-    price: 5999,
-    features: ['15 Team Members', 'Advanced CRM', 'Project Management', 'Reports & Analytics', 'Priority Support', '25GB Storage', '3 Industry Modules', 'API Access'],
+    priceKey: 'professional',
+    features: ['Up to 25 Users', 'Advanced CRM', 'Project Management', 'Reports & Analytics', 'Priority Support', '25GB Storage', '3 Industry Modules', 'API Access'],
     popular: true
   },
   {
     id: 'enterprise',
     name: 'Enterprise',
     description: 'For large organizations',
-    price: 9999,
+    priceKey: 'enterprise',
     features: ['Unlimited Users', 'Full CRM Suite', 'Custom Modules', 'Dedicated Manager', '100GB Storage', 'All Modules', 'White Labeling', 'Custom Domain', 'SLA 99.9%'],
     popular: false
+  },
+  {
+    id: 'custom',
+    name: 'Custom',
+    description: 'Tailored for your needs',
+    priceKey: 'custom',
+    features: ['Custom User Limits', 'Bespoke Features', 'On-Premise Option', 'Custom Integrations', 'Dedicated Infrastructure', 'Custom SLA', 'Training & Onboarding', '24/7 Phone Support'],
+    popular: false,
+    isCustom: true
   }
 ]
 
