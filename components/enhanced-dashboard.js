@@ -496,26 +496,33 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
             </p>
           </div>
           <div className="flex flex-wrap gap-2 sm:gap-3 w-full md:w-auto">
-            <Button 
-              className="bg-white text-indigo-600 hover:bg-white/90 shadow-lg flex-1 md:flex-none text-sm sm:text-base h-9 sm:h-10"
-              onClick={() => onNavigate?.('leads')}
-            >
-              <Plus className="h-4 w-4 mr-1 sm:mr-2" /> Add Lead
-            </Button>
-            <Button 
-              variant="outline" 
-              className="border-white/30 text-white hover:bg-white/10 flex-1 md:flex-none text-sm sm:text-base h-9 sm:h-10"
-              onClick={() => onNavigate?.('projects')}
-            >
-              <Briefcase className="h-4 w-4 mr-1 sm:mr-2" /> New Project
-            </Button>
-            <Button 
-              variant="outline" 
-              className="border-white/30 text-white hover:bg-white/10 flex-1 md:flex-none text-sm sm:text-base h-9 sm:h-10"
-              onClick={() => onNavigate?.('tasks')}
-            >
-              <CheckCircle2 className="h-4 w-4 mr-1 sm:mr-2" /> Add Task
-            </Button>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button 
+                className="bg-white text-indigo-600 hover:bg-white/90 shadow-lg flex-1 md:flex-none text-sm sm:text-base h-9 sm:h-10 font-semibold"
+                onClick={() => onNavigate?.('leads')}
+              >
+                <Plus className="h-4 w-4 mr-1 sm:mr-2" /> 
+                <span>Add Lead</span>
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button 
+                className="bg-white/20 backdrop-blur-sm border-2 border-white/50 text-white hover:bg-white/30 flex-1 md:flex-none text-sm sm:text-base h-9 sm:h-10 font-semibold shadow-lg"
+                onClick={() => onNavigate?.('projects')}
+              >
+                <Briefcase className="h-4 w-4 mr-1 sm:mr-2" /> 
+                <span>New Project</span>
+              </Button>
+            </motion.div>
+            <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+              <Button 
+                className="bg-white/20 backdrop-blur-sm border-2 border-white/50 text-white hover:bg-white/30 flex-1 md:flex-none text-sm sm:text-base h-9 sm:h-10 font-semibold shadow-lg"
+                onClick={() => onNavigate?.('tasks')}
+              >
+                <CheckCircle2 className="h-4 w-4 mr-1 sm:mr-2" /> 
+                <span>Add Task</span>
+              </Button>
+            </motion.div>
           </div>
         </div>
       </motion.div>
