@@ -2091,14 +2091,14 @@ export function AdvancedLeadManagement({
   }, [leads])
 
   // Handle status change
-  const handleStatusChange = async (leadId, newStatus) => {
-    // For won/lost, show the appropriate dialog
+  const handleStatusChange = async (leadId, newStatus, skipDialog = false) => {
+    // For won/lost, show the appropriate dialog (unless skipDialog is true - meaning called from dialog itself)
     const lead = leads.find(l => l.id === leadId)
-    if (newStatus === 'won' && lead) {
+    if (newStatus === 'won' && lead && !skipDialog) {
       setMarkWonDialog(lead)
       return
     }
-    if (newStatus === 'lost' && lead) {
+    if (newStatus === 'lost' && lead && !skipDialog) {
       setMarkLostDialog(lead)
       return
     }
