@@ -775,6 +775,49 @@ function ClientDashboard({ user, client, onLogout }) {
     })
   }, [client, planId])
 
+  // Submit Feature Request
+  const handleSubmitFeatureRequest = async () => {
+    if (!featureRequest.title.trim()) {
+      toast.error('Please enter a title for your feature request')
+      return
+    }
+    if (!featureRequest.description.trim()) {
+      toast.error('Please describe your feature idea')
+      return
+    }
+    
+    setSubmittingFeature(true)
+    try {
+      const res = await fetch('/api/feature-requests', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${authToken}`
+        },
+        body: JSON.stringify({
+          ...featureRequest,
+          clientId: client?.id,
+          clientName: client?.businessName,
+          userName: user?.name,
+          userEmail: user?.email
+        })
+      })
+      
+      if (res.ok) {
+        toast.success('Feature request submitted! Thank you for your feedback.')
+        setShowFeatureRequest(false)
+        setFeatureRequest({ title: '', description: '', category: 'feature' })
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to submit feature request')
+      }
+    } catch (error) {
+      console.error('Feature request error:', error)
+      toast.error('Failed to submit feature request')
+    } finally {
+      setSubmittingFeature(false)
+    }
+  }
 
   // Check if modules are enabled - only show modules that are actually assigned to the client
   const hasFlooringModule = modules.some(m => m.id === 'wooden-flooring' && m.enabled)
