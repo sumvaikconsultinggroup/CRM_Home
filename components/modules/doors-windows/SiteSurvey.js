@@ -28,7 +28,7 @@ import {
   RotateCcw, Move, ZoomIn, ZoomOut, Square, Circle, Triangle, Minus,
   Maximize, Minimize, GripVertical, MousePointer2, Pencil, Eraser,
   ImagePlus, Video, Mic, Layout, PanelLeft, PanelRight, ScanLine,
-  Focus, Scan, Crosshair, RulerIcon
+  Focus, Scan, Crosshair, RulerIcon, FolderKanban
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { BUILDING_TYPES, FLOOR_LEVELS, ROOM_TYPES, CATEGORIES, PRODUCT_TYPES, GLASS_TYPES, PRODUCT_FAMILIES, FINISHES, FRAME_COLORS } from './constants'
