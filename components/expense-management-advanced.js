@@ -1428,7 +1428,7 @@ export function AdvancedExpenseManagement({
           <div className="flex items-center gap-2 flex-wrap">
             <Button variant="outline" onClick={() => setShowPettyCashDialog(true)}>
               <Coins className="h-4 w-4 mr-2" /> Petty Cash
-              <Badge className="ml-2 bg-amber-500">{formatCurrency(pettyCash.balance)}</Badge>
+              <Badge className="ml-2 bg-amber-500">{formatCurrency(actualPettyCashBalance)}</Badge>
             </Button>
             <Button variant="outline" onClick={() => handleExport(null, 'expenses')}>
               <Download className="h-4 w-4 mr-2" /> Export
