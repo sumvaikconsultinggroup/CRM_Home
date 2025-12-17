@@ -155,10 +155,47 @@ export function EnterpriseUserManagement({ authToken, currentUser, onRefresh }) 
     }
   }
 
+  // Validation state
+  const [formErrors, setFormErrors] = useState({})
+
+  // Validate user form
+  const validateUserForm = (isUpdate = false) => {
+    const errors = {}
+    
+    // Name validation
+    const nameResult = validateName(userForm.name, { required: true, fieldName: 'Full Name' })
+    if (!nameResult.valid) errors.name = nameResult.error
+    
+    // Email validation (only for new users)
+    if (!isUpdate) {
+      const emailResult = validateEmail(userForm.email, true)
+      if (!emailResult.valid) errors.email = emailResult.error
+    }
+    
+    // Password validation
+    if (!isUpdate || userForm.password) {
+      const passwordResult = validatePassword(userForm.password, {
+        minLength: 8,
+        requireUppercase: true,
+        requireNumber: true
+      })
+      if (!passwordResult.valid) errors.password = passwordResult.error
+    }
+    
+    // Phone validation (optional)
+    if (userForm.phone) {
+      const phoneResult = validatePhone(userForm.phone, false)
+      if (!phoneResult.valid) errors.phone = phoneResult.error
+    }
+    
+    setFormErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
   // User CRUD operations
   const handleCreateUser = async () => {
-    if (!userForm.name || !userForm.email || !userForm.password) {
-      toast.error('Name, email and password are required')
+    if (!validateUserForm(false)) {
+      toast.error('Please fix the validation errors')
       return
     }
 
