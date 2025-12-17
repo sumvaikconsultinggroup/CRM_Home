@@ -3875,13 +3875,13 @@ Please confirm receipt of goods and update status after delivery.`
                   onChange={(e) => setChallanForm({ ...challanForm, driverName: e.target.value })}
                 />
               </div>
-              <div>
-                <Label>Driver Phone</Label>
-                <Input
-                  value={challanForm.driverPhone || ''}
-                  onChange={(e) => setChallanForm({ ...challanForm, driverPhone: e.target.value })}
-                />
-              </div>
+              <PhoneInput
+                label="Driver Phone"
+                name="driverPhone"
+                value={challanForm.driverPhone || ''}
+                onChange={(e) => setChallanForm({ ...challanForm, driverPhone: e.target.value })}
+                defaultCountry="IN"
+              />
             </div>
 
             <Separator />
