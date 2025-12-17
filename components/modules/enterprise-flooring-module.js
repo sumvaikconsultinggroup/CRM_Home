@@ -2049,45 +2049,141 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }
 
-  // Handle B2B Dispatch (Mark as dispatched/in-transit for B2B Material Orders)
-  const handleB2BDispatch = async (invoice) => {
+  // Open Dispatch Dialog - Comprehensive workflow
+  const openDispatchDialog = async (invoice) => {
+    setDispatchInvoice(invoice)
+    setDispatchStep(1)
+    setDispatchForm({
+      driverName: '',
+      driverPhone: '',
+      vehicleNumber: '',
+      transporterName: '',
+      dispatchPhoto: null,
+      notes: ''
+    })
+    setCustomerDues(null)
+    setStockCheck(null)
+    setShowDispatchDialog(true)
+    
+    // Fetch customer dues
     try {
-      setLoading(true)
-      
-      // Find the related project
-      const project = projects.find(p => p.id === invoice.projectId)
-      if (!project) {
-        toast.error('Project not found for this invoice')
-        return
+      setDispatchLoading(true)
+      const res = await fetch(`/api/flooring/enhanced/dispatch?checkDues=true&customerId=${invoice.customer?.id}`, { headers })
+      const data = await res.json()
+      if (data.dues) {
+        setCustomerDues(data.dues)
       }
-
-      // Safety check: Only for B2B projects
-      if (project.segment !== 'b2b') {
-        toast.error('This action is only for B2B orders. Use Installation for B2C projects.')
-        return
-      }
-
-      // Update project status to in_transit
-      await handleUpdateProjectStatus(project.id, 'in_transit')
+    } catch (error) {
+      console.error('Error fetching customer dues:', error)
+    } finally {
+      setDispatchLoading(false)
+    }
+  }
+  
+  // Check stock availability for dispatch
+  const checkDispatchStock = async () => {
+    if (!dispatchInvoice) return
+    
+    try {
+      setDispatchLoading(true)
+      const items = (dispatchInvoice.items || []).map(item => ({
+        productId: item.productId || item.id,
+        productName: item.productName || item.name,
+        quantity: item.quantity || item.area || 0,
+        warehouseId: 'default'
+      }))
       
-      // Mark invoice as dispatched
-      await fetch('/api/flooring/enhanced/invoices', {
-        method: 'PUT',
+      const res = await fetch(`/api/flooring/enhanced/dispatch?checkStock=true&items=${encodeURIComponent(JSON.stringify(items))}`, { headers })
+      const data = await res.json()
+      if (data.stockCheck) {
+        setStockCheck(data.stockCheck)
+      }
+      setDispatchStep(3)
+    } catch (error) {
+      console.error('Error checking stock:', error)
+      toast.error('Failed to check stock availability')
+    } finally {
+      setDispatchLoading(false)
+    }
+  }
+  
+  // Handle dispatch photo upload
+  const handleDispatchPhotoUpload = (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    const reader = new FileReader()
+    reader.onloadend = () => {
+      setDispatchForm(prev => ({ ...prev, dispatchPhoto: reader.result }))
+    }
+    reader.readAsDataURL(file)
+  }
+  
+  // Create dispatch
+  const handleCreateDispatch = async (forceDispatch = false) => {
+    if (!dispatchInvoice) return
+    
+    if (!dispatchForm.driverName || !dispatchForm.vehicleNumber) {
+      toast.error('Driver name and vehicle number are required')
+      return
+    }
+    
+    try {
+      setDispatchLoading(true)
+      
+      const res = await fetch('/api/flooring/enhanced/dispatch', {
+        method: 'POST',
         headers,
         body: JSON.stringify({
-          id: invoice.id,
-          action: 'mark_dispatched',
-          by: user?.id
+          invoiceId: dispatchInvoice.id,
+          driverDetails: {
+            driverName: dispatchForm.driverName,
+            driverPhone: dispatchForm.driverPhone,
+            vehicleNumber: dispatchForm.vehicleNumber,
+            transporterName: dispatchForm.transporterName
+          },
+          dispatchPhoto: dispatchForm.dispatchPhoto,
+          notes: dispatchForm.notes,
+          forceDispatch
         })
       })
-
-      toast.success('Material dispatched! Order marked as In Transit.')
-      fetchInvoices()
-      fetchProjects()
+      
+      const data = await res.json()
+      
+      if (res.ok) {
+        toast.success(`Dispatch ${data.dispatch?.dispatchNumber} created! Delivery Challan generated.`)
+        setShowDispatchDialog(false)
+        setDispatchInvoice(null)
+        fetchInvoices()
+        fetchDispatches()
+        fetchProjects()
+      } else {
+        if (data.requiresAdminOverride) {
+          // Show admin override option
+          const isAdmin = user?.role === 'admin' || user?.role === 'super_admin'
+          if (isAdmin) {
+            const confirm = window.confirm('Stock is insufficient. As admin, do you want to proceed with dispatch anyway?')
+            if (confirm) {
+              handleCreateDispatch(true)
+            }
+          } else {
+            toast.error('Insufficient stock. Only admin can override this.')
+          }
+        } else {
+          toast.error(data.error || 'Failed to create dispatch')
+        }
+      }
     } catch (error) {
-      toast.error('Failed to mark as dispatched')
+      toast.error('Failed to create dispatch')
     } finally {
-      setLoading(false)
+      setDispatchLoading(false)
+    }
+  }
+
+  // Handle B2B Dispatch (Legacy - now opens dialog)
+  const handleB2BDispatch = async (invoice) => {
+    // Open the comprehensive dispatch dialog instead
+    openDispatchDialog(invoice)
     }
   }
 
