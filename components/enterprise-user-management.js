@@ -375,6 +375,7 @@ export function EnterpriseUserManagement({ authToken, currentUser, onRefresh }) 
       },
       customPermissions: false
     })
+    setFormErrors({}) // Clear validation errors
   }
 
   const resetRoleForm = () => {
