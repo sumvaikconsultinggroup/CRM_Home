@@ -243,6 +243,8 @@ export function RegisterPage({ onBack, onSuccess, onLogin }) {
   const [plans, setPlans] = useState([])
   const [loading, setLoading] = useState(false)
   const [loadingPlans, setLoadingPlans] = useState(true)
+  const [errors, setErrors] = useState({})
+  const [touched, setTouched] = useState({})
   
   const [formData, setFormData] = useState({
     businessName: '',
@@ -267,8 +269,79 @@ export function RegisterPage({ onBack, onSuccess, onLogin }) {
     fetchPlans()
   }, [])
 
+  const handleBlur = (field) => {
+    setTouched(prev => ({ ...prev, [field]: true }))
+    validateSingleField(field)
+  }
+
+  const validateSingleField = (field) => {
+    let result = { valid: true, error: null }
+    
+    switch (field) {
+      case 'businessName':
+        result = validateName(formData.businessName, { required: true, fieldName: 'Business name', minLength: 2 })
+        break
+      case 'email':
+        result = validateEmail(formData.email, true)
+        break
+      case 'password':
+        result = validatePassword(formData.password, { minLength: 8, requireUppercase: true, requireNumber: true })
+        break
+      case 'phone':
+        if (formData.phone) {
+          result = validatePhone(formData.phone, false)
+        }
+        break
+    }
+
+    if (!result.valid) {
+      setErrors(prev => ({ ...prev, [field]: result.error }))
+    } else {
+      setErrors(prev => { const n = { ...prev }; delete n[field]; return n })
+    }
+    return result
+  }
+
+  const validateStep1 = () => {
+    const newErrors = {}
+    setTouched({ businessName: true, email: true, password: true, phone: true })
+
+    const businessResult = validateName(formData.businessName, { required: true, fieldName: 'Business name', minLength: 2 })
+    if (!businessResult.valid) newErrors.businessName = businessResult.error
+
+    const emailResult = validateEmail(formData.email, true)
+    if (!emailResult.valid) newErrors.email = emailResult.error
+
+    const passwordResult = validatePassword(formData.password, { minLength: 8, requireUppercase: true, requireNumber: true })
+    if (!passwordResult.valid) newErrors.password = passwordResult.error
+
+    if (formData.phone) {
+      const phoneResult = validatePhone(formData.phone, false)
+      if (!phoneResult.valid) newErrors.phone = phoneResult.error
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
+
+  const handleNextStep = () => {
+    if (validateStep1()) {
+      setStep(2)
+    } else {
+      toast.error('Please fix the validation errors')
+    }
+  }
+
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    // Re-validate step 1 fields before final submission
+    if (!validateStep1()) {
+      setStep(1)
+      toast.error('Please fix the validation errors')
+      return
+    }
+
     setLoading(true)
     try {
       const data = await api.register(
