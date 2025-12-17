@@ -401,6 +401,17 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }, [token])
 
+  // Fetch dispatches
+  const fetchDispatches = useCallback(async () => {
+    try {
+      const res = await fetch('/api/flooring/enhanced/dispatch', { headers })
+      const data = await res.json()
+      if (data.dispatches) setDispatches(data.dispatches)
+    } catch (error) {
+      console.error('Dispatches fetch error:', error)
+    }
+  }, [token])
+
   const fetchInventory = useCallback(async () => {
     try {
       const res = await fetch('/api/flooring/enhanced/inventory', { headers })
