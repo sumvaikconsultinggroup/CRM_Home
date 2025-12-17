@@ -48,9 +48,11 @@ export async function POST(request) {
     requireClientAccess(user)
 
     const body = await request.json()
+    console.log('Expense POST body:', JSON.stringify(body, null, 2))
     
     const validation = validateExpenseData(body)
     if (!validation.valid) {
+      console.log('Expense validation failed:', validation)
       return errorResponse(validation.message, 400)
     }
 
@@ -58,13 +60,21 @@ export async function POST(request) {
     const db = await getClientDb(dbName)
     const expensesCollection = db.collection('expenses')
 
+    // Check if user is admin - auto-approve their expenses
+    const isAdmin = user.role === 'admin' || user.role === 'superAdmin' || user.isAdmin
+    
     const expense = {
       id: uuidv4(),
       clientId: user.clientId,
       ...body,
+      description: body.description || body.category || 'Expense', // Default description
       date: body.date ? new Date(body.date) : new Date(),
-      approved: false,
+      approved: isAdmin, // Auto-approve for admins
+      status: isAdmin ? 'approved' : (body.status || 'pending'), // Auto-approve status for admins
+      approvedBy: isAdmin ? user.id : null,
+      approvedAt: isAdmin ? new Date() : null,
       createdBy: user.id,
+      createdByName: user.name || user.email,
       createdAt: new Date(),
       updatedAt: new Date()
     }
