@@ -1436,26 +1436,18 @@ const TaskDialog = ({ open, onClose, task, onSave, users, projects, loading }) =
           </div>
           )}
 
-          {/* Labels with Add Custom option */}
+          {/* Labels with inline + button (Jira-style) */}
           <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label>Labels</Label>
-              <button 
-                type="button"
-                onClick={() => setShowLabelInput(!showLabelInput)}
-                className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
-              >
-                <Plus className="h-3 w-3" /> Add Custom
-              </button>
-            </div>
+            <Label>Labels</Label>
             
             {showLabelInput && (
-              <div className="p-3 bg-slate-50 rounded-lg space-y-2 mb-2">
+              <div className="p-3 bg-slate-50 rounded-lg space-y-2 mb-2 border border-slate-200">
                 <Input
                   value={newLabelName}
                   onChange={(e) => setNewLabelName(e.target.value)}
                   placeholder="Label name..."
                   className="h-8 text-sm"
+                  onKeyDown={(e) => e.key === 'Enter' && addCustomLabel()}
                 />
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-slate-500">Color:</span>
@@ -1478,18 +1470,48 @@ const TaskDialog = ({ open, onClose, task, onSave, users, projects, loading }) =
               </div>
             )}
             
-            <div className="flex flex-wrap gap-2">
-              {allLabels.map((label) => (
-                <Badge 
-                  key={label.id}
-                  variant={formData.labels.includes(label.id) ? 'default' : 'outline'}
-                  className="cursor-pointer transition-all"
-                  style={formData.labels.includes(label.id) ? { backgroundColor: label.color, borderColor: label.color } : { borderColor: label.color, color: label.color }}
-                  onClick={() => toggleLabel(label.id)}
-                >
-                  {label.name}
-                </Badge>
-              ))}
+            <div className="flex flex-wrap gap-2 items-center">
+              {allLabels.map((label) => {
+                const isCustom = label.id.startsWith('custom_')
+                const isSelected = formData.labels.includes(label.id)
+                return (
+                  <div key={label.id} className="relative group">
+                    <Badge 
+                      variant={isSelected ? 'default' : 'outline'}
+                      className="cursor-pointer transition-all pr-1.5"
+                      style={isSelected ? { backgroundColor: label.color, borderColor: label.color } : { borderColor: label.color, color: label.color }}
+                      onClick={() => toggleLabel(label.id)}
+                    >
+                      {label.name}
+                      {isCustom && (
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation()
+                            const updated = customLabels.filter(l => l.id !== label.id)
+                            setCustomLabels(updated)
+                            localStorage.setItem('customTaskLabels', JSON.stringify(updated))
+                            setFormData(prev => ({ ...prev, labels: prev.labels.filter(l => l !== label.id) }))
+                          }}
+                          className="ml-1 opacity-0 group-hover:opacity-100 hover:text-red-500 transition-opacity"
+                        >
+                          <X className="h-3 w-3" />
+                        </button>
+                      )}
+                    </Badge>
+                  </div>
+                )
+              })}
+              
+              {/* Inline + button (Jira-style) */}
+              <button
+                type="button"
+                onClick={() => setShowLabelInput(!showLabelInput)}
+                className="h-6 w-6 rounded-full border-2 border-dashed border-slate-300 hover:border-blue-500 hover:bg-blue-50 flex items-center justify-center transition-colors"
+                title="Add custom label"
+              >
+                <Plus className="h-3.5 w-3.5 text-slate-400 hover:text-blue-500" />
+              </button>
             </div>
           </div>
         </div>
