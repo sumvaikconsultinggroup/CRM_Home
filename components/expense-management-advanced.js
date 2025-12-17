@@ -1348,12 +1348,9 @@ export function AdvancedExpenseManagement({
 
   // Handle petty cash transaction
   const handlePettyCashTransaction = async (data) => {
-    const newBalance = data.type === 'deposit' 
-      ? pettyCash.balance + data.amount 
-      : pettyCash.balance - data.amount
-    
-    if (data.type === 'withdrawal' && data.amount > pettyCash.balance) {
-      toast.error('Insufficient petty cash balance')
+    // Validate against actual balance
+    if (data.type === 'withdrawal' && data.amount > actualPettyCashBalance) {
+      toast.error(`Insufficient petty cash balance. Available: ₹${actualPettyCashBalance.toLocaleString()}`)
       return
     }
     
@@ -1363,24 +1360,25 @@ export function AdvancedExpenseManagement({
       timestamp: new Date().toISOString()
     }
     
-    setPettyCash({
-      balance: newBalance,
-      transactions: [transaction, ...pettyCash.transactions]
-    })
-    
-    // If withdrawal, also create an expense
-    if (data.type === 'withdrawal') {
+    // Only update transactions for deposits (withdrawals are tracked via expenses)
+    if (data.type === 'deposit') {
+      setPettyCash(prev => ({
+        ...prev,
+        transactions: [transaction, ...prev.transactions]
+      }))
+      toast.success('Petty cash deposit recorded')
+    } else {
+      // For withdrawals, create an expense which will auto-deduct from petty cash balance
       await handleSaveExpense({
-        description: data.description,
+        description: data.description || 'Petty Cash Withdrawal',
         amount: data.amount,
         category: 'petty_cash',
-        date: data.date,
+        date: data.date || new Date().toISOString().split('T')[0],
         paymentMethod: 'petty_cash',
-        status: 'paid'
+        status: 'approved' // Petty cash is usually pre-approved
       })
+      toast.success('Petty cash withdrawal recorded as expense')
     }
-    
-    toast.success(`Petty cash ${data.type} recorded`)
   }
 
   // Export function
