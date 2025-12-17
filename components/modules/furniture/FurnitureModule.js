@@ -3960,14 +3960,13 @@ const RequirementForm = ({ config, onSubmit, onCancel }) => {
             placeholder="Customer name"
           />
         </div>
-        <div>
-          <Label>Phone</Label>
-          <Input 
-            value={formData.customer.phone}
-            onChange={(e) => setFormData({ ...formData, customer: { ...formData.customer, phone: e.target.value } })}
-            placeholder="Phone number"
-          />
-        </div>
+        <PhoneInput
+          label="Phone"
+          name="customerPhone"
+          value={formData.customer.phone}
+          onChange={(e) => setFormData({ ...formData, customer: { ...formData.customer, phone: e.target.value } })}
+          defaultCountry="IN"
+        />
       </div>
       
       <div>
