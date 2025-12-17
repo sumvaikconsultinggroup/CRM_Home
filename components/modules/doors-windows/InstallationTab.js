@@ -395,10 +395,13 @@ export function InstallationTab({ orders, headers, glassStyles, onRefresh }) {
               <Label>Contact Person</Label>
               <Input value={scheduleForm.contactPerson} onChange={(e) => setScheduleForm({ ...scheduleForm, contactPerson: e.target.value })} placeholder="Site contact name" />
             </div>
-            <div className="space-y-2">
-              <Label>Contact Phone</Label>
-              <Input value={scheduleForm.contactPhone} onChange={(e) => setScheduleForm({ ...scheduleForm, contactPhone: e.target.value })} placeholder="+91 98765 43210" />
-            </div>
+            <PhoneInput
+              label="Contact Phone"
+              name="contactPhone"
+              value={scheduleForm.contactPhone}
+              onChange={(e) => setScheduleForm({ ...scheduleForm, contactPhone: e.target.value })}
+              defaultCountry="IN"
+            />
             <div className="col-span-2 space-y-2">
               <Label>Site Address</Label>
               <Textarea value={scheduleForm.siteAddress} onChange={(e) => setScheduleForm({ ...scheduleForm, siteAddress: e.target.value })} placeholder="Complete site address" />
