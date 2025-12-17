@@ -1290,16 +1290,40 @@ const TaskDialog = ({ open, onClose, task, onSave, users, projects, loading }) =
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(allStatuses).map(([key, config]) => (
-                    <SelectItem key={key} value={key}>
-                      <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${typeof config.color === 'string' && config.color.includes('bg-') ? config.color.split(' ')[0] : 'bg-slate-400'}`} />
-                        {config.label}
-                      </div>
-                    </SelectItem>
-                  ))}
+                  {Object.entries(allStatuses).map(([key, config]) => {
+                    const isCustom = customStatuses.some(s => s.id === key)
+                    return (
+                      <SelectItem key={key} value={key}>
+                        <div className="flex items-center gap-2 w-full justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className={`w-2 h-2 rounded-full ${typeof config.color === 'string' && config.color.includes('bg-') ? config.color.split(' ')[0] : 'bg-slate-400'}`} />
+                            {config.label}
+                          </div>
+                          {isCustom && (
+                            <span className="text-[10px] text-slate-400 ml-2">custom</span>
+                          )}
+                        </div>
+                      </SelectItem>
+                    )
+                  })}
                 </SelectContent>
               </Select>
+              
+              {/* Delete custom status button */}
+              {customStatuses.some(s => s.id === formData.status) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    const updated = customStatuses.filter(s => s.id !== formData.status)
+                    setCustomStatuses(updated)
+                    localStorage.setItem('customTaskStatuses', JSON.stringify(updated))
+                    setFormData(prev => ({ ...prev, status: 'todo' }))
+                  }}
+                  className="text-xs text-red-500 hover:text-red-700 mt-1"
+                >
+                  Delete this custom status
+                </button>
+              )}
             </div>
             
             <div className="space-y-2">
