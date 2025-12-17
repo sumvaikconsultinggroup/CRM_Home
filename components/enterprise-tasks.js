@@ -1696,6 +1696,15 @@ export function EnterpriseTaskManager({ token }) {
   }
 
   const handleUpdateTask = async (taskId, updates) => {
+    // Store original task for rollback
+    const originalTask = tasks.find(t => t.id === taskId)
+    
+    // Optimistic update - immediately update UI
+    setTasks(prev => prev.map(t => t.id === taskId ? { ...t, ...updates, _isUpdating: true } : t))
+    if (selectedTask?.id === taskId) {
+      setSelectedTask(prev => prev ? { ...prev, ...updates } : prev)
+    }
+    
     try {
       const res = await fetch(`/api/tasks/${taskId}`, {
         method: 'PUT',
@@ -1705,19 +1714,26 @@ export function EnterpriseTaskManager({ token }) {
       
       if (res.ok) {
         const data = await res.json()
-        setTasks(prev => prev.map(t => t.id === taskId ? data : t))
+        setTasks(prev => prev.map(t => t.id === taskId ? { ...data, _isUpdating: false } : t))
         if (selectedTask?.id === taskId) {
-          // Refresh the selected task details
-          const detailRes = await fetch(`/api/tasks/${taskId}?includeSubtasks=true`, { headers })
-          const detailData = await detailRes.json()
-          setSelectedTask(detailData)
+          setSelectedTask(data)
         }
         return data
       } else {
+        // Rollback on failure
+        if (originalTask) {
+          setTasks(prev => prev.map(t => t.id === taskId ? originalTask : t))
+          if (selectedTask?.id === taskId) setSelectedTask(originalTask)
+        }
         const error = await res.json()
         throw new Error(error.error || 'Failed to update task')
       }
     } catch (error) {
+      // Rollback on error
+      if (originalTask) {
+        setTasks(prev => prev.map(t => t.id === taskId ? originalTask : t))
+        if (selectedTask?.id === taskId) setSelectedTask(originalTask)
+      }
       console.error('Update error:', error)
       throw error
     }
