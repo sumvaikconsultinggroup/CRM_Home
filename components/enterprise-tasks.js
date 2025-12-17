@@ -1565,6 +1565,31 @@ export function EnterpriseTaskManager({ token }) {
   const [loading, setLoading] = useState(true)
   const [refreshKey, setRefreshKey] = useState(0)
 
+  // Custom Statuses & Labels (global state for the component)
+  const [globalCustomStatuses, setGlobalCustomStatuses] = useState([])
+  const [globalCustomLabels, setGlobalCustomLabels] = useState([])
+  
+  // Load custom statuses/labels on mount
+  useEffect(() => {
+    try {
+      const savedStatuses = localStorage.getItem('customTaskStatuses')
+      const savedLabels = localStorage.getItem('customTaskLabels')
+      if (savedStatuses) setGlobalCustomStatuses(JSON.parse(savedStatuses))
+      if (savedLabels) setGlobalCustomLabels(JSON.parse(savedLabels))
+    } catch (e) {
+      console.error('Error loading custom statuses/labels:', e)
+    }
+  }, [])
+  
+  // Combined statuses (default + custom) for Kanban view
+  const allKanbanStatuses = useMemo(() => {
+    const combined = { ...TASK_STATUSES }
+    globalCustomStatuses.forEach(s => {
+      combined[s.id] = s
+    })
+    return combined
+  }, [globalCustomStatuses])
+
   // View & Filters
   const [viewMode, setViewMode] = useState('kanban') // kanban, table, calendar
   const [searchQuery, setSearchQuery] = useState('')
