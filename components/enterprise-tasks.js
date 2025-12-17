@@ -213,16 +213,22 @@ const TaskStats = ({ stats }) => {
 // KANBAN BOARD
 // =============================================
 
-const KanbanColumn = ({ status, tasks, onTaskClick, onStatusChange, onQuickCreate }) => {
-  const config = TASK_STATUSES[status]
-  const Icon = config.icon
+const KanbanColumn = ({ status, tasks, onTaskClick, onStatusChange, onQuickCreate, statusConfig, allStatuses }) => {
+  // Use passed config or fallback to TASK_STATUSES
+  const config = statusConfig || TASK_STATUSES[status] || { label: status, icon: Circle, color: 'bg-slate-100 text-slate-700' }
+  const Icon = config.icon || Circle
   const columnTasks = tasks.filter(t => t.status === status)
+  
+  // Parse color for custom statuses
+  const headerBgColor = typeof config.color === 'string' && config.color.includes('bg-') 
+    ? config.color.split(' ')[0].replace('bg-', 'bg-') 
+    : 'bg-slate-100'
 
   return (
     <div className="flex-shrink-0 w-80 bg-slate-50 rounded-xl p-3">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <Icon className="h-4 w-4 text-slate-500" />
+          <div className={`w-3 h-3 rounded-full ${headerBgColor}`} />
           <h3 className="font-semibold text-sm">{config.label}</h3>
           <Badge variant="secondary" className="text-xs">{columnTasks.length}</Badge>
         </div>
@@ -239,6 +245,7 @@ const KanbanColumn = ({ status, tasks, onTaskClick, onStatusChange, onQuickCreat
               task={task} 
               onClick={() => onTaskClick(task)}
               onStatusChange={onStatusChange}
+              allStatuses={allStatuses || TASK_STATUSES}
             />
           ))}
           {columnTasks.length === 0 && (
