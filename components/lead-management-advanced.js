@@ -1779,24 +1779,19 @@ const AddLeadDialog = ({ open, onClose, onSave, users = [] }) => {
                   onChange={(e) => setFormData({ ...formData, company: e.target.value })}
                 />
               </div>
-              <div>
-                <Label className={`text-sm font-medium ${touched.phone && errors.phone ? 'text-red-600' : ''}`}>Phone *</Label>
-                <Input 
-                  placeholder="e.g., 9876543210"
-                  className={`mt-1 ${touched.phone && errors.phone ? 'border-red-500 focus:ring-red-500' : ''}`}
-                  value={formData.phone}
-                  onChange={(e) => {
-                    setFormData({ ...formData, phone: e.target.value })
-                    if (errors.phone) setErrors(prev => { const n = {...prev}; delete n.phone; return n })
-                  }}
-                  onBlur={() => handleBlur('phone')}
-                />
-                {touched.phone && errors.phone && (
-                  <p className="text-sm text-red-600 flex items-center gap-1 mt-1">
-                    <AlertCircle className="h-3 w-3" /> {errors.phone}
-                  </p>
-                )}
-              </div>
+              <PhoneInput
+                label="Phone *"
+                name="phone"
+                value={formData.phone}
+                onChange={(e) => {
+                  setFormData({ ...formData, phone: e.target.value })
+                  if (errors.phone) setErrors(prev => { const n = {...prev}; delete n.phone; return n })
+                }}
+                onBlur={() => handleBlur('phone')}
+                error={errors.phone}
+                touched={touched.phone}
+                defaultCountry="IN"
+              />
               <div>
                 <Label className={`text-sm font-medium ${touched.email && errors.email ? 'text-red-600' : ''}`}>Email</Label>
                 <Input 
