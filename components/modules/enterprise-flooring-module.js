@@ -96,6 +96,7 @@ const InstallationStatus = {
 // B2C (Consumer) Project Statuses - Measurement → Quote → Invoice → Installation
 const ProjectStatusB2C = {
   pending: { label: 'Pending', color: 'bg-slate-100 text-slate-700' },
+  site_visit_pending: { label: 'Site Visit Pending', color: 'bg-amber-100 text-amber-700' },
   measurement_scheduled: { label: 'Measurement Scheduled', color: 'bg-blue-100 text-blue-700' },
   measurement_done: { label: 'Measurement Done', color: 'bg-cyan-100 text-cyan-700' },
   quote_pending: { label: 'Quote Pending', color: 'bg-purple-100 text-purple-700' },
