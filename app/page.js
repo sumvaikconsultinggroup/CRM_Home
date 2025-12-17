@@ -678,6 +678,11 @@ function ClientDashboard({ user, client, onLogout }) {
   const [showUpgradeFlow, setShowUpgradeFlow] = useState(false)
   // Teams Hub integrated into main navigation
   
+  // Feature Request state
+  const [showFeatureRequest, setShowFeatureRequest] = useState(false)
+  const [featureRequest, setFeatureRequest] = useState({ title: '', description: '', category: 'feature' })
+  const [submittingFeature, setSubmittingFeature] = useState(false)
+  
   // Responsive state - moved to top of component
   const [mobileMenuOpenClient, setMobileMenuOpenClient] = useState(false)
   const [windowWidthClient, setWindowWidthClient] = useState(typeof window !== 'undefined' ? window.innerWidth : 1200)
