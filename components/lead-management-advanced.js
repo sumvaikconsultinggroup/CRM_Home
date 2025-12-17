@@ -1801,10 +1801,19 @@ const AddLeadDialog = ({ open, onClose, onSave, users = [] }) => {
                 <Input 
                   type="email"
                   placeholder="e.g., rajesh@email.com"
-                  className="mt-1"
+                  className={`mt-1 ${touched.email && errors.email ? 'border-red-500 focus:ring-red-500' : ''}`}
                   value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, email: e.target.value })
+                    if (errors.email) setErrors(prev => { const n = {...prev}; delete n.email; return n })
+                  }}
+                  onBlur={() => handleBlur('email')}
                 />
+                {touched.email && errors.email && (
+                  <p className="text-sm text-red-600 flex items-center gap-1 mt-1">
+                    <AlertCircle className="h-3 w-3" /> {errors.email}
+                  </p>
+                )}
               </div>
             </div>
           </div>
