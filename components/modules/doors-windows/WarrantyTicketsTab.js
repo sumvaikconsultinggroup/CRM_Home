@@ -469,10 +469,13 @@ export function WarrantyTicketsTab({ orders, headers, glassStyles }) {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Phone</Label>
-              <Input value={ticketForm.customerPhone} onChange={(e) => setTicketForm({ ...ticketForm, customerPhone: e.target.value })} />
-            </div>
+            <PhoneInput
+              label="Phone"
+              name="customerPhone"
+              value={ticketForm.customerPhone}
+              onChange={(e) => setTicketForm({ ...ticketForm, customerPhone: e.target.value })}
+              defaultCountry="IN"
+            />
             <div className="space-y-2">
               <Label>Email</Label>
               <Input type="email" value={ticketForm.customerEmail} onChange={(e) => setTicketForm({ ...ticketForm, customerEmail: e.target.value })} />
