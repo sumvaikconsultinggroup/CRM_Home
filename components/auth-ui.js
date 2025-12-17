@@ -7,11 +7,12 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Checkbox } from '@/components/ui/checkbox'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Building2, Mail, Lock, User, Phone, ArrowRight, Loader2, AlertCircle, CheckCircle2, ArrowLeft } from 'lucide-react'
+import { Building2, Mail, Lock, User, ArrowRight, Loader2, AlertCircle, CheckCircle2, ArrowLeft } from 'lucide-react'
 import { api } from '@/lib/api'
 import { toast } from 'sonner'
 import { validateEmail, validatePassword, validatePhone, validateName } from '@/lib/utils/validation'
 import { PasswordStrengthIndicator } from '@/components/ui/validated-input'
+import { PhoneInput } from '@/components/ui/phone-input'
 
 // Animation Variants
 const fadeIn = {
