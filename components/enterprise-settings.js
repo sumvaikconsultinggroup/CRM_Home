@@ -32,6 +32,7 @@ import {
   BarChart3, PieChart, Target, Flag, Bookmark, Tag, Filter, Search,
   ChevronRight, ChevronDown, MoreHorizontal, Copy, Edit, Plus, Minus
 } from 'lucide-react'
+import { validateEmail, validatePhone, validateGST, validatePinCode, validateURL } from '@/lib/utils/validation'
 
 // ==================== CONSTANTS ====================
 const CURRENCIES = [
