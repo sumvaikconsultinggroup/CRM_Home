@@ -236,6 +236,11 @@ export function EnterpriseUserManagement({ authToken, currentUser, onRefresh }) 
 
   const handleUpdateUser = async () => {
     if (!selectedUser?.id) return
+    
+    if (!validateUserForm(true)) {
+      toast.error('Please fix the validation errors')
+      return
+    }
 
     setSaving(true)
     try {
