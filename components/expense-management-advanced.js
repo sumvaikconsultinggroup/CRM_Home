@@ -1753,6 +1753,7 @@ export function AdvancedExpenseManagement({
         open={showPettyCashDialog}
         onClose={() => setShowPettyCashDialog(false)}
         pettyCash={pettyCash}
+        actualBalance={actualPettyCashBalance}
         onSave={handlePettyCashTransaction}
       />
     </div>
