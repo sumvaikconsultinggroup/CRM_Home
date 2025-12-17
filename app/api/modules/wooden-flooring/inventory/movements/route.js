@@ -128,12 +128,17 @@ export async function POST(request) {
     const movementCollection = db.collection('wf_inventory_movements')
     const stockCollection = db.collection('wf_inventory_stock')
     const batchCollection = db.collection('wf_inventory_batches')
-    const productCollection = db.collection('wf_inventory')
     const warehouseCollection = db.collection('wf_warehouses')
-
-    // Verify product and warehouse
-    const product = await productCollection.findOne({ id: productId })
-    if (!product) return errorResponse('Product not found', 404)
+    
+    // Check multiple product collections (flooring_products or wf_inventory)
+    let product = await db.collection('flooring_products').findOne({ id: productId })
+    if (!product) {
+      product = await db.collection('wf_inventory').findOne({ id: productId })
+    }
+    if (!product) {
+      console.error('Product not found in any collection:', productId)
+      return errorResponse('Product not found. Please ensure the product exists in the product catalog.', 404)
+    }
 
     const warehouse = await warehouseCollection.findOne({ id: warehouseId })
     if (!warehouse) return errorResponse('Warehouse not found', 404)
