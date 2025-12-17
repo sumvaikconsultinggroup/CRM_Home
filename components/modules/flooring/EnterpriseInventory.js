@@ -2883,13 +2883,13 @@ Please confirm receipt of goods and update status after delivery.`
                   onChange={(e) => setWarehouseForm({ ...warehouseForm, contactPerson: e.target.value })}
                 />
               </div>
-              <div>
-                <Label>Contact Phone</Label>
-                <Input
-                  value={warehouseForm.contactPhone || ''}
-                  onChange={(e) => setWarehouseForm({ ...warehouseForm, contactPhone: e.target.value })}
-                />
-              </div>
+              <PhoneInput
+                label="Contact Phone"
+                name="contactPhone"
+                value={warehouseForm.contactPhone || ''}
+                onChange={(e) => setWarehouseForm({ ...warehouseForm, contactPhone: e.target.value })}
+                defaultCountry="IN"
+              />
             </div>
             <div className="flex items-center gap-2">
               <Checkbox
