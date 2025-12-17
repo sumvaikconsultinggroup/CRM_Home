@@ -7058,7 +7058,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                 }
 
                 // Not blocked - show normal flow
-                if (status === 'measurement_scheduled' || status === 'pending') {
+                if (['pending', 'site_visit_pending', 'measurement_scheduled'].includes(status)) {
                   return (
                     <div className="space-y-3">
                       <div className="flex gap-3 flex-wrap">
