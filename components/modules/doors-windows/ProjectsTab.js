@@ -423,14 +423,13 @@ export function ProjectsTab({
                 placeholder="Client name"
               />
             </div>
-            <div className="space-y-2">
-              <Label>Contact Phone</Label>
-              <Input
-                value={projectForm.contactPhone}
-                onChange={(e) => setProjectForm({ ...projectForm, contactPhone: e.target.value })}
-                placeholder="+91 98765 43210"
-              />
-            </div>
+            <PhoneInput
+              label="Contact Phone"
+              name="contactPhone"
+              value={projectForm.contactPhone}
+              onChange={(e) => setProjectForm({ ...projectForm, contactPhone: e.target.value })}
+              defaultCountry="IN"
+            />
             <div className="space-y-2">
               <Label>Contact Email</Label>
               <Input
