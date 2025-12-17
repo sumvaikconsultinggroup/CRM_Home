@@ -3380,13 +3380,14 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                             return (
                               <div 
                                 key={product.id} 
-                                className={`flex items-center justify-between p-3 border rounded transition-all ${isSelected ? 'border-purple-500 bg-purple-50' : 'hover:bg-slate-50'}`}
+                                className={`flex items-center justify-between p-3 border rounded transition-all ${isSelected ? 'border-purple-500 bg-purple-50' : 'hover:bg-slate-50'} ${status.status === 'out_of_stock' ? 'opacity-60' : ''}`}
                               >
                                 <div className="flex items-center gap-3">
                                   <Checkbox 
                                     id={`prod-${product.id}`}
                                     checked={isSelected}
                                     onCheckedChange={() => toggleProductSelection(product)}
+                                    disabled={status.status === 'out_of_stock'}
                                   />
                                   <div>
                                     <p className="font-medium text-sm">{product.name}</p>
