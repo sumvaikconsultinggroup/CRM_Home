@@ -1679,14 +1679,13 @@ export function QuoteBuilder({ quotations, projects, surveys, selectedProject, o
                       placeholder="Customer name"
                     />
                   </div>
-                  <div className="space-y-2">
-                    <Label>Phone</Label>
-                    <Input
-                      value={quoteForm.customerPhone}
-                      onChange={(e) => setQuoteForm({ ...quoteForm, customerPhone: e.target.value })}
-                      placeholder="+91 98765 43210"
-                    />
-                  </div>
+                  <PhoneInput
+                    label="Phone"
+                    name="customerPhone"
+                    value={quoteForm.customerPhone}
+                    onChange={(e) => setQuoteForm({ ...quoteForm, customerPhone: e.target.value })}
+                    defaultCountry="IN"
+                  />
                   <div className="space-y-2">
                     <Label>Email</Label>
                     <Input
