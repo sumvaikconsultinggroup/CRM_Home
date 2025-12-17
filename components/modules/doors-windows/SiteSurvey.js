@@ -34,6 +34,7 @@ import { toast } from 'sonner'
 import { BUILDING_TYPES, FLOOR_LEVELS, ROOM_TYPES, CATEGORIES, PRODUCT_TYPES, GLASS_TYPES, PRODUCT_FAMILIES, FINISHES, FRAME_COLORS } from './constants'
 import { DoorWindow3DPreview } from './DoorWindow3DPreview'
 import { validateEmail, validatePhone, validatePinCode, validateName, validateAddress } from '@/lib/utils/validation'
+import { PhoneInput } from '@/components/ui/phone-input'
 
 const API_BASE = '/api/modules/doors-windows'
 
