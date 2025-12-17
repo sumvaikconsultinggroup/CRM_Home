@@ -30,6 +30,7 @@ import {
   Command, Save, Copy, Archive, Bookmark, Share2, Link2, PanelLeftClose,
   Brain, MessageSquare, Wand2, ImagePlus, Video, FileImage, RotateCcw, Maximize2
 } from 'lucide-react'
+import { PhoneInput } from '@/components/ui/phone-input'
 
 // Glassmorphism Components
 const GlassCard = ({ children, className = '', hover = true, ...props }) => (
