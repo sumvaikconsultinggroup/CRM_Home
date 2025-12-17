@@ -259,6 +259,24 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   // Dialog States
   const [dialogOpen, setDialogOpen] = useState({ type: null, data: null })
   
+  // Dispatch States
+  const [showDispatchDialog, setShowDispatchDialog] = useState(false)
+  const [dispatchInvoice, setDispatchInvoice] = useState(null)
+  const [dispatchStep, setDispatchStep] = useState(1) // 1: Customer Dues, 2: Driver Details, 3: Stock Check, 4: Confirm
+  const [customerDues, setCustomerDues] = useState(null)
+  const [stockCheck, setStockCheck] = useState(null)
+  const [dispatchForm, setDispatchForm] = useState({
+    driverName: '',
+    driverPhone: '',
+    vehicleNumber: '',
+    transporterName: '',
+    dispatchPhoto: null,
+    notes: ''
+  })
+  const [dispatchLoading, setDispatchLoading] = useState(false)
+  const [dispatches, setDispatches] = useState([])
+  const dispatchPhotoRef = useRef(null)
+  
   // Filter States
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
