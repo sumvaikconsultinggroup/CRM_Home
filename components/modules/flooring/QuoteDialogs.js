@@ -16,6 +16,7 @@ import {
   Calendar, Package, X, Receipt, Users, Phone, Mail, MapPin, Plus, ClipboardList
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { PhoneInput } from '@/components/ui/phone-input'
 
 // Quote Status Configuration - shared across components
 export const QuoteStatusConfig = {
