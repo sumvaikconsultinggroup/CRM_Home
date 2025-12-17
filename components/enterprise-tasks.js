@@ -72,6 +72,27 @@ const DEFAULT_LABELS = [
   { id: 'blocked', name: 'Blocked', color: '#6B7280' }
 ]
 
+// Label color options for custom labels
+const LABEL_COLORS = [
+  '#3B82F6', '#10B981', '#8B5CF6', '#F59E0B', '#EF4444', 
+  '#EC4899', '#6366F1', '#14B8A6', '#F97316', '#84CC16',
+  '#06B6D4', '#A855F7', '#DC2626', '#6B7280', '#0EA5E9'
+]
+
+// Status color options for custom statuses
+const STATUS_COLORS = [
+  { bg: 'bg-slate-100', text: 'text-slate-700' },
+  { bg: 'bg-blue-100', text: 'text-blue-700' },
+  { bg: 'bg-amber-100', text: 'text-amber-700' },
+  { bg: 'bg-purple-100', text: 'text-purple-700' },
+  { bg: 'bg-emerald-100', text: 'text-emerald-700' },
+  { bg: 'bg-red-100', text: 'text-red-700' },
+  { bg: 'bg-pink-100', text: 'text-pink-700' },
+  { bg: 'bg-cyan-100', text: 'text-cyan-700' },
+  { bg: 'bg-orange-100', text: 'text-orange-700' },
+  { bg: 'bg-indigo-100', text: 'text-indigo-700' }
+]
+
 // =============================================
 // UTILITY COMPONENTS
 // =============================================
