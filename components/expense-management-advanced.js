@@ -1617,7 +1617,7 @@ export function AdvancedExpenseManagement({
               </Card>
               <Card className="p-4">
                 <p className="text-sm text-muted-foreground">Petty Cash</p>
-                <p className="text-2xl font-bold text-amber-600">{formatCurrency(pettyCash.balance)}</p>
+                <p className="text-2xl font-bold text-amber-600">{formatCurrency(actualPettyCashBalance)}</p>
               </Card>
             </div>
             
