@@ -656,6 +656,22 @@ function SuperAdminDashboard({ user, onLogout }) {
               </motion.div>
             )}
 
+            {activeTab === 'feature-requests' && (
+              <motion.div
+                key="feature-requests"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -20 }}
+              >
+                <FeatureRequestsManager 
+                  requests={featureRequests} 
+                  stats={featureRequestStats}
+                  token={token}
+                  onRefresh={fetchData}
+                />
+              </motion.div>
+            )}
+
             {activeTab === 'settings' && (
               <motion.div
                 key="settings"
