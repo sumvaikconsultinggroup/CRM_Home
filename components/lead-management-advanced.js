@@ -1752,13 +1752,22 @@ const AddLeadDialog = ({ open, onClose, onSave, users = [] }) => {
             <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Contact Information</h4>
             <div className="grid md:grid-cols-2 gap-4">
               <div>
-                <Label className="text-sm font-medium">Full Name *</Label>
+                <Label className={`text-sm font-medium ${touched.name && errors.name ? 'text-red-600' : ''}`}>Full Name *</Label>
                 <Input 
                   placeholder="e.g., Rajesh Kumar"
-                  className="mt-1"
+                  className={`mt-1 ${touched.name && errors.name ? 'border-red-500 focus:ring-red-500' : ''}`}
                   value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, name: e.target.value })
+                    if (errors.name) setErrors(prev => { const n = {...prev}; delete n.name; return n })
+                  }}
+                  onBlur={() => handleBlur('name')}
                 />
+                {touched.name && errors.name && (
+                  <p className="text-sm text-red-600 flex items-center gap-1 mt-1">
+                    <AlertCircle className="h-3 w-3" /> {errors.name}
+                  </p>
+                )}
               </div>
               <div>
                 <Label className="text-sm font-medium">Company</Label>
@@ -1770,16 +1779,25 @@ const AddLeadDialog = ({ open, onClose, onSave, users = [] }) => {
                 />
               </div>
               <div>
-                <Label className="text-sm font-medium">Phone *</Label>
+                <Label className={`text-sm font-medium ${touched.phone && errors.phone ? 'text-red-600' : ''}`}>Phone *</Label>
                 <Input 
                   placeholder="e.g., 9876543210"
-                  className="mt-1"
+                  className={`mt-1 ${touched.phone && errors.phone ? 'border-red-500 focus:ring-red-500' : ''}`}
                   value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                  onChange={(e) => {
+                    setFormData({ ...formData, phone: e.target.value })
+                    if (errors.phone) setErrors(prev => { const n = {...prev}; delete n.phone; return n })
+                  }}
+                  onBlur={() => handleBlur('phone')}
                 />
+                {touched.phone && errors.phone && (
+                  <p className="text-sm text-red-600 flex items-center gap-1 mt-1">
+                    <AlertCircle className="h-3 w-3" /> {errors.phone}
+                  </p>
+                )}
               </div>
               <div>
-                <Label className="text-sm font-medium">Email</Label>
+                <Label className={`text-sm font-medium ${touched.email && errors.email ? 'text-red-600' : ''}`}>Email</Label>
                 <Input 
                   type="email"
                   placeholder="e.g., rajesh@email.com"
