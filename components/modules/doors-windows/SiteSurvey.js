@@ -1640,13 +1640,14 @@ export function SiteSurvey({ surveys, projects, selectedProject, onRefresh, head
                     onChange={(e) => setSurveyForm({...surveyForm, contactPerson: e.target.value})}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>Contact Phone *</Label>
-                  <Input
-                    value={surveyForm.contactPhone}
-                    onChange={(e) => setSurveyForm({...surveyForm, contactPhone: e.target.value})}
-                  />
-                </div>
+                <PhoneInput
+                  label="Contact Phone *"
+                  name="contactPhone"
+                  value={surveyForm.contactPhone}
+                  onChange={(e) => setSurveyForm({...surveyForm, contactPhone: e.target.value})}
+                  defaultCountry="IN"
+                  required
+                />
                 <div className="space-y-2">
                   <Label>Surveyor Name *</Label>
                   <Input
