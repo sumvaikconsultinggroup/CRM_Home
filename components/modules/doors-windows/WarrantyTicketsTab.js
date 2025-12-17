@@ -16,6 +16,7 @@ import {
   RefreshCw, Eye, Flag, XCircle, FileText
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { PhoneInput } from '@/components/ui/phone-input'
 
 const API_BASE = '/api/modules/doors-windows'
 
