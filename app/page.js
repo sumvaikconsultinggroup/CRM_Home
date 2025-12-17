@@ -186,6 +186,203 @@ const StatCard = ({ title, value, change, icon: Icon, trend = 'up', delay = 0, o
 
 // Old RegisterPage removed - using component from @/components/auth-ui
 
+// ==================== FEATURE REQUESTS MANAGER ====================
+function FeatureRequestsManager({ requests, stats, token, onRefresh }) {
+  const [selectedRequest, setSelectedRequest] = useState(null)
+  const [updating, setUpdating] = useState(false)
+  const [filter, setFilter] = useState('all')
+  
+  const filteredRequests = requests?.filter(r => filter === 'all' || r.status === filter) || []
+  
+  const handleUpdateStatus = async (id, status) => {
+    setUpdating(true)
+    try {
+      const res = await fetch('/api/feature-requests', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ id, status })
+      })
+      if (res.ok) {
+        toast.success('Status updated')
+        onRefresh()
+        setSelectedRequest(null)
+      } else {
+        toast.error('Failed to update status')
+      }
+    } catch (error) {
+      toast.error('Failed to update status')
+    } finally {
+      setUpdating(false)
+    }
+  }
+  
+  const statusColors = {
+    pending: 'bg-amber-100 text-amber-700 border-amber-200',
+    reviewed: 'bg-blue-100 text-blue-700 border-blue-200',
+    planned: 'bg-purple-100 text-purple-700 border-purple-200',
+    implemented: 'bg-emerald-100 text-emerald-700 border-emerald-200',
+    declined: 'bg-red-100 text-red-700 border-red-200'
+  }
+  
+  const categoryIcons = {
+    feature: Lightbulb,
+    improvement: Zap,
+    integration: Plug,
+    ui: Palette,
+    bug: AlertCircle,
+    other: MessageSquare
+  }
+  
+  return (
+    <div className="space-y-6">
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <GlassCard className="p-4 text-center cursor-pointer hover:shadow-lg transition-all" onClick={() => setFilter('all')}>
+          <p className="text-2xl font-bold text-slate-800">{stats?.total || 0}</p>
+          <p className="text-sm text-slate-500">Total</p>
+        </GlassCard>
+        <GlassCard className={`p-4 text-center cursor-pointer hover:shadow-lg transition-all ${filter === 'pending' ? 'ring-2 ring-amber-500' : ''}`} onClick={() => setFilter('pending')}>
+          <p className="text-2xl font-bold text-amber-600">{stats?.pending || 0}</p>
+          <p className="text-sm text-slate-500">Pending</p>
+        </GlassCard>
+        <GlassCard className={`p-4 text-center cursor-pointer hover:shadow-lg transition-all ${filter === 'planned' ? 'ring-2 ring-purple-500' : ''}`} onClick={() => setFilter('planned')}>
+          <p className="text-2xl font-bold text-purple-600">{stats?.planned || 0}</p>
+          <p className="text-sm text-slate-500">Planned</p>
+        </GlassCard>
+        <GlassCard className={`p-4 text-center cursor-pointer hover:shadow-lg transition-all ${filter === 'implemented' ? 'ring-2 ring-emerald-500' : ''}`} onClick={() => setFilter('implemented')}>
+          <p className="text-2xl font-bold text-emerald-600">{stats?.implemented || 0}</p>
+          <p className="text-sm text-slate-500">Implemented</p>
+        </GlassCard>
+        <GlassCard className={`p-4 text-center cursor-pointer hover:shadow-lg transition-all ${filter === 'declined' ? 'ring-2 ring-red-500' : ''}`} onClick={() => setFilter('declined')}>
+          <p className="text-2xl font-bold text-red-600">{stats?.declined || 0}</p>
+          <p className="text-sm text-slate-500">Declined</p>
+        </GlassCard>
+      </div>
+      
+      {/* Feature Requests List */}
+      <GlassCard className="p-6">
+        <div className="flex items-center justify-between mb-6">
+          <h2 className="text-xl font-bold flex items-center gap-2">
+            <Lightbulb className="h-5 w-5 text-amber-500" />
+            Feature Requests
+          </h2>
+          <Button variant="outline" size="sm" onClick={onRefresh}>
+            <RefreshCw className="h-4 w-4 mr-1" /> Refresh
+          </Button>
+        </div>
+        
+        {filteredRequests.length === 0 ? (
+          <div className="text-center py-12 text-slate-400">
+            <Lightbulb className="h-16 w-16 mx-auto mb-4 opacity-30" />
+            <p className="text-lg">No feature requests {filter !== 'all' ? `with status "${filter}"` : ''}</p>
+            <p className="text-sm mt-1">Feature requests from users will appear here</p>
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {filteredRequests.map((request) => {
+              const CategoryIcon = categoryIcons[request.category] || Lightbulb
+              return (
+                <div 
+                  key={request.id}
+                  className="p-4 bg-white rounded-xl border border-slate-200 hover:shadow-md transition-all cursor-pointer"
+                  onClick={() => setSelectedRequest(request)}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex items-start gap-3 flex-1">
+                      <div className="p-2 rounded-lg bg-amber-50">
+                        <CategoryIcon className="h-5 w-5 text-amber-600" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-semibold text-slate-800 truncate">{request.title}</h3>
+                        <p className="text-sm text-slate-500 line-clamp-2 mt-1">{request.description}</p>
+                        <div className="flex items-center gap-3 mt-2 text-xs text-slate-400">
+                          <span>From: {request.submittedBy?.userName || request.submittedBy?.userEmail}</span>
+                          <span>•</span>
+                          <span>{request.submittedBy?.clientName}</span>
+                          <span>•</span>
+                          <span>{new Date(request.createdAt).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <Badge className={statusColors[request.status]}>
+                      {request.status}
+                    </Badge>
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        )}
+      </GlassCard>
+      
+      {/* Request Detail Dialog */}
+      <Dialog open={!!selectedRequest} onOpenChange={() => setSelectedRequest(null)}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lightbulb className="h-5 w-5 text-amber-500" />
+              Feature Request Details
+            </DialogTitle>
+          </DialogHeader>
+          
+          {selectedRequest && (
+            <div className="space-y-4">
+              <div>
+                <Label className="text-slate-500 text-xs">Title</Label>
+                <p className="font-semibold text-lg">{selectedRequest.title}</p>
+              </div>
+              
+              <div>
+                <Label className="text-slate-500 text-xs">Description</Label>
+                <p className="text-slate-700 whitespace-pre-wrap">{selectedRequest.description}</p>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-slate-500 text-xs">Category</Label>
+                  <Badge variant="outline" className="mt-1">{selectedRequest.category}</Badge>
+                </div>
+                <div>
+                  <Label className="text-slate-500 text-xs">Status</Label>
+                  <Badge className={`mt-1 ${statusColors[selectedRequest.status]}`}>{selectedRequest.status}</Badge>
+                </div>
+              </div>
+              
+              <div className="bg-slate-50 rounded-lg p-3">
+                <Label className="text-slate-500 text-xs">Submitted By</Label>
+                <p className="font-medium">{selectedRequest.submittedBy?.userName}</p>
+                <p className="text-sm text-slate-500">{selectedRequest.submittedBy?.userEmail}</p>
+                <p className="text-sm text-slate-500">{selectedRequest.submittedBy?.clientName}</p>
+              </div>
+              
+              <div>
+                <Label className="text-slate-500 text-xs mb-2 block">Update Status</Label>
+                <div className="flex flex-wrap gap-2">
+                  {['pending', 'reviewed', 'planned', 'implemented', 'declined'].map((status) => (
+                    <Button
+                      key={status}
+                      size="sm"
+                      variant={selectedRequest.status === status ? 'default' : 'outline'}
+                      onClick={() => handleUpdateStatus(selectedRequest.id, status)}
+                      disabled={updating || selectedRequest.status === status}
+                      className={selectedRequest.status === status ? '' : statusColors[status]}
+                    >
+                      {status.charAt(0).toUpperCase() + status.slice(1)}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  )
+}
+
 // ==================== SUPER ADMIN DASHBOARD ====================
 function SuperAdminDashboard({ user, onLogout }) {
   const [activeTab, setActiveTab] = useState('overview')
