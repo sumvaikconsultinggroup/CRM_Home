@@ -1388,8 +1388,10 @@ const TaskDialog = ({ open, onClose, task, onSave, users, projects, loading }) =
               </PopoverContent>
             </Popover>
           </div>
+          )}
 
-          {/* Dates */}
+          {/* Dates - Only in Advanced Mode */}
+          {isAdvancedMode && (
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label>Start Date</Label>
@@ -1408,8 +1410,10 @@ const TaskDialog = ({ open, onClose, task, onSave, users, projects, loading }) =
               />
             </div>
           </div>
+          )}
 
-          {/* Estimated Hours */}
+          {/* Estimated Hours - Only in Advanced Mode */}
+          {isAdvancedMode && (
           <div className="space-y-2">
             <Label>Estimated Hours</Label>
             <Input 
@@ -1419,17 +1423,57 @@ const TaskDialog = ({ open, onClose, task, onSave, users, projects, loading }) =
               placeholder="0"
             />
           </div>
+          )}
 
-          {/* Labels */}
+          {/* Labels with Add Custom option */}
           <div className="space-y-2">
-            <Label>Labels</Label>
+            <div className="flex items-center justify-between">
+              <Label>Labels</Label>
+              <button 
+                type="button"
+                onClick={() => setShowLabelInput(!showLabelInput)}
+                className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
+              >
+                <Plus className="h-3 w-3" /> Add Custom
+              </button>
+            </div>
+            
+            {showLabelInput && (
+              <div className="p-3 bg-slate-50 rounded-lg space-y-2 mb-2">
+                <Input
+                  value={newLabelName}
+                  onChange={(e) => setNewLabelName(e.target.value)}
+                  placeholder="Label name..."
+                  className="h-8 text-sm"
+                />
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-500">Color:</span>
+                  <div className="flex gap-1 flex-wrap">
+                    {LABEL_COLORS.map((color) => (
+                      <button
+                        key={color}
+                        type="button"
+                        onClick={() => setNewLabelColor(color)}
+                        className={`w-5 h-5 rounded ${newLabelColor === color ? 'ring-2 ring-offset-1 ring-blue-500' : ''}`}
+                        style={{ backgroundColor: color }}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div className="flex gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setShowLabelInput(false)}>Cancel</Button>
+                  <Button size="sm" onClick={addCustomLabel}>Add Label</Button>
+                </div>
+              </div>
+            )}
+            
             <div className="flex flex-wrap gap-2">
-              {DEFAULT_LABELS.map((label) => (
+              {allLabels.map((label) => (
                 <Badge 
                   key={label.id}
                   variant={formData.labels.includes(label.id) ? 'default' : 'outline'}
-                  className="cursor-pointer"
-                  style={formData.labels.includes(label.id) ? { backgroundColor: label.color } : {}}
+                  className="cursor-pointer transition-all"
+                  style={formData.labels.includes(label.id) ? { backgroundColor: label.color, borderColor: label.color } : { borderColor: label.color, color: label.color }}
                   onClick={() => toggleLabel(label.id)}
                 >
                   {label.name}
