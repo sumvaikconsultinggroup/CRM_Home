@@ -672,11 +672,14 @@ function MeasurementChecklist({ opening, onChange }) {
 export function SiteSurvey({ surveys, projects, selectedProject, onRefresh, headers, user, glassStyles, businessMode }) {
   // Main states
   const [showNewSurvey, setShowNewSurvey] = useState(false)
+  const [showSurveyOptions, setShowSurveyOptions] = useState(false) // NEW: Show options dialog
+  const [surveyCreationMode, setSurveyCreationMode] = useState(null) // NEW: 'fromProject' or 'manual'
   const [showOpeningDialog, setShowOpeningDialog] = useState(false)
   const [selectedSurvey, setSelectedSurvey] = useState(null)
   const [viewingSurvey, setViewingSurvey] = useState(null)
   const [saving, setSaving] = useState(false)
   const [searchQuery, setSearchQuery] = useState('')
+  const [projectSearchQuery, setProjectSearchQuery] = useState('') // NEW: For project search
   const [surveyOpenings, setSurveyOpenings] = useState([])
   const [loadingOpenings, setLoadingOpenings] = useState(false)
   const [activeFormTab, setActiveFormTab] = useState('basic')
