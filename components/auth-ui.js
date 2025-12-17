@@ -94,9 +94,48 @@ export function LoginPage({ onBack, onSuccess, onRegister, onForgotPassword }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [loading, setLoading] = useState(false)
+  const [errors, setErrors] = useState({})
+  const [touched, setTouched] = useState({})
+
+  const validateField = (field, value) => {
+    let result = { valid: true, error: null }
+    if (field === 'email') {
+      result = validateEmail(value, true)
+    } else if (field === 'password') {
+      if (!value) result = { valid: false, error: 'Password is required' }
+    }
+    return result
+  }
+
+  const handleBlur = (field, value) => {
+    setTouched(prev => ({ ...prev, [field]: true }))
+    const result = validateField(field, value)
+    if (!result.valid) {
+      setErrors(prev => ({ ...prev, [field]: result.error }))
+    } else {
+      setErrors(prev => { const n = { ...prev }; delete n[field]; return n })
+    }
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+    
+    // Validate all fields
+    const emailResult = validateEmail(email, true)
+    const passwordResult = password ? { valid: true } : { valid: false, error: 'Password is required' }
+    
+    const newErrors = {}
+    if (!emailResult.valid) newErrors.email = emailResult.error
+    if (!passwordResult.valid) newErrors.password = passwordResult.error
+    
+    setErrors(newErrors)
+    setTouched({ email: true, password: true })
+    
+    if (Object.keys(newErrors).length > 0) {
+      toast.error('Please fix the validation errors')
+      return
+    }
+
     setLoading(true)
     try {
       const data = await api.login(email, password)
@@ -120,23 +159,31 @@ export function LoginPage({ onBack, onSuccess, onRegister, onForgotPassword }) {
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="space-y-2">
-          <Label>Email Address</Label>
+          <Label className={touched.email && errors.email ? 'text-red-600' : ''}>Email Address</Label>
           <div className="relative">
             <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
             <Input 
               type="email" 
               placeholder="you@company.com" 
-              className="pl-10 h-11" 
+              className={`pl-10 h-11 ${touched.email && errors.email ? 'border-red-500 focus:ring-red-500' : ''}`}
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
+              onChange={(e) => {
+                setEmail(e.target.value)
+                if (errors.email) setErrors(prev => { const n = { ...prev }; delete n.email; return n })
+              }}
+              onBlur={() => handleBlur('email', email)}
             />
           </div>
+          {touched.email && errors.email && (
+            <p className="text-sm text-red-600 flex items-center gap-1">
+              <AlertCircle className="h-3 w-3" /> {errors.email}
+            </p>
+          )}
         </div>
 
         <div className="space-y-2">
           <div className="flex justify-between items-center">
-            <Label>Password</Label>
+            <Label className={touched.password && errors.password ? 'text-red-600' : ''}>Password</Label>
             <button 
               type="button"
               onClick={onForgotPassword} 
@@ -150,12 +197,20 @@ export function LoginPage({ onBack, onSuccess, onRegister, onForgotPassword }) {
             <Input 
               type="password" 
               placeholder="••••••••" 
-              className="pl-10 h-11"
+              className={`pl-10 h-11 ${touched.password && errors.password ? 'border-red-500 focus:ring-red-500' : ''}`}
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
+              onChange={(e) => {
+                setPassword(e.target.value)
+                if (errors.password) setErrors(prev => { const n = { ...prev }; delete n.password; return n })
+              }}
+              onBlur={() => handleBlur('password', password)}
             />
           </div>
+          {touched.password && errors.password && (
+            <p className="text-sm text-red-600 flex items-center gap-1">
+              <AlertCircle className="h-3 w-3" /> {errors.password}
+            </p>
+          )}
         </div>
 
         <Button type="submit" className="w-full h-11 text-base bg-gradient-to-r from-primary to-indigo-600 hover:opacity-90 shadow-lg shadow-primary/20" disabled={loading}>
