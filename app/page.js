@@ -199,6 +199,8 @@ function SuperAdminDashboard({ user, onLogout }) {
   const [newPassword, setNewPassword] = useState('')
   const [sidebarOpen, setSidebarOpen] = useState(true)
   const [loading, setLoading] = useState(true)
+  const [featureRequests, setFeatureRequests] = useState([])
+  const [featureRequestStats, setFeatureRequestStats] = useState(null)
   const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
 
   const handleResetPassword = async () => {
