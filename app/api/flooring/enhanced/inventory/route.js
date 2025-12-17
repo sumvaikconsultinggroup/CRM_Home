@@ -21,7 +21,6 @@ export async function GET(request) {
 
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
-    const inventory = db.collection('flooring_inventory_v2')
     const products = db.collection('flooring_products')
 
     // Get all products first for lookup
@@ -32,7 +31,27 @@ export async function GET(request) {
     const query = {}
     if (productId) query.productId = productId
 
-    let inventoryItems = await inventory.find(query).sort({ updatedAt: -1 }).toArray()
+    // Check multiple inventory collections
+    let inventoryItems = []
+    
+    // First try wf_inventory_stock (from Inventory > Stock Management)
+    const wfStock = await db.collection('wf_inventory_stock').find(query).toArray()
+    if (wfStock.length > 0) {
+      inventoryItems = wfStock
+    }
+    
+    // Then check flooring_inventory_v2
+    if (inventoryItems.length === 0) {
+      inventoryItems = await db.collection('flooring_inventory_v2').find(query).toArray()
+    }
+    
+    // Also check original flooring_inventory
+    if (inventoryItems.length === 0) {
+      inventoryItems = await db.collection('flooring_inventory').find(query).toArray()
+    }
+    
+    // Sort by updatedAt
+    inventoryItems.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
 
     // Enrich with product data
     inventoryItems = inventoryItems.map(item => ({
