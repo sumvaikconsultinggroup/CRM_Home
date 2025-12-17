@@ -25,9 +25,11 @@ import {
   Copy, ChevronRight, ChevronDown, X, Check, Save, History,
   Globe, Database, Folder, FileText, DollarSign, MessageSquare,
   Briefcase, Target, ClipboardList, Layers, Zap, UserCheck, UserX,
-  ShieldCheck, ShieldAlert, ShieldOff, Plus, Minus
+  ShieldCheck, ShieldAlert, ShieldOff, Plus, Minus, AlertCircle
 } from 'lucide-react'
 import { toast } from 'sonner'
+import { validateEmail, validatePhone, validatePassword, validateName } from '@/lib/utils/validation'
+import { PasswordStrengthIndicator } from '@/components/ui/validated-input'
 
 const GlassCard = ({ children, className = '', ...props }) => (
   <div className={`backdrop-blur-xl bg-white/70 border border-white/20 shadow-xl rounded-xl ${className}`} {...props}>
