@@ -17,6 +17,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { BUILDING_TYPES } from './constants'
+import { PhoneInput } from '@/components/ui/phone-input'
 
 const API_BASE = '/api/modules/doors-windows'
 
