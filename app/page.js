@@ -1758,6 +1758,91 @@ function ClientDashboard({ user, client, onLogout }) {
         </DialogContent>
       </Dialog>
 
+      {/* Feature Request Dialog */}
+      <Dialog open={showFeatureRequest} onOpenChange={setShowFeatureRequest}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Lightbulb className="h-5 w-5 text-amber-500" />
+              Request a Feature
+            </DialogTitle>
+            <DialogDescription>
+              Share your ideas to help us improve BuildCRM. Your feedback goes directly to our team!
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label>Category</Label>
+              <Select 
+                value={featureRequest.category} 
+                onValueChange={(v) => setFeatureRequest({...featureRequest, category: v})}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="feature">New Feature</SelectItem>
+                  <SelectItem value="improvement">Improvement</SelectItem>
+                  <SelectItem value="integration">Integration Request</SelectItem>
+                  <SelectItem value="ui">UI/UX Suggestion</SelectItem>
+                  <SelectItem value="bug">Bug Report</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Title *</Label>
+              <Input 
+                placeholder="Brief title for your idea..."
+                value={featureRequest.title}
+                onChange={(e) => setFeatureRequest({...featureRequest, title: e.target.value})}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <Label>Description *</Label>
+              <Textarea 
+                placeholder="Describe your feature idea in detail. What problem would it solve? How would it help your workflow?"
+                value={featureRequest.description}
+                onChange={(e) => setFeatureRequest({...featureRequest, description: e.target.value})}
+                rows={5}
+              />
+            </div>
+            
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3">
+              <p className="text-sm text-amber-800">
+                <strong>Tip:</strong> Be specific! Include examples of how you'd use this feature and any pain points it would address.
+              </p>
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowFeatureRequest(false)}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmitFeatureRequest}
+              disabled={submittingFeature}
+              className="bg-gradient-to-r from-amber-500 to-orange-500 hover:from-amber-600 hover:to-orange-600"
+            >
+              {submittingFeature ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                <>
+                  <Send className="h-4 w-4 mr-2" />
+                  Submit Request
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Mee AI Agent - Floating */}
       <MeeAgent
         client={client}
