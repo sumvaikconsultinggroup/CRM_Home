@@ -1521,14 +1521,13 @@ export function PaintsCoatingsModule({ token, user }) {
                   placeholder="Name"
                 />
               </div>
-              <div>
-                <Label>Phone</Label>
-                <Input 
-                  value={formData.phone}
-                  onChange={(e) => setFormData(f => ({ ...f, phone: e.target.value }))}
-                  placeholder="+91"
-                />
-              </div>
+              <PhoneInput
+                label="Phone"
+                name="phone"
+                value={formData.phone}
+                onChange={(e) => setFormData(f => ({ ...f, phone: e.target.value }))}
+                defaultCountry="IN"
+              />
             </div>
             
             <div>
