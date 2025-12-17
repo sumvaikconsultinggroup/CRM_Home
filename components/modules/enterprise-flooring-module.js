@@ -6981,7 +6981,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                 { status: 'installation_scheduled', label: 'Install', icon: Wrench },
                 { status: 'completed', label: 'Complete', icon: CheckCircle2 }
               ].map((step, idx) => {
-                const statusOrder = ['pending', 'measurement_scheduled', 'measurement_done', 'quote_pending', 'quote_sent', 'quote_approved', 'invoice_sent', 'payment_received', 'installation_scheduled', 'installation_in_progress', 'completed']
+                const statusOrder = ['pending', 'site_visit_pending', 'measurement_scheduled', 'measurement_done', 'quote_pending', 'quote_sent', 'quote_approved', 'invoice_sent', 'payment_received', 'installation_scheduled', 'installation_in_progress', 'completed']
                 const currentIdx = statusOrder.indexOf(selectedProject.status)
                 const stepIdx = statusOrder.indexOf(step.status)
                 const isActive = currentIdx >= stepIdx
