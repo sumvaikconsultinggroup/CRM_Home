@@ -1921,7 +1921,7 @@ export function EnterpriseTaskManager({ token }) {
               />
             </div>
 
-            {/* Status Filter */}
+            {/* Status Filter - includes custom statuses */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" size="sm">
@@ -1930,18 +1930,24 @@ export function EnterpriseTaskManager({ token }) {
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent>
-                {Object.entries(TASK_STATUSES).map(([key, config]) => (
-                  <DropdownMenuCheckboxItem
-                    key={key}
-                    checked={statusFilter.includes(key)}
-                    onCheckedChange={(checked) => {
-                      setStatusFilter(prev => checked ? [...prev, key] : prev.filter(s => s !== key))
-                    }}
-                  >
-                    <config.icon className="h-4 w-4 mr-2" />
-                    {config.label}
-                  </DropdownMenuCheckboxItem>
-                ))}
+                {Object.entries(allKanbanStatuses).map(([key, config]) => {
+                  const Icon = config.icon || Circle
+                  const bgColor = typeof config.color === 'string' && config.color.includes('bg-') 
+                    ? config.color.split(' ')[0] 
+                    : 'bg-slate-400'
+                  return (
+                    <DropdownMenuCheckboxItem
+                      key={key}
+                      checked={statusFilter.includes(key)}
+                      onCheckedChange={(checked) => {
+                        setStatusFilter(prev => checked ? [...prev, key] : prev.filter(s => s !== key))
+                      }}
+                    >
+                      <div className={`w-3 h-3 rounded-full mr-2 ${bgColor}`} />
+                      {config.label}
+                    </DropdownMenuCheckboxItem>
+                  )
+                })}
               </DropdownMenuContent>
             </DropdownMenu>
 
