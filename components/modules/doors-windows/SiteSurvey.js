@@ -1355,19 +1355,210 @@ export function SiteSurvey({ surveys, projects, selectedProject, onRefresh, head
         )
       )}
 
+      {/* Survey Creation Options Dialog */}
+      <Dialog open={showSurveyOptions} onOpenChange={setShowSurveyOptions}>
+        <DialogContent className="max-w-4xl max-h-[85vh] overflow-hidden">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-xl">
+              <ClipboardCheck className="h-6 w-6 text-indigo-600" />
+              Start New Site Survey
+            </DialogTitle>
+            <DialogDescription>
+              Choose how you want to create your site survey
+            </DialogDescription>
+          </DialogHeader>
+
+          {!surveyCreationMode ? (
+            // Option Selection View
+            <div className="py-6">
+              <div className="grid grid-cols-2 gap-6">
+                {/* Option 1: From Project */}
+                <Card 
+                  className="cursor-pointer hover:shadow-xl transition-all border-2 hover:border-indigo-400 group"
+                  onClick={() => setSurveyCreationMode('fromProject')}
+                >
+                  <CardContent className="p-6 text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                      <FolderKanban className="h-8 w-8 text-white" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-800 mb-2">Start from Project</h3>
+                    <p className="text-sm text-slate-500 mb-4">
+                      Select an existing CRM project to auto-fill customer and site details
+                    </p>
+                    <Badge className="bg-indigo-100 text-indigo-700">
+                      {projects?.length || 0} Projects Available
+                    </Badge>
+                    <div className="mt-4 flex items-center justify-center gap-2 text-indigo-600 font-medium group-hover:gap-3 transition-all">
+                      <span>Select Project</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Option 2: Manual Entry */}
+                <Card 
+                  className="cursor-pointer hover:shadow-xl transition-all border-2 hover:border-emerald-400 group"
+                  onClick={() => { 
+                    resetSurveyForm(); 
+                    setShowSurveyOptions(false); 
+                    setShowNewSurvey(true); 
+                  }}
+                >
+                  <CardContent className="p-6 text-center">
+                    <div className="w-16 h-16 rounded-2xl bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center mx-auto mb-4 group-hover:scale-110 transition-transform">
+                      <Edit className="h-8 w-8 text-white" />
+                    </div>
+                    <h3 className="text-lg font-bold text-slate-800 mb-2">Manual Entry</h3>
+                    <p className="text-sm text-slate-500 mb-4">
+                      Start fresh and manually enter all site and customer details
+                    </p>
+                    <Badge className="bg-emerald-100 text-emerald-700">
+                      New Site Survey
+                    </Badge>
+                    <div className="mt-4 flex items-center justify-center gap-2 text-emerald-600 font-medium group-hover:gap-3 transition-all">
+                      <span>Start Fresh</span>
+                      <ArrowRight className="h-4 w-4" />
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </div>
+          ) : surveyCreationMode === 'fromProject' ? (
+            // Project Selection View
+            <div className="py-4">
+              <div className="flex items-center gap-2 mb-4">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setSurveyCreationMode(null)}
+                >
+                  <ChevronRight className="h-4 w-4 rotate-180 mr-1" /> Back
+                </Button>
+                <div className="flex-1 relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Input
+                    placeholder="Search projects by name or client..."
+                    value={projectSearchQuery}
+                    onChange={(e) => setProjectSearchQuery(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+              </div>
+
+              <ScrollArea className="h-[400px] pr-4">
+                {projects?.length === 0 ? (
+                  <div className="text-center py-12">
+                    <FolderKanban className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+                    <p className="text-slate-500">No projects found</p>
+                    <p className="text-sm text-slate-400">Sync projects from CRM first</p>
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {projects
+                      ?.filter(p => 
+                        !projectSearchQuery || 
+                        p.name?.toLowerCase().includes(projectSearchQuery.toLowerCase()) ||
+                        p.clientName?.toLowerCase().includes(projectSearchQuery.toLowerCase()) ||
+                        p.customer?.name?.toLowerCase().includes(projectSearchQuery.toLowerCase())
+                      )
+                      .map(project => (
+                        <Card 
+                          key={project.id} 
+                          className="cursor-pointer hover:shadow-lg transition-all border-2 hover:border-indigo-300"
+                          onClick={() => {
+                            // Auto-fill survey form from project
+                            setSurveyForm({
+                              ...surveyForm,
+                              projectId: project.id,
+                              siteCode: generateSiteCode(),
+                              siteName: project.name || project.siteName || '',
+                              siteAddress: project.siteAddress || project.customer?.address || '',
+                              city: project.city || '',
+                              pincode: project.pincode || '',
+                              buildingType: project.buildingType || '',
+                              contactPerson: project.clientName || project.customer?.name || project.contactPerson || '',
+                              contactPhone: project.clientPhone || project.customer?.phone || project.contactPhone || '',
+                              contactEmail: project.clientEmail || project.customer?.email || project.contactEmail || '',
+                              surveyorName: user?.name || '',
+                              surveyDate: new Date().toISOString().split('T')[0],
+                              status: 'draft'
+                            });
+                            setSitePhotos([]);
+                            setShowSurveyOptions(false);
+                            setShowNewSurvey(true);
+                          }}
+                        >
+                          <CardContent className="p-4">
+                            <div className="flex items-start gap-4">
+                              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-indigo-100 to-purple-100 flex items-center justify-center shrink-0">
+                                <Building2 className="h-6 w-6 text-indigo-600" />
+                              </div>
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h4 className="font-semibold text-slate-800 truncate">{project.name}</h4>
+                                  {project.projectNumber && (
+                                    <Badge variant="outline" className="text-xs font-mono shrink-0">
+                                      {project.projectNumber}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-sm text-slate-500 flex items-center gap-1 mb-1">
+                                  <User className="h-3 w-3" /> 
+                                  {project.clientName || project.customer?.name || 'No contact'}
+                                </p>
+                                {(project.siteAddress || project.customer?.address) && (
+                                  <p className="text-xs text-slate-400 flex items-center gap-1 truncate">
+                                    <MapPin className="h-3 w-3 shrink-0" /> 
+                                    {(project.siteAddress || project.customer?.address)?.substring(0, 50)}...
+                                  </p>
+                                )}
+                                <div className="flex gap-2 mt-2">
+                                  {project.buildingType && (
+                                    <Badge variant="secondary" className="text-xs">{project.buildingType}</Badge>
+                                  )}
+                                  {project.status && (
+                                    <Badge variant="outline" className="text-xs">{project.status}</Badge>
+                                  )}
+                                </div>
+                              </div>
+                              <div className="shrink-0">
+                                <Button size="sm" className="bg-indigo-600 hover:bg-indigo-700">
+                                  <ClipboardCheck className="h-4 w-4 mr-1" />
+                                  Start Survey
+                                </Button>
+                              </div>
+                            </div>
+                          </CardContent>
+                        </Card>
+                      ))
+                    }
+                  </div>
+                )}
+              </ScrollArea>
+            </div>
+          ) : null}
+        </DialogContent>
+      </Dialog>
+
       {/* New Survey Dialog */}
       <Dialog open={showNewSurvey} onOpenChange={setShowNewSurvey}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-hidden flex flex-col">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <ClipboardCheck className="h-5 w-5 text-indigo-600" />
-              {selectedSurvey ? 'Edit Survey' : 'New Site Survey'}
+              {selectedSurvey ? 'Edit Survey' : surveyForm.projectId ? 'Site Survey from Project' : 'New Site Survey'}
               {surveyForm.siteCode && (
                 <Badge className="bg-indigo-100 text-indigo-700 font-mono ml-2">
                   Site Code: {surveyForm.siteCode}
                 </Badge>
               )}
             </DialogTitle>
+            {surveyForm.projectId && (
+              <DialogDescription className="flex items-center gap-2">
+                <FolderKanban className="h-4 w-4" />
+                Linked to project: <strong>{surveyForm.siteName}</strong>
+              </DialogDescription>
+            )}
           </DialogHeader>
 
           <ScrollArea className="flex-1 pr-4">
