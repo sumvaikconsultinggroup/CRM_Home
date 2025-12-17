@@ -479,7 +479,7 @@ const PettyCashDialog = ({ open, onClose, pettyCash, onSave, actualBalance }) =>
           <Card className="p-4 bg-amber-50 border-amber-200">
             <div className="flex items-center justify-between">
               <span className="text-sm text-amber-700">Current Petty Cash Balance</span>
-              <span className="text-2xl font-bold text-amber-700">{formatCurrency(pettyCash?.balance || 0)}</span>
+              <span className="text-2xl font-bold text-amber-700">{formatCurrency(actualBalance || 0)}</span>
             </div>
           </Card>
           
