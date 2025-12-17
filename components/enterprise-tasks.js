@@ -1651,10 +1651,26 @@ export function EnterpriseTaskManager({ token }) {
     if (token) loadData()
   }, [token, fetchTasks, fetchUsers, fetchProjects, refreshKey])
 
-  // Task Actions
+  // Task Actions - Optimistic Updates for faster UX
   const handleCreateTask = async (taskData) => {
+    // Create temporary task for optimistic update
+    const tempId = `temp_${Date.now()}`
+    const tempTask = {
+      ...taskData,
+      id: tempId,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+      taskNumber: tasks.length + 1,
+      _isCreating: true // Flag to show loading state
+    }
+    
+    // Immediately add to state (optimistic)
+    setTasks(prev => [tempTask, ...prev])
+    setCreateDialogOpen(false)
+    setQuickCreateStatus(null)
+    toast.success('Creating task...')
+    
     try {
-      setLoading(true)
       const res = await fetch('/api/tasks', {
         method: 'POST',
         headers,
@@ -1662,18 +1678,20 @@ export function EnterpriseTaskManager({ token }) {
       })
       
       if (res.ok) {
+        const newTask = await res.json()
+        // Replace temp task with real task
+        setTasks(prev => prev.map(t => t.id === tempId ? newTask : t))
         toast.success('Task created successfully')
-        setCreateDialogOpen(false)
-        setQuickCreateStatus(null)
-        setRefreshKey(prev => prev + 1)
       } else {
         const error = await res.json()
+        // Remove temp task on failure
+        setTasks(prev => prev.filter(t => t.id !== tempId))
         toast.error(error.error || 'Failed to create task')
       }
     } catch (error) {
+      // Remove temp task on failure
+      setTasks(prev => prev.filter(t => t.id !== tempId))
       toast.error('Failed to create task')
-    } finally {
-      setLoading(false)
     }
   }
 
