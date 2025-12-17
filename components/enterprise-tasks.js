@@ -1029,12 +1029,23 @@ const TaskDialog = ({ open, onClose, task, onSave, users, projects, loading }) =
   const [newLabelColor, setNewLabelColor] = useState('#3B82F6')
   const [showLabelInput, setShowLabelInput] = useState(false)
   
-  // Load custom statuses and labels from localStorage
+  // Load custom statuses and labels from localStorage on mount
   useEffect(() => {
-    const savedStatuses = localStorage.getItem('customTaskStatuses')
-    const savedLabels = localStorage.getItem('customTaskLabels')
-    if (savedStatuses) setCustomStatuses(JSON.parse(savedStatuses))
-    if (savedLabels) setCustomLabels(JSON.parse(savedLabels))
+    try {
+      const savedStatuses = localStorage.getItem('customTaskStatuses')
+      const savedLabels = localStorage.getItem('customTaskLabels')
+      if (savedStatuses) {
+        const parsed = JSON.parse(savedStatuses)
+        setCustomStatuses(parsed)
+      }
+      if (savedLabels) {
+        const parsed = JSON.parse(savedLabels)
+        setCustomLabels(parsed)
+      }
+    } catch (e) {
+      console.error('Error loading custom statuses/labels:', e)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
   
   // Save custom statuses to localStorage
