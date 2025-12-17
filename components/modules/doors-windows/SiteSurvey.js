@@ -28,11 +28,12 @@ import {
   RotateCcw, Move, ZoomIn, ZoomOut, Square, Circle, Triangle, Minus,
   Maximize, Minimize, GripVertical, MousePointer2, Pencil, Eraser,
   ImagePlus, Video, Mic, Layout, PanelLeft, PanelRight, ScanLine,
-  Focus, Scan, Crosshair, RulerIcon, FolderKanban
+  Focus, Scan, Crosshair, RulerIcon, FolderKanban, AlertCircle
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { BUILDING_TYPES, FLOOR_LEVELS, ROOM_TYPES, CATEGORIES, PRODUCT_TYPES, GLASS_TYPES, PRODUCT_FAMILIES, FINISHES, FRAME_COLORS } from './constants'
 import { DoorWindow3DPreview } from './DoorWindow3DPreview'
+import { validateEmail, validatePhone, validatePinCode, validateName, validateAddress } from '@/lib/utils/validation'
 
 const API_BASE = '/api/modules/doors-windows'
 
