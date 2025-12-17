@@ -443,27 +443,19 @@ export function RegisterPage({ onBack, onSuccess, onLogin }) {
                 {formData.password && <PasswordStrengthIndicator password={formData.password} />}
               </div>
 
-              <div className="space-y-2">
-                <Label className={touched.phone && errors.phone ? 'text-red-600' : ''}>Phone Number</Label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-                  <Input 
-                    placeholder="+1 (555) 000-0000" 
-                    className={`pl-10 h-11 ${touched.phone && errors.phone ? 'border-red-500 focus:ring-red-500' : ''}`}
-                    value={formData.phone}
-                    onChange={(e) => {
-                      setFormData({...formData, phone: e.target.value})
-                      if (errors.phone) setErrors(prev => { const n = {...prev}; delete n.phone; return n })
-                    }}
-                    onBlur={() => handleBlur('phone')}
-                  />
-                </div>
-                {touched.phone && errors.phone && (
-                  <p className="text-sm text-red-600 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" /> {errors.phone}
-                  </p>
-                )}
-              </div>
+              <PhoneInput
+                label="Phone Number"
+                name="phone"
+                value={formData.phone}
+                onChange={(e) => {
+                  setFormData({...formData, phone: e.target.value})
+                  if (errors.phone) setErrors(prev => { const n = {...prev}; delete n.phone; return n })
+                }}
+                onBlur={() => handleBlur('phone')}
+                error={errors.phone}
+                touched={touched.phone}
+                defaultCountry="IN"
+              />
 
               <Button type="button" onClick={handleNextStep} className="w-full h-11 mt-2">
                 Next Step <ArrowRight className="h-4 w-4 ml-2" />
