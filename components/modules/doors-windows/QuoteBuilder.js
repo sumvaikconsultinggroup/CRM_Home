@@ -23,6 +23,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { DoorWindow3DPreview } from './DoorWindow3DPreview'
+import { PhoneInput } from '@/components/ui/phone-input'
 import { 
   PRODUCT_FAMILIES, CATEGORIES, PRODUCT_TYPES, GLASS_TYPES, 
   FINISHES, FRAME_COLORS, PRICING_RATES, FLOOR_LEVELS, ROOM_TYPES 
