@@ -990,29 +990,24 @@ export function EnterpriseUserManagement({ authToken, currentUser, onRefresh }) 
                   )}
                   {!selectedUser && userForm.password && <PasswordStrengthIndicator password={userForm.password} />}
                 </div>
-                <div className="space-y-2">
-                  <Label className={formErrors.phone ? 'text-red-600' : ''}>Phone</Label>
-                  <Input
-                    value={userForm.phone}
-                    onChange={(e) => {
-                      setUserForm({ ...userForm, phone: e.target.value })
-                      if (formErrors.phone) setFormErrors({ ...formErrors, phone: null })
-                    }}
-                    onBlur={() => {
-                      if (userForm.phone) {
-                        const result = validatePhone(userForm.phone, false)
-                        if (!result.valid) setFormErrors({ ...formErrors, phone: result.error })
-                      }
-                    }}
-                    placeholder="+91 98765 43210"
-                    className={formErrors.phone ? 'border-red-500 focus:ring-red-500' : ''}
-                  />
-                  {formErrors.phone && (
-                    <p className="text-sm text-red-600 flex items-center gap-1">
-                      <AlertCircle className="h-3 w-3" /> {formErrors.phone}
-                    </p>
-                  )}
-                </div>
+                <PhoneInput
+                  label="Phone"
+                  name="phone"
+                  value={userForm.phone}
+                  onChange={(e) => {
+                    setUserForm({ ...userForm, phone: e.target.value })
+                    if (formErrors.phone) setFormErrors({ ...formErrors, phone: null })
+                  }}
+                  onBlur={() => {
+                    if (userForm.phone) {
+                      const result = validatePhone(userForm.phone, false)
+                      if (!result.valid) setFormErrors({ ...formErrors, phone: result.error })
+                    }
+                  }}
+                  error={formErrors.phone}
+                  touched={!!formErrors.phone}
+                  defaultCountry="IN"
+                />
                 <div className="space-y-2">
                   <Label>Role</Label>
                   <Select value={userForm.role} onValueChange={(v) => setUserForm({ ...userForm, role: v })}>
