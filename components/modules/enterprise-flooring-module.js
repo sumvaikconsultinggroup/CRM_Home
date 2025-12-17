@@ -2184,7 +2184,6 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   const handleB2BDispatch = async (invoice) => {
     // Open the comprehensive dispatch dialog instead
     openDispatchDialog(invoice)
-    }
   }
 
   // Handle B2B Delivery (Mark as delivered)
