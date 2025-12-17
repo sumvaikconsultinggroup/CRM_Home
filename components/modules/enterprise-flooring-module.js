@@ -6859,6 +6859,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                         }
                                       }))
                                     }}
+                                    disabled={invStatus.status === 'out_of_stock'}
                                   />
                                   <div>
                                     <p className="font-medium text-sm">{product.name}</p>
@@ -6867,8 +6868,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                 </div>
                                 <div className="flex items-center gap-3">
                                   <div className="text-right text-xs">
-                                    <span className={`${inv.availableQty > 0 ? 'text-emerald-600' : 'text-amber-500'}`}>
-                                      {inv.availableQty > 0 ? `${inv.availableQty.toLocaleString()} avail` : 'No stock (can still select)'}
+                                    <span className={`${inv.availableQty > 0 ? 'text-emerald-600' : 'text-red-500'}`}>
+                                      {inv.availableQty.toLocaleString()} avail
                                     </span>
                                   </div>
                                   <Badge className={`text-xs ${invStatus.color}`}>{invStatus.label}</Badge>
