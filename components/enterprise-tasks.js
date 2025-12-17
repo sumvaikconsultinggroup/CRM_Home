@@ -2067,7 +2067,10 @@ export function EnterpriseTaskManager({ token }) {
         <>
           {viewMode === 'kanban' && (
             <div className="flex gap-4 overflow-x-auto pb-4">
-              {Object.keys(TASK_STATUSES).filter(s => s !== 'cancelled').map((status) => (
+              {Object.entries(allKanbanStatuses)
+                .filter(([key]) => key !== 'cancelled')
+                .sort((a, b) => (a[1].order || 0) - (b[1].order || 0))
+                .map(([status, config]) => (
                 <KanbanColumn
                   key={status}
                   status={status}
@@ -2075,6 +2078,8 @@ export function EnterpriseTaskManager({ token }) {
                   onTaskClick={handleTaskClick}
                   onStatusChange={handleStatusChange}
                   onQuickCreate={handleQuickCreate}
+                  statusConfig={config}
+                  allStatuses={allKanbanStatuses}
                 />
               ))}
             </div>
