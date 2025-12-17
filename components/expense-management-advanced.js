@@ -1221,11 +1221,22 @@ export function AdvancedExpenseManagement({
     EXPENSE_CATEGORIES.forEach(c => { defaultBudgets[c.id] = c.budget })
     return defaultBudgets
   })
-  const [pettyCash, setPettyCash] = useState({ balance: 30000, transactions: [] })
+  const [pettyCash, setPettyCash] = useState({ balance: 30000, transactions: [], initialFund: 30000 })
 
   useEffect(() => {
     setExpenses(initialExpenses)
   }, [initialExpenses])
+  
+  // Calculate actual petty cash balance based on expenses
+  const actualPettyCashBalance = useMemo(() => {
+    const pettyCashExpenses = expenses.filter(e => e.paymentMethod === 'petty_cash')
+    const totalSpent = pettyCashExpenses.reduce((sum, e) => sum + (e.amount || 0), 0)
+    // Add any deposits from transactions
+    const deposits = pettyCash.transactions
+      .filter(t => t.type === 'deposit')
+      .reduce((sum, t) => sum + (t.amount || 0), 0)
+    return pettyCash.initialFund + deposits - totalSpent
+  }, [expenses, pettyCash.transactions, pettyCash.initialFund])
 
   // Filter expenses
   const filteredExpenses = useMemo(() => {
