@@ -422,7 +422,7 @@ const ExpenseDialog = ({ open, onClose, expense, onSave, projects = [] }) => {
 }
 
 // Petty Cash Dialog
-const PettyCashDialog = ({ open, onClose, pettyCash, onSave }) => {
+const PettyCashDialog = ({ open, onClose, pettyCash, onSave, actualBalance }) => {
   const [formData, setFormData] = useState({
     type: 'withdrawal',
     amount: '',
