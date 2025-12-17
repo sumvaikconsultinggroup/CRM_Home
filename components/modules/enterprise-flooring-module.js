@@ -6660,8 +6660,9 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               }
               const appType = appTypeIcons[room.applicationType] || appTypeIcons.flooring
               
-              // Check if editing is allowed (only in scheduling phase)
-              const isEditingAllowed = ['pending', 'measurement_scheduled'].includes(selectedProject.status)
+              // Check if editing is allowed (in initial phases before quote)
+              const measurementAllowedStatuses = ['pending', 'site_visit_pending', 'measurement_scheduled', 'measurement_done']
+              const isEditingAllowed = measurementAllowedStatuses.includes(selectedProject.status)
               const isLocked = !isEditingAllowed
               
               return (
