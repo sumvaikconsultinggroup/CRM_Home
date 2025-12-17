@@ -234,12 +234,26 @@ function SuperAdminDashboard({ user, onLogout }) {
       setModules(modulesData)
       setPlans(plansData)
       setModuleRequests(requestsData)
+      
+      // Fetch feature requests
+      try {
+        const res = await fetch('/api/feature-requests', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        })
+        if (res.ok) {
+          const data = await res.json()
+          setFeatureRequests(data.requests || [])
+          setFeatureRequestStats(data.stats || null)
+        }
+      } catch (e) {
+        console.error('Failed to fetch feature requests:', e)
+      }
     } catch (error) {
       toast.error('Failed to load dashboard data')
     } finally {
       setLoading(false)
     }
-  }, [])
+  }, [token])
 
   useEffect(() => {
     fetchData()
