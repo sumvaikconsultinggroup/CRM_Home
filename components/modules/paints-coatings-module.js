@@ -32,6 +32,7 @@ import {
   Ruler, Thermometer, Timer, Beaker, FileCheck, Image, FolderOpen, ArrowRight,
   PlusCircle, MinusCircle, Copy, ExternalLink, Sparkles, Zap, Info
 } from 'lucide-react'
+import { PhoneInput } from '@/components/ui/phone-input'
 
 // =============================================
 // CONSTANTS
