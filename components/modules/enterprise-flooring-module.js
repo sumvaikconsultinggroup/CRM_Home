@@ -7637,6 +7637,406 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ===== DISPATCH DIALOG - Comprehensive Dispatch Workflow ===== */}
+      <Dialog open={showDispatchDialog} onOpenChange={(open) => {
+        if (!open) {
+          setShowDispatchDialog(false)
+          setDispatchInvoice(null)
+          setDispatchStep(1)
+        }
+      }}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Truck className="h-5 w-5 text-orange-600" />
+              Dispatch Material - {dispatchInvoice?.invoiceNumber}
+            </DialogTitle>
+            <DialogDescription>
+              Complete dispatch workflow for {dispatchInvoice?.customer?.name}
+            </DialogDescription>
+          </DialogHeader>
+
+          {/* Progress Steps */}
+          <div className="flex items-center justify-between mb-6">
+            {[
+              { step: 1, label: 'Customer Dues' },
+              { step: 2, label: 'Driver Details' },
+              { step: 3, label: 'Stock Check' },
+              { step: 4, label: 'Confirm' }
+            ].map((s, idx) => (
+              <div key={s.step} className="flex items-center">
+                <div className={`flex items-center justify-center w-8 h-8 rounded-full text-sm font-bold ${
+                  dispatchStep >= s.step 
+                    ? 'bg-orange-500 text-white' 
+                    : 'bg-slate-200 text-slate-500'
+                }`}>
+                  {dispatchStep > s.step ? <CheckCircle2 className="h-4 w-4" /> : s.step}
+                </div>
+                <span className={`ml-2 text-sm ${dispatchStep >= s.step ? 'text-orange-600 font-medium' : 'text-slate-400'}`}>
+                  {s.label}
+                </span>
+                {idx < 3 && <ChevronRight className="h-4 w-4 mx-2 text-slate-300" />}
+              </div>
+            ))}
+          </div>
+
+          <Separator className="my-4" />
+
+          {/* Step 1: Customer Dues Check */}
+          {dispatchStep === 1 && (
+            <div className="space-y-4">
+              <Card className={customerDues?.totalDue > 0 ? 'border-amber-300 bg-amber-50' : 'border-emerald-300 bg-emerald-50'}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <AlertTriangle className={`h-4 w-4 ${customerDues?.totalDue > 0 ? 'text-amber-600' : 'text-emerald-600'}`} />
+                    Customer Account Status
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {dispatchLoading ? (
+                    <div className="flex items-center justify-center py-4">
+                      <RefreshCw className="h-5 w-5 animate-spin text-slate-400 mr-2" />
+                      <span className="text-slate-500">Checking customer dues...</span>
+                    </div>
+                  ) : customerDues ? (
+                    <div className="space-y-3">
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-600">Total Outstanding:</span>
+                        <span className={`text-xl font-bold ${customerDues.totalDue > 0 ? 'text-amber-600' : 'text-emerald-600'}`}>
+                          ₹{(customerDues.totalDue || 0).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <span className="text-slate-600">Pending Invoices:</span>
+                        <Badge className={customerDues.pendingInvoicesCount > 0 ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700'}>
+                          {customerDues.pendingInvoicesCount || 0}
+                        </Badge>
+                      </div>
+                      
+                      {customerDues.pendingInvoices?.length > 0 && (
+                        <div className="mt-3 pt-3 border-t">
+                          <p className="text-sm font-medium text-amber-700 mb-2">Outstanding Invoices:</p>
+                          <div className="space-y-2 max-h-32 overflow-y-auto">
+                            {customerDues.pendingInvoices.map(inv => (
+                              <div key={inv.id} className={`flex justify-between items-center p-2 rounded ${inv.isOverdue ? 'bg-red-50' : 'bg-white'}`}>
+                                <div>
+                                  <span className="font-medium text-sm">{inv.invoiceNumber}</span>
+                                  {inv.isOverdue && <Badge className="ml-2 text-xs bg-red-100 text-red-700">Overdue</Badge>}
+                                </div>
+                                <span className="font-medium text-amber-600">₹{inv.balanceAmount?.toLocaleString()}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <p className="text-slate-500">Unable to fetch customer dues</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <div className="flex justify-end gap-2">
+                <Button variant="outline" onClick={() => setShowDispatchDialog(false)}>Cancel</Button>
+                <Button onClick={() => setDispatchStep(2)} disabled={dispatchLoading}>
+                  Continue <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 2: Driver Details */}
+          {dispatchStep === 2 && (
+            <div className="space-y-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Truck className="h-4 w-4 text-blue-600" />
+                    Driver & Vehicle Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Driver Name <span className="text-red-500">*</span></Label>
+                      <Input
+                        placeholder="Enter driver name"
+                        value={dispatchForm.driverName}
+                        onChange={(e) => setDispatchForm(prev => ({ ...prev, driverName: e.target.value }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Driver Phone</Label>
+                      <PhoneInput
+                        value={dispatchForm.driverPhone}
+                        onChange={(value) => setDispatchForm(prev => ({ ...prev, driverPhone: value }))}
+                        placeholder="Enter phone number"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Vehicle Number <span className="text-red-500">*</span></Label>
+                      <Input
+                        placeholder="e.g., MH12AB1234"
+                        value={dispatchForm.vehicleNumber}
+                        onChange={(e) => setDispatchForm(prev => ({ ...prev, vehicleNumber: e.target.value.toUpperCase() }))}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Transporter Name</Label>
+                      <Input
+                        placeholder="Transport company name"
+                        value={dispatchForm.transporterName}
+                        onChange={(e) => setDispatchForm(prev => ({ ...prev, transporterName: e.target.value }))}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Dispatch Photo */}
+                  <div className="space-y-2">
+                    <Label>Dispatch Photo (at Loading)</Label>
+                    <div className="flex items-center gap-4">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        ref={dispatchPhotoRef}
+                        onChange={handleDispatchPhotoUpload}
+                        className="hidden"
+                      />
+                      <Button 
+                        variant="outline" 
+                        onClick={() => dispatchPhotoRef.current?.click()}
+                        className="w-full"
+                      >
+                        <Camera className="h-4 w-4 mr-2" />
+                        {dispatchForm.dispatchPhoto ? 'Change Photo' : 'Upload Photo'}
+                      </Button>
+                    </div>
+                    {dispatchForm.dispatchPhoto && (
+                      <div className="mt-2 relative">
+                        <img 
+                          src={dispatchForm.dispatchPhoto} 
+                          alt="Dispatch" 
+                          className="w-full h-32 object-cover rounded-lg border"
+                        />
+                        <Button 
+                          size="sm" 
+                          variant="destructive" 
+                          className="absolute top-2 right-2"
+                          onClick={() => setDispatchForm(prev => ({ ...prev, dispatchPhoto: null }))}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>Notes</Label>
+                    <Textarea
+                      placeholder="Any special instructions or notes..."
+                      value={dispatchForm.notes}
+                      onChange={(e) => setDispatchForm(prev => ({ ...prev, notes: e.target.value }))}
+                      rows={2}
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+
+              <div className="flex justify-between">
+                <Button variant="outline" onClick={() => setDispatchStep(1)}>
+                  <ArrowLeft className="h-4 w-4 mr-1" /> Back
+                </Button>
+                <Button 
+                  onClick={checkDispatchStock} 
+                  disabled={!dispatchForm.driverName || !dispatchForm.vehicleNumber || dispatchLoading}
+                >
+                  {dispatchLoading ? 'Checking...' : 'Check Stock'} <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 3: Stock Check */}
+          {dispatchStep === 3 && (
+            <div className="space-y-4">
+              <Card className={stockCheck?.hasInsufficient ? 'border-red-300 bg-red-50' : 'border-emerald-300 bg-emerald-50'}>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <Warehouse className={`h-4 w-4 ${stockCheck?.hasInsufficient ? 'text-red-600' : 'text-emerald-600'}`} />
+                    Stock Availability
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {dispatchLoading ? (
+                    <div className="flex items-center justify-center py-4">
+                      <RefreshCw className="h-5 w-5 animate-spin text-slate-400 mr-2" />
+                      <span className="text-slate-500">Checking stock...</span>
+                    </div>
+                  ) : stockCheck ? (
+                    <div className="space-y-3">
+                      {stockCheck.hasInsufficient && (
+                        <div className="p-3 bg-red-100 rounded-lg mb-3">
+                          <p className="text-sm font-medium text-red-700 flex items-center gap-2">
+                            <AlertTriangle className="h-4 w-4" />
+                            Some items have insufficient stock. Only Admin can proceed.
+                          </p>
+                        </div>
+                      )}
+                      
+                      <div className="space-y-2 max-h-48 overflow-y-auto">
+                        {stockCheck.items?.map((item, idx) => (
+                          <div key={idx} className={`flex justify-between items-center p-2 rounded ${
+                            item.stockStatus === 'insufficient' ? 'bg-red-50 border border-red-200' : 'bg-white border'
+                          }`}>
+                            <div>
+                              <span className="font-medium text-sm">{item.productName}</span>
+                              <p className="text-xs text-slate-500">
+                                Required: {item.requestedQty} | Available: {item.availableQty}
+                              </p>
+                            </div>
+                            <Badge className={item.stockStatus === 'insufficient' ? 'bg-red-100 text-red-700' : 'bg-emerald-100 text-emerald-700'}>
+                              {item.stockStatus === 'insufficient' ? `Short: ${item.shortfall}` : 'OK'}
+                            </Badge>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-slate-500">Unable to check stock</p>
+                  )}
+                </CardContent>
+              </Card>
+
+              <div className="flex justify-between">
+                <Button variant="outline" onClick={() => setDispatchStep(2)}>
+                  <ArrowLeft className="h-4 w-4 mr-1" /> Back
+                </Button>
+                <Button 
+                  onClick={() => setDispatchStep(4)} 
+                  disabled={stockCheck?.hasInsufficient && !(user?.role === 'admin' || user?.role === 'super_admin')}
+                >
+                  Continue <ChevronRight className="h-4 w-4 ml-1" />
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 4: Confirm & Create */}
+          {dispatchStep === 4 && (
+            <div className="space-y-4">
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-sm flex items-center gap-2">
+                    <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+                    Dispatch Summary
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-slate-500">Invoice</p>
+                      <p className="font-medium">{dispatchInvoice?.invoiceNumber}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">Customer</p>
+                      <p className="font-medium">{dispatchInvoice?.customer?.name}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">Invoice Value</p>
+                      <p className="font-bold text-emerald-600">₹{(dispatchInvoice?.grandTotal || 0).toLocaleString()}</p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">Items</p>
+                      <p className="font-medium">{dispatchInvoice?.items?.length || 0} products</p>
+                    </div>
+                  </div>
+                  
+                  <Separator />
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <p className="text-xs text-slate-500">Driver</p>
+                      <p className="font-medium">{dispatchForm.driverName}</p>
+                      {dispatchForm.driverPhone && <p className="text-sm text-slate-500">{dispatchForm.driverPhone}</p>}
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-500">Vehicle</p>
+                      <p className="font-medium font-mono">{dispatchForm.vehicleNumber}</p>
+                      {dispatchForm.transporterName && <p className="text-sm text-slate-500">{dispatchForm.transporterName}</p>}
+                    </div>
+                  </div>
+
+                  {dispatchForm.dispatchPhoto && (
+                    <div>
+                      <p className="text-xs text-slate-500 mb-1">Loading Photo</p>
+                      <img 
+                        src={dispatchForm.dispatchPhoto} 
+                        alt="Dispatch" 
+                        className="w-full h-24 object-cover rounded-lg border"
+                      />
+                    </div>
+                  )}
+
+                  {customerDues?.totalDue > 0 && (
+                    <div className="p-3 bg-amber-50 rounded-lg border border-amber-200">
+                      <p className="text-sm text-amber-700">
+                        <AlertTriangle className="h-4 w-4 inline mr-1" />
+                        Customer has outstanding dues of <strong>₹{customerDues.totalDue.toLocaleString()}</strong>
+                      </p>
+                    </div>
+                  )}
+
+                  {stockCheck?.hasInsufficient && (
+                    <div className="p-3 bg-red-50 rounded-lg border border-red-200">
+                      <p className="text-sm text-red-700">
+                        <AlertTriangle className="h-4 w-4 inline mr-1" />
+                        Proceeding with insufficient stock (Admin Override)
+                      </p>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              <Card className="bg-blue-50 border-blue-200">
+                <CardContent className="pt-4">
+                  <p className="text-sm text-blue-700">
+                    <Info className="h-4 w-4 inline mr-1" />
+                    A <strong>Delivery Challan</strong> and <strong>Dispatch Note</strong> will be generated automatically.
+                    Stock will be deducted from inventory.
+                  </p>
+                </CardContent>
+              </Card>
+
+              <div className="flex justify-between">
+                <Button variant="outline" onClick={() => setDispatchStep(3)}>
+                  <ArrowLeft className="h-4 w-4 mr-1" /> Back
+                </Button>
+                <Button 
+                  onClick={() => handleCreateDispatch(stockCheck?.hasInsufficient)} 
+                  disabled={dispatchLoading}
+                  className="bg-orange-600 hover:bg-orange-700"
+                >
+                  {dispatchLoading ? (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
+                      Creating...
+                    </>
+                  ) : (
+                    <>
+                      <Truck className="h-4 w-4 mr-2" />
+                      Create Dispatch & Challan
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
