@@ -220,10 +220,29 @@ export async function POST(request) {
     
     // =============== SYNC FROM CRM ===============
     if (action === 'sync_from_crm') {
-      // Import NEW CRM projects that don't have a flooring project linked yet
-      const newCrmProjects = await crmProjects.find({ 
-        flooringProjectId: { $exists: false }
-      }).toArray()
+      // Get all CRM projects
+      const allCrmProjects = await crmProjects.find({}).toArray()
+      
+      // Filter to projects that need to be synced:
+      // 1. No flooringProjectId OR
+      // 2. flooringProjectId points to a non-existent flooring project (orphaned)
+      const newCrmProjects = []
+      for (const crm of allCrmProjects) {
+        if (!crm.flooringProjectId) {
+          newCrmProjects.push(crm)
+        } else {
+          // Check if the referenced flooring project actually exists
+          const flooringProject = await flooringProjects.findOne({ id: crm.flooringProjectId })
+          if (!flooringProject) {
+            // Orphaned reference - clear it and re-sync
+            await crmProjects.updateOne(
+              { id: crm.id },
+              { $unset: { flooringProjectId: '' } }
+            )
+            newCrmProjects.push(crm)
+          }
+        }
+      }
 
       for (const crm of newCrmProjects) {
         try {
