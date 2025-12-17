@@ -892,13 +892,54 @@ export function SiteSurvey({ surveys, projects, selectedProject, onRefresh, head
   }
 
   // Save survey
-  const handleSaveSurvey = async () => {
-    if (!surveyForm.surveyorName?.trim()) {
-      toast.error('Surveyor Name is mandatory!')
-      return
+  // Validation state for survey form
+  const [surveyErrors, setSurveyErrors] = useState({})
+
+  // Validate survey form
+  const validateSurveyForm = () => {
+    const errors = {}
+    
+    // Site name validation
+    const siteNameResult = validateName(surveyForm.siteName, { required: true, fieldName: 'Site name' })
+    if (!siteNameResult.valid) errors.siteName = siteNameResult.error
+    
+    // Contact person validation
+    const contactResult = validateName(surveyForm.contactPerson, { required: true, fieldName: 'Contact person' })
+    if (!contactResult.valid) errors.contactPerson = contactResult.error
+    
+    // Contact phone validation
+    const phoneResult = validatePhone(surveyForm.contactPhone, true)
+    if (!phoneResult.valid) errors.contactPhone = phoneResult.error
+    
+    // Contact email validation (optional)
+    if (surveyForm.contactEmail) {
+      const emailResult = validateEmail(surveyForm.contactEmail, false)
+      if (!emailResult.valid) errors.contactEmail = emailResult.error
     }
-    if (!surveyForm.contactPerson || !surveyForm.contactPhone) {
-      toast.error('Contact person and phone are required')
+    
+    // Surveyor name validation
+    const surveyorResult = validateName(surveyForm.surveyorName, { required: true, fieldName: 'Surveyor name' })
+    if (!surveyorResult.valid) errors.surveyorName = surveyorResult.error
+    
+    // Address validation (optional but if provided should be meaningful)
+    if (surveyForm.siteAddress) {
+      const addressResult = validateAddress(surveyForm.siteAddress, { required: false, minLength: 5 })
+      if (!addressResult.valid) errors.siteAddress = addressResult.error
+    }
+    
+    // Pin code validation (optional)
+    if (surveyForm.pincode) {
+      const pincodeResult = validatePinCode(surveyForm.pincode, false)
+      if (!pincodeResult.valid) errors.pincode = pincodeResult.error
+    }
+    
+    setSurveyErrors(errors)
+    return Object.keys(errors).length === 0
+  }
+
+  const handleSaveSurvey = async () => {
+    if (!validateSurveyForm()) {
+      toast.error('Please fix the validation errors')
       return
     }
 
