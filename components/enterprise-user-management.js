@@ -30,6 +30,7 @@ import {
 import { toast } from 'sonner'
 import { validateEmail, validatePhone, validatePassword, validateName } from '@/lib/utils/validation'
 import { PasswordStrengthIndicator } from '@/components/ui/validated-input'
+import { PhoneInput } from '@/components/ui/phone-input'
 
 const GlassCard = ({ children, className = '', ...props }) => (
   <div className={`backdrop-blur-xl bg-white/70 border border-white/20 shadow-xl rounded-xl ${className}`} {...props}>
