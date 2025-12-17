@@ -374,64 +374,97 @@ export function RegisterPage({ onBack, onSuccess, onLogin }) {
           {step === 1 ? (
             <motion.div key="step1" {...fadeIn} className="space-y-4">
               <div className="space-y-2">
-                <Label>Business Name</Label>
+                <Label className={touched.businessName && errors.businessName ? 'text-red-600' : ''}>Business Name *</Label>
                 <div className="relative">
                   <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input 
                     placeholder="Acme Construction" 
-                    className="pl-10 h-11"
+                    className={`pl-10 h-11 ${touched.businessName && errors.businessName ? 'border-red-500 focus:ring-red-500' : ''}`}
                     value={formData.businessName}
-                    onChange={(e) => setFormData({...formData, businessName: e.target.value})}
-                    required
+                    onChange={(e) => {
+                      setFormData({...formData, businessName: e.target.value})
+                      if (errors.businessName) setErrors(prev => { const n = {...prev}; delete n.businessName; return n })
+                    }}
+                    onBlur={() => handleBlur('businessName')}
                   />
                 </div>
+                {touched.businessName && errors.businessName && (
+                  <p className="text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> {errors.businessName}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label>Work Email</Label>
+                <Label className={touched.email && errors.email ? 'text-red-600' : ''}>Work Email *</Label>
                 <div className="relative">
                   <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input 
                     type="email" 
                     placeholder="you@company.com" 
-                    className="pl-10 h-11"
+                    className={`pl-10 h-11 ${touched.email && errors.email ? 'border-red-500 focus:ring-red-500' : ''}`}
                     value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
-                    required
+                    onChange={(e) => {
+                      setFormData({...formData, email: e.target.value})
+                      if (errors.email) setErrors(prev => { const n = {...prev}; delete n.email; return n })
+                    }}
+                    onBlur={() => handleBlur('email')}
                   />
                 </div>
+                {touched.email && errors.email && (
+                  <p className="text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> {errors.email}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
-                <Label>Password</Label>
+                <Label className={touched.password && errors.password ? 'text-red-600' : ''}>Password *</Label>
                 <div className="relative">
                   <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input 
                     type="password" 
                     placeholder="Create a strong password" 
-                    className="pl-10 h-11"
+                    className={`pl-10 h-11 ${touched.password && errors.password ? 'border-red-500 focus:ring-red-500' : ''}`}
                     value={formData.password}
-                    onChange={(e) => setFormData({...formData, password: e.target.value})}
-                    required
-                    minLength={8}
+                    onChange={(e) => {
+                      setFormData({...formData, password: e.target.value})
+                      if (errors.password) setErrors(prev => { const n = {...prev}; delete n.password; return n })
+                    }}
+                    onBlur={() => handleBlur('password')}
                   />
                 </div>
+                {touched.password && errors.password && (
+                  <p className="text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> {errors.password}
+                  </p>
+                )}
+                {formData.password && <PasswordStrengthIndicator password={formData.password} />}
               </div>
 
               <div className="space-y-2">
-                <Label>Phone Number</Label>
+                <Label className={touched.phone && errors.phone ? 'text-red-600' : ''}>Phone Number</Label>
                 <div className="relative">
                   <Phone className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
                   <Input 
                     placeholder="+1 (555) 000-0000" 
-                    className="pl-10 h-11"
+                    className={`pl-10 h-11 ${touched.phone && errors.phone ? 'border-red-500 focus:ring-red-500' : ''}`}
                     value={formData.phone}
-                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    onChange={(e) => {
+                      setFormData({...formData, phone: e.target.value})
+                      if (errors.phone) setErrors(prev => { const n = {...prev}; delete n.phone; return n })
+                    }}
+                    onBlur={() => handleBlur('phone')}
                   />
                 </div>
+                {touched.phone && errors.phone && (
+                  <p className="text-sm text-red-600 flex items-center gap-1">
+                    <AlertCircle className="h-3 w-3" /> {errors.phone}
+                  </p>
+                )}
               </div>
 
-              <Button type="button" onClick={() => setStep(2)} className="w-full h-11 mt-2">
+              <Button type="button" onClick={handleNextStep} className="w-full h-11 mt-2">
                 Next Step <ArrowRight className="h-4 w-4 ml-2" />
               </Button>
             </motion.div>
