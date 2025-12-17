@@ -1349,7 +1349,8 @@ const TaskDialog = ({ open, onClose, task, onSave, users, projects, loading }) =
             )}
           </div>
 
-          {/* Assignees */}
+          {/* Assignees - Only in Advanced Mode */}
+          {isAdvancedMode && (
           <div className="space-y-2">
             <Label>Assignees</Label>
             <Popover>
