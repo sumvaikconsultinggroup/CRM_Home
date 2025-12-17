@@ -1166,10 +1166,35 @@ const TaskDialog = ({ open, onClose, task, onSave, users, projects, loading }) =
     <Dialog open={open} onOpenChange={handleDialogOpen}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{task ? 'Edit Task' : 'Create New Task'}</DialogTitle>
-          <DialogDescription>
-            {task ? 'Update task details' : 'Add a new task to your board'}
-          </DialogDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle>{task ? 'Edit Task' : 'Create New Task'}</DialogTitle>
+              <DialogDescription>
+                {task ? 'Update task details' : 'Add a new task to your board'}
+              </DialogDescription>
+            </div>
+            {/* Simple/Advanced Toggle */}
+            <div className="flex items-center gap-2 bg-slate-100 rounded-lg p-1">
+              <button
+                type="button"
+                onClick={() => setIsAdvancedMode(false)}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  !isAdvancedMode ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Simple
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsAdvancedMode(true)}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  isAdvancedMode ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Advanced
+              </button>
+            </div>
+          </div>
         </DialogHeader>
 
         <div className="space-y-4 py-4">
@@ -1183,19 +1208,81 @@ const TaskDialog = ({ open, onClose, task, onSave, users, projects, loading }) =
             />
           </div>
 
-          {/* Type, Status, Priority */}
-          <div className="grid grid-cols-3 gap-4">
+          {/* Type, Status, Priority - Simple Mode shows only Status & Priority */}
+          <div className={`grid ${isAdvancedMode ? 'grid-cols-3' : 'grid-cols-2'} gap-4`}>
+            {isAdvancedMode && (
+              <div className="space-y-2">
+                <Label>Type</Label>
+                <Select value={formData.taskType} onValueChange={(v) => setFormData(prev => ({ ...prev, taskType: v }))}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(TASK_TYPES).map(([key, config]) => (
+                      <SelectItem key={key} value={key}>
+                        <div className="flex items-center gap-2">
+                          <config.icon className="h-4 w-4" />
+                          {config.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            
+            {/* Status with Add Custom option */}
             <div className="space-y-2">
-              <Label>Type</Label>
-              <Select value={formData.taskType} onValueChange={(v) => setFormData(prev => ({ ...prev, taskType: v }))}>
+              <div className="flex items-center justify-between">
+                <Label>Status</Label>
+                {isAdvancedMode && (
+                  <button 
+                    type="button"
+                    onClick={() => setShowStatusInput(!showStatusInput)}
+                    className="text-xs text-blue-600 hover:text-blue-700 flex items-center gap-1"
+                  >
+                    <Plus className="h-3 w-3" /> Add Custom
+                  </button>
+                )}
+              </div>
+              
+              {showStatusInput && isAdvancedMode && (
+                <div className="p-3 bg-slate-50 rounded-lg space-y-2 mb-2">
+                  <Input
+                    value={newStatusName}
+                    onChange={(e) => setNewStatusName(e.target.value)}
+                    placeholder="Status name..."
+                    className="h-8 text-sm"
+                  />
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs text-slate-500">Color:</span>
+                    <div className="flex gap-1">
+                      {STATUS_COLORS.map((c, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setNewStatusColor(idx)}
+                          className={`w-5 h-5 rounded ${c.bg} ${newStatusColor === idx ? 'ring-2 ring-offset-1 ring-blue-500' : ''}`}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button size="sm" variant="outline" onClick={() => setShowStatusInput(false)}>Cancel</Button>
+                    <Button size="sm" onClick={addCustomStatus}>Add Status</Button>
+                  </div>
+                </div>
+              )}
+              
+              <Select value={formData.status} onValueChange={(v) => setFormData(prev => ({ ...prev, status: v }))}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  {Object.entries(TASK_TYPES).map(([key, config]) => (
+                  {Object.entries(allStatuses).map(([key, config]) => (
                     <SelectItem key={key} value={key}>
                       <div className="flex items-center gap-2">
-                        <config.icon className="h-4 w-4" />
+                        <div className={`w-2 h-2 rounded-full ${typeof config.color === 'string' && config.color.includes('bg-') ? config.color.split(' ')[0] : 'bg-slate-400'}`} />
                         {config.label}
                       </div>
                     </SelectItem>
@@ -1203,19 +1290,7 @@ const TaskDialog = ({ open, onClose, task, onSave, users, projects, loading }) =
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-2">
-              <Label>Status</Label>
-              <Select value={formData.status} onValueChange={(v) => setFormData(prev => ({ ...prev, status: v }))}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.entries(TASK_STATUSES).map(([key, config]) => (
-                    <SelectItem key={key} value={key}>{config.label}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            
             <div className="space-y-2">
               <Label>Priority</Label>
               <Select value={formData.priority} onValueChange={(v) => setFormData(prev => ({ ...prev, priority: v }))}>
@@ -1231,33 +1306,47 @@ const TaskDialog = ({ open, onClose, task, onSave, users, projects, loading }) =
             </div>
           </div>
 
-          {/* Description */}
-          <div className="space-y-2">
-            <Label>Description</Label>
-            <Textarea 
-              value={formData.description}
-              onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
-              placeholder="Describe the task..."
-              rows={3}
-            />
-          </div>
+          {/* Description - Only in Advanced Mode */}
+          {isAdvancedMode && (
+            <div className="space-y-2">
+              <Label>Description</Label>
+              <Textarea 
+                value={formData.description}
+                onChange={(e) => setFormData(prev => ({ ...prev, description: e.target.value }))}
+                placeholder="Describe the task..."
+                rows={3}
+              />
+            </div>
+          )}
 
-          {/* Project */}
-          <div className="space-y-2">
-            <Label>Project</Label>
-            <Select value={formData.projectId} onValueChange={(v) => setFormData(prev => ({ ...prev, projectId: v }))}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select project (optional)" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">No Project</SelectItem>
-                {projects?.map((project) => (
-                  <SelectItem key={project.id} value={project.id}>
-                    {project.name || project.projectNumber}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Project & Due Date - Simple shows both in one row */}
+          <div className={`grid ${isAdvancedMode ? 'grid-cols-1' : 'grid-cols-2'} gap-4`}>
+            <div className="space-y-2">
+              <Label>Project</Label>
+              <Select value={formData.projectId} onValueChange={(v) => setFormData(prev => ({ ...prev, projectId: v }))}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select project (optional)" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">No Project</SelectItem>
+                  {projects?.map((project) => (
+                    <SelectItem key={project.id} value={project.id}>
+                      {project.name || project.projectNumber}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            {!isAdvancedMode && (
+              <div className="space-y-2">
+                <Label>Due Date</Label>
+                <Input 
+                  type="date"
+                  value={formData.dueDate}
+                  onChange={(e) => setFormData(prev => ({ ...prev, dueDate: e.target.value }))}
+                />
+              </div>
+            )}
           </div>
 
           {/* Assignees */}
