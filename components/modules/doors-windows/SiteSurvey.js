@@ -1073,7 +1073,7 @@ export function SiteSurvey({ surveys, projects, selectedProject, onRefresh, head
           <Badge variant="outline" className="bg-slate-50">Total: {surveyStats.total}</Badge>
           <Badge variant="outline" className="bg-emerald-50 text-emerald-700">Completed: {surveyStats.completed}</Badge>
           <Badge variant="outline" className="bg-purple-50 text-purple-700">Quoted: {surveyStats.sentForQuote}</Badge>
-          <Button onClick={() => { resetSurveyForm(); setShowNewSurvey(true); }} className="bg-gradient-to-r from-indigo-600 to-purple-600">
+          <Button onClick={() => { setShowSurveyOptions(true); setSurveyCreationMode(null); setProjectSearchQuery(''); }} className="bg-gradient-to-r from-indigo-600 to-purple-600">
             <Plus className="h-4 w-4 mr-2" /> New Survey
           </Button>
         </div>
