@@ -912,39 +912,104 @@ export function EnterpriseUserManagement({ authToken, currentUser, onRefresh }) 
             <TabsContent value="details" className="space-y-4 mt-4">
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Full Name *</Label>
+                  <Label className={formErrors.name ? 'text-red-600' : ''}>Full Name *</Label>
                   <Input
                     value={userForm.name}
-                    onChange={(e) => setUserForm({ ...userForm, name: e.target.value })}
+                    onChange={(e) => {
+                      setUserForm({ ...userForm, name: e.target.value })
+                      if (formErrors.name) setFormErrors({ ...formErrors, name: null })
+                    }}
+                    onBlur={() => {
+                      const result = validateName(userForm.name, { required: true, fieldName: 'Full Name' })
+                      if (!result.valid) setFormErrors({ ...formErrors, name: result.error })
+                    }}
                     placeholder="John Doe"
+                    className={formErrors.name ? 'border-red-500 focus:ring-red-500' : ''}
                   />
+                  {formErrors.name && (
+                    <p className="text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" /> {formErrors.name}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label>Email *</Label>
+                  <Label className={formErrors.email ? 'text-red-600' : ''}>Email *</Label>
                   <Input
                     type="email"
                     value={userForm.email}
-                    onChange={(e) => setUserForm({ ...userForm, email: e.target.value })}
+                    onChange={(e) => {
+                      setUserForm({ ...userForm, email: e.target.value })
+                      if (formErrors.email) setFormErrors({ ...formErrors, email: null })
+                    }}
+                    onBlur={() => {
+                      if (!selectedUser) {
+                        const result = validateEmail(userForm.email, true)
+                        if (!result.valid) setFormErrors({ ...formErrors, email: result.error })
+                      }
+                    }}
                     placeholder="john@example.com"
                     disabled={!!selectedUser}
+                    className={formErrors.email ? 'border-red-500 focus:ring-red-500' : ''}
                   />
+                  {formErrors.email && (
+                    <p className="text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" /> {formErrors.email}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
-                  <Label>{selectedUser ? 'New Password (leave blank to keep)' : 'Password *'}</Label>
+                  <Label className={formErrors.password ? 'text-red-600' : ''}>
+                    {selectedUser ? 'New Password (leave blank to keep)' : 'Password *'}
+                  </Label>
                   <Input
                     type="password"
                     value={userForm.password}
-                    onChange={(e) => setUserForm({ ...userForm, password: e.target.value })}
+                    onChange={(e) => {
+                      setUserForm({ ...userForm, password: e.target.value })
+                      if (formErrors.password) setFormErrors({ ...formErrors, password: null })
+                    }}
+                    onBlur={() => {
+                      if (!selectedUser || userForm.password) {
+                        const result = validatePassword(userForm.password, {
+                          minLength: 8,
+                          requireUppercase: true,
+                          requireNumber: true
+                        })
+                        if (!result.valid) setFormErrors({ ...formErrors, password: result.error })
+                      }
+                    }}
                     placeholder="••••••••"
+                    className={formErrors.password ? 'border-red-500 focus:ring-red-500' : ''}
                   />
+                  {formErrors.password && (
+                    <p className="text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" /> {formErrors.password}
+                    </p>
+                  )}
+                  {!selectedUser && userForm.password && <PasswordStrengthIndicator password={userForm.password} />}
                 </div>
                 <div className="space-y-2">
-                  <Label>Phone</Label>
+                  <Label className={formErrors.phone ? 'text-red-600' : ''}>Phone</Label>
                   <Input
                     value={userForm.phone}
-                    onChange={(e) => setUserForm({ ...userForm, phone: e.target.value })}
+                    onChange={(e) => {
+                      setUserForm({ ...userForm, phone: e.target.value })
+                      if (formErrors.phone) setFormErrors({ ...formErrors, phone: null })
+                    }}
+                    onBlur={() => {
+                      if (userForm.phone) {
+                        const result = validatePhone(userForm.phone, false)
+                        if (!result.valid) setFormErrors({ ...formErrors, phone: result.error })
+                      }
+                    }}
                     placeholder="+91 98765 43210"
+                    className={formErrors.phone ? 'border-red-500 focus:ring-red-500' : ''}
                   />
+                  {formErrors.phone && (
+                    <p className="text-sm text-red-600 flex items-center gap-1">
+                      <AlertCircle className="h-3 w-3" /> {formErrors.phone}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label>Role</Label>
