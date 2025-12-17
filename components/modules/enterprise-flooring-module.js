@@ -7552,10 +7552,14 @@ function CustomerDialog({ open, onClose, customer, onSave, loading }) {
               <Label>Name *</Label>
               <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Customer name" />
             </div>
-            <div className="space-y-2">
-              <Label>Phone *</Label>
-              <Input value={form.phone} onChange={(e) => setForm({ ...form, phone: e.target.value })} placeholder="Phone number" />
-            </div>
+            <PhoneInput
+              label="Phone *"
+              name="phone"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              defaultCountry="IN"
+              required
+            />
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
