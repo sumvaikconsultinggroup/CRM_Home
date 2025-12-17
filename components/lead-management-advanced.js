@@ -1631,14 +1631,73 @@ const AddLeadDialog = ({ open, onClose, onSave, users = [] }) => {
     notes: ''
   })
   const [saving, setSaving] = useState(false)
+  const [errors, setErrors] = useState({})
+  const [touched, setTouched] = useState({})
+  
+  const handleBlur = (field) => {
+    setTouched(prev => ({ ...prev, [field]: true }))
+    validateField(field)
+  }
+
+  const validateField = (field) => {
+    let result = { valid: true, error: null }
+    
+    switch (field) {
+      case 'name':
+        result = validateName(formData.name, { required: true, fieldName: 'Lead name' })
+        break
+      case 'email':
+        if (formData.email) {
+          result = validateEmail(formData.email, false)
+        }
+        break
+      case 'phone':
+        if (formData.phone) {
+          result = validatePhone(formData.phone, false)
+        }
+        break
+    }
+
+    if (!result.valid) {
+      setErrors(prev => ({ ...prev, [field]: result.error }))
+    } else {
+      setErrors(prev => { const n = { ...prev }; delete n[field]; return n })
+    }
+    return result
+  }
+
+  const validateForm = () => {
+    const newErrors = {}
+    setTouched({ name: true, email: true, phone: true })
+
+    // Name is required
+    const nameResult = validateName(formData.name, { required: true, fieldName: 'Lead name' })
+    if (!nameResult.valid) newErrors.name = nameResult.error
+
+    // At least one contact method required
+    if (!formData.phone?.trim() && !formData.email?.trim()) {
+      newErrors.phone = 'Either phone or email is required'
+    }
+
+    // Validate email if provided
+    if (formData.email) {
+      const emailResult = validateEmail(formData.email, false)
+      if (!emailResult.valid) newErrors.email = emailResult.error
+    }
+
+    // Validate phone if provided
+    if (formData.phone) {
+      const phoneResult = validatePhone(formData.phone, false)
+      if (!phoneResult.valid) newErrors.phone = phoneResult.error
+    }
+
+    setErrors(newErrors)
+    return Object.keys(newErrors).length === 0
+  }
   
   const handleSave = async () => {
-    if (!formData.name.trim()) {
-      toast.error('Lead name is required')
-      return
-    }
-    if (!formData.phone.trim() && !formData.email.trim()) {
-      toast.error('Either phone or email is required')
+    if (!validateForm()) {
+      toast.error('Please fix the validation errors')
       return
     }
     
@@ -1655,6 +1714,8 @@ const AddLeadDialog = ({ open, onClose, onSave, users = [] }) => {
         value: '', status: 'new', followUpDate: '', followUpTime: '10:00', assignedTo: '',
         requirements: '', address: '', city: '', state: '', notes: ''
       })
+      setErrors({})
+      setTouched({})
       onClose()
     } catch (error) {
       toast.error('Failed to create lead')
