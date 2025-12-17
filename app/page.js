@@ -1131,6 +1131,17 @@ function ClientDashboard({ user, client, onLogout }) {
             <Badge variant="outline" className="px-2 py-1 text-xs">
               {client?.planId?.toUpperCase() || 'BASIC'}
             </Badge>
+            {/* Request a Feature */}
+            <Button 
+              variant="outline" 
+              size="sm"
+              onClick={() => setShowFeatureRequest(true)} 
+              className="hidden sm:flex items-center gap-1.5 h-8 lg:h-9 px-2 lg:px-3 text-amber-600 border-amber-200 hover:bg-amber-50 hover:border-amber-300"
+              title="Request a Feature"
+            >
+              <Lightbulb className="h-4 w-4" />
+              <span className="hidden lg:inline text-xs font-medium">Request Feature</span>
+            </Button>
             {/* Teams Hub Quick Access */}
             <Button 
               variant="outline" 
