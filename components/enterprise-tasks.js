@@ -1013,6 +1013,79 @@ const TaskDialog = ({ open, onClose, task, onSave, users, projects, loading }) =
     labels: [],
     checklist: []
   })
+  
+  // Advanced mode toggle
+  const [isAdvancedMode, setIsAdvancedMode] = useState(false)
+  
+  // Custom status entry
+  const [customStatuses, setCustomStatuses] = useState([])
+  const [newStatusName, setNewStatusName] = useState('')
+  const [newStatusColor, setNewStatusColor] = useState(0)
+  const [showStatusInput, setShowStatusInput] = useState(false)
+  
+  // Custom label entry
+  const [customLabels, setCustomLabels] = useState([])
+  const [newLabelName, setNewLabelName] = useState('')
+  const [newLabelColor, setNewLabelColor] = useState('#3B82F6')
+  const [showLabelInput, setShowLabelInput] = useState(false)
+  
+  // Load custom statuses and labels from localStorage
+  useEffect(() => {
+    const savedStatuses = localStorage.getItem('customTaskStatuses')
+    const savedLabels = localStorage.getItem('customTaskLabels')
+    if (savedStatuses) setCustomStatuses(JSON.parse(savedStatuses))
+    if (savedLabels) setCustomLabels(JSON.parse(savedLabels))
+  }, [])
+  
+  // Save custom statuses to localStorage
+  const addCustomStatus = () => {
+    if (!newStatusName.trim()) return
+    const statusId = newStatusName.toLowerCase().replace(/\s+/g, '_')
+    const newStatus = {
+      id: statusId,
+      label: newStatusName,
+      color: `${STATUS_COLORS[newStatusColor].bg} ${STATUS_COLORS[newStatusColor].text}`,
+      icon: Circle,
+      order: Object.keys(TASK_STATUSES).length + customStatuses.length
+    }
+    const updated = [...customStatuses, newStatus]
+    setCustomStatuses(updated)
+    localStorage.setItem('customTaskStatuses', JSON.stringify(updated))
+    setFormData(prev => ({ ...prev, status: statusId }))
+    setNewStatusName('')
+    setShowStatusInput(false)
+  }
+  
+  // Add custom label
+  const addCustomLabel = () => {
+    if (!newLabelName.trim()) return
+    const labelId = `custom_${Date.now()}`
+    const newLabel = {
+      id: labelId,
+      name: newLabelName,
+      color: newLabelColor
+    }
+    const updated = [...customLabels, newLabel]
+    setCustomLabels(updated)
+    localStorage.setItem('customTaskLabels', JSON.stringify(updated))
+    setFormData(prev => ({ ...prev, labels: [...prev.labels, labelId] }))
+    setNewLabelName('')
+    setShowLabelInput(false)
+  }
+  
+  // Combined statuses (default + custom)
+  const allStatuses = useMemo(() => {
+    const combined = { ...TASK_STATUSES }
+    customStatuses.forEach(s => {
+      combined[s.id] = s
+    })
+    return combined
+  }, [customStatuses])
+  
+  // Combined labels (default + custom)
+  const allLabels = useMemo(() => {
+    return [...DEFAULT_LABELS, ...customLabels]
+  }, [customLabels])
 
   // Initialize form when dialog opens or task changes
   const initialFormData = useMemo(() => {
