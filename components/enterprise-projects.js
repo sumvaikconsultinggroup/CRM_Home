@@ -2100,9 +2100,16 @@ export function EnterpriseProjects({ authToken, onProjectSelect, onRefresh }) {
                 <TabsContent value="tasks" className="mt-4">
                   <GlassCard className="p-4">
                     <div className="flex items-center justify-between mb-4">
-                      <h4 className="font-medium flex items-center gap-2">
-                        <FileText className="h-4 w-4" /> Project Tasks
-                      </h4>
+                      <div>
+                        <h4 className="font-medium flex items-center gap-2">
+                          <FileText className="h-4 w-4" /> Project Tasks
+                        </h4>
+                        {projectDetail.tasks?.length > 0 && (
+                          <p className="text-xs text-slate-500 mt-1">
+                            {projectDetail.tasks?.filter(t => t.status === 'completed').length} of {projectDetail.tasks?.length} completed
+                          </p>
+                        )}
+                      </div>
                       <Button size="sm" onClick={() => setShowTaskDialog(true)}>
                         <Plus className="h-4 w-4 mr-1" /> Add Task
                       </Button>
@@ -2111,29 +2118,71 @@ export function EnterpriseProjects({ authToken, onProjectSelect, onRefresh }) {
                       <div className="text-center py-8 text-slate-400">
                         <FileText className="h-12 w-12 mx-auto mb-2 opacity-50" />
                         <p>No tasks linked to this project</p>
+                        <p className="text-xs mt-1">Create tasks and link them to this project</p>
                         <Button size="sm" variant="outline" className="mt-3" onClick={() => setShowTaskDialog(true)}>
                           <Plus className="h-4 w-4 mr-1" /> Add First Task
                         </Button>
                       </div>
                     ) : (
                       <div className="space-y-2">
-                        {projectDetail.tasks?.map(task => (
-                          <div key={task.id} className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
-                            <Checkbox 
-                              checked={task.status === 'completed'} 
-                              onCheckedChange={() => handleToggleTask(task.id, task.status)}
-                            />
-                            <div className="flex-1">
-                              <p className={`font-medium ${task.status === 'completed' ? 'line-through text-slate-400' : ''}`}>
-                                {task.title}
-                              </p>
-                              {task.dueDate && (
-                                <p className="text-xs text-slate-400">Due: {formatDate(task.dueDate)}</p>
-                              )}
+                        {projectDetail.tasks?.map(task => {
+                          const priorityColors = {
+                            urgent: 'bg-red-100 text-red-700 border-red-200',
+                            high: 'bg-orange-100 text-orange-700 border-orange-200',
+                            medium: 'bg-blue-100 text-blue-700 border-blue-200',
+                            low: 'bg-slate-100 text-slate-600 border-slate-200'
+                          }
+                          const statusColors = {
+                            todo: 'bg-slate-100 text-slate-700',
+                            in_progress: 'bg-blue-100 text-blue-700',
+                            review: 'bg-purple-100 text-purple-700',
+                            completed: 'bg-emerald-100 text-emerald-700',
+                            cancelled: 'bg-red-100 text-red-700'
+                          }
+                          const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && task.status !== 'completed'
+                          
+                          return (
+                            <div 
+                              key={task.id} 
+                              className={`flex items-center gap-3 p-3 rounded-lg border transition-colors hover:shadow-sm ${
+                                task.status === 'completed' ? 'bg-slate-50 opacity-70' : 'bg-white'
+                              } ${isOverdue ? 'border-red-200' : 'border-slate-200'}`}
+                            >
+                              <Checkbox 
+                                checked={task.status === 'completed'} 
+                                onCheckedChange={() => handleToggleTask(task.id, task.status)}
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <p className={`font-medium truncate ${task.status === 'completed' ? 'line-through text-slate-400' : ''}`}>
+                                    {task.title}
+                                  </p>
+                                  {task.priority && task.priority !== 'medium' && (
+                                    <Badge className={`${priorityColors[task.priority]} text-xs`} variant="outline">
+                                      {task.priority}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-3 mt-1">
+                                  {task.dueDate && (
+                                    <p className={`text-xs flex items-center gap-1 ${isOverdue ? 'text-red-600 font-medium' : 'text-slate-400'}`}>
+                                      <Calendar className="h-3 w-3" />
+                                      {isOverdue ? 'Overdue: ' : ''}{formatDate(task.dueDate)}
+                                    </p>
+                                  )}
+                                  {task.description && (
+                                    <p className="text-xs text-slate-400 truncate max-w-[200px]">
+                                      {task.description}
+                                    </p>
+                                  )}
+                                </div>
+                              </div>
+                              <Badge className={statusColors[task.status] || 'bg-slate-100 text-slate-700'}>
+                                {task.status?.replace('_', ' ')}
+                              </Badge>
                             </div>
-                            <Badge variant="outline">{task.status}</Badge>
-                          </div>
-                        ))}
+                          )
+                        })}
                       </div>
                     )}
                   </GlassCard>
