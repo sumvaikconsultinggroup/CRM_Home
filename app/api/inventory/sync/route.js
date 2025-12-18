@@ -151,6 +151,15 @@ export async function POST(request) {
         sourceModuleId: moduleId
       })
 
+      // Extract pricing from nested object or flat fields
+      const pricing = product.pricing || {}
+      const costPrice = product.costPrice || pricing.costPrice || product.pricePerSqft || product.price || 0
+      const sellingPrice = product.sellingPrice || pricing.sellingPrice || pricing.dealerPrice || product.price || 0
+      const mrp = product.mrp || pricing.mrp || sellingPrice || 0
+      
+      // Extract stock quantity
+      const stockQuantity = product.stockQuantity || product.quantity || product.stock || 0
+      
       // Create or update inventory product
       const inventoryProduct = {
         id: existingSync?.inventoryProductId || uuidv4(),
@@ -161,22 +170,26 @@ export async function POST(request) {
         sku: product.sku || generateSKU(moduleId, product),
         barcode: product.barcode || null,
         description: product.description || '',
-        category: product.category || moduleDoc.name,
-        subCategory: product.subCategory || product.type || '',
+        category: product.category || product.specs?.construction || moduleDoc.name,
+        subCategory: product.subCategory || product.type || product.brand || '',
         
-        // Pricing
-        costPrice: product.costPrice || product.pricePerSqft || product.price || 0,
-        sellingPrice: product.sellingPrice || product.price || 0,
-        mrp: product.mrp || product.sellingPrice || product.price || 0,
+        // Pricing (handle nested pricing object)
+        costPrice,
+        sellingPrice,
+        mrp,
+        
+        // Stock (sync from module)
+        stockQuantity,
+        reservedQuantity: product.reservedQuantity || 0,
         
         // Units
         unit: product.unit || getDefaultUnit(moduleId),
         secondaryUnit: product.secondaryUnit || null,
         conversionRate: product.conversionRate || 1,
         
-        // Tax
-        gstRate: product.gstRate || product.taxRate || 18,
-        hsnCode: product.hsnCode || '',
+        // Tax (handle nested tax object)
+        gstRate: product.gstRate || product.tax?.gstRate || product.taxRate || 18,
+        hsnCode: product.hsnCode || product.tax?.hsnCode || '',
         
         // Inventory Settings
         trackInventory: true,
@@ -194,7 +207,7 @@ export async function POST(request) {
         attributes: extractAttributes(moduleId, product),
         
         // Status
-        active: product.active !== false,
+        active: product.active !== false && product.status !== 'inactive',
         createdAt: existingSync ? undefined : new Date(),
         updatedAt: new Date(),
         lastSyncAt: new Date()
