@@ -15,7 +15,16 @@ const convertInventoryReservation = async (db, clientId, quotationId, invoiceIte
     const reservationCollection = db.collection('inventory_reservations')
     const stockCollection = db.collection('wf_inventory_stock')
     const movementCollection = db.collection('wf_inventory_movements')
+    const productsCollection = db.collection('flooring_products')
     const now = new Date().toISOString()
+    
+    // Get all stock records for reference
+    const allStock = await stockCollection.find({}).toArray()
+    const stockByProductId = new Map(allStock.map(s => [s.productId, s]))
+    
+    // Get all products for name lookup
+    const allProducts = await productsCollection.find({}).toArray()
+    const productMap = new Map(allProducts.map(p => [p.id, p]))
     
     const reservations = await reservationCollection.find({ 
       quotationId, 
@@ -24,13 +33,23 @@ const convertInventoryReservation = async (db, clientId, quotationId, invoiceIte
     
     let convertedCount = 0
     let directDeductCount = 0
+    let skippedCount = 0
     const processedProductIds = new Set()
+    const results = []
     
     // Process existing reservations first
     for (const reservation of reservations) {
+      const stockRecord = stockByProductId.get(reservation.productId)
+      
+      if (!stockRecord) {
+        results.push({ productId: reservation.productId, status: 'skipped', reason: 'No stock record found' })
+        skippedCount++
+        continue
+      }
+      
       // Deduct from total stock (reservation was already from available)
-      await stockCollection.updateOne(
-        { productId: reservation.productId, warehouseId: reservation.warehouseId || 'default' },
+      const updateResult = await stockCollection.updateOne(
+        { productId: reservation.productId },
         {
           $inc: { 
             quantity: -reservation.quantity, 
@@ -40,91 +59,127 @@ const convertInventoryReservation = async (db, clientId, quotationId, invoiceIte
         }
       )
       
-      // Record inventory movement
-      await movementCollection.insertOne({
-        id: uuidv4(),
-        productId: reservation.productId,
-        productName: reservation.productName,
-        type: 'sale',
-        quantity: -reservation.quantity,
-        warehouseId: reservation.warehouseId || 'default',
-        invoiceId,
-        invoiceNumber,
-        quotationId,
-        notes: `Sold via Invoice ${invoiceNumber} (from reservation)`,
-        createdBy: 'system',
-        createdAt: now
-      })
-      
-      // Update reservation status to converted
-      await reservationCollection.updateOne(
-        { id: reservation.id },
-        { 
-          $set: { 
-            status: 'converted', 
-            invoiceId,
-            invoiceNumber,
-            convertedAt: now,
-            updatedAt: now 
-          } 
-        }
-      )
-      
-      processedProductIds.add(reservation.productId)
-      convertedCount++
+      if (updateResult.modifiedCount > 0) {
+        // Record inventory movement
+        await movementCollection.insertOne({
+          id: uuidv4(),
+          productId: reservation.productId,
+          productName: reservation.productName || stockRecord.productName,
+          type: 'sale',
+          quantity: -reservation.quantity,
+          warehouseId: stockRecord.warehouseId || 'default',
+          invoiceId,
+          invoiceNumber,
+          quotationId,
+          notes: `Sold via Invoice ${invoiceNumber} (from reservation)`,
+          createdBy: 'system',
+          createdAt: now
+        })
+        
+        // Update reservation status to converted
+        await reservationCollection.updateOne(
+          { id: reservation.id },
+          { 
+            $set: { 
+              status: 'converted', 
+              invoiceId,
+              invoiceNumber,
+              convertedAt: now,
+              updatedAt: now 
+            } 
+          }
+        )
+        
+        processedProductIds.add(reservation.productId)
+        convertedCount++
+        results.push({ productId: reservation.productId, status: 'converted', quantity: reservation.quantity })
+      }
     }
     
-    // For items NOT covered by reservations, deduct directly
+    // For items NOT covered by reservations, deduct directly from stock
     const materialItems = invoiceItems.filter(i => 
       i.itemType === 'material' && 
-      i.productId && 
-      !processedProductIds.has(i.productId)
+      (i.productId || i.id) && 
+      !processedProductIds.has(i.productId) &&
+      !processedProductIds.has(i.id)
     )
     
     for (const item of materialItems) {
-      const warehouseId = item.warehouseId || 'default'
+      const productId = item.productId || item.id
       const quantityToDeduct = item.quantity || item.area || 0
       
       if (quantityToDeduct <= 0) continue
       
-      // Direct deduction from stock
-      await stockCollection.updateOne(
-        { productId: item.productId, warehouseId },
+      // Find matching stock record - try multiple fields
+      let stockRecord = stockByProductId.get(productId)
+      
+      // If not found by productId, try to find by SKU or name
+      if (!stockRecord) {
+        stockRecord = allStock.find(s => 
+          s.sku === item.sku || 
+          s.productName === item.productName ||
+          s.productName === item.name
+        )
+      }
+      
+      if (!stockRecord) {
+        results.push({ 
+          productId, 
+          productName: item.productName || item.name,
+          status: 'skipped', 
+          reason: 'No stock record found for direct deduction' 
+        })
+        skippedCount++
+        continue
+      }
+      
+      // Update the EXISTING stock record
+      const updateResult = await stockCollection.updateOne(
+        { _id: stockRecord._id }, // Use _id for exact match
         {
           $inc: { quantity: -quantityToDeduct },
           $set: { updatedAt: now }
-        },
-        { upsert: false }
+        }
       )
       
-      // Record inventory movement
-      await movementCollection.insertOne({
-        id: uuidv4(),
-        productId: item.productId,
-        productName: item.productName || item.name,
-        type: 'sale',
-        quantity: -quantityToDeduct,
-        warehouseId,
-        invoiceId,
-        invoiceNumber,
-        notes: `Sold via Invoice ${invoiceNumber} (direct deduction)`,
-        createdBy: 'system',
-        createdAt: now
-      })
-      
-      directDeductCount++
+      if (updateResult.modifiedCount > 0) {
+        // Record inventory movement
+        await movementCollection.insertOne({
+          id: uuidv4(),
+          productId: stockRecord.productId,
+          productName: stockRecord.productName || item.productName || item.name,
+          type: 'sale',
+          quantity: -quantityToDeduct,
+          warehouseId: stockRecord.warehouseId || 'default',
+          invoiceId,
+          invoiceNumber,
+          notes: `Sold via Invoice ${invoiceNumber} (direct deduction)`,
+          createdBy: 'system',
+          createdAt: now
+        })
+        
+        directDeductCount++
+        results.push({ 
+          productId: stockRecord.productId, 
+          productName: stockRecord.productName,
+          status: 'deducted', 
+          quantity: quantityToDeduct 
+        })
+      }
     }
     
     const totalProcessed = convertedCount + directDeductCount
     return { 
       converted: convertedCount, 
       directDeducted: directDeductCount,
+      skipped: skippedCount,
       total: totalProcessed,
-      message: `Inventory updated: ${convertedCount} reservations converted, ${directDeductCount} direct deductions`
+      details: results,
+      message: `Inventory updated: ${convertedCount} reservations converted, ${directDeductCount} direct deductions, ${skippedCount} skipped`
     }
   } catch (error) {
     console.error('Convert inventory reservation error:', error)
-    return { converted: 0, directDeducted: 0, total: 0, error: error.message }
+    return { converted: 0, directDeducted: 0, skipped: 0, total: 0, error: error.message }
   }
 }
 
