@@ -2505,43 +2505,41 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           </div>
         </div>
 
-        {/* Products Grid */}
+        {/* Products Grid - Compact Cards */}
         {filteredProducts.length > 0 ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3">
             {filteredProducts.map(product => (
               <motion.div key={product.id} whileHover={{ y: -2 }}>
-                <Card className="overflow-hidden hover:shadow-lg transition-all">
-                  <div className="aspect-video bg-gradient-to-br from-slate-100 to-slate-200 relative">
+                <Card className="overflow-hidden hover:shadow-md transition-all h-full">
+                  <div className="h-24 bg-gradient-to-br from-slate-50 to-slate-100 relative flex items-center justify-center">
                     {product.images?.[0] ? (
                       <img src={product.images[0]} alt={product.name} className="w-full h-full object-cover" />
                     ) : (
-                      <div className="w-full h-full flex items-center justify-center">
-                        <Layers className="h-12 w-12 text-slate-300" />
-                      </div>
+                      <Layers className="h-8 w-8 text-slate-300" />
                     )}
-                    <Badge className={`absolute top-2 right-2 ${categoryColorById.get(product.categoryId) || categoryColorById.get(product.category) || 'bg-slate-100 text-slate-700'}`}>
-                      {categoryLabelById.get(product.categoryId) || categoryLabelById.get(product.category) || product.category || 'Category'}
+                    <Badge className={`absolute top-1 right-1 text-[10px] px-1.5 py-0.5 ${categoryColorById.get(product.categoryId) || categoryColorById.get(product.category) || 'bg-slate-100 text-slate-700'}`}>
+                      {categoryLabelById.get(product.categoryId) || categoryLabelById.get(product.category) || product.category || 'N/A'}
                     </Badge>
                   </div>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <div>
-                        <h3 className="font-semibold text-slate-900 line-clamp-1">{product.name}</h3>
-                        <p className="text-sm text-slate-500">{product.brand}</p>
+                  <CardContent className="p-2.5">
+                    <div className="flex items-start justify-between gap-1 mb-1.5">
+                      <div className="flex-1 min-w-0">
+                        <h3 className="font-medium text-sm text-slate-900 line-clamp-1">{product.name}</h3>
+                        <p className="text-xs text-slate-500 truncate">{product.brand}</p>
                       </div>
-                      <Badge variant="outline" className="text-xs">{product.sku}</Badge>
+                      <Badge variant="outline" className="text-[10px] px-1 shrink-0">{product.sku}</Badge>
                     </div>
-                    <div className="flex items-center justify-between mt-3 pt-3 border-t">
+                    <div className="flex items-center justify-between pt-1.5 border-t">
                       <div>
-                        <p className="text-lg font-bold text-emerald-600">₹{product.pricing?.sellingPrice || 0}/sqft</p>
-                        <p className="text-xs text-slate-400">{product.pack?.coverageSqftPerBox || product.pricing?.sqftPerBox || 0} sqft/box</p>
+                        <p className="text-sm font-bold text-emerald-600">₹{product.pricing?.sellingPrice || 0}/sqft</p>
+                        <p className="text-[10px] text-slate-400">{product.pack?.coverageSqftPerBox || product.pricing?.sqftPerBox || 0} sqft/box</p>
                       </div>
-                      <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'product', data: product })}>
-                          <Eye className="h-4 w-4" />
+                      <div className="flex gap-0.5">
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDialogOpen({ type: 'product', data: product })}>
+                          <Eye className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'product', data: product })}>
-                          <Edit className="h-4 w-4" />
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDialogOpen({ type: 'product', data: product })}>
+                          <Edit className="h-3.5 w-3.5" />
                         </Button>
                       </div>
                     </div>
