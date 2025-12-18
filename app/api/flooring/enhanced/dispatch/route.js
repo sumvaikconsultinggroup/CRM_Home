@@ -131,32 +131,59 @@ const checkStockAvailability = async (db, items) => {
   return { items: results, hasInsufficient }
 }
 
-// Deduct stock on dispatch
+// Deduct stock on dispatch - uses Build Inventory (inventory_products)
 const deductStock = async (db, items, dispatchId) => {
-  const stockCollection = db.collection('wf_inventory_stock')
-  const movementCollection = db.collection('wf_inventory_movements')
+  const inventoryProducts = db.collection('inventory_products')
+  const movementCollection = db.collection('inventory_movements') // Use central movement log
   const now = new Date().toISOString()
   
   for (const item of items) {
-    // Deduct from stock
-    await stockCollection.updateOne(
-      { productId: item.productId, warehouseId: item.warehouseId || 'default' },
+    // Skip services or items without productId
+    if (item.isService || !item.productId) continue
+    
+    // Find the product in Build Inventory using same logic as checkStockAvailability
+    let product = await inventoryProducts.findOne({ id: item.productId })
+    if (!product) {
+      product = await inventoryProducts.findOne({ sourceProductId: item.productId })
+    }
+    if (!product && item.sku) {
+      product = await inventoryProducts.findOne({ sku: item.sku })
+    }
+    if (!product && item.productName) {
+      product = await inventoryProducts.findOne({ 
+        name: { $regex: new RegExp(item.productName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') }
+      })
+    }
+    
+    if (!product) {
+      console.warn(`Product not found in Build Inventory for deduction: ${item.productId} / ${item.productName}`)
+      continue
+    }
+    
+    // Deduct from Build Inventory stock
+    // Support both stockQuantity and currentStock field names
+    const stockField = product.stockQuantity !== undefined ? 'stockQuantity' : 'currentStock'
+    await inventoryProducts.updateOne(
+      { id: product.id },
       {
-        $inc: { quantity: -item.quantity },
+        $inc: { [stockField]: -item.quantity },
         $set: { updatedAt: now }
       }
     )
     
-    // Record movement
+    // Record movement in central inventory movements
     await movementCollection.insertOne({
       id: uuidv4(),
-      productId: item.productId,
-      productName: item.productName,
+      productId: product.id,
+      sourceProductId: item.productId,
+      productName: item.productName || product.name,
       type: 'dispatch',
+      movementType: 'out',
       quantity: -item.quantity,
       dispatchId,
-      warehouseId: item.warehouseId || 'default',
-      notes: `Dispatched - ${item.quantity} units`,
+      reference: `Dispatch ${dispatchId}`,
+      notes: `Dispatched - ${item.quantity} ${item.unit || 'units'}`,
+      createdBy: 'system',
       createdAt: now
     })
   }
