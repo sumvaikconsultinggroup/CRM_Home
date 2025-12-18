@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
-import { WoodenFlooringModule } from '@/components/wooden-flooring-module'
+import { EnterpriseFlooringModule } from '@/components/modules/enterprise-flooring-module'
 import { FlooringMeeAgent } from '@/components/flooring-mee-agent'
 
 export default function FlooringPage() {
