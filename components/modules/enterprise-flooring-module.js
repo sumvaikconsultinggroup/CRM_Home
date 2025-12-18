@@ -5075,6 +5075,30 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             </div>
           </div>
           <div className="flex items-center gap-2">
+            {/* Cleanup button for admin */}
+            {(user?.role === 'admin' || user?.role === 'super_admin') && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" size="sm" className="text-red-600 border-red-200 hover:bg-red-50">
+                    <Trash2 className="h-4 w-4 mr-1" /> Cleanup
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuItem onClick={() => handleInventoryCleanup('remove_negative')}>
+                    <Trash2 className="h-4 w-4 mr-2 text-red-600" />
+                    Remove Invalid Records
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleInventoryCleanup('remove_duplicates')}>
+                    <RefreshCw className="h-4 w-4 mr-2 text-amber-600" />
+                    Consolidate Duplicates
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleInventoryCleanup('reset_reserved')}>
+                    <Lock className="h-4 w-4 mr-2 text-blue-600" />
+                    Reset All Reservations
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <Button variant="outline" onClick={() => setDialogOpen({ type: 'import_inventory', data: null })}>
               <Upload className="h-4 w-4 mr-2" /> Import
             </Button>
