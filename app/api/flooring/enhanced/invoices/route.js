@@ -610,11 +610,22 @@ export async function POST(request) {
 
     // CONVERT INVENTORY RESERVATIONS when invoice is created from quote
     // This moves items from "blocked/reserved" to "sold/deducted" in inventory
-    let inventoryResult = null
-    if (body.quoteId) {
-      inventoryResult = await convertInventoryReservation(db, user.clientId, body.quoteId)
-      invoice.inventoryConversionResult = inventoryResult
-    }
+    // Also handles direct deduction for items without reservations
+    const inventoryResult = await convertInventoryReservation(
+      db, 
+      user.clientId, 
+      body.quoteId || null,
+      invoice.items || [],
+      invoice.id,
+      invoice.invoiceNumber
+    )
+    invoice.inventoryConversionResult = inventoryResult
+
+    // Update invoice with inventory result
+    await invoices.updateOne(
+      { id: invoice.id },
+      { $set: { inventoryDeducted: true, inventoryResult, updatedAt: now } }
+    )
 
     return successResponse(sanitizeDocument(invoice), 201)
   } catch (error) {
