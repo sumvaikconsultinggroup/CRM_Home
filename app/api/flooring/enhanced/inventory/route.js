@@ -68,12 +68,25 @@ export async function GET(request) {
       inventoryItems = inventoryItems.filter(i => i.product?.category === category)
     }
 
+    // Normalize inventory items - ensure consistent field names
+    inventoryItems = inventoryItems.map(item => {
+      const reserved = item.reservedQuantity || item.reservedQty || 0
+      const total = item.quantity || 0
+      const available = total - reserved
+      return {
+        ...item,
+        reservedQty: reserved,
+        reservedQuantity: reserved,
+        availableQty: Math.max(0, available)
+      }
+    })
+
     // Calculate summary
     const summary = {
       totalProducts: inventoryItems.length,
       totalQuantity: inventoryItems.reduce((sum, i) => sum + (i.quantity || 0), 0),
       totalValue: inventoryItems.reduce((sum, i) => sum + ((i.quantity || 0) * (i.avgCostPrice || 0)), 0),
-      reservedQuantity: inventoryItems.reduce((sum, i) => sum + (i.reservedQty || 0), 0),
+      reservedQuantity: inventoryItems.reduce((sum, i) => sum + (i.reservedQuantity || 0), 0),
       availableQuantity: inventoryItems.reduce((sum, i) => sum + (i.availableQty || 0), 0),
       lowStockCount: inventoryItems.filter(i => i.availableQty <= (i.reorderLevel || 100) && i.availableQty > 0).length,
       outOfStockCount: inventoryItems.filter(i => i.availableQty <= 0).length
