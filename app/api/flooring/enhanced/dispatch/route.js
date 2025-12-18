@@ -59,12 +59,52 @@ const checkStockAvailability = async (db, items) => {
   let hasInsufficient = false
   
   for (const item of items) {
-    const stock = await stockCollection.findOne({ 
+    // Skip items without productId
+    if (!item.productId) {
+      results.push({
+        productId: null,
+        productName: item.productName || 'Unknown Item',
+        requestedQty: item.quantity,
+        availableQty: 0,
+        stockStatus: 'not_tracked',
+        shortfall: 0
+      })
+      continue
+    }
+    
+    // Try to find stock - first by productId with warehouseId, then without
+    let stock = await stockCollection.findOne({ 
       productId: item.productId,
       warehouseId: item.warehouseId || 'default'
     })
     
+    // Fallback: search by productId only (ignoring warehouse)
+    if (!stock) {
+      stock = await stockCollection.findOne({ productId: item.productId })
+    }
+    
+    // Fallback: search by product name
+    if (!stock && item.productName) {
+      stock = await stockCollection.findOne({ 
+        productName: { $regex: new RegExp(item.productName, 'i') }
+      })
+    }
+    
     const availableQty = (stock?.quantity || 0) - (stock?.reservedQuantity || 0)
+    
+    // Services with unlimited stock (like labor) should always be available
+    if (stock?.isService || item.isService) {
+      results.push({
+        productId: item.productId,
+        productName: item.productName,
+        requestedQty: item.quantity,
+        availableQty: 99999,
+        stockStatus: 'service',
+        shortfall: 0
+      })
+      continue
+    }
+    
     const isInsufficient = availableQty < item.quantity
     
     if (isInsufficient) hasInsufficient = true
