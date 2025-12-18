@@ -5726,6 +5726,48 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       }
     }
 
+    const resetAllData = async () => {
+      const confirmed = window.confirm(
+        'WARNING: This will DELETE ALL flooring module data including:\n\n' +
+        '• All Projects\n• All Quotes\n• All Invoices\n• All Installations\n• All Dispatches\n• All Inventory Stock & Movements\n• All Reservations\n\n' +
+        'This action CANNOT be undone. Are you sure?'
+      )
+      if (!confirmed) return
+
+      const doubleConfirm = window.prompt('Type "DELETE" to confirm:')
+      if (doubleConfirm !== 'DELETE') {
+        toast.error('Reset cancelled')
+        return
+      }
+
+      try {
+        setLoading(true)
+        const res = await fetch('/api/flooring/enhanced/reset', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ confirmReset: 'DELETE_ALL_FLOORING_DATA' })
+        })
+        const data = await res.json()
+        if (res.ok) {
+          toast.success('All flooring data has been reset!')
+          // Refresh all data
+          fetchProjects()
+          fetchQuotes()
+          fetchInvoices()
+          fetchInstallations()
+          fetchInventory()
+          fetchDispatches()
+          fetchDashboard()
+        } else {
+          toast.error(data.error || 'Reset failed')
+        }
+      } catch (error) {
+        toast.error('Failed to reset data')
+      } finally {
+        setLoading(false)
+      }
+    }
+
     return (
       <div className="space-y-6">
         <Tabs value={settingsTab} onValueChange={setSettingsTab}>
@@ -5735,6 +5777,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             <TabsTrigger value="bank">Bank Details</TabsTrigger>
             <TabsTrigger value="templates">Templates</TabsTrigger>
             <TabsTrigger value="sync">CRM Sync</TabsTrigger>
+            <TabsTrigger value="danger" className="text-red-600">Danger Zone</TabsTrigger>
           </TabsList>
 
           <div className="mt-6">
