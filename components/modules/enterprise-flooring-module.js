@@ -2016,7 +2016,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }
 
-  // Handle Send for Installation (B2C only - after invoice is paid)
+  // Handle Send for Installation (B2C only - AFTER material dispatch is delivered)
   const handleSendForInstallation = async (invoice) => {
     try {
       setLoading(true)
@@ -2034,7 +2034,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         return
       }
 
-      // Create installation record
+      // Safety check: Material must be dispatched and delivered first
+      if (!invoice.dispatchId || invoice.dispatchStatus !== 'delivered') {
+        toast.error('Material must be dispatched and delivered before starting installation.')
+        return
+      }
+
+      // Create installation record with dispatch reference
       const res = await fetch('/api/flooring/enhanced/installations', {
         method: 'POST',
         headers,
@@ -2043,12 +2049,14 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           projectNumber: project.projectNumber,
           invoiceId: invoice.id,
           invoiceNumber: invoice.invoiceNumber,
+          dispatchId: invoice.dispatchId,
+          dispatchNumber: invoice.dispatchNumber,
           customerId: project.customerId,
           customerName: project.customerName,
           siteAddress: project.site?.address || '',
           totalArea: project.totalArea || invoice.totalArea || 0,
           status: 'scheduled',
-          notes: `Installation for ${invoice.invoiceNumber}`
+          notes: `Installation for ${invoice.invoiceNumber} (Material delivered via ${invoice.dispatchNumber || 'dispatch'})`
         })
       })
       
