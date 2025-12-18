@@ -111,8 +111,9 @@ export async function POST(request) {
     )
 
     // Determine product collection based on module
+    // IMPORTANT: wooden-flooring uses flooring_products, NOT wf_inventory
     const moduleProductCollections = {
-      'wooden-flooring': 'wf_inventory',
+      'wooden-flooring': 'flooring_products',
       'paints-coatings': 'pc_inventory',
       'furniture': 'furniture_products',
       'tiles': 'tiles_inventory',
