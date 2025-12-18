@@ -67,8 +67,11 @@ export async function GET(request) {
       const periodInvoices = allInvoices.filter(i => new Date(i.createdAt) >= periodStart)
       const periodPayments = allPayments.filter(p => new Date(p.createdAt) >= periodStart)
 
-      // Low stock items
-      const lowStockItems = allInventory.filter(i => i.availableQty <= (i.reorderLevel || 100))
+      // Low stock items (from Build Inventory)
+      const lowStockItems = allInventory.filter(i => {
+        const available = (i.stockQuantity || 0) - (i.reservedQuantity || 0)
+        return available <= (i.reorderLevel || 10)
+      })
 
       // Active installations
       const activeInstallations = allInstallations.filter(i => ['scheduled', 'in_progress'].includes(i.status))
