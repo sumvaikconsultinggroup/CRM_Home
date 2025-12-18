@@ -294,6 +294,11 @@ export async function GET(request) {
       return successResponse(sanitizeDocument({ ...invoice, payments: invoicePayments }))
     }
 
+    // Get projects for segment lookup
+    const projects = db.collection('flooring_projects')
+    const allProjects = await projects.find({}).toArray()
+    const projectMap = new Map(allProjects.map(p => [p.id, p]))
+
     // Build query
     const query = {}
     if (customerId) query['customer.id'] = customerId
