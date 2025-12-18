@@ -3111,22 +3111,27 @@ const CreateTaskDialog = ({ open, onClose, onCreate, defaultStatus, template, us
           </div>
         </DialogHeader>
         <div className="space-y-4 py-4">
+          {/* Title - Always shown */}
           <div>
             <Label>Title *</Label>
             <Input value={formData.title} onChange={(e) => setFormData(p => ({ ...p, title: e.target.value }))} placeholder="Task title..." />
           </div>
-          <div className="grid grid-cols-3 gap-3">
-            <div>
-              <Label>Type</Label>
-              <Select value={formData.taskType} onValueChange={(v) => setFormData(p => ({ ...p, taskType: v }))}>
-                <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>
-                  {Object.entries(TASK_TYPES).filter(([k]) => k !== 'subtask').map(([key, config]) => (
-                    <SelectItem key={key} value={key}><div className="flex items-center gap-2"><config.icon className="h-4 w-4" />{config.label}</div></SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+          
+          {/* Type, Status, Priority - Type only in Advanced mode */}
+          <div className={`grid ${isAdvancedMode ? 'grid-cols-3' : 'grid-cols-2'} gap-3`}>
+            {isAdvancedMode && (
+              <div>
+                <Label>Type</Label>
+                <Select value={formData.taskType} onValueChange={(v) => setFormData(p => ({ ...p, taskType: v }))}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    {Object.entries(TASK_TYPES).filter(([k]) => k !== 'subtask').map(([key, config]) => (
+                      <SelectItem key={key} value={key}><div className="flex items-center gap-2"><config.icon className="h-4 w-4" />{config.label}</div></SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div>
               <Label>Status</Label>
               <Select value={formData.status} onValueChange={(v) => setFormData(p => ({ ...p, status: v }))}>
@@ -3150,10 +3155,16 @@ const CreateTaskDialog = ({ open, onClose, onCreate, defaultStatus, template, us
               </Select>
             </div>
           </div>
-          <div>
-            <Label>Description</Label>
-            <Textarea value={formData.description} onChange={(e) => setFormData(p => ({ ...p, description: e.target.value }))} rows={3} />
-          </div>
+          
+          {/* Description - Only in Advanced mode */}
+          {isAdvancedMode && (
+            <div>
+              <Label>Description</Label>
+              <Textarea value={formData.description} onChange={(e) => setFormData(p => ({ ...p, description: e.target.value }))} rows={3} placeholder="Add task description..." />
+            </div>
+          )}
+          
+          {/* Project & Due Date */}
           <div className="grid grid-cols-2 gap-3">
             <div>
               <Label>Project</Label>
@@ -3170,6 +3181,46 @@ const CreateTaskDialog = ({ open, onClose, onCreate, defaultStatus, template, us
               <Input type="date" value={formData.dueDate} onChange={(e) => setFormData(p => ({ ...p, dueDate: e.target.value }))} />
             </div>
           </div>
+          
+          {/* Assignees - Only in Advanced mode */}
+          {isAdvancedMode && users && users.length > 0 && (
+            <div>
+              <Label>Assignees</Label>
+              <div className="flex flex-wrap gap-2 mt-1">
+                {users.map((user) => (
+                  <Badge 
+                    key={user.id}
+                    variant={formData.assignees.includes(user.id) ? 'default' : 'outline'}
+                    className="cursor-pointer"
+                    onClick={() => setFormData(p => ({
+                      ...p,
+                      assignees: p.assignees.includes(user.id) ? p.assignees.filter(a => a !== user.id) : [...p.assignees, user.id]
+                    }))}
+                  >
+                    <User className="h-3 w-3 mr-1" />
+                    {user.name || user.email}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Estimated Hours - Only in Advanced mode */}
+          {isAdvancedMode && (
+            <div>
+              <Label>Estimated Hours</Label>
+              <Input 
+                type="number" 
+                value={formData.estimatedHours} 
+                onChange={(e) => setFormData(p => ({ ...p, estimatedHours: e.target.value }))} 
+                placeholder="e.g., 4"
+                min="0"
+                step="0.5"
+              />
+            </div>
+          )}
+          
+          {/* Labels */}
           <div>
             <Label>Labels</Label>
             <div className="flex flex-wrap gap-2 mt-1">
@@ -3190,11 +3241,13 @@ const CreateTaskDialog = ({ open, onClose, onCreate, defaultStatus, template, us
             </div>
           </div>
           
-          {/* Recurring Task Settings */}
-          <RecurringTaskSettings 
-            value={formData.recurrence}
-            onChange={(recurrence) => setFormData(p => ({ ...p, recurrence }))}
-          />
+          {/* Recurring Task Settings - Only in Advanced mode */}
+          {isAdvancedMode && (
+            <RecurringTaskSettings 
+              value={formData.recurrence}
+              onChange={(recurrence) => setFormData(p => ({ ...p, recurrence }))}
+            />
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>Cancel</Button>
