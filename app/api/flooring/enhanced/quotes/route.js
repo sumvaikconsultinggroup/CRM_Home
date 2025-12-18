@@ -8,6 +8,174 @@ export async function OPTIONS() {
   return optionsResponse()
 }
 
+// ============================================
+// INVENTORY RESERVATION MANAGEMENT
+// ============================================
+
+// Reserve inventory when quote is created/approved
+const reserveInventoryForQuote = async (db, quote, action = 'reserve') => {
+  try {
+    const reservationCollection = db.collection('inventory_reservations')
+    const stockCollection = db.collection('wf_inventory_stock')
+    const now = new Date().toISOString()
+    
+    const items = quote.items || []
+    const materialItems = items.filter(i => i.itemType === 'material' && i.productId)
+    
+    if (materialItems.length === 0) {
+      return { success: true, reserved: 0, message: 'No material items to reserve' }
+    }
+    
+    let reservedCount = 0
+    let reservationDetails = []
+    
+    for (const item of materialItems) {
+      const warehouseId = item.warehouseId || 'default'
+      const quantityToReserve = item.quantity || item.area || 0
+      
+      if (quantityToReserve <= 0) continue
+      
+      // Check existing stock
+      let stock = await stockCollection.findOne({ 
+        productId: item.productId, 
+        warehouseId 
+      })
+      
+      // Create stock record if doesn't exist
+      if (!stock) {
+        stock = {
+          id: uuidv4(),
+          productId: item.productId,
+          productName: item.productName || item.name,
+          warehouseId,
+          quantity: 0,
+          reservedQuantity: 0,
+          createdAt: now,
+          updatedAt: now
+        }
+        await stockCollection.insertOne(stock)
+      }
+      
+      const availableQty = (stock.quantity || 0) - (stock.reservedQuantity || 0)
+      
+      // Check if already reserved for this quote
+      const existingReservation = await reservationCollection.findOne({
+        quotationId: quote.id,
+        productId: item.productId,
+        status: 'active'
+      })
+      
+      if (existingReservation) {
+        // Already reserved, skip
+        reservationDetails.push({
+          productId: item.productId,
+          productName: item.productName || item.name,
+          status: 'already_reserved',
+          quantity: existingReservation.quantity
+        })
+        continue
+      }
+      
+      // Create reservation record
+      const reservation = {
+        id: uuidv4(),
+        quotationId: quote.id,
+        quoteNumber: quote.quoteNumber,
+        projectId: quote.projectId,
+        productId: item.productId,
+        productName: item.productName || item.name,
+        warehouseId,
+        quantity: quantityToReserve,
+        unit: item.unit || 'sqft',
+        status: 'active',
+        reservedAt: now,
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(), // 7 days expiry
+        createdBy: quote.createdBy,
+        createdAt: now,
+        updatedAt: now
+      }
+      
+      await reservationCollection.insertOne(reservation)
+      
+      // Update stock - increase reserved quantity
+      await stockCollection.updateOne(
+        { productId: item.productId, warehouseId },
+        {
+          $inc: { reservedQuantity: quantityToReserve },
+          $set: { updatedAt: now }
+        }
+      )
+      
+      reservedCount++
+      reservationDetails.push({
+        productId: item.productId,
+        productName: item.productName || item.name,
+        status: availableQty >= quantityToReserve ? 'reserved' : 'reserved_insufficient',
+        quantity: quantityToReserve,
+        availableBeforeReserve: availableQty
+      })
+    }
+    
+    return { 
+      success: true, 
+      reserved: reservedCount, 
+      details: reservationDetails,
+      message: `${reservedCount} items reserved for quote ${quote.quoteNumber}`
+    }
+  } catch (error) {
+    console.error('Reserve inventory error:', error)
+    return { success: false, error: error.message }
+  }
+}
+
+// Release inventory reservation when quote is cancelled/rejected
+const releaseInventoryReservation = async (db, quoteId) => {
+  try {
+    const reservationCollection = db.collection('inventory_reservations')
+    const stockCollection = db.collection('wf_inventory_stock')
+    const now = new Date().toISOString()
+    
+    const reservations = await reservationCollection.find({ 
+      quotationId: quoteId, 
+      status: 'active' 
+    }).toArray()
+    
+    if (reservations.length === 0) {
+      return { released: 0, message: 'No active reservations to release' }
+    }
+    
+    let releasedCount = 0
+    for (const reservation of reservations) {
+      // Release reserved quantity from stock
+      await stockCollection.updateOne(
+        { productId: reservation.productId, warehouseId: reservation.warehouseId || 'default' },
+        {
+          $inc: { reservedQuantity: -reservation.quantity },
+          $set: { updatedAt: now }
+        }
+      )
+      
+      // Update reservation status
+      await reservationCollection.updateOne(
+        { id: reservation.id },
+        { 
+          $set: { 
+            status: 'released', 
+            releasedAt: now,
+            updatedAt: now 
+          } 
+        }
+      )
+      releasedCount++
+    }
+    
+    return { released: releasedCount, message: `${releasedCount} reservations released` }
+  } catch (error) {
+    console.error('Release inventory error:', error)
+    return { released: 0, error: error.message }
+  }
+}
+
 // Generate quote number
 const generateQuoteNumber = async (db) => {
   const quotes = db.collection('flooring_quotes_v2')
