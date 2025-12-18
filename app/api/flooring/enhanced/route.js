@@ -25,7 +25,8 @@ export async function GET(request) {
     const leads = db.collection('leads')
     const projects = db.collection('projects')
     const products = db.collection('flooring_products')
-    const inventory = db.collection('flooring_inventory_v2')
+    // Use Build Inventory as single source of truth for stock
+    const inventoryProducts = db.collection('inventory_products')
     const quotes = db.collection('flooring_quotes_v2')
     const invoices = db.collection('flooring_invoices')
     const payments = db.collection('flooring_payments')
