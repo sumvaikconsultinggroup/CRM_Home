@@ -339,7 +339,18 @@ export async function GET(request) {
     
     // Get paginated invoices
     const skip = (page - 1) * limit
-    const paginatedInvoices = await invoices.find(query).sort(sortConfig).skip(skip).limit(limit).toArray()
+    let paginatedInvoices = await invoices.find(query).sort(sortConfig).skip(skip).limit(limit).toArray()
+    
+    // Enrich invoices with correct projectSegment from project
+    paginatedInvoices = paginatedInvoices.map(inv => {
+      const project = inv.projectId ? projectMap.get(inv.projectId) : null
+      const correctSegment = project?.segment || inv.projectSegment || 'b2c'
+      return {
+        ...inv,
+        projectSegment: correctSegment,
+        _projectName: project?.name || project?.projectNumber || null
+      }
+    })
 
     // Calculate comprehensive summary
     const now = new Date()
