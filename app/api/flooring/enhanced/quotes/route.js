@@ -465,7 +465,21 @@ export async function PUT(request) {
         if (quote.leadId) {
           await leads.updateOne({ id: quote.leadId }, { $set: { flooringStatus: 'quote_rejected' } })
         }
-        return successResponse({ message: 'Quote rejected' })
+        // RELEASE INVENTORY RESERVATION when quote is rejected
+        const releaseResultReject = await releaseInventoryReservation(db, id)
+        return successResponse({ message: 'Quote rejected', inventoryReleased: releaseResultReject })
+      
+      case 'cancel':
+        await quotes.updateOne({ id }, {
+          $set: { status: 'cancelled', cancelledAt: now, cancellationReason: body.reason, updatedAt: now },
+          $push: { statusHistory: { status: 'cancelled', timestamp: now, by: user.id, reason: body.reason } }
+        })
+        if (quote.leadId) {
+          await leads.updateOne({ id: quote.leadId }, { $set: { flooringStatus: 'quote_cancelled' } })
+        }
+        // RELEASE INVENTORY RESERVATION when quote is cancelled
+        const releaseResultCancel = await releaseInventoryReservation(db, id)
+        return successResponse({ message: 'Quote cancelled', inventoryReleased: releaseResultCancel })
 
       case 'revise':
         // Create new revision
