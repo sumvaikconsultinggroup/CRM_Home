@@ -4740,7 +4740,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                             )}
                             
                             {/* Paid - Send for installation (B2C only) */}
-                            {invoice.status === 'paid' && invoice.projectSegment !== 'b2b' && !invoice.installationCreated && (
+                            {invoice.status === 'paid' && !isB2B && !invoice.installationCreated && !invoice.dispatchId && (
                               <Button 
                                 size="sm" 
                                 className="bg-teal-600 hover:bg-teal-700 text-white"
@@ -4751,14 +4751,21 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                             )}
                             
                             {/* Paid - Mark as Dispatched (B2B only) */}
-                            {invoice.status === 'paid' && invoice.projectSegment === 'b2b' && (
+                            {invoice.status === 'paid' && isB2B && !invoice.dispatchId && (
                               <Button 
                                 size="sm" 
                                 className="bg-orange-600 hover:bg-orange-700 text-white"
-                                onClick={() => handleB2BDispatch(invoice)}
+                                onClick={() => openDispatchDialog(invoice)}
                               >
                                 <Truck className="h-4 w-4 mr-1" /> Dispatch
                               </Button>
+                            )}
+                            
+                            {/* Show dispatch status if already dispatched */}
+                            {invoice.dispatchId && (
+                              <Badge className="bg-orange-100 text-orange-700">
+                                <Truck className="h-3 w-3 mr-1" /> Dispatched
+                              </Badge>
                             )}
                             
                             {/* More actions dropdown */}
