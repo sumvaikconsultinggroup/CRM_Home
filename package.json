@@ -83,6 +83,7 @@
         "zod": "^3.25.67"
     },
     "devDependencies": {
+        "@playwright/test": "^1.57.0",
         "autoprefixer": "^10.4.19",
         "globals": "^16.2.0",
         "postcss": "^8",
