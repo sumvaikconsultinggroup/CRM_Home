@@ -5252,8 +5252,6 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   // Reports Tab
   const renderReports = () => {
     const summaryReport = reports.summary || {}
-    const [reportPeriod, setReportPeriod] = useState('30')
-    const [selectedReportType, setSelectedReportType] = useState('summary')
 
     const reportTypes = [
       { id: 'summary', name: 'Executive Summary', icon: LayoutDashboard },
