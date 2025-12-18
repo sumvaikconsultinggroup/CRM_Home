@@ -3026,6 +3026,9 @@ const CreateTaskDialog = ({ open, onClose, onCreate, defaultStatus, template, us
     labels: [],
     recurrence: null
   })
+  
+  // Simple/Advanced mode toggle
+  const [isAdvancedMode, setIsAdvancedMode] = useState(false)
 
   // Compute initial form data based on dialog state and template
   const initialFormData = useMemo(() => {
@@ -3058,6 +3061,7 @@ const CreateTaskDialog = ({ open, onClose, onCreate, defaultStatus, template, us
   const handleOpenChange = (isOpen) => {
     if (isOpen) {
       setFormData(initialFormData)
+      setIsAdvancedMode(false)
     }
     if (!isOpen) {
       onClose()
@@ -3079,9 +3083,32 @@ const CreateTaskDialog = ({ open, onClose, onCreate, defaultStatus, template, us
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
-      <DialogContent className="max-w-lg">
+      <DialogContent className={isAdvancedMode ? "max-w-2xl" : "max-w-lg"}>
         <DialogHeader>
-          <DialogTitle>Create New Task</DialogTitle>
+          <div className="flex items-center justify-between">
+            <DialogTitle>Create New Task</DialogTitle>
+            {/* Simple/Advanced Toggle */}
+            <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+              <button
+                type="button"
+                onClick={() => setIsAdvancedMode(false)}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  !isAdvancedMode ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Simple
+              </button>
+              <button
+                type="button"
+                onClick={() => setIsAdvancedMode(true)}
+                className={`px-3 py-1.5 text-sm font-medium rounded-md transition-colors ${
+                  isAdvancedMode ? 'bg-white shadow-sm text-slate-900' : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                Advanced
+              </button>
+            </div>
+          </div>
         </DialogHeader>
         <div className="space-y-4 py-4">
           <div>
