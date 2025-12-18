@@ -63,13 +63,13 @@
         "input-otp": "^1.4.2",
         "lucide-react": "^0.516.0",
         "mongodb": "^6.6.0",
-        "next": "14.2.3",
+        "next": "^16.0.10",
         "next-themes": "^0.4.6",
         "openai": "^6.10.0",
         "qrcode.react": "^4.2.0",
-        "react": "^18",
+        "react": "^19.2.3",
         "react-day-picker": "^9.7.0",
-        "react-dom": "^18",
+        "react-dom": "^19.2.3",
         "react-hook-form": "^7.58.1",
         "react-resizable-panels": "^3.0.3",
         "recharts": "^2.15.3",
@@ -87,6 +87,5 @@
         "globals": "^16.2.0",
         "postcss": "^8",
         "tailwindcss": "^3.4.1"
-    },
-    "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+    }
 }
