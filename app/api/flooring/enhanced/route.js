@@ -87,7 +87,7 @@ export async function GET(request) {
       return successResponse({
         overview: {
           totalProducts: allProducts.length,
-          totalInventoryValue: allInventory.reduce((sum, i) => sum + (i.quantity * (i.avgCostPrice || 0)), 0),
+          totalInventoryValue: allInventory.reduce((sum, i) => sum + ((i.stockQuantity || 0) * (i.costPrice || 0)), 0),
           totalQuotes: allQuotes.length,
           totalQuoteValue,
           approvedQuotes: approvedQuotes.length,
