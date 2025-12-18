@@ -146,6 +146,7 @@ export async function POST(request) {
       id: quoteId,
       quoteNumber,
       projectId: body.projectId,
+      projectSegment, // B2B or B2C from project
       leadId: body.leadId,
       customer: body.customer || {},
       site: body.site || {},
