@@ -6401,6 +6401,54 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                 </CardContent>
               </Card>
             </TabsContent>
+
+            {/* Danger Zone */}
+            <TabsContent value="danger">
+              <Card className="border-red-200">
+                <CardHeader className="bg-red-50">
+                  <CardTitle className="text-red-700 flex items-center gap-2">
+                    <AlertTriangle className="h-5 w-5" />
+                    Danger Zone
+                  </CardTitle>
+                  <CardDescription className="text-red-600">
+                    Irreversible actions. Proceed with extreme caution.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-6 pt-6">
+                  <div className="p-4 border border-red-200 rounded-lg bg-red-50/50">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <h4 className="font-medium text-red-800">Reset All Flooring Data</h4>
+                        <p className="text-sm text-red-600 mt-1">
+                          This will permanently delete ALL flooring module data including:
+                        </p>
+                        <ul className="text-sm text-red-600 mt-2 space-y-1 list-disc list-inside">
+                          <li>All Projects</li>
+                          <li>All Quotes & Invoices</li>
+                          <li>All Installations</li>
+                          <li>All Dispatches & Challans</li>
+                          <li>All Inventory Stock & Movements</li>
+                          <li>All Reservations</li>
+                          <li>All Customers (module-specific)</li>
+                        </ul>
+                        <p className="text-sm font-medium text-red-700 mt-3">
+                          ⚠️ This action CANNOT be undone!
+                        </p>
+                      </div>
+                      <Button 
+                        variant="destructive" 
+                        onClick={resetAllData}
+                        disabled={loading}
+                        className="shrink-0"
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Reset All Data
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
           </div>
         </Tabs>
       </div>
