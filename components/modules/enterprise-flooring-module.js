@@ -5679,37 +5679,40 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     )
   }
 
+  // Initialize settings values when moduleSettings loads
+  useEffect(() => {
+    if (moduleSettings) {
+      setWhatsappConfig({
+        provider: moduleSettings?.whatsapp?.provider || '',
+        apiKey: moduleSettings?.whatsapp?.apiKey || '',
+        apiSecret: moduleSettings?.whatsapp?.apiSecret || '',
+        phoneNumberId: moduleSettings?.whatsapp?.phoneNumberId || '',
+        webhookUrl: moduleSettings?.whatsapp?.webhookUrl || '',
+        enabled: moduleSettings?.whatsapp?.enabled || false
+      })
+      setGeneralSettings({
+        companyName: moduleSettings?.companyName || client?.name || '',
+        gstin: moduleSettings?.gstin || '',
+        defaultTaxRate: moduleSettings?.defaultTaxRate || 18,
+        quoteValidityDays: moduleSettings?.quoteValidityDays || 30,
+        invoicePrefix: moduleSettings?.invoicePrefix || 'INV',
+        quotePrefix: moduleSettings?.quotePrefix || 'FLQ',
+        defaultPaymentTerms: moduleSettings?.defaultPaymentTerms || 'Net 30',
+        laborRatePerSqft: moduleSettings?.laborRatePerSqft || 25,
+        defaultWastagePercent: moduleSettings?.defaultWastagePercent || 10
+      })
+      setBankDetails({
+        bankName: moduleSettings?.bankDetails?.bankName || '',
+        accountName: moduleSettings?.bankDetails?.accountName || '',
+        accountNumber: moduleSettings?.bankDetails?.accountNumber || '',
+        ifscCode: moduleSettings?.bankDetails?.ifscCode || '',
+        upiId: moduleSettings?.bankDetails?.upiId || ''
+      })
+    }
+  }, [moduleSettings, client?.name])
+
   // Settings Tab
   const renderSettings = () => {
-    const [settingsTab, setSettingsTab] = useState('general')
-    const [whatsappConfig, setWhatsappConfig] = useState({
-      provider: moduleSettings?.whatsapp?.provider || '',
-      apiKey: moduleSettings?.whatsapp?.apiKey || '',
-      apiSecret: moduleSettings?.whatsapp?.apiSecret || '',
-      phoneNumberId: moduleSettings?.whatsapp?.phoneNumberId || '',
-      webhookUrl: moduleSettings?.whatsapp?.webhookUrl || '',
-      enabled: moduleSettings?.whatsapp?.enabled || false
-    })
-    const [generalSettings, setGeneralSettings] = useState({
-      companyName: moduleSettings?.companyName || client?.name || '',
-      gstin: moduleSettings?.gstin || '',
-      defaultTaxRate: moduleSettings?.defaultTaxRate || 18,
-      quoteValidityDays: moduleSettings?.quoteValidityDays || 30,
-      invoicePrefix: moduleSettings?.invoicePrefix || 'INV',
-      quotePrefix: moduleSettings?.quotePrefix || 'FLQ',
-      defaultPaymentTerms: moduleSettings?.defaultPaymentTerms || 'Net 30',
-      laborRatePerSqft: moduleSettings?.laborRatePerSqft || 25,
-      defaultWastagePercent: moduleSettings?.defaultWastagePercent || 10
-    })
-    const [bankDetails, setBankDetails] = useState({
-      bankName: moduleSettings?.bankDetails?.bankName || '',
-      accountName: moduleSettings?.bankDetails?.accountName || '',
-      accountNumber: moduleSettings?.bankDetails?.accountNumber || '',
-      ifscCode: moduleSettings?.bankDetails?.ifscCode || '',
-      upiId: moduleSettings?.bankDetails?.upiId || ''
-    })
-    const [savingSettings, setSavingSettings] = useState(false)
-
     const saveSettings = async () => {
       try {
         setSavingSettings(true)
