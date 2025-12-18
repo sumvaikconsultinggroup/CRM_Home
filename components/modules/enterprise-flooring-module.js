@@ -4758,19 +4758,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                               </Button>
                             )}
                             
-                            {/* Paid - Send for installation (B2C only) */}
-                            {invoice.status === 'paid' && !isB2B && !invoice.installationCreated && !invoice.dispatchId && (
-                              <Button 
-                                size="sm" 
-                                className="bg-teal-600 hover:bg-teal-700 text-white"
-                                onClick={() => handleSendForInstallation(invoice)}
-                              >
-                                <Wrench className="h-4 w-4 mr-1" /> Install
-                              </Button>
-                            )}
-                            
-                            {/* Paid - Mark as Dispatched (B2B only) */}
-                            {invoice.status === 'paid' && isB2B && !invoice.dispatchId && (
+                            {/* STEP 1: Paid - Dispatch Material (Both B2B and B2C) */}
+                            {invoice.status === 'paid' && !invoice.dispatchId && (
                               <Button 
                                 size="sm" 
                                 className="bg-orange-600 hover:bg-orange-700 text-white"
@@ -4780,10 +4769,35 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                               </Button>
                             )}
                             
-                            {/* Show dispatch status if already dispatched */}
-                            {invoice.dispatchId && (
+                            {/* Show dispatch status if dispatched but not delivered */}
+                            {invoice.dispatchId && invoice.dispatchStatus !== 'delivered' && (
                               <Badge className="bg-orange-100 text-orange-700">
-                                <Truck className="h-3 w-3 mr-1" /> Dispatched
+                                <Truck className="h-3 w-3 mr-1" /> {invoice.dispatchStatus === 'in_transit' ? 'In Transit' : 'Dispatched'}
+                              </Badge>
+                            )}
+                            
+                            {/* STEP 2: After Delivery - Start Installation (B2C ONLY) */}
+                            {invoice.dispatchStatus === 'delivered' && !isB2B && !invoice.installationCreated && (
+                              <Button 
+                                size="sm" 
+                                className="bg-teal-600 hover:bg-teal-700 text-white"
+                                onClick={() => handleSendForInstallation(invoice)}
+                              >
+                                <Wrench className="h-4 w-4 mr-1" /> Start Installation
+                              </Button>
+                            )}
+                            
+                            {/* Show delivered badge for B2B (final state) */}
+                            {invoice.dispatchStatus === 'delivered' && isB2B && (
+                              <Badge className="bg-emerald-100 text-emerald-700">
+                                <CheckCircle2 className="h-3 w-3 mr-1" /> Delivered
+                              </Badge>
+                            )}
+                            
+                            {/* Show installation status for B2C */}
+                            {invoice.installationCreated && !isB2B && (
+                              <Badge className="bg-teal-100 text-teal-700">
+                                <Wrench className="h-3 w-3 mr-1" /> Installation Created
                               </Badge>
                             )}
                             
