@@ -170,6 +170,44 @@ export async function PUT(request) {
     if (!result) {
       return errorResponse('Product not found', 404)
     }
+    
+    // === BI-DIRECTIONAL SYNC TO MODULE ===
+    // If this product is synced from a module, update the module product too
+    const product = result
+    if (product.sourceType === 'crm_module' && product.sourceProductId) {
+      try {
+        // Determine module collection based on sourceModuleId
+        const moduleCollections = {
+          'wooden-flooring': 'flooring_products',
+          'doors-windows': 'dw_products',
+          'paints-coatings': 'pc_products',
+          'furniture': 'furniture_products'
+        }
+        
+        const collectionName = moduleCollections[product.sourceModuleId]
+        if (collectionName) {
+          const moduleCollection = db.collection(collectionName)
+          
+          // Sync key fields back to module
+          const moduleUpdate = {
+            'pricing.costPrice': product.costPrice,
+            'pricing.sellingPrice': product.sellingPrice,
+            'pricing.mrp': product.mrp,
+            stockQuantity: product.stockQuantity,
+            updatedAt: new Date().toISOString(),
+            lastInventorySync: new Date().toISOString()
+          }
+          
+          await moduleCollection.updateOne(
+            { id: product.sourceProductId },
+            { $set: moduleUpdate }
+          )
+        }
+      } catch (syncError) {
+        console.warn('Module sync error (non-fatal):', syncError.message)
+      }
+    }
+    // === END BI-DIRECTIONAL SYNC ===
 
     return successResponse(sanitizeDocument(result))
   } catch (error) {
