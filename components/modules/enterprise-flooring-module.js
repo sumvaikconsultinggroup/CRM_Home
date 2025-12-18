@@ -4592,6 +4592,11 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     const isOverdue = new Date(invoice.dueDate) < new Date() && !['paid', 'cancelled'].includes(invoice.status)
                     const daysOverdue = isOverdue ? Math.floor((new Date() - new Date(invoice.dueDate)) / (1000 * 60 * 60 * 24)) : 0
                     
+                    // Determine segment from invoice or fallback to project
+                    const relatedProject = invoice.projectId ? projects.find(p => p.id === invoice.projectId) : null
+                    const invoiceSegment = invoice.projectSegment || relatedProject?.segment || 'b2c'
+                    const isB2B = invoiceSegment === 'b2b'
+                    
                     return (
                       <tr key={invoice.id} className={`hover:bg-slate-50 transition-colors ${isOverdue ? 'bg-red-50/50' : ''}`}>
                         <td className="px-4 py-3">
@@ -4602,11 +4607,9 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                 <FileText className="h-3 w-3" /> {invoice.quoteNumber}
                               </p>
                             )}
-                            {invoice.projectSegment && (
-                              <Badge variant="outline" className="text-xs mt-1">
-                                {invoice.projectSegment === 'b2b' ? 'B2B' : 'B2C'}
-                              </Badge>
-                            )}
+                            <Badge variant="outline" className="text-xs mt-1">
+                              {isB2B ? 'B2B' : 'B2C'}
+                            </Badge>
                           </div>
                         </td>
                         <td className="px-4 py-3">
