@@ -1723,6 +1723,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         const result = await res.json()
         toast.success(result.message || 'Action completed')
         fetchInvoices()
+        // Close any open dialog after successful action
+        setDialogOpen({ type: null, data: null })
       } else {
         const error = await res.json()
         toast.error(error.error || 'Action failed')
