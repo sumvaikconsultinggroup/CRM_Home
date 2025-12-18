@@ -1,0 +1,150 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - button "Back to Dashboard" [ref=e5] [cursor=pointer]:
+      - img
+      - text: Back to Dashboard
+    - generic [ref=e6]:
+      - generic [ref=e7]:
+        - generic [ref=e8]:
+          - img [ref=e10]
+          - generic [ref=e14]:
+            - heading "Flooring Module" [level=1] [ref=e15]
+            - paragraph [ref=e16]: Enterprise-grade flooring business management
+        - generic [ref=e17]:
+          - button "Refresh" [ref=e18] [cursor=pointer]:
+            - img
+            - text: Refresh
+          - button "Settings" [ref=e19] [cursor=pointer]:
+            - img
+            - text: Settings
+      - generic [ref=e20]:
+        - tablist [ref=e21]:
+          - tab "Dashboard" [selected] [ref=e22] [cursor=pointer]:
+            - img [ref=e23]
+            - text: Dashboard
+          - tab "Products" [ref=e28] [cursor=pointer]:
+            - img [ref=e29]
+            - text: Products
+          - tab "Projects" [ref=e33] [cursor=pointer]:
+            - img [ref=e34]
+            - text: Projects
+          - tab "Measurements" [ref=e38] [cursor=pointer]:
+            - img [ref=e39]
+            - text: Measurements
+          - tab "Materials" [ref=e45] [cursor=pointer]:
+            - img [ref=e46]
+            - text: Materials
+          - tab "Quotes" [ref=e56] [cursor=pointer]:
+            - img [ref=e57]
+            - text: Quotes
+          - tab "Invoices" [ref=e60] [cursor=pointer]:
+            - img [ref=e61]
+            - text: Invoices
+          - tab "Installations" [ref=e64] [cursor=pointer]:
+            - img [ref=e65]
+            - text: Installations
+          - tab "Reports" [ref=e67] [cursor=pointer]:
+            - img [ref=e68]
+            - text: Reports
+          - tab "Settings" [ref=e70] [cursor=pointer]:
+            - img [ref=e71]
+            - text: Settings
+        - tabpanel "Dashboard" [ref=e75]:
+          - generic [ref=e76]:
+            - generic [ref=e77]:
+              - generic [ref=e81] [cursor=pointer]:
+                - generic [ref=e82]:
+                  - paragraph [ref=e83]: Total Quotes
+                  - paragraph [ref=e84]: "3"
+                  - paragraph [ref=e85]: ₹89,975 total value
+                  - generic [ref=e86]:
+                    - img [ref=e87]
+                    - text: +3 this period
+                - img [ref=e91]
+              - generic [ref=e97]:
+                - generic [ref=e98]:
+                  - paragraph [ref=e99]: Conversion Rate
+                  - paragraph [ref=e100]: 33%
+                  - paragraph [ref=e101]: 1 approved quotes
+                - img [ref=e103]
+              - generic [ref=e110] [cursor=pointer]:
+                - generic [ref=e111]:
+                  - paragraph [ref=e112]: Revenue
+                  - paragraph [ref=e113]: ₹89,975
+                  - paragraph [ref=e114]: ₹33,040 pending
+                - img [ref=e116]
+              - generic [ref=e121] [cursor=pointer]:
+                - generic [ref=e122]:
+                  - paragraph [ref=e123]: Active Installations
+                  - paragraph [ref=e124]: "0"
+                  - paragraph [ref=e125]: 1 low stock alerts
+                - img [ref=e127]
+            - generic [ref=e129]:
+              - generic [ref=e131]:
+                - img [ref=e133]
+                - generic [ref=e137]:
+                  - paragraph [ref=e138]: "2"
+                  - paragraph [ref=e139]: Products
+              - generic [ref=e141]:
+                - img [ref=e143]
+                - generic [ref=e148]:
+                  - paragraph [ref=e149]: "3"
+                  - paragraph [ref=e150]: Leads
+              - generic [ref=e152]:
+                - img [ref=e154]
+                - generic [ref=e158]:
+                  - paragraph [ref=e159]: "5"
+                  - paragraph [ref=e160]: Projects
+              - generic [ref=e162]:
+                - img [ref=e164]
+                - generic [ref=e167]:
+                  - paragraph [ref=e168]: ₹0.0L
+                  - paragraph [ref=e169]: Inventory Value
+            - generic [ref=e170]:
+              - generic [ref=e171]:
+                - generic [ref=e172]:
+                  - generic [ref=e173]: Recent Quotes
+                  - button "View All" [ref=e174] [cursor=pointer]:
+                    - text: View All
+                    - img
+                - generic [ref=e176]:
+                  - generic [ref=e177]:
+                    - generic [ref=e178]:
+                      - img [ref=e180]
+                      - generic [ref=e183]:
+                        - paragraph [ref=e184]: FLQ-202512-0003
+                        - paragraph [ref=e185]: No customer
+                    - generic [ref=e186]:
+                      - paragraph [ref=e187]: ₹0
+                      - generic [ref=e188]: Approved
+                  - generic [ref=e189]:
+                    - generic [ref=e190]:
+                      - img [ref=e192]
+                      - generic [ref=e195]:
+                        - paragraph [ref=e196]: FLQ-202512-0002
+                        - paragraph [ref=e197]: Soul Saarthi
+                    - paragraph [ref=e199]: ₹54,575
+                  - generic [ref=e201]:
+                    - generic [ref=e202]:
+                      - img [ref=e204]
+                      - generic [ref=e207]:
+                        - paragraph [ref=e208]: FLQ-202512-0001
+                        - paragraph [ref=e209]: Salome
+                    - paragraph [ref=e211]: ₹35,400
+              - generic [ref=e213]:
+                - generic [ref=e215]:
+                  - img [ref=e216]
+                  - text: Alerts
+                - generic [ref=e219]:
+                  - generic [ref=e220]:
+                    - img [ref=e221]
+                    - generic [ref=e225]: Product
+                  - generic [ref=e226]: 0 left
+      - button [ref=e227] [cursor=pointer]:
+        - img [ref=e228]
+  - region "Notifications alt+T"
+  - alert [ref=e231]
+```

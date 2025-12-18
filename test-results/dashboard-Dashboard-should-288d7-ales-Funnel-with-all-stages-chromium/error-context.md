@@ -1,0 +1,48 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - img [ref=e9]
+        - heading "Welcome Back" [level=2] [ref=e13]
+        - paragraph [ref=e14]: Sign in to your account to continue
+      - generic [ref=e15]:
+        - generic [ref=e16]:
+          - text: Email Address
+          - generic [ref=e17]:
+            - img [ref=e18]
+            - textbox "you@company.com" [ref=e21]: xyz@interiors.com
+        - generic [ref=e22]:
+          - generic [ref=e23]:
+            - generic [ref=e24]: Password
+            - button "Forgot password?" [ref=e25] [cursor=pointer]
+          - generic [ref=e26]:
+            - img [ref=e27]
+            - textbox "••••••••" [ref=e30]: client123
+        - button [disabled]:
+          - img
+      - generic [ref=e31]:
+        - text: Don't have an account?
+        - button "Start your 30-day free trial" [ref=e32] [cursor=pointer]
+      - generic [ref=e33]:
+        - button "Back to Home" [ref=e34] [cursor=pointer]:
+          - img [ref=e35]
+          - text: Back to Home
+        - generic [ref=e37]: "Super Admin: admin@buildcrm.com / admin123"
+      - generic [ref=e38]: © 2025 BuildCRM. All rights reserved.
+    - generic [ref=e39]:
+      - img "Background" [ref=e41]
+      - generic [ref=e43]:
+        - generic [ref=e45]: Enterprise Grade CRM
+        - generic [ref=e46]:
+          - blockquote [ref=e47]: "\"BuildCRM transformed how we manage our construction projects. The efficiency gains were immediate.\""
+          - generic [ref=e48]:
+            - generic [ref=e49]: JD
+            - generic [ref=e50]:
+              - generic [ref=e51]: John Davis
+              - generic [ref=e52]: CEO, Davis Construction
+  - region "Notifications alt+T"
+  - alert [ref=e53]
+```
