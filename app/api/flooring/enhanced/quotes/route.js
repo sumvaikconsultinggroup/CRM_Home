@@ -101,10 +101,16 @@ export async function POST(request) {
     const quoteId = uuidv4()
     const now = new Date().toISOString()
 
-    // Get rooms for project
+    // Get rooms for project and project details (for segment)
     let projectRooms = []
+    let projectSegment = body.projectSegment || 'b2c'
     if (body.projectId) {
       projectRooms = await rooms.find({ projectId: body.projectId }).toArray()
+      // Get project segment
+      const project = await projects.findOne({ id: body.projectId })
+      if (project) {
+        projectSegment = project.segment || 'b2c'
+      }
     }
 
     // Calculate totals from items
