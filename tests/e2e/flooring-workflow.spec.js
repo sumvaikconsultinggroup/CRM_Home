@@ -111,16 +111,17 @@ test.describe('Flooring Module Workflow', () => {
     }
   })
 
-  test('should view inventory', async ({ page }) => {
+  test('should NOT have Inventory tab (removed per architecture change)', async ({ page }) => {
     await page.click('text=Wooden Flooring')
     await page.waitForTimeout(3000)
     
-    // Click Inventory tab
-    await page.click('[role="tab"]:has-text("Inventory"), button:has-text("Inventory")')
-    await page.waitForTimeout(2000)
+    // Inventory tab should NOT exist - it was removed per user request
+    // Inventory is now managed centrally in Build Inventory module
+    const inventoryTab = page.locator('[role="tab"]:has-text("Inventory")')
+    const visible = await inventoryTab.isVisible().catch(() => false)
     
-    // Should see inventory content
-    const inventorySection = page.locator('text=Stock, text=Warehouse, text=Available, text=Reserved')
-    await expect(inventorySection.first()).toBeVisible({ timeout: 5000 }).catch(() => {})
+    expect(visible).toBe(false) // Tab should NOT be visible
+    console.log('  ✓ Inventory tab correctly removed from Flooring Module')
+    console.log('  ✓ Inventory is now managed via Build Inventory module')
   })
 })
