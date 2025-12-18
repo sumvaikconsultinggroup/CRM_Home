@@ -102,7 +102,7 @@ export default function FlooringPage() {
       <div className="flex h-[calc(100vh-57px)]">
         {/* Module */}
         <div className={`flex-1 transition-all duration-300 ${showMeeAgent ? 'mr-96' : ''}`}>
-          <WoodenFlooringModule client={client} user={user} />
+          <EnterpriseFlooringModule client={client} user={user} />
         </div>
 
         {/* Mee AI Agent Panel */}
