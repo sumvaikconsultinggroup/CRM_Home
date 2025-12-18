@@ -1,5 +1,5 @@
 import { v4 as uuidv4 } from 'uuid'
-import { getMasterDb } from '@/lib/db/multitenancy'
+import { getMainDb } from '@/lib/db/multitenancy'
 import { getAuthUser, requireClientAccess, requireSuperAdmin } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocument, sanitizeDocuments } from '@/lib/utils/response'
 
@@ -19,7 +19,7 @@ export async function GET(request) {
     const sortBy = searchParams.get('sortBy') || 'createdAt'
     const sortOrder = searchParams.get('sortOrder') || 'desc'
 
-    const db = await getMasterDb()
+    const db = await getMainDb()
     const collection = db.collection('feature_requests')
 
     // Build query
@@ -69,7 +69,7 @@ export async function POST(request) {
       return errorResponse('Title and description are required', 400)
     }
 
-    const db = await getMasterDb()
+    const db = await getMainDb()
     const collection = db.collection('feature_requests')
 
     const featureRequest = {
@@ -125,7 +125,7 @@ export async function PUT(request) {
       return errorResponse('Feature request ID is required', 400)
     }
 
-    const db = await getMasterDb()
+    const db = await getMainDb()
     const collection = db.collection('feature_requests')
 
     const updates = {
@@ -171,7 +171,7 @@ export async function DELETE(request) {
       return errorResponse('Feature request ID is required', 400)
     }
 
-    const db = await getMasterDb()
+    const db = await getMainDb()
     const collection = db.collection('feature_requests')
 
     const result = await collection.deleteOne({ id })
