@@ -7717,9 +7717,6 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           <TabsTrigger value="installations" className="flex items-center gap-2">
             <Wrench className="h-4 w-4" /> Installations
           </TabsTrigger>
-          <TabsTrigger value="inventory" className="flex items-center gap-2">
-            <Warehouse className="h-4 w-4" /> Inventory
-          </TabsTrigger>
           <TabsTrigger value="reports" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" /> Reports
           </TabsTrigger>
