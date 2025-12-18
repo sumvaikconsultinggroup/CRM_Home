@@ -277,6 +277,36 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   const [dispatches, setDispatches] = useState([])
   const dispatchPhotoRef = useRef(null)
   
+  // Settings States (moved to component level to fix hook issues)
+  const [settingsTab, setSettingsTab] = useState('general')
+  const [whatsappConfig, setWhatsappConfig] = useState({
+    provider: '',
+    apiKey: '',
+    apiSecret: '',
+    phoneNumberId: '',
+    webhookUrl: '',
+    enabled: false
+  })
+  const [generalSettings, setGeneralSettings] = useState({
+    companyName: '',
+    gstin: '',
+    defaultTaxRate: 18,
+    quoteValidityDays: 30,
+    invoicePrefix: 'INV',
+    quotePrefix: 'FLQ',
+    defaultPaymentTerms: 'Net 30',
+    laborRatePerSqft: 25,
+    defaultWastagePercent: 10
+  })
+  const [bankDetails, setBankDetails] = useState({
+    bankName: '',
+    accountName: '',
+    accountNumber: '',
+    ifscCode: '',
+    upiId: ''
+  })
+  const [savingSettings, setSavingSettings] = useState(false)
+  
   // Filter States
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
