@@ -33,7 +33,7 @@ export async function POST(request) {
       errors: []
     }
 
-    // List of all flooring-related collections to clear
+    // List of all flooring-related collections to clear (INCLUDING PRODUCTS)
     const collectionsToDelete = [
       'flooring_projects',
       'flooring_quotes_v2',
@@ -46,7 +46,11 @@ export async function POST(request) {
       'flooring_payments',
       'inventory_reservations',
       'wf_inventory_movements',
-      'wf_inventory_stock'
+      'wf_inventory_stock',
+      'flooring_products',
+      'flooring_categories',
+      'flooring_inventory',
+      'flooring_inventory_v2'
     ]
 
     for (const collectionName of collectionsToDelete) {
