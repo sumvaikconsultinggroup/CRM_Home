@@ -60,9 +60,13 @@ test.describe('Login Flow', () => {
     // Wait for redirect
     await page.waitForTimeout(5000)
     
-    // Should see dashboard elements
-    const dashboardVisible = await page.locator('text=Dashboard, text=Projects, text=Leads').first().isVisible().catch(() => false)
-    expect(dashboardVisible).toBe(true)
+    // Should see dashboard elements - check for any sidebar item
+    const dashboardVisible = await page.locator('text=Dashboard').first().isVisible().catch(() => false)
+    const leadsVisible = await page.locator('text=Leads').first().isVisible().catch(() => false)
+    const projectsVisible = await page.locator('text=Projects').first().isVisible().catch(() => false)
+    
+    // At least one should be visible after login
+    expect(dashboardVisible || leadsVisible || projectsVisible).toBe(true)
   })
 
   test('should display sidebar navigation after login', async ({ page }) => {
