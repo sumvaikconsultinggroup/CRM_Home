@@ -36,12 +36,18 @@ export async function GET(request) {
     periodStart.setDate(periodStart.getDate() - parseInt(period))
 
     if (type === 'dashboard') {
-      // Comprehensive dashboard data
+      // Comprehensive dashboard data - use inventory_products for stock
       const [allLeads, allProjects, allProducts, allInventory, allQuotes, allInvoices, allPayments, allInstallations] = await Promise.all([
         leads.find({}).toArray(),
         projects.find({}).toArray(),
         products.find({}).toArray(),
-        inventory.find({}).toArray(),
+        // Get inventory from Build Inventory (central source of truth)
+        inventoryProducts.find({ 
+          $or: [
+            { sourceModuleId: 'wooden-flooring' },
+            { category: { $regex: /flooring|wood/i } }
+          ]
+        }).toArray(),
         quotes.find({}).toArray(),
         invoices.find({}).toArray(),
         payments.find({}).toArray(),
