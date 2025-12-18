@@ -834,7 +834,7 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
         </Card>
 
         {/* Lead Funnel */}
-        <Card>
+        <Card className="overflow-visible">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <Layers className="h-5 w-5 text-blue-600" />
@@ -842,7 +842,7 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
             </CardTitle>
             <CardDescription>Lead conversion stages</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-6">
             {leads.length > 0 ? (
               <>
                 <FunnelChart data={leadFunnel} />
