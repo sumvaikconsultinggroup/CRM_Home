@@ -9,21 +9,24 @@ export async function OPTIONS() {
 }
 
 // Convert inventory reservations when invoice is created from quote
-const convertInventoryReservation = async (db, clientId, quotationId) => {
+// Also handles direct deduction if no reservation exists
+const convertInventoryReservation = async (db, clientId, quotationId, invoiceItems = [], invoiceId, invoiceNumber) => {
   try {
     const reservationCollection = db.collection('inventory_reservations')
     const stockCollection = db.collection('wf_inventory_stock')
+    const movementCollection = db.collection('wf_inventory_movements')
+    const now = new Date().toISOString()
     
     const reservations = await reservationCollection.find({ 
       quotationId, 
       status: 'active' 
     }).toArray()
     
-    if (reservations.length === 0) {
-      return { converted: 0, message: 'No active reservations found' }
-    }
-    
     let convertedCount = 0
+    let directDeductCount = 0
+    const processedProductIds = new Set()
+    
+    // Process existing reservations first
     for (const reservation of reservations) {
       // Deduct from total stock (reservation was already from available)
       await stockCollection.updateOne(
@@ -33,9 +36,25 @@ const convertInventoryReservation = async (db, clientId, quotationId) => {
             quantity: -reservation.quantity, 
             reservedQuantity: -reservation.quantity 
           },
-          $set: { updatedAt: new Date() }
+          $set: { updatedAt: now }
         }
       )
+      
+      // Record inventory movement
+      await movementCollection.insertOne({
+        id: uuidv4(),
+        productId: reservation.productId,
+        productName: reservation.productName,
+        type: 'sale',
+        quantity: -reservation.quantity,
+        warehouseId: reservation.warehouseId || 'default',
+        invoiceId,
+        invoiceNumber,
+        quotationId,
+        notes: `Sold via Invoice ${invoiceNumber} (from reservation)`,
+        createdBy: 'system',
+        createdAt: now
+      })
       
       // Update reservation status to converted
       await reservationCollection.updateOne(
@@ -43,18 +62,69 @@ const convertInventoryReservation = async (db, clientId, quotationId) => {
         { 
           $set: { 
             status: 'converted', 
-            convertedAt: new Date(),
-            updatedAt: new Date() 
+            invoiceId,
+            invoiceNumber,
+            convertedAt: now,
+            updatedAt: now 
           } 
         }
       )
+      
+      processedProductIds.add(reservation.productId)
       convertedCount++
     }
     
-    return { converted: convertedCount, message: `${convertedCount} inventory reservations converted to sold` }
+    // For items NOT covered by reservations, deduct directly
+    const materialItems = invoiceItems.filter(i => 
+      i.itemType === 'material' && 
+      i.productId && 
+      !processedProductIds.has(i.productId)
+    )
+    
+    for (const item of materialItems) {
+      const warehouseId = item.warehouseId || 'default'
+      const quantityToDeduct = item.quantity || item.area || 0
+      
+      if (quantityToDeduct <= 0) continue
+      
+      // Direct deduction from stock
+      await stockCollection.updateOne(
+        { productId: item.productId, warehouseId },
+        {
+          $inc: { quantity: -quantityToDeduct },
+          $set: { updatedAt: now }
+        },
+        { upsert: false }
+      )
+      
+      // Record inventory movement
+      await movementCollection.insertOne({
+        id: uuidv4(),
+        productId: item.productId,
+        productName: item.productName || item.name,
+        type: 'sale',
+        quantity: -quantityToDeduct,
+        warehouseId,
+        invoiceId,
+        invoiceNumber,
+        notes: `Sold via Invoice ${invoiceNumber} (direct deduction)`,
+        createdBy: 'system',
+        createdAt: now
+      })
+      
+      directDeductCount++
+    }
+    
+    const totalProcessed = convertedCount + directDeductCount
+    return { 
+      converted: convertedCount, 
+      directDeducted: directDeductCount,
+      total: totalProcessed,
+      message: `Inventory updated: ${convertedCount} reservations converted, ${directDeductCount} direct deductions`
+    }
   } catch (error) {
     console.error('Convert inventory reservation error:', error)
-    return { converted: 0, error: error.message }
+    return { converted: 0, directDeducted: 0, total: 0, error: error.message }
   }
 }
 
