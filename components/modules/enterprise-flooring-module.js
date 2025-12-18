@@ -4590,10 +4590,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     const isOverdue = new Date(invoice.dueDate) < new Date() && !['paid', 'cancelled'].includes(invoice.status)
                     const daysOverdue = isOverdue ? Math.floor((new Date() - new Date(invoice.dueDate)) / (1000 * 60 * 60 * 24)) : 0
                     
-                    // Determine segment from invoice or fallback to project
-                    const relatedProject = invoice.projectId ? projects.find(p => p.id === invoice.projectId) : null
-                    const invoiceSegment = invoice.projectSegment || relatedProject?.segment || 'b2c'
-                    const isB2B = invoiceSegment === 'b2b'
+                    // Segment now comes correctly from API (enriched with project data)
+                    const isB2B = invoice.projectSegment === 'b2b'
                     
                     return (
                       <tr key={invoice.id} className={`hover:bg-slate-50 transition-colors ${isOverdue ? 'bg-red-50/50' : ''}`}>
