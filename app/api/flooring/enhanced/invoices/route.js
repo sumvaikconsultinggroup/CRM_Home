@@ -335,7 +335,16 @@ export async function GET(request) {
     sortConfig[sortBy] = sortOrder === 'asc' ? 1 : -1
 
     // Get all invoices for summary (before pagination)
-    const allInvoices = await invoices.find(query).toArray()
+    let allInvoices = await invoices.find(query).toArray()
+    
+    // Enrich all invoices with correct projectSegment from project
+    allInvoices = allInvoices.map(inv => {
+      const project = inv.projectId ? projectMap.get(inv.projectId) : null
+      return {
+        ...inv,
+        projectSegment: project?.segment || inv.projectSegment || 'b2c'
+      }
+    })
     
     // Get paginated invoices
     const skip = (page - 1) * limit
