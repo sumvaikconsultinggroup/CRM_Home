@@ -370,6 +370,10 @@ export async function POST(request) {
 
     await quotes.insertOne(quote)
 
+    // RESERVE INVENTORY for material items in quote
+    const inventoryReservation = await reserveInventoryForQuote(db, quote)
+    quote.inventoryReservation = inventoryReservation
+
     // Update project status
     if (body.projectId) {
       await projects.updateOne(
