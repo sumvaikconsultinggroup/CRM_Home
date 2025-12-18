@@ -422,6 +422,29 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }, [token])
 
+  // Cleanup inventory issues (negative values, duplicates, etc.)
+  const handleInventoryCleanup = async (action) => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/flooring/enhanced/inventory/cleanup', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ action })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success(data.message || 'Inventory cleanup completed')
+        fetchInventory()
+      } else {
+        toast.error(data.error || 'Cleanup failed')
+      }
+    } catch (error) {
+      toast.error('Failed to cleanup inventory')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const fetchModuleSettings = useCallback(async () => {
     try {
       const res = await fetch('/api/flooring/enhanced/settings', { headers })
