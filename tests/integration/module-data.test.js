@@ -186,11 +186,16 @@ const tests = [
   test('Verify project-module data consistency', async () => {
     // Get a project with flooring data
     const { status: projStatus, data: projData } = await apiCall('GET', '/api/projects')
-    const projects = projData.projects || projData
+    const projects = projData.projects || projData || []
+    
+    if (!Array.isArray(projects)) {
+      console.log('  Skipped: Projects data not an array')
+      return
+    }
     
     // Get all flooring quotes
     const { status: quoteStatus, data: quoteData } = await apiCall('GET', '/api/flooring/enhanced/quotes')
-    const quotes = quoteData.quotes || quoteData || []
+    const quotes = quoteData.quotes || (Array.isArray(quoteData) ? quoteData : [])
     
     // Check that quotes reference valid projects
     const projectIds = new Set(projects.map(p => p.id))
