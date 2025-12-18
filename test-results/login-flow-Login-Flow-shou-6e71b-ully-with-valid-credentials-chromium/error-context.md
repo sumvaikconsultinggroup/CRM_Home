@@ -1,0 +1,505 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e3]:
+    - complementary [ref=e4]:
+      - generic [ref=e5]:
+        - img [ref=e7]
+        - generic [ref=e11]: XYZ Interiors
+      - navigation [ref=e12]:
+        - button "Dashboard" [ref=e13] [cursor=pointer]:
+          - img [ref=e14]
+          - generic [ref=e19]: Dashboard
+        - button "Leads" [ref=e20] [cursor=pointer]:
+          - img [ref=e21]
+          - generic [ref=e25]: Leads
+        - button "Contacts" [ref=e26] [cursor=pointer]:
+          - img [ref=e27]
+          - generic [ref=e32]: Contacts
+        - button "Projects" [ref=e33] [cursor=pointer]:
+          - img [ref=e34]
+          - generic [ref=e37]: Projects
+        - button "Tasks" [ref=e38] [cursor=pointer]:
+          - img [ref=e39]
+          - generic [ref=e42]: Tasks
+        - button "Expenses" [ref=e43] [cursor=pointer]:
+          - img [ref=e44]
+          - generic [ref=e47]: Expenses
+        - button "Calendar & Notes" [ref=e48] [cursor=pointer]:
+          - img [ref=e49]
+          - generic [ref=e51]: Calendar & Notes
+        - button "User Management" [ref=e52] [cursor=pointer]:
+          - img [ref=e53]
+          - generic [ref=e55]: User Management
+        - button "Teams Hub" [ref=e56] [cursor=pointer]:
+          - img [ref=e57]
+          - generic [ref=e59]: Teams Hub
+        - button "Reports" [ref=e60] [cursor=pointer]:
+          - img [ref=e61]
+          - generic [ref=e63]: Reports
+        - button "Wooden Flooring" [ref=e64] [cursor=pointer]:
+          - img [ref=e65]
+          - generic [ref=e69]: Wooden Flooring
+          - img [ref=e70]
+        - button "Doors & Windows" [ref=e74] [cursor=pointer]:
+          - img [ref=e75]
+          - generic [ref=e77]: Doors & Windows
+          - img [ref=e78]
+        - button "Modules" [ref=e82] [cursor=pointer]:
+          - img [ref=e83]
+          - generic [ref=e87]: Modules
+        - button "Integrations" [ref=e88] [cursor=pointer]:
+          - img [ref=e89]
+          - generic [ref=e91]: Integrations
+        - button "White Label" [ref=e92] [cursor=pointer]:
+          - img [ref=e93]
+          - generic [ref=e99]: White Label
+        - button "Settings" [ref=e100] [cursor=pointer]:
+          - img [ref=e101]
+          - generic [ref=e104]: Settings
+      - button "Logout" [ref=e106] [cursor=pointer]:
+        - img [ref=e107]
+        - generic [ref=e110]: Logout
+      - button [ref=e111] [cursor=pointer]:
+        - img [ref=e112]
+    - main [ref=e114]:
+      - generic [ref=e115]:
+        - generic [ref=e116]:
+          - button [ref=e117] [cursor=pointer]:
+            - img
+          - button "Build CRM" [ref=e119] [cursor=pointer]:
+            - generic [ref=e120]:
+              - img
+            - paragraph [ref=e122]: Build CRM
+            - img
+          - generic [ref=e123]:
+            - heading "XYZ Interiors" [level=1] [ref=e124]
+            - paragraph [ref=e125]: Dashboard
+        - generic [ref=e126]:
+          - button [ref=e127] [cursor=pointer]:
+            - img
+          - generic [ref=e128]: CL-183256
+          - generic [ref=e129]: ENTERPRISE
+          - button "Request Feature" [ref=e130] [cursor=pointer]:
+            - img
+            - generic [ref=e131]: Request Feature
+          - button "Teams Hub" [ref=e132] [cursor=pointer]:
+            - img
+          - generic [ref=e133]:
+            - generic [ref=e134]: X
+            - generic [ref=e135]: XYZ Admin
+      - generic [ref=e138]:
+        - generic [ref=e144]:
+          - generic [ref=e145]:
+            - generic [ref=e146]:
+              - img [ref=e147]
+              - generic [ref=e149]: ENTERPRISE Plan
+            - heading "Welcome back, XYZ! 👋" [level=1] [ref=e150]
+            - paragraph [ref=e151]: You have 11 pending tasks and 0 new leads waiting.
+          - generic [ref=e152]:
+            - button "Add Lead" [ref=e154] [cursor=pointer]:
+              - img
+              - generic [ref=e155]: Add Lead
+            - button "New Project" [ref=e157] [cursor=pointer]:
+              - img
+              - generic [ref=e158]: New Project
+            - button "Add Task" [ref=e160] [cursor=pointer]:
+              - img
+              - generic [ref=e161]: Add Task
+        - generic [ref=e162]:
+          - generic [ref=e165] [cursor=pointer]:
+            - generic [ref=e166]:
+              - img [ref=e168]
+              - img [ref=e175]
+            - generic [ref=e177]:
+              - paragraph [ref=e178]:
+                - generic [ref=e179]: ₹5,163,322
+              - paragraph [ref=e180]: Total Revenue
+            - generic [ref=e181]:
+              - img [ref=e183]
+              - generic [ref=e185]: 4 deals won
+          - generic [ref=e188] [cursor=pointer]:
+            - generic [ref=e189]:
+              - img [ref=e191]
+              - img [ref=e196]
+            - generic [ref=e198]:
+              - paragraph [ref=e199]: "0"
+              - paragraph [ref=e200]: Active Leads
+            - generic [ref=e201]:
+              - img [ref=e203]
+              - generic [ref=e205]: 4 won
+          - generic [ref=e208] [cursor=pointer]:
+            - generic [ref=e209]:
+              - img [ref=e211]
+              - img [ref=e215]
+            - generic [ref=e217]:
+              - paragraph [ref=e218]: "6"
+              - paragraph [ref=e219]: Active Projects
+            - generic [ref=e220]:
+              - img [ref=e222]
+              - generic [ref=e224]: 0 completed
+          - generic [ref=e227] [cursor=pointer]:
+            - generic [ref=e228]:
+              - img [ref=e230]
+              - img [ref=e234]
+            - generic [ref=e236]:
+              - paragraph [ref=e237]:
+                - generic [ref=e238]: 27%
+              - paragraph [ref=e239]: Task Progress
+            - generic [ref=e240]:
+              - img [ref=e242]
+              - generic [ref=e244]: 4/15 done
+        - generic [ref=e245]:
+          - generic [ref=e246]:
+            - generic [ref=e248]:
+              - generic [ref=e249]:
+                - generic [ref=e250]:
+                  - img [ref=e251]
+                  - text: Revenue Overview
+                - generic [ref=e254]: Monthly revenue performance
+              - tablist [ref=e256]:
+                - tab "Week" [ref=e257] [cursor=pointer]
+                - tab "Month" [selected] [ref=e258] [cursor=pointer]
+                - tab "Year" [ref=e259] [cursor=pointer]
+            - generic [ref=e260]:
+              - generic [ref=e262]:
+                - generic [ref=e263]:
+                  - generic [ref=e264] [cursor=pointer]: 387,249
+                  - generic [ref=e266]: Jan
+                - generic [ref=e267]:
+                  - generic [ref=e268] [cursor=pointer]: 774,498
+                  - generic [ref=e270]: Feb
+                - generic [ref=e271]:
+                  - generic [ref=e272] [cursor=pointer]: 1,161,747
+                  - generic [ref=e274]: Mar
+                - generic [ref=e275]:
+                  - generic [ref=e276] [cursor=pointer]: 1,548,997
+                  - generic [ref=e278]: Apr
+                - generic [ref=e279]:
+                  - generic [ref=e280] [cursor=pointer]: 1,936,246
+                  - generic [ref=e282]: May
+                - generic [ref=e283]:
+                  - generic [ref=e284] [cursor=pointer]: 2,323,495
+                  - generic [ref=e286]: Jun
+                - generic [ref=e287]:
+                  - generic [ref=e288] [cursor=pointer]: 2,710,744
+                  - generic [ref=e290]: Jul
+                - generic [ref=e291]:
+                  - generic [ref=e292] [cursor=pointer]: 3,097,993
+                  - generic [ref=e294]: Aug
+                - generic [ref=e295]:
+                  - generic [ref=e296] [cursor=pointer]: 3,485,242
+                  - generic [ref=e298]: Sep
+                - generic [ref=e299]:
+                  - generic [ref=e300] [cursor=pointer]: 3,872,492
+                  - generic [ref=e302]: Oct
+                - generic [ref=e303]:
+                  - generic [ref=e304] [cursor=pointer]: 4,259,741
+                  - generic [ref=e306]: Nov
+                - generic [ref=e307]:
+                  - generic [ref=e308] [cursor=pointer]: 5,163,322
+                  - generic [ref=e310]: Dec
+              - generic [ref=e311]:
+                - generic [ref=e312]:
+                  - paragraph [ref=e313]: ₹5,163,322
+                  - paragraph [ref=e314]: Total Revenue
+                - generic [ref=e315]:
+                  - paragraph [ref=e316]: ₹1,290,831
+                  - paragraph [ref=e317]: Avg Deal Size
+                - generic [ref=e318]:
+                  - paragraph [ref=e319]: ₹0
+                  - paragraph [ref=e320]: Pipeline Value
+          - generic [ref=e321]:
+            - generic [ref=e322]:
+              - generic [ref=e323]:
+                - img [ref=e324]
+                - text: Sales Funnel
+              - generic [ref=e328]: Lead conversion stages
+            - generic [ref=e329]:
+              - generic [ref=e330]:
+                - generic [ref=e332] [cursor=pointer]:
+                  - generic [ref=e333]: New
+                  - generic [ref=e334]: "0"
+                - generic [ref=e336] [cursor=pointer]:
+                  - generic [ref=e337]: Contacted
+                  - generic [ref=e338]: "0"
+                - generic [ref=e340] [cursor=pointer]:
+                  - generic [ref=e341]: Qualified
+                  - generic [ref=e342]: "0"
+                - generic [ref=e344] [cursor=pointer]:
+                  - generic [ref=e345]: Negotiation
+                  - generic [ref=e346]: "0"
+                - generic [ref=e348] [cursor=pointer]:
+                  - generic [ref=e349]: Won
+                  - generic [ref=e350]: "4"
+              - generic [ref=e351]:
+                - generic [ref=e352]:
+                  - generic [ref=e353]: Conversion Rate
+                  - generic [ref=e354]: 80%
+                - progressbar [ref=e355]
+        - generic [ref=e357]:
+          - generic [ref=e359] [cursor=pointer]:
+            - img [ref=e361]
+            - generic [ref=e364]:
+              - paragraph [ref=e365]: "4"
+              - paragraph [ref=e366]: Deals Won
+          - generic [ref=e368] [cursor=pointer]:
+            - img [ref=e370]
+            - generic [ref=e375]:
+              - paragraph [ref=e376]: "1"
+              - paragraph [ref=e377]: Deals Lost
+          - generic [ref=e379] [cursor=pointer]:
+            - img [ref=e381]
+            - generic [ref=e385]:
+              - paragraph [ref=e386]: 80%
+              - paragraph [ref=e387]: Win Rate
+          - generic [ref=e389] [cursor=pointer]:
+            - img [ref=e391]
+            - generic [ref=e393]:
+              - paragraph [ref=e394]: "0"
+              - paragraph [ref=e395]: Overdue Tasks
+          - generic [ref=e397] [cursor=pointer]:
+            - img [ref=e399]
+            - generic [ref=e401]:
+              - paragraph [ref=e402]: "4"
+              - paragraph [ref=e403]: High Priority
+          - generic [ref=e405] [cursor=pointer]:
+            - img [ref=e407]
+            - generic [ref=e410]:
+              - paragraph [ref=e411]: "0"
+              - paragraph [ref=e412]: Completed
+        - generic [ref=e413]:
+          - generic [ref=e414]:
+            - generic [ref=e416]:
+              - img [ref=e417]
+              - text: Lead Sources
+            - generic [ref=e421]:
+              - img [ref=e422]:
+                - generic [ref=e429]: "5"
+              - generic [ref=e430]:
+                - generic [ref=e431]:
+                  - generic [ref=e433]: cold_call
+                  - generic [ref=e434]: "1"
+                - generic [ref=e435]:
+                  - generic [ref=e437]: indiamart
+                  - generic [ref=e438]: "1"
+                - generic [ref=e439]:
+                  - generic [ref=e441]: social_media
+                  - generic [ref=e442]: "2"
+                - generic [ref=e443]:
+                  - generic [ref=e445]: website
+                  - generic [ref=e446]: "1"
+          - generic [ref=e447]:
+            - generic [ref=e449]:
+              - img [ref=e450]
+              - text: Weekly Activity
+            - generic [ref=e454]:
+              - generic [ref=e455]:
+                - generic [ref=e456] [cursor=pointer]: "3"
+                - generic [ref=e458]: Mon
+              - generic [ref=e459]:
+                - generic [ref=e460] [cursor=pointer]: "4"
+                - generic [ref=e462]: Tue
+              - generic [ref=e463]:
+                - generic [ref=e464] [cursor=pointer]: "4"
+                - generic [ref=e466]: Wed
+              - generic [ref=e467]:
+                - generic [ref=e468] [cursor=pointer]: "4"
+                - generic [ref=e470]: Thu
+              - generic [ref=e471]:
+                - generic [ref=e472] [cursor=pointer]: "3"
+                - generic [ref=e474]: Fri
+              - generic [ref=e475]:
+                - generic [ref=e476] [cursor=pointer]: "2"
+                - generic [ref=e478]: Sat
+              - generic [ref=e479]:
+                - generic [ref=e480] [cursor=pointer]: "1"
+                - generic [ref=e482]: Sun
+          - generic [ref=e483]:
+            - generic [ref=e485]:
+              - img [ref=e486]
+              - text: Performance
+            - generic [ref=e491]:
+              - generic [ref=e492]:
+                - img [ref=e493]
+                - generic [ref=e498]: 27%
+                - paragraph [ref=e499]: Tasks
+              - generic [ref=e500]:
+                - img [ref=e501]
+                - generic [ref=e506]: 80%
+                - paragraph [ref=e507]: Conversion
+              - generic [ref=e508]:
+                - img [ref=e509]
+                - generic [ref=e513]: 0%
+                - paragraph [ref=e514]: Projects
+        - generic [ref=e515]:
+          - generic [ref=e516]:
+            - generic [ref=e518]:
+              - generic [ref=e519]:
+                - img [ref=e520]
+                - text: Top Leads
+              - button "View All" [ref=e522] [cursor=pointer]:
+                - text: View All
+                - img
+            - generic [ref=e524]:
+              - generic [ref=e525] [cursor=pointer]:
+                - generic [ref=e526]:
+                  - generic [ref=e527]: A
+                  - generic [ref=e528]:
+                    - paragraph [ref=e529]: Aditya
+                    - paragraph [ref=e530]: abc@gmail.com
+                - generic [ref=e531]:
+                  - paragraph [ref=e532]: ₹2,200,000
+                  - generic [ref=e533]: won
+              - generic [ref=e534] [cursor=pointer]:
+                - generic [ref=e535]:
+                  - generic [ref=e536]: "N"
+                  - generic [ref=e537]:
+                    - paragraph [ref=e538]: Nipun Kathuria
+                    - paragraph [ref=e539]: Sumvaik Consuting
+                - generic [ref=e540]:
+                  - paragraph [ref=e541]: ₹2,000,000
+                  - generic [ref=e542]: lost
+              - generic [ref=e543] [cursor=pointer]:
+                - generic [ref=e544]:
+                  - generic [ref=e545]: "N"
+                  - generic [ref=e546]:
+                    - paragraph [ref=e547]: Nipun
+                    - paragraph [ref=e548]: SCG
+                - generic [ref=e549]:
+                  - paragraph [ref=e550]: ₹1,233,322
+                  - generic [ref=e551]: won
+              - generic [ref=e552] [cursor=pointer]:
+                - generic [ref=e553]:
+                  - generic [ref=e554]: G
+                  - generic [ref=e555]:
+                    - paragraph [ref=e556]: Garima Singh
+                    - paragraph [ref=e557]: Soul Saarthi
+                - generic [ref=e558]:
+                  - paragraph [ref=e559]: ₹1,230,000
+                  - generic [ref=e560]: won
+              - generic [ref=e561] [cursor=pointer]:
+                - generic [ref=e562]:
+                  - generic [ref=e563]: S
+                  - generic [ref=e564]:
+                    - paragraph [ref=e565]: Salome
+                    - paragraph [ref=e566]: bac@smail.com
+                - generic [ref=e567]:
+                  - paragraph [ref=e568]: ₹500,000
+                  - generic [ref=e569]: won
+          - generic [ref=e570]:
+            - generic [ref=e572]:
+              - generic [ref=e573]:
+                - img [ref=e574]
+                - text: Upcoming Tasks
+              - button "View All" [ref=e577] [cursor=pointer]:
+                - text: View All
+                - img
+            - generic [ref=e579]:
+              - generic [ref=e580] [cursor=pointer]:
+                - generic [ref=e583]:
+                  - paragraph [ref=e584]: Change Printer Ink
+                  - paragraph [ref=e585]: 12/19/2025
+                - generic [ref=e586]: urgent
+              - generic [ref=e587] [cursor=pointer]:
+                - generic [ref=e590]:
+                  - paragraph [ref=e591]: Send 20000 sq ft engineered wood
+                  - paragraph [ref=e592]: No due date
+                - generic [ref=e593]: medium
+              - generic [ref=e594] [cursor=pointer]:
+                - generic [ref=e597]:
+                  - paragraph [ref=e598]: Meet with Ar. Rahul
+                  - paragraph [ref=e599]: No due date
+                - generic [ref=e600]: medium
+              - generic [ref=e601] [cursor=pointer]:
+                - generic [ref=e604]:
+                  - paragraph [ref=e605]: Take site measurements
+                  - paragraph [ref=e606]: No due date
+                - generic [ref=e607]: high
+              - generic [ref=e608] [cursor=pointer]:
+                - generic [ref=e611]:
+                  - paragraph [ref=e612]: Create mood boards
+                  - paragraph [ref=e613]: No due date
+                - generic [ref=e614]: medium
+          - generic [ref=e615]:
+            - generic [ref=e617]:
+              - img [ref=e618]
+              - text: Recent Activity
+            - generic [ref=e622]:
+              - generic [ref=e625]:
+                - paragraph [ref=e626]: "New lead: Salome"
+                - paragraph [ref=e627]: 5h ago
+              - generic [ref=e630]:
+                - paragraph [ref=e631]: "New lead: Aditya"
+                - paragraph [ref=e632]: 8h ago
+              - generic [ref=e635]:
+                - paragraph [ref=e636]: "New lead: Nipun"
+                - paragraph [ref=e637]: 23h ago
+              - generic [ref=e640]:
+                - paragraph [ref=e641]: "Completed: Schedule client meeting"
+                - paragraph [ref=e642]: 8h ago
+              - generic [ref=e645]:
+                - paragraph [ref=e646]: "Completed: Schedule client meeting"
+                - paragraph [ref=e647]: 1d ago
+              - generic [ref=e650]:
+                - paragraph [ref=e651]: "Project: Aditya"
+                - paragraph [ref=e652]: 21m ago
+        - generic [ref=e653]:
+          - generic [ref=e654]:
+            - generic [ref=e656]:
+              - img [ref=e657]
+              - text: Financial Summary
+            - generic [ref=e660]:
+              - generic [ref=e661]:
+                - generic [ref=e662]:
+                  - img [ref=e663]
+                  - generic [ref=e665]: Total Income
+                - generic [ref=e666]: ₹5,163,322
+              - generic [ref=e667]:
+                - generic [ref=e668]:
+                  - img [ref=e669]
+                  - generic [ref=e671]: Total Expenses
+                - generic [ref=e672]: ₹0
+              - generic [ref=e673]:
+                - generic [ref=e674]:
+                  - img [ref=e675]
+                  - generic [ref=e678]: Net Profit
+                - generic [ref=e679]: ₹5,163,322
+          - generic [ref=e680]:
+            - generic [ref=e682]:
+              - img [ref=e683]
+              - text: Quick Actions
+            - generic [ref=e686]:
+              - button "New Lead Add a prospect" [ref=e687] [cursor=pointer]:
+                - img [ref=e688]
+                - paragraph [ref=e692]: New Lead
+                - paragraph [ref=e693]: Add a prospect
+              - button "New Project Start tracking" [ref=e694] [cursor=pointer]:
+                - img [ref=e695]
+                - paragraph [ref=e698]: New Project
+                - paragraph [ref=e699]: Start tracking
+              - button "Create Task Track work" [ref=e700] [cursor=pointer]:
+                - img [ref=e701]
+                - paragraph [ref=e704]: Create Task
+                - paragraph [ref=e705]: Track work
+              - button "Add Expense Track finances" [ref=e706] [cursor=pointer]:
+                - img [ref=e707]
+                - paragraph [ref=e710]: Add Expense
+                - paragraph [ref=e711]: Track finances
+        - generic [ref=e713]:
+          - generic [ref=e714]:
+            - img [ref=e716]
+            - generic [ref=e718]:
+              - heading "Performance Insights" [level=3] [ref=e719]
+              - paragraph [ref=e720]: AI-powered recommendations based on your data
+          - generic [ref=e721]:
+            - paragraph [ref=e723]: 🎯 Great conversion rate! Keep nurturing your qualified leads.
+            - paragraph [ref=e725]: ✅ All tasks are on track. Great job staying organized!
+            - paragraph [ref=e727]: 📊 You have many active projects. Consider delegating or prioritizing.
+    - button "Chat with Mee AI" [ref=e728] [cursor=pointer]:
+      - img [ref=e729]
+      - generic [ref=e733]: Chat with Mee AI
+  - region "Notifications alt+T"
+  - alert [ref=e734]
+```
