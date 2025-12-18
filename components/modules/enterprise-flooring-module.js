@@ -307,6 +307,10 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   })
   const [savingSettings, setSavingSettings] = useState(false)
   
+  // Reports States (moved to component level)
+  const [reportPeriod, setReportPeriod] = useState('30')
+  const [selectedReportType, setSelectedReportType] = useState('summary')
+  
   // Filter States
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
