@@ -52,48 +52,57 @@ const getCustomerDues = async (db, customerId) => {
   }
 }
 
-// Check stock availability
+// Check stock availability from Build Inventory
 const checkStockAvailability = async (db, items) => {
-  const stockCollection = db.collection('wf_inventory_stock')
+  // Use Build Inventory's products collection
+  const inventoryProducts = db.collection('inventory_products')
   const results = []
   let hasInsufficient = false
   
   for (const item of items) {
-    // Skip items without productId
-    if (!item.productId) {
+    // Skip items without productId or services
+    if (!item.productId || item.isService) {
       results.push({
-        productId: null,
-        productName: item.productName || 'Unknown Item',
+        productId: item.productId || null,
+        productName: item.productName || 'Service/Unknown',
         requestedQty: item.quantity,
-        availableQty: 0,
-        stockStatus: 'not_tracked',
+        availableQty: item.isService ? 99999 : 0,
+        stockStatus: item.isService ? 'service' : 'not_tracked',
         shortfall: 0
       })
       continue
     }
     
-    // Try to find stock - first by productId with warehouseId, then without
-    let stock = await stockCollection.findOne({ 
-      productId: item.productId,
-      warehouseId: item.warehouseId || 'default'
-    })
+    // Search Build Inventory by productId first
+    let product = await inventoryProducts.findOne({ id: item.productId })
     
-    // Fallback: search by productId only (ignoring warehouse)
-    if (!stock) {
-      stock = await stockCollection.findOne({ productId: item.productId })
+    // Fallback: search by sourceProductId (if synced from CRM module)
+    if (!product) {
+      product = await inventoryProducts.findOne({ sourceProductId: item.productId })
     }
     
-    // Fallback: search by product name
-    if (!stock && item.productName) {
-      stock = await stockCollection.findOne({ 
-        productName: { $regex: new RegExp(item.productName, 'i') }
+    // Fallback: search by SKU
+    if (!product && item.sku) {
+      product = await inventoryProducts.findOne({ sku: item.sku })
+    }
+    
+    // Fallback: search by product name (case-insensitive)
+    if (!product && item.productName) {
+      product = await inventoryProducts.findOne({ 
+        name: { $regex: new RegExp(item.productName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') }
       })
     }
     
-    const availableQty = (stock?.quantity || 0) - (stock?.reservedQuantity || 0)
+    // Calculate available stock
+    const totalStock = product?.stockQuantity || product?.currentStock || 0
+    const reservedStock = product?.reservedQuantity || 0
+    const availableQty = totalStock - reservedStock
     
-    // Services with unlimited stock (like labor) should always be available
-    if (stock?.isService || item.isService) {
+    // Services (like labor, installation) have unlimited availability
+    if (product?.category?.toLowerCase() === 'service' || 
+        product?.type === 'service' ||
+        item.productName?.toLowerCase().includes('labor') ||
+        item.productName?.toLowerCase().includes('installation')) {
       results.push({
         productId: item.productId,
         productName: item.productName,
@@ -106,16 +115,16 @@ const checkStockAvailability = async (db, items) => {
     }
     
     const isInsufficient = availableQty < item.quantity
-    
     if (isInsufficient) hasInsufficient = true
     
     results.push({
       productId: item.productId,
       productName: item.productName,
       requestedQty: item.quantity,
-      availableQty,
+      availableQty: Math.max(0, availableQty),
       stockStatus: isInsufficient ? 'insufficient' : 'available',
-      shortfall: isInsufficient ? item.quantity - availableQty : 0
+      shortfall: isInsufficient ? item.quantity - availableQty : 0,
+      inventoryProductId: product?.id || null
     })
   }
   
