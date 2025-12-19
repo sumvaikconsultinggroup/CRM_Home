@@ -3680,16 +3680,23 @@ export function EnterpriseFlooringModule({ client, user, token }) {
 
                     // Case 1: Inventory is already blocked - show edit and proceed options
                     if (isInventoryBlocked) {
+                      // Check if materials are already invoiced/dispatched/delivered - editing NOT allowed
+                      const isInvoiced = ['invoice_sent', 'in_transit', 'delivered', 'completed'].includes(status)
+                      const isDispatched = ['in_transit', 'delivered', 'completed'].includes(status)
+                      const isDelivered = ['delivered', 'completed'].includes(status)
+                      const canEdit = !isInvoiced // Can only edit if NOT yet invoiced
+                      
                       return (
                         <div className="space-y-3">
                           <div className="flex gap-3">
                             <Button 
                               variant="outline"
-                              disabled={loading}
+                              disabled={loading || !canEdit}
                               onClick={handleUpdateMaterials}
+                              className={!canEdit ? 'opacity-50 cursor-not-allowed' : ''}
                             >
                               <Edit className="h-4 w-4 mr-2" />
-                              Edit Materials (Release Inventory)
+                              Edit Materials
                             </Button>
                             {status === 'material_requisition' && (
                               <Button 
@@ -3697,7 +3704,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                 disabled={loading}
                                 onClick={async () => {
                                   await handleUpdateProjectStatus(selectedProject.id, 'material_processing')
-                                  toast.success('Proceeding to processing. Inventory remains blocked.')
+                                  toast.success('Proceeding to processing. Stock remains allocated.')
                                 }}
                               >
                                 <ArrowRight className="h-4 w-4 mr-2" />
@@ -3728,9 +3735,29 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                               </Button>
                             )}
                           </div>
-                          <p className="text-sm text-amber-700 flex items-center gap-2">
-                            <Lock className="h-4 w-4" />
-                            Inventory is blocked. Click "Edit Materials" to release and modify the requisition.
+                          {/* Professional messaging based on status */}
+                          <p className={`text-sm flex items-center gap-2 ${isDelivered ? 'text-green-700' : isDispatched ? 'text-blue-700' : isInvoiced ? 'text-purple-700' : 'text-amber-700'}`}>
+                            {isDelivered ? (
+                              <>
+                                <CheckCircle2 className="h-4 w-4" />
+                                Materials delivered. Inventory has been deducted from stock.
+                              </>
+                            ) : isDispatched ? (
+                              <>
+                                <Truck className="h-4 w-4" />
+                                Materials dispatched. Inventory deducted and in transit.
+                              </>
+                            ) : isInvoiced ? (
+                              <>
+                                <Receipt className="h-4 w-4" />
+                                Invoice generated. Stock has been allocated and deducted.
+                              </>
+                            ) : (
+                              <>
+                                <Lock className="h-4 w-4" />
+                                Stock allocated for this requisition. Click "Edit Materials" to modify.
+                              </>
+                            )}
                           </p>
                         </div>
                       )
