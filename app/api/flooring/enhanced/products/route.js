@@ -216,65 +216,12 @@ export async function POST(request) {
       updatedAt: new Date().toISOString()
     })
 
-    // === AUTO-SYNC TO BUILD INVENTORY (inventory_products) ===
-    // This ensures bi-directional sync: Module ↔ Build Inventory
-    const inventoryProducts = db.collection('inventory_products')
-    const inventoryProductId = uuidv4()
-    
-    const inventoryProduct = {
-      id: inventoryProductId,
-      clientId: user.clientId,
-      name: product.name,
-      sku: product.sku,
-      barcode: product.barcode || null,
-      description: product.description || '',
-      category: product.specs?.construction || product.category || 'Wooden Flooring',
-      subCategory: product.brand || product.subcategory || '',
-      costPrice: product.pricing?.costPrice || 0,
-      sellingPrice: product.pricing?.sellingPrice || product.pricing?.dealerPrice || 0,
-      mrp: product.pricing?.mrp || 0,
-      stockQuantity: body.stockQuantity || 0,
-      reservedQuantity: 0,
-      unit: product.pricing?.unit || 'sqft',
-      gstRate: product.gstRate || product.tax?.gstRate || 18,
-      hsnCode: product.hsnCode || product.tax?.hsnCode || '4418',
-      trackInventory: true,
-      allowNegativeStock: false,
-      reorderLevel: 10,
-      sourceType: 'crm_module',
-      sourceModuleId: 'wooden-flooring',
-      sourceModuleName: 'Wooden Flooring',
-      sourceProductId: productId,
-      attributes: {
-        ...(product.specs || {}),
-        brand: product.brand,
-        collection: product.collection
-      },
-      active: product.status !== 'inactive',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      lastSyncAt: new Date().toISOString()
-    }
-    
-    await inventoryProducts.insertOne(inventoryProduct)
-    
-    // Create sync record
-    const syncCollection = db.collection('inventory_product_sync')
-    await syncCollection.insertOne({
-      id: uuidv4(),
-      clientId: user.clientId,
-      sourceModuleId: 'wooden-flooring',
-      sourceModuleName: 'Wooden Flooring',
-      sourceProductId: productId,
-      sourceProductName: product.name,
-      inventoryProductId: inventoryProductId,
-      syncStatus: 'synced',
-      lastSyncAt: new Date().toISOString(),
-      syncedBy: user.id,
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    })
-    // === END AUTO-SYNC ===
+    // === SYNC DISABLED - Module is Self-Contained ===
+    // The Flooring module now manages its own inventory independently.
+    // Products remain in flooring_products and wf_inventory_stock only.
+    // No sync to Build Inventory (inventory_products) or sync records.
+    // This eliminates sync bugs and makes the module standalone.
+    // === END SYNC DISABLED ===
 
     return successResponse(sanitizeDocument(product), 201)
   } catch (error) {
