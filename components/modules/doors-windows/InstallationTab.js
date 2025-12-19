@@ -138,11 +138,12 @@ export function InstallationTab({ orders, headers, glassStyles, onRefresh }) {
         toast.error('Please select an order and date')
         return
       }
-      const res = await fetch('/api/modules/doors-windows/installations', {
+      const res = await fetch('/api/modules/doors-windows/installation', {
         method: 'POST',
         headers,
         body: JSON.stringify({
           ...scheduleForm,
+          action: 'schedule',
           status: 'scheduled'
         })
       })
