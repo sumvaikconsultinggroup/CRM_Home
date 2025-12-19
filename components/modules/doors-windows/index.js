@@ -1862,14 +1862,14 @@ export function DoorsWindowsModule({ client, user }) {
             </Card>
           </TabsContent>
 
-          {/* Inventory Tab - Self-Contained Module Inventory */}
+          {/* Inventory Tab - Enterprise D&W Inventory */}
           <TabsContent value="inventory" className="space-y-6">
-            <InventoryTab client={client} user={user} />
+            <EnterpriseInventoryDW client={client} user={user} />
           </TabsContent>
 
-          {/* Finance Tab - Self-Contained Module Finance */}
+          {/* Finance Tab - Enterprise D&W Finance */}
           <TabsContent value="finance" className="space-y-6">
-            <FinanceTab client={client} user={user} />
+            <EnterpriseFinanceDW client={client} user={user} />
           </TabsContent>
         </Tabs>
       </div>
