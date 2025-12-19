@@ -7186,9 +7186,19 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   <p className="text-xs text-amber-600 mt-1"><Lock className="h-3 w-3 inline" /> Stock Blocked</p>
                 )}
               </div>
-              {/* Only show Add Room when editing is allowed */}
-              {['pending', 'site_visit_pending', 'measurement_scheduled', 'measurement_done'].includes(selectedProject.status) && (
+              {/* Only show Add Room when editing is allowed - NOT when measurement_done */}
+              {['pending', 'site_visit_pending', 'measurement_scheduled'].includes(selectedProject.status) && (
                 <Button onClick={() => setDialogOpen({ type: 'room', data: { projectId: selectedProject.id } })}>
+                  <Plus className="h-4 w-4 mr-2" /> Add Room
+                </Button>
+              )}
+              {selectedProject.status === 'measurement_done' && (
+                <Button 
+                  variant="outline" 
+                  disabled 
+                  className="opacity-50 cursor-not-allowed"
+                  title="Click 'Edit Measurements' below to add rooms"
+                >
                   <Plus className="h-4 w-4 mr-2" /> Add Room
                 </Button>
               )}
