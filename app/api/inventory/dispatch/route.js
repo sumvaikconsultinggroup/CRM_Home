@@ -330,6 +330,22 @@ export async function PUT(request) {
       { returnDocument: 'after' }
     )
 
+    // === SYNC STATUS TO INVOICE ===
+    // Keep invoice dispatchStatus in sync with dispatch status
+    if (status && result?.invoiceId) {
+      const invoicesCollection = db.collection('flooring_invoices')
+      await invoicesCollection.updateOne(
+        { id: result.invoiceId },
+        { 
+          $set: { 
+            dispatchStatus: status,
+            updatedAt: new Date().toISOString()
+          } 
+        }
+      )
+    }
+    // === END SYNC ===
+
     return successResponse(sanitizeDocument(result))
   } catch (error) {
     console.error('Dispatch PUT Error:', error)
