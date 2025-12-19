@@ -10,6 +10,7 @@ export async function OPTIONS() {
 }
 
 // GET - Get sync status and pending invoices for dispatch
+// UNIFIED: Uses flooring_dispatches as single source of truth
 export async function GET(request) {
   try {
     const user = getAuthUser(request)
@@ -17,23 +18,24 @@ export async function GET(request) {
 
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
-    const dispatchCollection = db.collection('inventory_dispatches')
     
-    // Get invoices from Wooden Flooring module - USE CLIENT DATABASE
-    // The invoices are stored in the client-specific database, not buildcrm
+    // UNIFIED: Use flooring_dispatches (same as module)
+    const dispatchCollection = db.collection('flooring_dispatches')
+    
+    // Get invoices from Wooden Flooring module
     const invoicesCollection = db.collection('flooring_invoices')
     
-    // Get all invoices that don't have dispatches yet
+    // Get all invoices that are not cancelled
     const allInvoices = await invoicesCollection.find({ 
-      status: { $in: ['draft', 'sent', 'paid', 'partial', 'partially_paid'] } // Exclude cancelled
+      status: { $in: ['draft', 'sent', 'paid', 'partial', 'partially_paid'] }
     }).toArray()
     
     // Get existing dispatches with invoice references
     const existingDispatches = await dispatchCollection.find({
-      clientId: user.clientId,
       invoiceId: { $ne: null }
     }).toArray()
     
+    // Map by invoiceId to check which invoices have dispatches
     const dispatchedInvoiceIds = new Set(existingDispatches.map(d => d.invoiceId))
     
     // Find invoices without dispatches
