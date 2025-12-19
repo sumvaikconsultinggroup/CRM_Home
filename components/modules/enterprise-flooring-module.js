@@ -259,6 +259,17 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   // Dialog States
   const [dialogOpen, setDialogOpen] = useState({ type: null, data: null })
   
+  // Create Invoice Form State
+  const [newInvoiceForm, setNewInvoiceForm] = useState({
+    customerName: '',
+    customerEmail: '',
+    customerPhone: '',
+    customerAddress: '',
+    items: [{ name: '', description: '', quantity: 1, rate: 0, amount: 0 }],
+    notes: '',
+    dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+  })
+  
   // Dispatch States
   const [showDispatchDialog, setShowDispatchDialog] = useState(false)
   const [dispatchInvoice, setDispatchInvoice] = useState(null)
