@@ -350,14 +350,19 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   }, [token])
 
   const fetchProductSchema = useCallback(async () => {
+    if (!token) {
+      console.log('Waiting for token to fetch schema...')
+      return
+    }
     try {
       const res = await fetch('/api/flooring/enhanced/products/schema', { headers })
       const data = await res.json()
       if (data?.schema) setProductSchema(data.schema)
+      else if (data?.error) console.error('Schema API error:', data.error)
     } catch (error) {
       console.error('Product schema fetch error:', error)
     }
-  }, [token])
+  }, [token, headers])
 
   const fetchProductCategories = useCallback(async () => {
     try {
