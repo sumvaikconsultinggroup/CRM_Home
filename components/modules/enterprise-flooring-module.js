@@ -5537,7 +5537,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         payments={payments}
         quotes={quotes}
         projects={projects}
-        onRefresh={fetchDashboardData}
+        onRefresh={fetchDashboard}
       />
     )
   }
