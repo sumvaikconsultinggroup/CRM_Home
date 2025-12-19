@@ -46,7 +46,8 @@ export async function POST(request) {
     
     const validation = validateUserData(body)
     if (!validation.valid) {
-      return errorResponse(validation.message, 400)
+      const errorMessage = validation.errors?.map(e => e.message).join(', ') || validation.message || 'Validation failed'
+      return errorResponse(errorMessage, 400)
     }
 
     // Users are in main database (platform-level)
