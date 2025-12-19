@@ -24,9 +24,28 @@ export async function GET(request) {
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
     
-    // UNIFIED DISPATCH: Use flooring_dispatches as single source of truth
-    // Both Build Inventory and Module read from same collection
-    const dispatchCollection = db.collection('flooring_dispatches')
+    // Get sync config to determine which module is connected
+    const syncConfig = await db.collection('inventory_sync_config').findOne({})
+    const connectedModuleId = syncConfig?.syncedModuleId
+    
+    // DYNAMIC DISPATCH: Use the connected module's dispatch collection
+    // Each module has its own dispatch collection: flooring_dispatches, dw_dispatches, etc.
+    const moduleDispatchCollections = {
+      'wooden-flooring': 'flooring_dispatches',
+      'doors-windows': 'dw_dispatches',
+      'paints-coatings': 'pc_dispatches',
+      'furniture': 'furniture_dispatches',
+      'tiles': 'tiles_dispatches',
+      'electrical': 'electrical_dispatches',
+      'plumbing': 'plumbing_dispatches',
+      'kitchens': 'kitchen_dispatches'
+    }
+    
+    const dispatchCollectionName = connectedModuleId 
+      ? (moduleDispatchCollections[connectedModuleId] || 'dispatches')
+      : 'dispatches' // Generic collection if no module connected
+    
+    const dispatchCollection = db.collection(dispatchCollectionName)
 
     // Build query - no clientId filter as it's per-database
     let query = {}
