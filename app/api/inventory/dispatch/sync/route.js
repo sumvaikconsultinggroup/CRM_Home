@@ -103,12 +103,30 @@ export async function POST(request) {
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
     
-    // UNIFIED: Use flooring_dispatches (same as module)
-    const dispatchCollection = db.collection('flooring_dispatches')
-    const syncConfigCollection = db.collection('dispatch_sync_config')
+    // Get sync config to determine connected module
+    const syncConfig = await db.collection('inventory_sync_config').findOne({})
+    const connectedModuleId = syncConfig?.syncedModuleId
     
-    // Get invoices from Wooden Flooring module
-    const invoicesCollection = db.collection('flooring_invoices')
+    if (!connectedModuleId) {
+      return errorResponse('No module connected. Connect a module first.', 400)
+    }
+    
+    // Dynamic collection mapping
+    const moduleCollections = {
+      'wooden-flooring': { dispatches: 'flooring_dispatches', invoices: 'flooring_invoices' },
+      'doors-windows': { dispatches: 'dw_dispatches', invoices: 'dw_invoices' },
+      'paints-coatings': { dispatches: 'pc_dispatches', invoices: 'pc_invoices' },
+      'furniture': { dispatches: 'furniture_dispatches', invoices: 'furniture_invoices' }
+    }
+    
+    const collections = moduleCollections[connectedModuleId] || {
+      dispatches: `${connectedModuleId}_dispatches`,
+      invoices: `${connectedModuleId}_invoices`
+    }
+    
+    const dispatchCollection = db.collection(collections.dispatches)
+    const syncConfigCollection = db.collection('dispatch_sync_config')
+    const invoicesCollection = db.collection(collections.invoices)
     
     // Determine which invoices to sync
     let invoicesToSync = []
