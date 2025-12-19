@@ -10432,3 +10432,4 @@ function RoomMeasurementDialog({ open, onClose, room, project, onSave, loading }
 // This reduces the main module size by ~770 lines
 
 export default EnterpriseFlooringModule
+/* Build timestamp: Fri Dec 19 18:00:56 UTC 2025 */
