@@ -10,7 +10,7 @@ export async function OPTIONS() {
 }
 
 // GET - Get sync status and pending invoices for dispatch
-// UNIFIED: Uses flooring_dispatches as single source of truth
+// DYNAMIC: Uses the connected module's collections
 export async function GET(request) {
   try {
     const user = getAuthUser(request)
@@ -19,11 +19,36 @@ export async function GET(request) {
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
     
-    // UNIFIED: Use flooring_dispatches (same as module)
-    const dispatchCollection = db.collection('flooring_dispatches')
+    // Get sync config to determine connected module
+    const syncConfig = await db.collection('inventory_sync_config').findOne({})
+    const connectedModuleId = syncConfig?.syncedModuleId
     
-    // Get invoices from Wooden Flooring module
-    const invoicesCollection = db.collection('flooring_invoices')
+    if (!connectedModuleId) {
+      return successResponse({
+        connected: false,
+        message: 'No module connected. Connect a module to sync dispatches.',
+        totalInvoices: 0,
+        dispatchedInvoices: 0,
+        pendingInvoices: []
+      })
+    }
+    
+    // Dynamic collection mapping based on connected module
+    const moduleCollections = {
+      'wooden-flooring': { dispatches: 'flooring_dispatches', invoices: 'flooring_invoices' },
+      'doors-windows': { dispatches: 'dw_dispatches', invoices: 'dw_invoices' },
+      'paints-coatings': { dispatches: 'pc_dispatches', invoices: 'pc_invoices' },
+      'furniture': { dispatches: 'furniture_dispatches', invoices: 'furniture_invoices' },
+      'tiles': { dispatches: 'tiles_dispatches', invoices: 'tiles_invoices' }
+    }
+    
+    const collections = moduleCollections[connectedModuleId] || {
+      dispatches: `${connectedModuleId}_dispatches`,
+      invoices: `${connectedModuleId}_invoices`
+    }
+    
+    const dispatchCollection = db.collection(collections.dispatches)
+    const invoicesCollection = db.collection(collections.invoices)
     
     // Get all invoices that are not cancelled
     const allInvoices = await invoicesCollection.find({ 
