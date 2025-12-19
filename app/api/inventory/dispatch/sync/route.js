@@ -77,10 +77,12 @@ export async function POST(request) {
 
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
-    const dispatchCollection = db.collection('inventory_dispatches')
+    
+    // UNIFIED: Use flooring_dispatches (same as module)
+    const dispatchCollection = db.collection('flooring_dispatches')
     const syncConfigCollection = db.collection('dispatch_sync_config')
     
-    // Get invoices from Wooden Flooring module - USE CLIENT DATABASE
+    // Get invoices from Wooden Flooring module
     const invoicesCollection = db.collection('flooring_invoices')
     
     // Determine which invoices to sync
