@@ -829,61 +829,368 @@ export function BuildFinance({ token, user }) {
         {activeTab === 'expenses' && renderExpensesTab()}
         {activeTab === 'reports' && renderReportsTab()}
         {activeTab === 'settings' && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Finance Settings</CardTitle>
-              <CardDescription>Configure your finance module preferences</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <div className="grid md:grid-cols-2 gap-6">
-                <div className="space-y-4">
-                  <h3 className="font-medium">Business Information</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <Label>GST Number</Label>
-                      <Input placeholder="Enter GSTIN" />
-                    </div>
-                    <div>
-                      <Label>PAN Number</Label>
-                      <Input placeholder="Enter PAN" />
-                    </div>
-                    <div>
-                      <Label>Financial Year Start</Label>
-                      <Select defaultValue="april">
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="april">April</SelectItem>
-                          <SelectItem value="january">January</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  </div>
-                </div>
-                <div className="space-y-4">
-                  <h3 className="font-medium">Invoice Settings</h3>
-                  <div className="space-y-3">
-                    <div>
-                      <Label>Invoice Prefix</Label>
-                      <Input defaultValue="INV-" />
-                    </div>
-                    <div>
-                      <Label>Default Payment Terms (Days)</Label>
-                      <Input type="number" defaultValue="15" />
-                    </div>
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <Label>Auto-send Invoice</Label>
-                        <p className="text-xs text-slate-500">Email invoice on creation</p>
-                      </div>
-                      <Switch />
-                    </div>
-                  </div>
-                </div>
+          <div className="space-y-6">
+            {/* Save Button Header */}
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-2xl font-bold">Finance Settings</h2>
+                <p className="text-slate-500">Configure your company details and invoice branding</p>
               </div>
-            </CardContent>
-          </Card>
+              <Button onClick={saveFinanceSettings} disabled={savingSettings}>
+                {savingSettings ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Saving...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 mr-2" /> Save Settings
+                  </>
+                )}
+              </Button>
+            </div>
+
+            {/* Company Branding */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  Company Branding
+                </CardTitle>
+                <CardDescription>Your company details for invoices and official documents</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Company Name *</Label>
+                    <Input 
+                      placeholder="Enter company name" 
+                      value={financeSettings.companyName}
+                      onChange={(e) => updateSettings('companyName', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Brand Name (for invoice header)</Label>
+                    <Input 
+                      placeholder="Enter brand name" 
+                      value={financeSettings.brandName}
+                      onChange={(e) => updateSettings('brandName', e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Company Logo URL</Label>
+                    <Input 
+                      placeholder="https://example.com/logo.png" 
+                      value={financeSettings.brandLogo}
+                      onChange={(e) => updateSettings('brandLogo', e.target.value)}
+                    />
+                    <p className="text-xs text-slate-500 mt-1">Paste a URL to your logo image</p>
+                  </div>
+                  <div>
+                    <Label>Preview</Label>
+                    {financeSettings.brandLogo ? (
+                      <div className="p-4 border rounded-lg bg-slate-50">
+                        <img 
+                          src={financeSettings.brandLogo} 
+                          alt="Logo preview" 
+                          className="max-h-16 object-contain"
+                          onError={(e) => { e.target.style.display = 'none' }}
+                        />
+                      </div>
+                    ) : (
+                      <div className="p-4 border rounded-lg bg-slate-50 text-slate-400 text-sm">
+                        No logo set
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Tax Information */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Receipt className="h-5 w-5" />
+                  Tax Information
+                </CardTitle>
+                <CardDescription>GST and tax details for compliance</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>GSTIN *</Label>
+                    <Input 
+                      placeholder="22AAAAA0000A1Z5" 
+                      value={financeSettings.gstin}
+                      onChange={(e) => updateSettings('gstin', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>PAN Number</Label>
+                    <Input 
+                      placeholder="AAAAA0000A" 
+                      value={financeSettings.pan}
+                      onChange={(e) => updateSettings('pan', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Place of Supply</Label>
+                    <Input 
+                      placeholder="Maharashtra" 
+                      value={financeSettings.placeOfSupply}
+                      onChange={(e) => updateSettings('placeOfSupply', e.target.value)}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Address */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Building2 className="h-5 w-5" />
+                  Business Address
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Address Line 1</Label>
+                    <Input 
+                      placeholder="Street address" 
+                      value={financeSettings.address.line1}
+                      onChange={(e) => updateAddressField('line1', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Address Line 2</Label>
+                    <Input 
+                      placeholder="Building, Floor, etc." 
+                      value={financeSettings.address.line2}
+                      onChange={(e) => updateAddressField('line2', e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-4 gap-4">
+                  <div>
+                    <Label>City</Label>
+                    <Input 
+                      placeholder="City" 
+                      value={financeSettings.address.city}
+                      onChange={(e) => updateAddressField('city', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>State</Label>
+                    <Input 
+                      placeholder="State" 
+                      value={financeSettings.address.state}
+                      onChange={(e) => updateAddressField('state', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Pincode</Label>
+                    <Input 
+                      placeholder="400001" 
+                      value={financeSettings.address.pincode}
+                      onChange={(e) => updateAddressField('pincode', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Country</Label>
+                    <Input 
+                      placeholder="India" 
+                      value={financeSettings.address.country}
+                      onChange={(e) => updateAddressField('country', e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>Phone</Label>
+                    <Input 
+                      placeholder="+91 9876543210" 
+                      value={financeSettings.phone}
+                      onChange={(e) => updateSettings('phone', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Email</Label>
+                    <Input 
+                      placeholder="billing@company.com" 
+                      value={financeSettings.email}
+                      onChange={(e) => updateSettings('email', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Website</Label>
+                    <Input 
+                      placeholder="www.company.com" 
+                      value={financeSettings.website}
+                      onChange={(e) => updateSettings('website', e.target.value)}
+                    />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Bank Details */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Landmark className="h-5 w-5" />
+                  Bank Details
+                </CardTitle>
+                <CardDescription>Bank account details for payment instructions on invoices</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Account Holder Name</Label>
+                    <Input 
+                      placeholder="Company Name" 
+                      value={financeSettings.bankDetails.accountHolderName}
+                      onChange={(e) => updateBankField('accountHolderName', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Account Number</Label>
+                    <Input 
+                      placeholder="1234567890" 
+                      value={financeSettings.bankDetails.accountNumber}
+                      onChange={(e) => updateBankField('accountNumber', e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>IFSC Code</Label>
+                    <Input 
+                      placeholder="SBIN0001234" 
+                      value={financeSettings.bankDetails.ifscCode}
+                      onChange={(e) => updateBankField('ifscCode', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Bank Name</Label>
+                    <Input 
+                      placeholder="State Bank of India" 
+                      value={financeSettings.bankDetails.bankName}
+                      onChange={(e) => updateBankField('bankName', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Branch</Label>
+                    <Input 
+                      placeholder="Main Branch" 
+                      value={financeSettings.bankDetails.branchName}
+                      onChange={(e) => updateBankField('branchName', e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div className="grid md:grid-cols-2 gap-4">
+                  <div>
+                    <Label>Account Type</Label>
+                    <Select 
+                      value={financeSettings.bankDetails.accountType}
+                      onValueChange={(value) => updateBankField('accountType', value)}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="Current">Current Account</SelectItem>
+                        <SelectItem value="Savings">Savings Account</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>UPI ID</Label>
+                    <Input 
+                      placeholder="company@upi" 
+                      value={financeSettings.bankDetails.upiId}
+                      onChange={(e) => updateBankField('upiId', e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>Payment QR Code URL</Label>
+                  <Input 
+                    placeholder="https://example.com/qr-code.png" 
+                    value={financeSettings.paymentQRCode}
+                    onChange={(e) => updateSettings('paymentQRCode', e.target.value)}
+                  />
+                  <p className="text-xs text-slate-500 mt-1">QR code image will appear on invoices for quick payment</p>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Invoice Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <FileText className="h-5 w-5" />
+                  Invoice Settings
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div>
+                    <Label>Invoice Number Prefix</Label>
+                    <Input 
+                      placeholder="INV-" 
+                      value={financeSettings.invoicePrefix}
+                      onChange={(e) => updateSettings('invoicePrefix', e.target.value)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Default Payment Terms (Days)</Label>
+                    <Input 
+                      type="number" 
+                      placeholder="15" 
+                      value={financeSettings.defaultPaymentDays}
+                      onChange={(e) => updateSettings('defaultPaymentDays', parseInt(e.target.value) || 15)}
+                    />
+                  </div>
+                  <div>
+                    <Label>Authorized Signatory Name</Label>
+                    <Input 
+                      placeholder="John Doe" 
+                      value={financeSettings.authorizedSignatoryName}
+                      onChange={(e) => updateSettings('authorizedSignatoryName', e.target.value)}
+                    />
+                  </div>
+                </div>
+                <div>
+                  <Label>Terms & Conditions (one per line)</Label>
+                  <Textarea 
+                    placeholder="Enter terms and conditions..." 
+                    rows={4}
+                    value={financeSettings.termsAndConditions?.join('\n') || ''}
+                    onChange={(e) => updateSettings('termsAndConditions', e.target.value.split('\n').filter(t => t.trim()))}
+                  />
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Save Button Footer */}
+            <div className="flex justify-end">
+              <Button size="lg" onClick={saveFinanceSettings} disabled={savingSettings}>
+                {savingSettings ? (
+                  <>
+                    <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Saving...
+                  </>
+                ) : (
+                  <>
+                    <CheckCircle2 className="h-4 w-4 mr-2" /> Save All Settings
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
         )}
       </main>
 
