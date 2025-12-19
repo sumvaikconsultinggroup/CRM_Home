@@ -23,7 +23,7 @@ import {
   Loader2, Plus, FileText, Send, Calendar as CalendarIcon, Users,
   Building2, Percent, Calculator, History, DollarSign, ArrowDownRight,
   FileCheck, Edit, Trash2, Printer, Mail, Phone, ChevronRight,
-  Award, Target, Landmark, BookOpen, Scale, Shield
+  Award, Target, Landmark, BookOpen, Scale, Shield, ArrowRightLeft
 } from 'lucide-react'
 import { toast } from 'sonner'
 
