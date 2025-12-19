@@ -134,51 +134,58 @@ const checkStockAvailability = async (db, items) => {
   return { items: results, hasInsufficient }
 }
 
-// Deduct stock on dispatch - uses Build Inventory (inventory_products)
+// Deduct stock on dispatch - SELF-CONTAINED: uses Flooring Module's own inventory
 const deductStock = async (db, items, dispatchId) => {
-  const inventoryProducts = db.collection('inventory_products')
-  const movementCollection = db.collection('inventory_movements') // Use central movement log
+  const flooringProducts = db.collection('flooring_products')
+  const flooringStock = db.collection('wf_inventory_stock')
+  const movementCollection = db.collection('wf_inventory_movements') // Use module-specific movement log
   const now = new Date().toISOString()
   
   for (const item of items) {
     // Skip services or items without productId
     if (item.isService || !item.productId) continue
     
-    // Find the product in Build Inventory using same logic as checkStockAvailability
-    let product = await inventoryProducts.findOne({ id: item.productId })
-    if (!product) {
-      product = await inventoryProducts.findOne({ sourceProductId: item.productId })
-    }
+    // Find the product in Flooring Products
+    let product = await flooringProducts.findOne({ id: item.productId })
     if (!product && item.sku) {
-      product = await inventoryProducts.findOne({ sku: item.sku })
+      product = await flooringProducts.findOne({ sku: item.sku })
     }
     if (!product && item.productName) {
-      product = await inventoryProducts.findOne({ 
+      product = await flooringProducts.findOne({ 
         name: { $regex: new RegExp(item.productName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') }
       })
     }
     
     if (!product) {
-      console.warn(`Product not found in Build Inventory for deduction: ${item.productId} / ${item.productName}`)
+      console.warn(`Product not found in Flooring Products for deduction: ${item.productId} / ${item.productName}`)
       continue
     }
     
-    // Deduct from Build Inventory stock
-    // Support both stockQuantity and currentStock field names
-    const stockField = product.stockQuantity !== undefined ? 'stockQuantity' : 'currentStock'
-    await inventoryProducts.updateOne(
-      { id: product.id },
-      {
-        $inc: { [stockField]: -item.quantity },
-        $set: { updatedAt: now }
-      }
-    )
+    // Try to deduct from wf_inventory_stock first
+    const stockRecord = await flooringStock.findOne({ productId: product.id })
+    if (stockRecord) {
+      await flooringStock.updateOne(
+        { productId: product.id },
+        {
+          $inc: { currentQty: -item.quantity },
+          $set: { updatedAt: now }
+        }
+      )
+    } else {
+      // Fallback: deduct from flooring_products.stockQuantity
+      await flooringProducts.updateOne(
+        { id: product.id },
+        {
+          $inc: { stockQuantity: -item.quantity },
+          $set: { updatedAt: now }
+        }
+      )
+    }
     
-    // Record movement in central inventory movements
+    // Record movement in flooring-specific movement log
     await movementCollection.insertOne({
       id: uuidv4(),
       productId: product.id,
-      sourceProductId: item.productId,
       productName: item.productName || product.name,
       type: 'dispatch',
       movementType: 'out',
