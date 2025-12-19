@@ -696,6 +696,29 @@ export function DoorsWindowsModule({ client, user }) {
                   {tab.highlight && <Sparkles className="h-3 w-3 text-amber-500" />}
                 </button>
               ))}
+              {/* Module-level tabs (Inventory & Finance) */}
+              {currentTabGroups.module && currentTabGroups.module.length > 0 && (
+                <>
+                  <Separator orientation="vertical" className="h-8 mx-2" />
+                  {currentTabGroups.module.map(tab => (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-medium transition-all ${
+                        activeTab === tab.id 
+                          ? 'bg-white shadow-md text-indigo-600' 
+                          : tab.highlight 
+                            ? 'text-emerald-600 bg-emerald-50 hover:bg-emerald-100 border border-emerald-200'
+                            : 'text-slate-600 hover:bg-white/50'
+                      }`}
+                    >
+                      <tab.icon className="h-4 w-4" />
+                      {tab.label}
+                      {tab.highlight && <Sparkles className="h-3 w-3 text-amber-500" />}
+                    </button>
+                  ))}
+                </>
+              )}
               <Separator orientation="vertical" className="h-8 mx-2" />
               {currentTabGroups.support.map(tab => (
                 <button
