@@ -833,7 +833,13 @@ export function DoorsWindowsModule({ client, user }) {
                     </CardTitle>
                     <CardDescription>Manage invoices and payments</CardDescription>
                   </div>
-                  <Button className="bg-gradient-to-r from-green-600 to-emerald-600">
+                  <Button 
+                    className="bg-gradient-to-r from-green-600 to-emerald-600"
+                    onClick={() => {
+                      toast.info('Invoices are created when quotes are approved and converted to orders. Go to Quotes tab to manage quotes.')
+                      setActiveTab('quotes')
+                    }}
+                  >
                     <Plus className="h-4 w-4 mr-2" /> Create Invoice
                   </Button>
                 </div>
