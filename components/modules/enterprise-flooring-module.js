@@ -7362,10 +7362,10 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         ) : (
           <EmptyState
             icon={Ruler}
-            title={['pending', 'site_visit_pending', 'measurement_scheduled', 'measurement_done'].includes(selectedProject.status) ? "No rooms measured yet" : "Measurement Locked"}
-            description={['pending', 'site_visit_pending', 'measurement_scheduled', 'measurement_done'].includes(selectedProject.status) ? "Add room measurements for this project to proceed with quotes." : "Click 'Edit Measurements' in workflow to add/modify rooms."}
-            action={['pending', 'site_visit_pending', 'measurement_scheduled', 'measurement_done'].includes(selectedProject.status) ? () => setDialogOpen({ type: 'room', data: { projectId: selectedProject.id } }) : null}
-            actionLabel={['pending', 'site_visit_pending', 'measurement_scheduled', 'measurement_done'].includes(selectedProject.status) ? "Add Room" : null}
+            title={['pending', 'site_visit_pending', 'measurement_scheduled'].includes(selectedProject.status) ? "No rooms measured yet" : "Measurement Locked"}
+            description={['pending', 'site_visit_pending', 'measurement_scheduled'].includes(selectedProject.status) ? "Add room measurements for this project to proceed with quotes." : "Click 'Edit Measurements' in workflow to add/modify rooms."}
+            action={['pending', 'site_visit_pending', 'measurement_scheduled'].includes(selectedProject.status) ? () => setDialogOpen({ type: 'room', data: { projectId: selectedProject.id } }) : null}
+            actionLabel={['pending', 'site_visit_pending', 'measurement_scheduled'].includes(selectedProject.status) ? "Add Room" : null}
           />
         )}
 
