@@ -4890,15 +4890,15 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               <table className="w-full">
                 <thead className="bg-slate-50 border-b">
                   <tr>
-                    <TableHeader>Invoice</TableHeader>
-                    <TableHeader>Customer</TableHeader>
-                    <TableHeader>Amount</TableHeader>
-                    <TableHeader>Paid</TableHeader>
-                    <TableHeader>Balance</TableHeader>
-                    <TableHeader>Due Date</TableHeader>
-                    <TableHeader>Status</TableHeader>
-                    <TableHeader>CRM</TableHeader>
-                    <TableHeader>Actions</TableHeader>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">Invoice</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">Customer</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">Amount</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">Paid</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">Balance</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">Due Date</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">Status</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">CRM</th>
+                    <th className="px-4 py-3 text-left text-sm font-semibold text-slate-700">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
