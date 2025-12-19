@@ -472,13 +472,10 @@ export async function POST(request) {
         payment.receiptNumber = receipt.receiptNumber
       }
 
-      // Sync to Build Finance
-      try {
-        await syncPaymentToFinance(db, payment, invoice, user)
-      } catch (syncError) {
-        console.error('Finance sync error:', syncError)
-        // Don't fail the payment if sync fails
-      }
+      // SYNC DISABLED - Module is Self-Contained
+      // D&W module manages its own finance data locally
+      // Payment stays in dw_payment_collections, no sync to central finance_payments
+      // This eliminates sync bugs and keeps module standalone
 
       return successResponse({ 
         payment: sanitizeDocument(payment),
