@@ -78,8 +78,8 @@ export async function POST(request) {
     const dispatchCollection = db.collection('inventory_dispatches')
     const syncConfigCollection = db.collection('dispatch_sync_config')
     
-    // Get invoices from Wooden Flooring module
-    const invoicesCollection = await getCollection(FlooringCollections.INVOICES)
+    // Get invoices from Wooden Flooring module - USE CLIENT DATABASE
+    const invoicesCollection = db.collection('flooring_invoices')
     
     // Determine which invoices to sync
     let invoicesToSync = []
@@ -87,12 +87,10 @@ export async function POST(request) {
     if (syncAll) {
       // Get all invoices without dispatches
       const allInvoices = await invoicesCollection.find({ 
-        clientId: user.clientId,
-        status: { $in: ['draft', 'sent', 'paid', 'partial'] }
+        status: { $in: ['draft', 'sent', 'paid', 'partial', 'partially_paid'] }
       }).toArray()
       
       const existingDispatches = await dispatchCollection.find({
-        clientId: user.clientId,
         invoiceId: { $ne: null }
       }).toArray()
       
@@ -100,7 +98,6 @@ export async function POST(request) {
       invoicesToSync = allInvoices.filter(inv => !dispatchedInvoiceIds.has(inv.id))
     } else if (invoiceIds && invoiceIds.length > 0) {
       invoicesToSync = await invoicesCollection.find({
-        clientId: user.clientId,
         id: { $in: invoiceIds }
       }).toArray()
     }
