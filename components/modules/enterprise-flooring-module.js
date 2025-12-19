@@ -3482,19 +3482,55 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   </div>
                 </div>
 
-                {/* Inventory Block Alert */}
-                {selectedProject.materialRequisition?.inventoryBlocked && (
-                  <div className="mb-6 p-4 border-2 border-amber-300 bg-amber-50 rounded-lg">
-                    <div className="flex items-center gap-2 text-amber-800">
-                      <AlertTriangle className="h-5 w-5" />
-                      <span className="font-medium">Inventory is blocked for this requisition</span>
+                {/* Inventory Status Alert */}
+                {selectedProject.materialRequisition?.inventoryBlocked && (() => {
+                  const status = selectedProject.status
+                  const isInvoiced = ['invoice_sent', 'in_transit', 'delivered', 'completed'].includes(status)
+                  const isDispatched = ['in_transit', 'delivered', 'completed'].includes(status)
+                  const isDelivered = ['delivered', 'completed'].includes(status)
+                  
+                  // Different messages based on status
+                  let statusMessage = ''
+                  let statusClass = 'border-amber-300 bg-amber-50'
+                  let textClass = 'text-amber-800'
+                  let subTextClass = 'text-amber-700'
+                  let icon = <AlertTriangle className="h-5 w-5" />
+                  
+                  if (isDelivered) {
+                    statusMessage = 'Materials delivered to customer'
+                    statusClass = 'border-green-300 bg-green-50'
+                    textClass = 'text-green-800'
+                    subTextClass = 'text-green-700'
+                    icon = <CheckCircle2 className="h-5 w-5" />
+                  } else if (isDispatched) {
+                    statusMessage = 'Materials dispatched and in transit'
+                    statusClass = 'border-blue-300 bg-blue-50'
+                    textClass = 'text-blue-800'
+                    subTextClass = 'text-blue-700'
+                    icon = <Truck className="h-5 w-5" />
+                  } else if (isInvoiced) {
+                    statusMessage = 'Stock allocated for invoice'
+                    statusClass = 'border-purple-300 bg-purple-50'
+                    textClass = 'text-purple-800'
+                    subTextClass = 'text-purple-700'
+                    icon = <Receipt className="h-5 w-5" />
+                  } else {
+                    statusMessage = 'Stock reserved for this requisition'
+                  }
+                  
+                  return (
+                    <div className={`mb-6 p-4 border-2 ${statusClass} rounded-lg`}>
+                      <div className={`flex items-center gap-2 ${textClass}`}>
+                        {icon}
+                        <span className="font-medium">{statusMessage}</span>
+                      </div>
+                      <p className={`text-sm ${subTextClass} mt-1`}>
+                        {selectedProject.materialRequisition.totalQuantity} units • 
+                        {isDelivered ? ' Delivered' : isDispatched ? ' In Transit' : isInvoiced ? ' Invoiced' : ' Reserved'} on: {new Date(selectedProject.materialRequisition.reservedAt || selectedProject.materialRequisition.createdAt).toLocaleDateString()}
+                      </p>
                     </div>
-                    <p className="text-sm text-amber-700 mt-1">
-                      {selectedProject.materialRequisition.totalQuantity} units are reserved and cannot be allocated to other projects.
-                      Reserved on: {new Date(selectedProject.materialRequisition.reservedAt || selectedProject.materialRequisition.createdAt).toLocaleDateString()}
-                    </p>
-                  </div>
-                )}
+                  )
+                })()}
 
                 {/* Existing Material Requisition Display */}
                 {selectedProject.materialRequisition?.items?.length > 0 && (
