@@ -138,9 +138,26 @@ export async function POST(request) {
     if (!product) {
       product = await db.collection('inventory_products').findOne({ id: productId })
     }
+    // Also check stock collection - product might have been deleted but stock record exists
+    if (!product) {
+      const existingStock = await stockCollection.findOne({ productId })
+      if (existingStock) {
+        // Create a minimal product object from stock record
+        product = {
+          id: productId,
+          name: existingStock.productName || 'Unknown Product',
+          sku: existingStock.sku || '',
+          category: existingStock.category || '',
+          costPrice: existingStock.avgCostPrice || 0,
+          sellingPrice: existingStock.sellingPrice || 0,
+          unit: existingStock.unit || 'sqft'
+        }
+        console.log('Using product data from stock record:', productId)
+      }
+    }
     if (!product) {
       console.error('Product not found in any collection:', productId)
-      return errorResponse('Product not found. Please ensure the product exists in the product catalog.', 404)
+      return errorResponse('Product not found. Please ensure the product exists in the product catalog. If the product was deleted, please create it again.', 404)
     }
 
     const warehouse = await warehouseCollection.findOne({ id: warehouseId })
