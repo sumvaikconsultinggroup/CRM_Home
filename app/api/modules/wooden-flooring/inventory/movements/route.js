@@ -130,10 +130,13 @@ export async function POST(request) {
     const batchCollection = db.collection('wf_inventory_batches')
     const warehouseCollection = db.collection('wf_warehouses')
     
-    // Check multiple product collections (flooring_products or wf_inventory)
+    // Check multiple product collections (flooring_products, wf_inventory, or inventory_products)
     let product = await db.collection('flooring_products').findOne({ id: productId })
     if (!product) {
       product = await db.collection('wf_inventory').findOne({ id: productId })
+    }
+    if (!product) {
+      product = await db.collection('inventory_products').findOne({ id: productId })
     }
     if (!product) {
       console.error('Product not found in any collection:', productId)
