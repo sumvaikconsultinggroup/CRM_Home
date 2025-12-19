@@ -19,13 +19,13 @@ export async function GET(request) {
     const db = await getClientDb(dbName)
     const dispatchCollection = db.collection('inventory_dispatches')
     
-    // Get invoices from Wooden Flooring module
-    const invoicesCollection = await getCollection(FlooringCollections.INVOICES)
+    // Get invoices from Wooden Flooring module - USE CLIENT DATABASE
+    // The invoices are stored in the client-specific database, not buildcrm
+    const invoicesCollection = db.collection('flooring_invoices')
     
     // Get all invoices that don't have dispatches yet
     const allInvoices = await invoicesCollection.find({ 
-      clientId: user.clientId,
-      status: { $in: ['draft', 'sent', 'paid', 'partial'] } // Exclude cancelled
+      status: { $in: ['draft', 'sent', 'paid', 'partial', 'partially_paid'] } // Exclude cancelled
     }).toArray()
     
     // Get existing dispatches with invoice references
