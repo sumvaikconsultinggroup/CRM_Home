@@ -198,8 +198,8 @@ const EmptyState = ({ icon: Icon, title, description, action, actionLabel }) => 
   </div>
 )
 
-// Data Table Header
-const TableHeader = ({ children, sortable, sorted, onSort }) => (
+// Data Table Header (Custom sortable header)
+const SortableTableHeader = ({ children, sortable, sorted, onSort }) => (
   <th 
     className={`px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider ${sortable ? 'cursor-pointer hover:bg-slate-100' : ''}`}
     onClick={sortable ? onSort : undefined}
