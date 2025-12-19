@@ -5512,6 +5512,232 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     )
   }
 
+  // Finance Tab - Self-contained module finance
+  const renderFinance = () => {
+    // Calculate finance metrics from invoices
+    const totalRevenue = invoices.reduce((sum, inv) => sum + (inv.grandTotal || 0), 0)
+    const paidInvoices = invoices.filter(inv => inv.status === 'paid')
+    const pendingInvoices = invoices.filter(inv => inv.status === 'pending' || inv.status === 'sent')
+    const overdueInvoices = invoices.filter(inv => {
+      if (inv.status === 'paid') return false
+      const dueDate = new Date(inv.dueDate)
+      return dueDate < new Date()
+    })
+    
+    const totalPaid = paidInvoices.reduce((sum, inv) => sum + (inv.grandTotal || 0), 0)
+    const totalPending = pendingInvoices.reduce((sum, inv) => sum + (inv.grandTotal || 0), 0)
+    const totalOverdue = overdueInvoices.reduce((sum, inv) => sum + (inv.grandTotal || 0), 0)
+
+    return (
+      <div className="space-y-6">
+        {/* Finance Overview Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <Card className="bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-emerald-600 font-medium">Total Revenue</p>
+                  <p className="text-2xl font-bold text-emerald-700">₹{totalRevenue.toLocaleString()}</p>
+                </div>
+                <div className="p-3 bg-emerald-100 rounded-full">
+                  <IndianRupee className="h-6 w-6 text-emerald-600" />
+                </div>
+              </div>
+              <p className="text-xs text-emerald-600 mt-2">{invoices.length} total invoices</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-blue-600 font-medium">Collected</p>
+                  <p className="text-2xl font-bold text-blue-700">₹{totalPaid.toLocaleString()}</p>
+                </div>
+                <div className="p-3 bg-blue-100 rounded-full">
+                  <CheckCircle2 className="h-6 w-6 text-blue-600" />
+                </div>
+              </div>
+              <p className="text-xs text-blue-600 mt-2">{paidInvoices.length} paid invoices</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-amber-50 to-yellow-50 border-amber-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-amber-600 font-medium">Pending</p>
+                  <p className="text-2xl font-bold text-amber-700">₹{totalPending.toLocaleString()}</p>
+                </div>
+                <div className="p-3 bg-amber-100 rounded-full">
+                  <Clock className="h-6 w-6 text-amber-600" />
+                </div>
+              </div>
+              <p className="text-xs text-amber-600 mt-2">{pendingInvoices.length} pending invoices</p>
+            </CardContent>
+          </Card>
+          
+          <Card className="bg-gradient-to-br from-red-50 to-rose-50 border-red-200">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm text-red-600 font-medium">Overdue</p>
+                  <p className="text-2xl font-bold text-red-700">₹{totalOverdue.toLocaleString()}</p>
+                </div>
+                <div className="p-3 bg-red-100 rounded-full">
+                  <AlertTriangle className="h-6 w-6 text-red-600" />
+                </div>
+              </div>
+              <p className="text-xs text-red-600 mt-2">{overdueInvoices.length} overdue invoices</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Recent Transactions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5" />
+              Recent Invoices & Payments
+            </CardTitle>
+            <CardDescription>Latest financial transactions for this module</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Invoice #</TableHead>
+                  <TableHead>Customer</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead>Amount</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {invoices.slice(0, 10).map((invoice) => (
+                  <TableRow key={invoice.id}>
+                    <TableCell className="font-medium">{invoice.invoiceNumber}</TableCell>
+                    <TableCell>{invoice.customer?.name || 'N/A'}</TableCell>
+                    <TableCell>{new Date(invoice.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell className="font-semibold">₹{(invoice.grandTotal || 0).toLocaleString()}</TableCell>
+                    <TableCell>
+                      <Badge className={
+                        invoice.status === 'paid' ? 'bg-emerald-100 text-emerald-700' :
+                        invoice.status === 'sent' ? 'bg-blue-100 text-blue-700' :
+                        invoice.status === 'overdue' ? 'bg-red-100 text-red-700' :
+                        'bg-slate-100 text-slate-700'
+                      }>
+                        {invoice.status}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex gap-1">
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => setDialogOpen({ type: 'view_invoice', data: invoice })}
+                        >
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          className="h-8 w-8"
+                          onClick={() => window.open(`/api/flooring/enhanced/invoices/pdf?id=${invoice.id}`, '_blank')}
+                        >
+                          <Download className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {invoices.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={6} className="text-center py-8 text-slate-400">
+                      No invoices yet. Create invoices from the Invoices tab.
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+
+        {/* Payment Summary by Status */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Landmark className="h-5 w-5" />
+                Bank & Payment Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                <div className="p-3 bg-slate-50 rounded-lg">
+                  <p className="text-sm text-slate-500">Bank Account</p>
+                  <p className="font-medium">{moduleSettings?.bank?.accountNumber ? `****${moduleSettings.bank.accountNumber.slice(-4)}` : 'Not configured'}</p>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-lg">
+                  <p className="text-sm text-slate-500">IFSC Code</p>
+                  <p className="font-medium">{moduleSettings?.bank?.ifscCode || 'Not configured'}</p>
+                </div>
+                <div className="p-3 bg-slate-50 rounded-lg">
+                  <p className="text-sm text-slate-500">UPI ID</p>
+                  <p className="font-medium">{moduleSettings?.bank?.upiId || 'Not configured'}</p>
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="w-full mt-2"
+                  onClick={() => setActiveTab('settings')}
+                >
+                  <Settings className="h-4 w-4 mr-2" /> Configure Bank Details
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Wallet className="h-5 w-5" />
+                Collection Summary
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-600">Collection Rate</span>
+                  <span className="font-bold text-lg">
+                    {totalRevenue > 0 ? Math.round((totalPaid / totalRevenue) * 100) : 0}%
+                  </span>
+                </div>
+                <div className="w-full bg-slate-200 rounded-full h-3">
+                  <div 
+                    className="bg-emerald-500 h-3 rounded-full transition-all"
+                    style={{ width: `${totalRevenue > 0 ? (totalPaid / totalRevenue) * 100 : 0}%` }}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-4 pt-4">
+                  <div className="text-center p-3 bg-emerald-50 rounded-lg">
+                    <p className="text-2xl font-bold text-emerald-600">{paidInvoices.length}</p>
+                    <p className="text-xs text-emerald-600">Paid</p>
+                  </div>
+                  <div className="text-center p-3 bg-amber-50 rounded-lg">
+                    <p className="text-2xl font-bold text-amber-600">{pendingInvoices.length}</p>
+                    <p className="text-xs text-amber-600">Pending</p>
+                  </div>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    )
+  }
+
   // Reports Tab
   const renderReports = () => {
     const summaryReport = reports.summary || {}
