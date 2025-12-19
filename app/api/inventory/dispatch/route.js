@@ -41,16 +41,32 @@ export async function GET(request) {
 
     const dispatches = await dispatchCollection.find(query).sort({ createdAt: -1 }).toArray()
 
+    // Normalize dispatches for consistent field names
+    const normalizedDispatches = dispatches.map(d => ({
+      ...d,
+      // Normalize customer fields
+      customerName: d.customerName || d.customer?.name || 'N/A',
+      customerPhone: d.customerPhone || d.customer?.phone || '',
+      customerEmail: d.customerEmail || d.customer?.email || '',
+      customerId: d.customerId || d.customer?.id || null,
+      // Normalize driver fields
+      driverName: d.driverName || d.driver?.driverName || '',
+      driverPhone: d.driverPhone || d.driver?.driverPhone || '',
+      vehicleNumber: d.vehicleNumber || d.driver?.vehicleNumber || '',
+      // Ensure totalValue
+      totalValue: d.totalValue || d.grandTotal || 0
+    }))
+
     // Get summary stats
     const stats = {
-      total: dispatches.length,
-      pending: dispatches.filter(d => d.status === 'pending').length,
-      inTransit: dispatches.filter(d => d.status === 'in_transit').length,
-      delivered: dispatches.filter(d => d.status === 'delivered').length,
-      totalValue: dispatches.reduce((sum, d) => sum + (d.totalValue || 0), 0)
+      total: normalizedDispatches.length,
+      pending: normalizedDispatches.filter(d => d.status === 'pending').length,
+      inTransit: normalizedDispatches.filter(d => d.status === 'in_transit').length,
+      delivered: normalizedDispatches.filter(d => d.status === 'delivered').length,
+      totalValue: normalizedDispatches.reduce((sum, d) => sum + (d.totalValue || 0), 0)
     }
 
-    return successResponse({ dispatches: sanitizeDocuments(dispatches), stats })
+    return successResponse({ dispatches: sanitizeDocuments(normalizedDispatches), stats })
   } catch (error) {
     console.error('Dispatch GET Error:', error)
     if (error.message === 'Unauthorized') return errorResponse('Unauthorized', 401)
