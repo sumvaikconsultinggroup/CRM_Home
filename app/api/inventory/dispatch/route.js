@@ -8,6 +8,7 @@ export async function OPTIONS() {
 }
 
 // GET - Get all dispatches
+// UNIFIED: Read from flooring_dispatches (module's collection) as single source of truth
 export async function GET(request) {
   try {
     const user = getAuthUser(request)
@@ -22,10 +23,13 @@ export async function GET(request) {
 
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
-    const dispatchCollection = db.collection('inventory_dispatches')
+    
+    // UNIFIED DISPATCH: Use flooring_dispatches as single source of truth
+    // Both Build Inventory and Module read from same collection
+    const dispatchCollection = db.collection('flooring_dispatches')
 
-    // Build query
-    let query = { clientId: user.clientId }
+    // Build query - no clientId filter as it's per-database
+    let query = {}
     if (status) query.status = status
     if (invoiceId) query.invoiceId = invoiceId
     if (customerId) query.customerId = customerId
