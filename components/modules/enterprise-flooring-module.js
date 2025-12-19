@@ -329,11 +329,11 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   const [productSortBy, setProductSortBy] = useState('createdAt')
   const [productSortDir, setProductSortDir] = useState('desc')
 
-  // API Headers
-  const headers = {
+  // API Headers - memoized to prevent re-renders
+  const headers = useMemo(() => ({
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${token}`
-  }
+  }), [token])
 
   // =============================================
   // DATA FETCHING FUNCTIONS
