@@ -7,14 +7,42 @@ export async function OPTIONS() {
   return optionsResponse()
 }
 
-// POST - Clear all data from CRM and Flooring modules
+// GET - List all collections in the database
+export async function GET(request) {
+  try {
+    const user = getAuthUser(request)
+    requireAuth(user)
+
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+
+    const collections = await db.listCollections().toArray()
+    const collectionStats = []
+
+    for (const coll of collections) {
+      const count = await db.collection(coll.name).countDocuments()
+      collectionStats.push({ name: coll.name, count })
+    }
+
+    return successResponse({
+      database: dbName,
+      collections: collectionStats.sort((a, b) => b.count - a.count)
+    })
+  } catch (error) {
+    console.error('List collections error:', error)
+    if (error.message === 'Unauthorized') return errorResponse('Unauthorized', 401)
+    return errorResponse('Failed to list collections', 500, error.message)
+  }
+}
+
+// POST - Clear all data from specified modules or ALL data
 export async function POST(request) {
   try {
     const user = getAuthUser(request)
     requireAuth(user)
 
     const body = await request.json()
-    const { modules = ['crm', 'flooring'], confirm } = body
+    const { clearAll, modules = [], confirm } = body
 
     if (confirm !== 'DELETE_ALL_DATA') {
       return errorResponse('Please confirm by sending confirm: "DELETE_ALL_DATA"', 400)
@@ -25,6 +53,30 @@ export async function POST(request) {
 
     const results = {}
 
+    // If clearAll is true, clear ALL collections except system collections
+    if (clearAll === true) {
+      const collections = await db.listCollections().toArray()
+      const systemCollections = ['system.indexes', 'system.profile', 'system.users']
+      
+      results.all = {}
+      for (const coll of collections) {
+        if (systemCollections.includes(coll.name)) continue
+        try {
+          const result = await db.collection(coll.name).deleteMany({})
+          results.all[coll.name] = result.deletedCount
+        } catch (e) {
+          results.all[coll.name] = `Error: ${e.message}`
+        }
+      }
+
+      return successResponse({
+        message: 'ALL data cleared successfully',
+        results,
+        database: dbName
+      })
+    }
+
+    // Otherwise clear specific modules
     // CRM Collections
     if (modules.includes('crm')) {
       const crmCollections = [
@@ -32,7 +84,17 @@ export async function POST(request) {
         'contacts',
         'projects',
         'tasks',
-        'customers'
+        'customers',
+        'deals',
+        'activities',
+        'notes',
+        'quotes',
+        'invoices',
+        'payments',
+        'expenses',
+        'revenue',
+        'pipeline',
+        'stages'
       ]
 
       results.crm = {}
@@ -68,6 +130,78 @@ export async function POST(request) {
           results.flooring[collName] = result.deletedCount
         } catch (e) {
           results.flooring[collName] = `Error: ${e.message}`
+        }
+      }
+    }
+
+    // Inventory Collections
+    if (modules.includes('inventory')) {
+      const inventoryCollections = [
+        'inventory_products',
+        'inventory_movements',
+        'inventory_dispatches',
+        'inventory_stock',
+        'warehouses',
+        'purchase_orders',
+        'suppliers'
+      ]
+
+      results.inventory = {}
+      for (const collName of inventoryCollections) {
+        try {
+          const result = await db.collection(collName).deleteMany({})
+          results.inventory[collName] = result.deletedCount
+        } catch (e) {
+          results.inventory[collName] = `Error: ${e.message}`
+        }
+      }
+    }
+
+    // Finance Collections
+    if (modules.includes('finance')) {
+      const financeCollections = [
+        'finance_invoices',
+        'finance_payments',
+        'finance_expenses',
+        'finance_quotes',
+        'credit_notes',
+        'debit_notes'
+      ]
+
+      results.finance = {}
+      for (const collName of financeCollections) {
+        try {
+          const result = await db.collection(collName).deleteMany({})
+          results.finance[collName] = result.deletedCount
+        } catch (e) {
+          results.finance[collName] = `Error: ${e.message}`
+        }
+      }
+    }
+
+    // D&W Collections
+    if (modules.includes('dw')) {
+      const dwCollections = [
+        'dw_products',
+        'dw_inventory',
+        'dw_inventory_holds',
+        'dw_quotations',
+        'dw_quote_items',
+        'dw_orders',
+        'dw_invoices',
+        'dw_payment_collections',
+        'dw_production_orders',
+        'dw_installations',
+        'dw_warranties'
+      ]
+
+      results.dw = {}
+      for (const collName of dwCollections) {
+        try {
+          const result = await db.collection(collName).deleteMany({})
+          results.dw[collName] = result.deletedCount
+        } catch (e) {
+          results.dw[collName] = `Error: ${e.message}`
         }
       }
     }
