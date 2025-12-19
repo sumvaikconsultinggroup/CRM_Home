@@ -486,7 +486,7 @@ export function DoorsWindowsModule({ client, user }) {
 
   // Get mode-specific tabs
   const currentTabGroups = businessMode === 'manufacturer' ? TAB_GROUPS_MANUFACTURER : TAB_GROUPS_FABRICATOR
-  const allTabs = [...currentTabGroups.main, ...currentTabGroups.operations, ...currentTabGroups.support]
+  const allTabs = [...currentTabGroups.main, ...currentTabGroups.operations, ...(currentTabGroups.module || []), ...currentTabGroups.support]
   
   // Reset to dashboard when switching modes if current tab doesn't exist in new mode
   useEffect(() => {
