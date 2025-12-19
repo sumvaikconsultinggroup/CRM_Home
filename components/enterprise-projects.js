@@ -2614,6 +2614,100 @@ export function EnterpriseProjects({ authToken, onProjectSelect, onRefresh }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Milestone Add/Edit Dialog */}
+      <Dialog open={showMilestoneDialog} onOpenChange={setShowMilestoneDialog}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Milestone className="h-5 w-5" />
+              {editingMilestone ? 'Edit Milestone' : 'Add New Milestone'}
+            </DialogTitle>
+            <DialogDescription>
+              {editingMilestone ? 'Update milestone details' : 'Create a new milestone for this project'}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Milestone Name *</Label>
+              <Input
+                placeholder="e.g., Design Approval, Site Preparation"
+                value={milestoneForm.name}
+                onChange={(e) => setMilestoneForm({ ...milestoneForm, name: e.target.value })}
+              />
+            </div>
+            <div>
+              <Label>Description</Label>
+              <Textarea
+                placeholder="Brief description of this milestone..."
+                rows={2}
+                value={milestoneForm.description}
+                onChange={(e) => setMilestoneForm({ ...milestoneForm, description: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Phase</Label>
+                <Select
+                  value={milestoneForm.phase}
+                  onValueChange={(v) => setMilestoneForm({ ...milestoneForm, phase: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="planning">Planning</SelectItem>
+                    <SelectItem value="design">Design</SelectItem>
+                    <SelectItem value="procurement">Procurement</SelectItem>
+                    <SelectItem value="execution">Execution</SelectItem>
+                    <SelectItem value="review">Review</SelectItem>
+                    <SelectItem value="handover">Handover</SelectItem>
+                    <SelectItem value="completion">Completion</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Status</Label>
+                <Select
+                  value={milestoneForm.status}
+                  onValueChange={(v) => setMilestoneForm({ ...milestoneForm, status: v })}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="review">Under Review</SelectItem>
+                    <SelectItem value="completed">Completed</SelectItem>
+                    <SelectItem value="blocked">Blocked</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <div>
+              <Label>Due Date</Label>
+              <Input
+                type="date"
+                value={milestoneForm.dueDate}
+                onChange={(e) => setMilestoneForm({ ...milestoneForm, dueDate: e.target.value })}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowMilestoneDialog(false)}>Cancel</Button>
+            <Button onClick={handleSaveMilestone} disabled={saving}>
+              {saving ? (
+                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
+              ) : editingMilestone ? (
+                'Update Milestone'
+              ) : (
+                'Add Milestone'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
