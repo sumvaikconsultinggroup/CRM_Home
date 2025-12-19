@@ -66,23 +66,25 @@ export async function GET(request) {
     // Find invoices without dispatches
     const pendingInvoices = allInvoices.filter(inv => !dispatchedInvoiceIds.has(inv.id))
     
-    // Get last sync timestamp
-    const syncConfig = await db.collection('dispatch_sync_config').findOne({ clientId: user.clientId })
+    // Get last dispatch sync timestamp (use different var name to avoid conflict)
+    const dispatchSyncConfig = await db.collection('dispatch_sync_config').findOne({ clientId: user.clientId })
     
     return successResponse({
+      connected: true,
+      connectedModuleId,
       totalInvoices: allInvoices.length,
       dispatchedCount: existingDispatches.length,
       pendingCount: pendingInvoices.length,
       pendingInvoices: pendingInvoices.map(inv => ({
         id: inv.id,
         invoiceNumber: inv.invoiceNumber,
-        customerName: inv.customerName,
+        customerName: inv.customer?.name || inv.customerName,
         grandTotal: inv.grandTotal,
         status: inv.status,
         createdAt: inv.createdAt
       })),
-      lastSyncAt: syncConfig?.lastSyncAt || null,
-      autoSyncEnabled: syncConfig?.autoSyncEnabled ?? true
+      lastSyncAt: dispatchSyncConfig?.lastSyncAt || null,
+      autoSyncEnabled: dispatchSyncConfig?.autoSyncEnabled ?? true
     })
   } catch (error) {
     console.error('Dispatch Sync GET Error:', error)
