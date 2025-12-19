@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react'
 import { FlooringProductDialog, ImportProductsDialog, CategoryManagerDialog } from '@/components/modules/flooring-products-ui'
 import { ViewQuoteDialog as ViewQuoteDialogNew, QuoteEditDialog as QuoteEditDialogNew, QuoteStatusConfig as QuoteStatusConfigShared } from '@/components/modules/flooring/QuoteDialogs'
-// EnterpriseInventory removed - use Build Inventory module instead
+import { EnterpriseInventory } from './flooring/EnterpriseInventory'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
