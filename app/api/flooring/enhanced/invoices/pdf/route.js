@@ -36,7 +36,8 @@ export async function GET(request) {
     }
 
     // Get client info for header
-    const mainDb = await getClientDb('buildcrm')
+    const { getMainDb } = await import('@/lib/db/multitenancy')
+    const mainDb = await getMainDb()
     const client = await mainDb.collection('clients').findOne({ clientCode: user.clientId })
 
     // Generate HTML Invoice (printable format)
