@@ -21,12 +21,12 @@ export async function GET(request) {
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
 
-    // Collections
+    // Collections - SELF-CONTAINED: Module uses its own collections only
     const leads = db.collection('leads')
     const projects = db.collection('projects')
     const products = db.collection('flooring_products')
-    // Use Build Inventory as single source of truth for stock
-    const inventoryProducts = db.collection('inventory_products')
+    // Use Flooring Module's own stock collection (NO sync with Build Inventory)
+    const flooringStock = db.collection('wf_inventory_stock')
     const quotes = db.collection('flooring_quotes_v2')
     const invoices = db.collection('flooring_invoices')
     const payments = db.collection('flooring_payments')
