@@ -169,10 +169,10 @@ export function InstallationTab({ orders, headers, glassStyles, onRefresh }) {
 
   const handleStartInstallation = async (id) => {
     try {
-      const res = await fetch('/api/modules/doors-windows/installations', {
-        method: 'PATCH',
+      const res = await fetch('/api/modules/doors-windows/installation', {
+        method: 'PUT',
         headers,
-        body: JSON.stringify({ id, status: 'in_progress', startedAt: new Date().toISOString() })
+        body: JSON.stringify({ id, status: 'in-progress', startedAt: new Date().toISOString() })
       })
       if (res.ok) {
         toast.success('Installation started')
@@ -187,8 +187,8 @@ export function InstallationTab({ orders, headers, glassStyles, onRefresh }) {
 
   const handleCompleteInstallation = async (id) => {
     try {
-      const res = await fetch('/api/modules/doors-windows/installations', {
-        method: 'PATCH',
+      const res = await fetch('/api/modules/doors-windows/installation', {
+        method: 'PUT',
         headers,
         body: JSON.stringify({ id, status: 'completed', completedAt: new Date().toISOString() })
       })
