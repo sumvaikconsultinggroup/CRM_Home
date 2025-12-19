@@ -8039,6 +8039,200 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         <Bot className="h-6 w-6" />
       </motion.button>
 
+      {/* Create Invoice Dialog */}
+      <Dialog open={dialogOpen.type === 'invoice'} onOpenChange={(open) => !open && setDialogOpen({ type: null, data: null })}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Plus className="h-5 w-5" />
+              Create New Invoice
+            </DialogTitle>
+            <DialogDescription>
+              Create a standalone invoice for services or products
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-6 py-4">
+            {/* Customer Details */}
+            <div className="space-y-4">
+              <h3 className="font-semibold text-sm text-slate-700">Customer Details</h3>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Customer Name *</Label>
+                  <Input 
+                    placeholder="Enter customer name" 
+                    value={newInvoiceForm.customerName}
+                    onChange={(e) => setNewInvoiceForm(prev => ({ ...prev, customerName: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label>Email</Label>
+                  <Input 
+                    type="email"
+                    placeholder="customer@email.com" 
+                    value={newInvoiceForm.customerEmail}
+                    onChange={(e) => setNewInvoiceForm(prev => ({ ...prev, customerEmail: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label>Phone</Label>
+                  <Input 
+                    placeholder="+91 9876543210" 
+                    value={newInvoiceForm.customerPhone}
+                    onChange={(e) => setNewInvoiceForm(prev => ({ ...prev, customerPhone: e.target.value }))}
+                  />
+                </div>
+                <div>
+                  <Label>Address</Label>
+                  <Input 
+                    placeholder="Customer address" 
+                    value={newInvoiceForm.customerAddress}
+                    onChange={(e) => setNewInvoiceForm(prev => ({ ...prev, customerAddress: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Invoice Items */}
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-semibold text-sm text-slate-700">Invoice Items</h3>
+                <Button variant="outline" size="sm" onClick={addInvoiceItem}>
+                  <Plus className="h-4 w-4 mr-1" /> Add Item
+                </Button>
+              </div>
+              
+              <div className="border rounded-lg overflow-hidden">
+                <table className="w-full">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-slate-600">Item/Service</th>
+                      <th className="px-3 py-2 text-left text-xs font-medium text-slate-600">Description</th>
+                      <th className="px-3 py-2 text-center text-xs font-medium text-slate-600 w-20">Qty</th>
+                      <th className="px-3 py-2 text-center text-xs font-medium text-slate-600 w-28">Rate (₹)</th>
+                      <th className="px-3 py-2 text-right text-xs font-medium text-slate-600 w-28">Amount</th>
+                      <th className="px-3 py-2 w-10"></th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {newInvoiceForm.items.map((item, index) => (
+                      <tr key={index}>
+                        <td className="px-2 py-2">
+                          <Input 
+                            placeholder="Item name" 
+                            className="h-8 text-sm"
+                            value={item.name}
+                            onChange={(e) => updateInvoiceItem(index, 'name', e.target.value)}
+                          />
+                        </td>
+                        <td className="px-2 py-2">
+                          <Input 
+                            placeholder="Description" 
+                            className="h-8 text-sm"
+                            value={item.description}
+                            onChange={(e) => updateInvoiceItem(index, 'description', e.target.value)}
+                          />
+                        </td>
+                        <td className="px-2 py-2">
+                          <Input 
+                            type="number" 
+                            className="h-8 text-sm text-center"
+                            value={item.quantity}
+                            onChange={(e) => updateInvoiceItem(index, 'quantity', parseFloat(e.target.value) || 0)}
+                          />
+                        </td>
+                        <td className="px-2 py-2">
+                          <Input 
+                            type="number" 
+                            className="h-8 text-sm text-right"
+                            value={item.rate}
+                            onChange={(e) => updateInvoiceItem(index, 'rate', parseFloat(e.target.value) || 0)}
+                          />
+                        </td>
+                        <td className="px-2 py-2 text-right font-medium text-sm">
+                          ₹{(item.quantity * item.rate).toLocaleString()}
+                        </td>
+                        <td className="px-2 py-2">
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            className="h-7 w-7"
+                            onClick={() => removeInvoiceItem(index)}
+                            disabled={newInvoiceForm.items.length <= 1}
+                          >
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Totals */}
+              <div className="flex justify-end">
+                <div className="w-64 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-600">Subtotal:</span>
+                    <span className="font-medium">₹{newInvoiceForm.items.reduce((sum, item) => sum + (item.quantity * item.rate), 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-600">CGST (9%):</span>
+                    <span>₹{(newInvoiceForm.items.reduce((sum, item) => sum + (item.quantity * item.rate), 0) * 0.09).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-slate-600">SGST (9%):</span>
+                    <span>₹{(newInvoiceForm.items.reduce((sum, item) => sum + (item.quantity * item.rate), 0) * 0.09).toLocaleString()}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between font-bold">
+                    <span>Grand Total:</span>
+                    <span className="text-green-600">₹{(newInvoiceForm.items.reduce((sum, item) => sum + (item.quantity * item.rate), 0) * 1.18).toLocaleString()}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Additional Details */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Due Date</Label>
+                <Input 
+                  type="date" 
+                  value={newInvoiceForm.dueDate}
+                  onChange={(e) => setNewInvoiceForm(prev => ({ ...prev, dueDate: e.target.value }))}
+                />
+              </div>
+              <div>
+                <Label>Notes</Label>
+                <Input 
+                  placeholder="Additional notes..." 
+                  value={newInvoiceForm.notes}
+                  onChange={(e) => setNewInvoiceForm(prev => ({ ...prev, notes: e.target.value }))}
+                />
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen({ type: null, data: null })}>
+              Cancel
+            </Button>
+            <Button onClick={handleCreateStandaloneInvoice} disabled={loading}>
+              {loading ? (
+                <>
+                  <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> Creating...
+                </>
+              ) : (
+                <>
+                  <Receipt className="h-4 w-4 mr-2" /> Create Invoice
+                </>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* View Invoice Dialog */}
       <Dialog open={dialogOpen.type === 'view_invoice'} onOpenChange={(open) => !open && setDialogOpen({ type: null, data: null })}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
