@@ -7755,6 +7755,136 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         <Bot className="h-6 w-6" />
       </motion.button>
 
+      {/* View Invoice Dialog */}
+      <Dialog open={dialogOpen.type === 'view_invoice'} onOpenChange={(open) => !open && setDialogOpen({ type: null, data: null })}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5" />
+              Invoice {dialogOpen.data?.invoiceNumber}
+            </DialogTitle>
+            <DialogDescription>
+              {dialogOpen.data?.customer?.name || 'Customer'} • {dialogOpen.data?.status?.toUpperCase() || 'DRAFT'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {dialogOpen.data && (
+            <div className="space-y-6">
+              {/* Invoice Header */}
+              <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg">
+                <div>
+                  <p className="text-sm text-slate-500">Invoice Number</p>
+                  <p className="font-semibold">{dialogOpen.data.invoiceNumber}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Date</p>
+                  <p className="font-semibold">{new Date(dialogOpen.data.createdAt || dialogOpen.data.invoiceDate).toLocaleDateString('en-IN')}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Customer</p>
+                  <p className="font-semibold">{dialogOpen.data.customer?.name || 'N/A'}</p>
+                  {dialogOpen.data.customer?.phone && <p className="text-sm text-slate-500">{dialogOpen.data.customer.phone}</p>}
+                </div>
+                <div>
+                  <p className="text-sm text-slate-500">Status</p>
+                  <Badge variant={dialogOpen.data.status === 'paid' ? 'default' : 'secondary'}>
+                    {dialogOpen.data.status?.toUpperCase() || 'DRAFT'}
+                  </Badge>
+                </div>
+              </div>
+
+              {/* Items Table */}
+              <div>
+                <h4 className="font-semibold mb-3">Items</h4>
+                <div className="border rounded-lg overflow-hidden">
+                  <table className="w-full text-sm">
+                    <thead className="bg-slate-100">
+                      <tr>
+                        <th className="text-left p-3">#</th>
+                        <th className="text-left p-3">Item</th>
+                        <th className="text-right p-3">Qty</th>
+                        <th className="text-right p-3">Rate</th>
+                        <th className="text-right p-3">Amount</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {(dialogOpen.data.items || []).map((item, index) => (
+                        <tr key={index} className="border-t">
+                          <td className="p-3">{index + 1}</td>
+                          <td className="p-3">
+                            <p className="font-medium">{item.name || item.productName}</p>
+                            {item.description && <p className="text-xs text-slate-500">{item.description}</p>}
+                          </td>
+                          <td className="text-right p-3">{item.quantity} {item.unit || ''}</td>
+                          <td className="text-right p-3">₹{(item.unitPrice || item.rate || 0).toLocaleString('en-IN')}</td>
+                          <td className="text-right p-3">₹{(item.totalPrice || item.amount || 0).toLocaleString('en-IN')}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Totals */}
+              <div className="flex justify-end">
+                <div className="w-72 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Subtotal</span>
+                    <span>₹{(dialogOpen.data.subtotal || 0).toLocaleString('en-IN')}</span>
+                  </div>
+                  {!dialogOpen.data.isInterstate ? (
+                    <>
+                      <div className="flex justify-between text-sm text-slate-500">
+                        <span>CGST @ {dialogOpen.data.cgstRate || 9}%</span>
+                        <span>₹{(dialogOpen.data.cgst || 0).toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="flex justify-between text-sm text-slate-500">
+                        <span>SGST @ {dialogOpen.data.sgstRate || 9}%</span>
+                        <span>₹{(dialogOpen.data.sgst || 0).toLocaleString('en-IN')}</span>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="flex justify-between text-sm text-slate-500">
+                      <span>IGST @ {dialogOpen.data.igstRate || 18}%</span>
+                      <span>₹{(dialogOpen.data.igst || 0).toLocaleString('en-IN')}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between font-bold text-lg pt-2 border-t">
+                    <span>Grand Total</span>
+                    <span>₹{(dialogOpen.data.grandTotal || 0).toLocaleString('en-IN')}</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Actions */}
+              <div className="flex gap-3 pt-4 border-t">
+                <Button 
+                  variant="outline" 
+                  onClick={() => window.open(`/api/flooring/enhanced/invoices/pdf?id=${dialogOpen.data.id}`, '_blank')}
+                >
+                  <Download className="h-4 w-4 mr-2" /> Download PDF
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    const pdfWindow = window.open(`/api/flooring/enhanced/invoices/pdf?id=${dialogOpen.data.id}`, '_blank')
+                    setTimeout(() => pdfWindow?.print(), 1000)
+                  }}
+                >
+                  <Printer className="h-4 w-4 mr-2" /> Print
+                </Button>
+                <Button 
+                  variant="ghost"
+                  onClick={() => setDialogOpen({ type: null, data: null })}
+                >
+                  Close
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       {/* MEE AI Chat Dialog */}
       <Dialog open={dialogOpen.type === 'mee_ai'} onOpenChange={(open) => !open && setDialogOpen({ type: null, data: null })}>
         <DialogContent className="max-w-md h-[600px] flex flex-col p-0">
