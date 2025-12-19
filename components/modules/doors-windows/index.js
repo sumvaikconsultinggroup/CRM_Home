@@ -1839,109 +1839,14 @@ export function DoorsWindowsModule({ client, user }) {
             </Card>
           </TabsContent>
 
-          {/* Inventory Tab (Manufacturer Only - Raw Materials Focus) */}
+          {/* Inventory Tab - Self-Contained Module Inventory */}
           <TabsContent value="inventory" className="space-y-6">
-            <Card className={glassStyles.card}>
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <CardTitle className="flex items-center gap-2">
-                      <Box className="h-5 w-5 text-indigo-600" />
-                      Raw Materials Inventory
-                    </CardTitle>
-                    <CardDescription>Track raw materials, WIP, and finished goods inventory</CardDescription>
-                  </div>
-                  <Button className="bg-gradient-to-r from-indigo-600 to-purple-600">
-                    <Plus className="h-4 w-4 mr-2" /> Add Stock
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-                  <Card className="bg-indigo-50 border-indigo-200">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-indigo-600">Raw Materials</p>
-                          <p className="text-xl font-bold text-indigo-700">₹45.2L</p>
-                        </div>
-                        <Box className="h-8 w-8 text-indigo-400" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-amber-50 border-amber-200">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-amber-600">Work in Progress</p>
-                          <p className="text-xl font-bold text-amber-700">₹18.6L</p>
-                        </div>
-                        <Factory className="h-8 w-8 text-amber-400" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                  <Card className="bg-emerald-50 border-emerald-200">
-                    <CardContent className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <p className="text-sm text-emerald-600">Finished Goods</p>
-                          <p className="text-xl font-bold text-emerald-700">₹32.8L</p>
-                        </div>
-                        <Package className="h-8 w-8 text-emerald-400" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                </div>
+            <InventoryTab client={client} user={user} />
+          </TabsContent>
 
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 bg-slate-100 rounded-lg">
-                        <Layers className="h-5 w-5 text-slate-600" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold">Aluminium Profiles - Series 50</h4>
-                        <p className="text-sm text-slate-500">In Stock: 2,450 running ft</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Progress value={75} className="w-24 h-2" />
-                      <Badge className="bg-green-100 text-green-700">Healthy</Badge>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 bg-slate-100 rounded-lg">
-                        <Layers className="h-5 w-5 text-slate-600" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold">Float Glass 5mm Clear</h4>
-                        <p className="text-sm text-slate-500">In Stock: 850 sq.ft</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Progress value={35} className="w-24 h-2" />
-                      <Badge className="bg-amber-100 text-amber-700">Low Stock</Badge>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-white rounded-xl border">
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 bg-slate-100 rounded-lg">
-                        <Cog className="h-5 w-5 text-slate-600" />
-                      </div>
-                      <div>
-                        <h4 className="font-semibold">Multi-Point Lock Sets</h4>
-                        <p className="text-sm text-slate-500">In Stock: 320 units</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-3">
-                      <Progress value={90} className="w-24 h-2" />
-                      <Badge className="bg-green-100 text-green-700">Healthy</Badge>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+          {/* Finance Tab - Self-Contained Module Finance */}
+          <TabsContent value="finance" className="space-y-6">
+            <FinanceTab client={client} user={user} />
           </TabsContent>
         </Tabs>
       </div>
