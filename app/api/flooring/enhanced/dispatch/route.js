@@ -562,6 +562,22 @@ export async function PUT(request) {
 
     const updatedDispatch = await dispatches.findOne({ id })
 
+    // === SYNC STATUS TO INVOICE ===
+    // Keep invoice dispatchStatus in sync with dispatch status
+    if (updatedDispatch?.invoiceId && updatedDispatch?.status) {
+      const invoicesCollection = db.collection('flooring_invoices')
+      await invoicesCollection.updateOne(
+        { id: updatedDispatch.invoiceId },
+        { 
+          $set: { 
+            dispatchStatus: updatedDispatch.status,
+            updatedAt: new Date().toISOString()
+          } 
+        }
+      )
+    }
+    // === END SYNC ===
+
     return successResponse({
       dispatch: sanitizeDocument(updatedDispatch),
       message: `Dispatch ${action.replace('_', ' ')} successful`
