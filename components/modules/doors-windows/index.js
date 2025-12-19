@@ -71,9 +71,12 @@ const TAB_GROUPS_FABRICATOR = {
     { id: 'production', label: 'Production', icon: Factory },
     { id: 'installation', label: 'Installation', icon: Wrench },
   ],
+  module: [
+    { id: 'inventory', label: 'Inventory', icon: Box, highlight: true },
+    { id: 'finance', label: 'Finance', icon: IndianRupee, highlight: true },
+  ],
   support: [
     { id: 'warranty', label: 'Warranty', icon: Shield },
-    { id: 'finance-sync', label: 'Finance Sync', icon: RefreshCw },
     { id: 'reports', label: 'Reports', icon: BarChart3 },
     { id: 'settings', label: 'Settings', icon: Settings },
   ]
