@@ -3470,16 +3470,49 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     <p className="text-sm text-muted-foreground">Total Quantity</p>
                     <p className="font-medium text-blue-600">{getTotalQuantity().toLocaleString()} units</p>
                   </div>
-                  <div className={`p-3 rounded-lg ${selectedProject.materialRequisition?.inventoryBlocked ? 'bg-amber-50' : 'bg-slate-50'}`}>
-                    <p className="text-sm text-muted-foreground">Inventory Status</p>
-                    <p className={`font-medium ${selectedProject.materialRequisition?.inventoryBlocked ? 'text-amber-600' : 'text-slate-600'}`}>
-                      {selectedProject.materialRequisition?.inventoryBlocked ? (
-                        <><Lock className="h-4 w-4 inline mr-1" /> Blocked</>
-                      ) : (
-                        <><Unlock className="h-4 w-4 inline mr-1" /> Not Blocked</>
-                      )}
-                    </p>
-                  </div>
+                  {(() => {
+                    const projectStatus = selectedProject.status
+                    const isDelivered = ['delivered', 'completed'].includes(projectStatus)
+                    const isDispatched = ['in_transit'].includes(projectStatus)
+                    const isInvoiced = ['invoice_sent'].includes(projectStatus)
+                    const isBlocked = selectedProject.materialRequisition?.inventoryBlocked
+                    
+                    let bgColor = 'bg-slate-50'
+                    let textColor = 'text-slate-600'
+                    let statusIcon = <Unlock className="h-4 w-4 inline mr-1" />
+                    let statusText = 'Available'
+                    
+                    if (isDelivered) {
+                      bgColor = 'bg-green-50'
+                      textColor = 'text-green-600'
+                      statusIcon = <CheckCircle2 className="h-4 w-4 inline mr-1" />
+                      statusText = 'Deducted & Delivered'
+                    } else if (isDispatched) {
+                      bgColor = 'bg-blue-50'
+                      textColor = 'text-blue-600'
+                      statusIcon = <Truck className="h-4 w-4 inline mr-1" />
+                      statusText = 'Dispatched'
+                    } else if (isInvoiced) {
+                      bgColor = 'bg-purple-50'
+                      textColor = 'text-purple-600'
+                      statusIcon = <Receipt className="h-4 w-4 inline mr-1" />
+                      statusText = 'Invoiced & Allocated'
+                    } else if (isBlocked) {
+                      bgColor = 'bg-amber-50'
+                      textColor = 'text-amber-600'
+                      statusIcon = <Lock className="h-4 w-4 inline mr-1" />
+                      statusText = 'Reserved'
+                    }
+                    
+                    return (
+                      <div className={`p-3 rounded-lg ${bgColor}`}>
+                        <p className="text-sm text-muted-foreground">Stock Status</p>
+                        <p className={`font-medium ${textColor}`}>
+                          {statusIcon} {statusText}
+                        </p>
+                      </div>
+                    )
+                  })()}
                 </div>
 
                 {/* Inventory Status Alert */}
