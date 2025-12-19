@@ -7,7 +7,10 @@ export async function OPTIONS() {
   return optionsResponse()
 }
 
-// POST - Sync Quote/Invoice to BuilD Finance
+// POST - Finance Sync - DISABLED for Self-Contained Module Architecture
+// The D&W module now manages its own invoices/payments independently
+// Finance data stays in dw_invoices, dw_payment_collections, etc.
+// No sync to central Build Finance (finance_invoices, finance_payments)
 export async function POST(request) {
   try {
     const user = getAuthUser(request)
@@ -20,11 +23,19 @@ export async function POST(request) {
     const db = await getClientDb(dbName)
     const now = new Date()
 
-    // ==================== SYNC QUOTE TO FINANCE ====================
+    // ==================== SYNC DISABLED - Self-Contained Module ====================
+    // Return success message indicating sync is disabled but module manages own finance
     if (action === 'sync-quote' || type === 'quote') {
+      // Just mark as "synced" locally without writing to finance_quotes
       const dwQuotes = db.collection('dw_quotations')
-      const dwQuoteItems = db.collection('dw_quote_items')
-      const financeQuotes = db.collection('finance_quotes')
+      await dwQuotes.updateOne(
+        { id: body.quoteId },
+        { $set: { financeManaged: true, updatedAt: now } }
+      )
+      return successResponse({ 
+        message: 'Quote managed locally (module is self-contained)',
+        note: 'D&W module handles its own finance - no central sync'
+      })
       
       const quote = await dwQuotes.findOne({ id: body.quoteId })
       if (!quote) return errorResponse('Quote not found', 404)
