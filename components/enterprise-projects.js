@@ -323,11 +323,106 @@ export function EnterpriseProjects({ authToken, onProjectSelect, onRefresh }) {
 
     const updatedMilestones = project.milestones.map(m => 
       m.id === milestoneId 
-        ? { ...m, status: currentStatus === 'completed' ? 'pending' : 'completed' }
+        ? { ...m, status: currentStatus === 'completed' ? 'pending' : 'completed', completedAt: currentStatus === 'completed' ? null : new Date().toISOString() }
         : m
     )
 
     await handleUpdateProject(projectId, { milestones: updatedMilestones })
+  }
+
+  // Milestone CRUD handlers
+  const handleOpenAddMilestone = () => {
+    setEditingMilestone(null)
+    setMilestoneForm({
+      name: '',
+      description: '',
+      phase: 'planning',
+      dueDate: '',
+      status: 'pending'
+    })
+    setShowMilestoneDialog(true)
+  }
+
+  const handleOpenEditMilestone = (milestone) => {
+    setEditingMilestone(milestone)
+    setMilestoneForm({
+      name: milestone.name || '',
+      description: milestone.description || '',
+      phase: milestone.phase || 'planning',
+      dueDate: milestone.dueDate ? milestone.dueDate.split('T')[0] : '',
+      status: milestone.status || 'pending'
+    })
+    setShowMilestoneDialog(true)
+  }
+
+  const handleSaveMilestone = async () => {
+    if (!milestoneForm.name.trim()) {
+      toast.error('Milestone name is required')
+      return
+    }
+
+    const projectId = projectDetail?.project?.id
+    if (!projectId) return
+
+    const currentMilestones = projectDetail.project.milestones || []
+    
+    let updatedMilestones
+    if (editingMilestone) {
+      // Update existing milestone
+      updatedMilestones = currentMilestones.map(m => 
+        m.id === editingMilestone.id 
+          ? { 
+              ...m, 
+              ...milestoneForm,
+              dueDate: milestoneForm.dueDate ? new Date(milestoneForm.dueDate).toISOString() : null,
+              updatedAt: new Date().toISOString()
+            }
+          : m
+      )
+    } else {
+      // Add new milestone
+      const newMilestone = {
+        id: `milestone-${Date.now()}`,
+        ...milestoneForm,
+        dueDate: milestoneForm.dueDate ? new Date(milestoneForm.dueDate).toISOString() : null,
+        createdAt: new Date().toISOString(),
+        completedAt: null
+      }
+      updatedMilestones = [...currentMilestones, newMilestone]
+    }
+
+    await handleUpdateProject(projectId, { milestones: updatedMilestones })
+    setShowMilestoneDialog(false)
+    setEditingMilestone(null)
+    
+    // Refresh project detail
+    if (projectDetail) {
+      setProjectDetail({
+        ...projectDetail,
+        project: { ...projectDetail.project, milestones: updatedMilestones }
+      })
+    }
+  }
+
+  const handleDeleteMilestone = async (milestoneId) => {
+    const projectId = projectDetail?.project?.id
+    if (!projectId) return
+
+    if (!confirm('Are you sure you want to delete this milestone?')) return
+
+    const currentMilestones = projectDetail.project.milestones || []
+    const updatedMilestones = currentMilestones.filter(m => m.id !== milestoneId)
+
+    await handleUpdateProject(projectId, { milestones: updatedMilestones })
+    
+    // Refresh project detail
+    if (projectDetail) {
+      setProjectDetail({
+        ...projectDetail,
+        project: { ...projectDetail.project, milestones: updatedMilestones }
+      })
+    }
+    toast.success('Milestone deleted')
   }
 
   // Phase 2: Template handlers
