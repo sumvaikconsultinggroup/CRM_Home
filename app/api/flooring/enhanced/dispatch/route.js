@@ -52,10 +52,12 @@ const getCustomerDues = async (db, customerId) => {
   }
 }
 
-// Check stock availability from Build Inventory
+// Check stock availability from Flooring Module's own inventory
+// SELF-CONTAINED: No longer uses Build Inventory - uses flooring_products directly
 const checkStockAvailability = async (db, items) => {
-  // Use Build Inventory's products collection
-  const inventoryProducts = db.collection('inventory_products')
+  // Use Flooring Module's own products and stock collections
+  const flooringProducts = db.collection('flooring_products')
+  const flooringStock = db.collection('wf_inventory_stock')
   const results = []
   let hasInsufficient = false
   
@@ -73,29 +75,30 @@ const checkStockAvailability = async (db, items) => {
       continue
     }
     
-    // Search Build Inventory by productId first
-    let product = await inventoryProducts.findOne({ id: item.productId })
-    
-    // Fallback: search by sourceProductId (if synced from CRM module)
-    if (!product) {
-      product = await inventoryProducts.findOne({ sourceProductId: item.productId })
-    }
+    // Search Flooring Products by productId first
+    let product = await flooringProducts.findOne({ id: item.productId })
     
     // Fallback: search by SKU
     if (!product && item.sku) {
-      product = await inventoryProducts.findOne({ sku: item.sku })
+      product = await flooringProducts.findOne({ sku: item.sku })
     }
     
     // Fallback: search by product name (case-insensitive)
     if (!product && item.productName) {
-      product = await inventoryProducts.findOne({ 
+      product = await flooringProducts.findOne({ 
         name: { $regex: new RegExp(item.productName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i') }
       })
     }
     
-    // Calculate available stock
-    const totalStock = product?.stockQuantity || product?.currentStock || 0
-    const reservedStock = product?.reservedQuantity || 0
+    // Get stock from wf_inventory_stock if exists
+    let stockRecord = null
+    if (product) {
+      stockRecord = await flooringStock.findOne({ productId: product.id })
+    }
+    
+    // Calculate available stock from product or stock record
+    const totalStock = stockRecord?.currentQty || stockRecord?.quantity || product?.stockQuantity || 0
+    const reservedStock = stockRecord?.reservedQty || product?.reservedQuantity || 0
     const availableQty = totalStock - reservedStock
     
     // Services (like labor, installation) have unlimited availability
@@ -124,7 +127,7 @@ const checkStockAvailability = async (db, items) => {
       availableQty: Math.max(0, availableQty),
       stockStatus: isInsufficient ? 'insufficient' : 'available',
       shortfall: isInsufficient ? item.quantity - availableQty : 0,
-      inventoryProductId: product?.id || null
+      flooringProductId: product?.id || null
     })
   }
   
