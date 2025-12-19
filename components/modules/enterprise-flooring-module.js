@@ -5514,50 +5514,16 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     )
   }
 
-  // Finance Tab - Self-contained module finance
+  // Finance Tab - Enterprise Level Self-contained module finance
   const renderFinance = () => {
-    // Calculate finance metrics from invoices
-    const totalRevenue = invoices.reduce((sum, inv) => sum + (inv.grandTotal || 0), 0)
-    const paidInvoices = invoices.filter(inv => inv.status === 'paid')
-    const pendingInvoices = invoices.filter(inv => inv.status === 'pending' || inv.status === 'sent')
-    const overdueInvoices = invoices.filter(inv => {
-      if (inv.status === 'paid') return false
-      const dueDate = new Date(inv.dueDate)
-      return dueDate < new Date()
-    })
-    
-    const totalPaid = paidInvoices.reduce((sum, inv) => sum + (inv.grandTotal || 0), 0)
-    const totalPending = pendingInvoices.reduce((sum, inv) => sum + (inv.grandTotal || 0), 0)
-    const totalOverdue = overdueInvoices.reduce((sum, inv) => sum + (inv.grandTotal || 0), 0)
-
     return (
-      <div className="space-y-6">
-        {/* Finance Overview Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-          <Card className="bg-gradient-to-br from-emerald-50 to-green-50 border-emerald-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-emerald-600 font-medium">Total Revenue</p>
-                  <p className="text-2xl font-bold text-emerald-700">₹{totalRevenue.toLocaleString()}</p>
-                </div>
-                <div className="p-3 bg-emerald-100 rounded-full">
-                  <IndianRupee className="h-6 w-6 text-emerald-600" />
-                </div>
-              </div>
-              <p className="text-xs text-emerald-600 mt-2">{invoices.length} total invoices</p>
-            </CardContent>
-          </Card>
-          
-          <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-200">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-blue-600 font-medium">Collected</p>
-                  <p className="text-2xl font-bold text-blue-700">₹{totalPaid.toLocaleString()}</p>
-                </div>
-                <div className="p-3 bg-blue-100 rounded-full">
-                  <CheckCircle2 className="h-6 w-6 text-blue-600" />
+      <EnterpriseFinanceFlooring 
+        invoices={invoices}
+        payments={payments}
+        quotes={quotes}
+        projects={projects}
+        onRefresh={fetchDashboardData}
+      />
                 </div>
               </div>
               <p className="text-xs text-blue-600 mt-2">{paidInvoices.length} paid invoices</p>
