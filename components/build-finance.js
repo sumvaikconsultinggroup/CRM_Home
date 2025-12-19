@@ -156,13 +156,90 @@ export function BuildFinance({ token, user }) {
     }
   }, [token])
 
+  // Fetch finance settings
+  const fetchFinanceSettings = useCallback(async () => {
+    if (!token) return
+    try {
+      const res = await fetch('/api/finance/settings', { 
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        }
+      })
+      const data = await res.json()
+      if (data.settings) {
+        setFinanceSettings(prev => ({
+          ...prev,
+          ...data.settings,
+          address: { ...prev.address, ...data.settings.address },
+          bankDetails: { ...prev.bankDetails, ...data.settings.bankDetails }
+        }))
+      }
+    } catch (error) {
+      console.error('Finance settings fetch error:', error)
+    }
+  }, [token])
+
+  // Save finance settings
+  const saveFinanceSettings = async () => {
+    if (!token) return
+    setSavingSettings(true)
+    try {
+      const res = await fetch('/api/finance/settings', { 
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(financeSettings)
+      })
+      const data = await res.json()
+      if (data.settings) {
+        setFinanceSettings(prev => ({
+          ...prev,
+          ...data.settings,
+          address: { ...prev.address, ...data.settings.address },
+          bankDetails: { ...prev.bankDetails, ...data.settings.bankDetails }
+        }))
+        toast.success('Finance settings saved successfully!')
+      } else if (data.error) {
+        toast.error(data.error)
+      }
+    } catch (error) {
+      console.error('Finance settings save error:', error)
+      toast.error('Failed to save settings')
+    } finally {
+      setSavingSettings(false)
+    }
+  }
+
+  // Update settings field helper
+  const updateSettings = (field, value) => {
+    setFinanceSettings(prev => ({ ...prev, [field]: value }))
+  }
+
+  const updateAddressField = (field, value) => {
+    setFinanceSettings(prev => ({
+      ...prev,
+      address: { ...prev.address, [field]: value }
+    }))
+  }
+
+  const updateBankField = (field, value) => {
+    setFinanceSettings(prev => ({
+      ...prev,
+      bankDetails: { ...prev.bankDetails, [field]: value }
+    }))
+  }
+
   useEffect(() => {
     if (token) {
       fetchStats()
       fetchInvoices()
       fetchExpenses()
+      fetchFinanceSettings()
     }
-  }, [token, fetchStats, fetchInvoices, fetchExpenses])
+  }, [token, fetchStats, fetchInvoices, fetchExpenses, fetchFinanceSettings])
 
   // Sample chart data (would come from API)
   const revenueData = [
