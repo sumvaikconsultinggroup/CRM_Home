@@ -40,6 +40,8 @@ import { ReportsTab } from './ReportsTab'
 import { SettingsTab } from './SettingsTab'
 import { MEEAIFloater } from './MEEAIFloater'
 import { DoorWindow3DPreview } from './DoorWindow3DPreview'
+import { InventoryTab } from './InventoryTab'
+import { FinanceTab } from './FinanceTab'
 import { PRODUCT_FAMILIES, CATEGORIES, PRODUCT_TYPES, GLASS_TYPES, HARDWARE_TYPES, FINISHES, PRICING_RATES } from './constants'
 
 const API_BASE = '/api/modules/doors-windows'
