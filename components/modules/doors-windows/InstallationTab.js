@@ -133,19 +133,74 @@ export function InstallationTab({ orders, headers, glassStyles, onRefresh }) {
   )
 
   const handleSchedule = async () => {
-    toast.success('Installation scheduled successfully')
-    setShowSchedule(false)
-    fetchInstallations()
+    try {
+      if (!scheduleForm.orderId || !scheduleForm.scheduledDate) {
+        toast.error('Please select an order and date')
+        return
+      }
+      const res = await fetch('/api/modules/doors-windows/installations', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          ...scheduleForm,
+          status: 'scheduled'
+        })
+      })
+      if (res.ok) {
+        toast.success('Installation scheduled successfully')
+        setShowSchedule(false)
+        setScheduleForm({
+          orderId: '',
+          scheduledDate: '',
+          scheduledTime: '',
+          assignedTeam: '',
+          notes: ''
+        })
+        fetchInstallations()
+      } else {
+        const data = await res.json()
+        toast.error(data.error || 'Failed to schedule installation')
+      }
+    } catch (error) {
+      console.error('Schedule error:', error)
+      toast.error('Failed to schedule installation')
+    }
   }
 
   const handleStartInstallation = async (id) => {
-    toast.success('Installation started')
-    fetchInstallations()
+    try {
+      const res = await fetch('/api/modules/doors-windows/installations', {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ id, status: 'in_progress', startedAt: new Date().toISOString() })
+      })
+      if (res.ok) {
+        toast.success('Installation started')
+        fetchInstallations()
+      } else {
+        toast.error('Failed to update installation')
+      }
+    } catch (error) {
+      toast.error('Failed to start installation')
+    }
   }
 
   const handleCompleteInstallation = async (id) => {
-    toast.success('Installation marked as completed')
-    fetchInstallations()
+    try {
+      const res = await fetch('/api/modules/doors-windows/installations', {
+        method: 'PATCH',
+        headers,
+        body: JSON.stringify({ id, status: 'completed', completedAt: new Date().toISOString() })
+      })
+      if (res.ok) {
+        toast.success('Installation marked as completed')
+        fetchInstallations()
+      } else {
+        toast.error('Failed to update installation')
+      }
+    } catch (error) {
+      toast.error('Failed to complete installation')
+    }
   }
 
   return (
