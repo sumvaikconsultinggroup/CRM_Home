@@ -134,17 +134,65 @@ export async function DELETE(request) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
+    const { searchParams } = new URL(request.url)
+    const keepProducts = searchParams.get('keepProducts') !== 'false' // Default: keep products
+
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
     const configCollection = db.collection('inventory_sync_config')
+    const productsCollection = db.collection('inventory_products')
+    const syncRecordsCollection = db.collection('inventory_product_sync')
 
     const existingConfig = await configCollection.findOne({ clientId: user.clientId })
-    if (!existingConfig) {
+    if (!existingConfig || !existingConfig.syncedModuleId) {
       return successResponse({ message: 'No sync to disconnect' })
     }
 
-    // Don't delete the config, just clear the synced module
-    // This preserves history and allows re-syncing later
+    const disconnectedModuleId = existingConfig.syncedModuleId
+    const disconnectedModuleName = existingConfig.syncedModuleName
+
+    // Handle synced products based on user preference
+    let productsAffected = 0
+    
+    if (keepProducts) {
+      // Option A: Keep products but mark as "disconnected" - preserves inventory data
+      const result = await productsCollection.updateMany(
+        { sourceModuleId: disconnectedModuleId },
+        { 
+          $set: {
+            syncStatus: 'disconnected',
+            previousSourceModuleId: disconnectedModuleId,
+            previousSourceModuleName: disconnectedModuleName,
+            disconnectedAt: new Date(),
+            sourceModuleId: null,
+            sourceModuleName: null,
+            sourceType: 'disconnected_module',
+            updatedAt: new Date()
+          }
+        }
+      )
+      productsAffected = result.modifiedCount
+    } else {
+      // Option B: Remove synced products entirely (data loss warning!)
+      const result = await productsCollection.deleteMany({
+        sourceModuleId: disconnectedModuleId
+      })
+      productsAffected = result.deletedCount
+    }
+
+    // Mark sync records as disconnected
+    await syncRecordsCollection.updateMany(
+      { sourceModuleId: disconnectedModuleId },
+      {
+        $set: {
+          syncStatus: 'disconnected',
+          disconnectedAt: new Date(),
+          updatedAt: new Date()
+        }
+      }
+    )
+
+    // Clear the config
     await configCollection.updateOne(
       { clientId: user.clientId },
       { 
@@ -153,12 +201,22 @@ export async function DELETE(request) {
           syncedModuleName: null,
           disconnectedAt: new Date(),
           disconnectedBy: user.id,
+          disconnectedModuleId,
+          disconnectedModuleName,
           updatedAt: new Date()
         }
       }
     )
 
-    return successResponse({ message: 'Sync disconnected successfully' })
+    return successResponse({ 
+      message: 'Sync disconnected successfully',
+      disconnectedModule: disconnectedModuleName,
+      productsAffected,
+      productsKept: keepProducts,
+      note: keepProducts 
+        ? 'Products marked as disconnected. You can delete them manually or they will remain as standalone products.'
+        : 'Synced products have been removed from Build Inventory.'
+    })
   } catch (error) {
     console.error('Sync Config DELETE Error:', error)
     if (error.message === 'Unauthorized') return errorResponse('Unauthorized', 401)
