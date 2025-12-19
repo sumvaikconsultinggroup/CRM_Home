@@ -133,6 +133,17 @@ export function EnterpriseProjects({ authToken, onProjectSelect, onRefresh }) {
   })
   const [savingField, setSavingField] = useState(null)
   
+  // Milestone management state
+  const [showMilestoneDialog, setShowMilestoneDialog] = useState(false)
+  const [editingMilestone, setEditingMilestone] = useState(null)
+  const [milestoneForm, setMilestoneForm] = useState({
+    name: '',
+    description: '',
+    phase: 'planning',
+    dueDate: '',
+    status: 'pending'
+  })
+  
   // Form state
   const [formData, setFormData] = useState({
     name: '',
