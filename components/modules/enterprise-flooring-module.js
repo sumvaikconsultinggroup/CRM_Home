@@ -2973,11 +2973,10 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           </SelectContent>
                         </Select>
                       </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </Card>
         ) : (
           <EmptyState
