@@ -400,22 +400,38 @@ export function ReportsTab({ headers, glassStyles }) {
               </div>
             ) : (
               <div className="space-y-6">
-                {/* Sample Report Preview */}
+                {/* Dynamic Report Metrics */}
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  {Object.entries(sampleMetrics[selectedReport.id] || sampleMetrics['sales-summary']).map(([key, value]) => (
+                  {Object.entries(dynamicMetrics).map(([key, data]) => (
                     <div key={key} className="p-4 bg-slate-50 rounded-lg text-center">
-                      <p className="text-2xl font-bold text-slate-800">{value}</p>
-                      <p className="text-sm text-slate-500 capitalize">{key.replace(/([A-Z])/g, ' $1')}</p>
+                      <p className="text-2xl font-bold text-slate-800">{data.value}</p>
+                      <p className="text-sm text-slate-500">{data.label}</p>
                     </div>
                   ))}
                 </div>
 
-                {/* Sample Chart Placeholder */}
+                {/* Report Title and Period */}
+                {reportData && (
+                  <div className="p-4 bg-indigo-50 rounded-lg">
+                    <h3 className="font-semibold text-indigo-800">{reportData.title || selectedReport.name}</h3>
+                    {reportData.period && (
+                      <p className="text-sm text-indigo-600">
+                        {new Date(reportData.period.start).toLocaleDateString()} - {new Date(reportData.period.end).toLocaleDateString()}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {/* Chart Visualization */}
                 <div className="h-64 bg-gradient-to-br from-slate-50 to-indigo-50 rounded-lg flex items-center justify-center border-2 border-dashed border-slate-200">
                   <div className="text-center">
                     <BarChart3 className="h-12 w-12 text-indigo-300 mx-auto mb-2" />
-                    <p className="text-slate-500">Chart visualization would appear here</p>
-                    <p className="text-xs text-slate-400 mt-1">Interactive charts with real data</p>
+                    <p className="text-slate-500">
+                      {reportData ? 'Data loaded successfully' : 'Click Generate to load data'}
+                    </p>
+                    <p className="text-xs text-slate-400 mt-1">
+                      {reportData?.summary ? `${Object.keys(reportData.summary).length} metrics loaded` : 'Interactive charts with real data'}
+                    </p>
                   </div>
                 </div>
 
