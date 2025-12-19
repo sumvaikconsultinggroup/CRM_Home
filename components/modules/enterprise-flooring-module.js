@@ -1086,6 +1086,117 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }
 
+  // Create standalone invoice (not from quote)
+  const handleCreateStandaloneInvoice = async () => {
+    try {
+      if (!newInvoiceForm.customerName) {
+        toast.error('Customer name is required')
+        return
+      }
+      if (newInvoiceForm.items.length === 0 || !newInvoiceForm.items[0].name) {
+        toast.error('At least one item is required')
+        return
+      }
+
+      setLoading(true)
+      
+      // Calculate totals
+      const subtotal = newInvoiceForm.items.reduce((sum, item) => sum + (item.quantity * item.rate), 0)
+      const cgstRate = 9
+      const sgstRate = 9
+      const cgstAmount = subtotal * (cgstRate / 100)
+      const sgstAmount = subtotal * (sgstRate / 100)
+      const totalTax = cgstAmount + sgstAmount
+      const grandTotal = subtotal + totalTax
+
+      const invoiceData = {
+        customer: {
+          name: newInvoiceForm.customerName,
+          email: newInvoiceForm.customerEmail,
+          phone: newInvoiceForm.customerPhone,
+          address: newInvoiceForm.customerAddress
+        },
+        items: newInvoiceForm.items.map(item => ({
+          name: item.name,
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: item.rate,
+          totalPrice: item.quantity * item.rate,
+          productType: 'service'
+        })),
+        subtotal,
+        taxableAmount: subtotal,
+        cgstRate,
+        cgstAmount,
+        sgstRate,
+        sgstAmount,
+        totalTax,
+        grandTotal,
+        dueDate: new Date(newInvoiceForm.dueDate).toISOString(),
+        notes: newInvoiceForm.notes,
+        status: 'pending'
+      }
+
+      const res = await fetch('/api/flooring/enhanced/invoices', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(invoiceData)
+      })
+
+      if (res.ok) {
+        fetchInvoices()
+        setDialogOpen({ type: null, data: null })
+        // Reset form
+        setNewInvoiceForm({
+          customerName: '',
+          customerEmail: '',
+          customerPhone: '',
+          customerAddress: '',
+          items: [{ name: '', description: '', quantity: 1, rate: 0, amount: 0 }],
+          notes: '',
+          dueDate: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+        })
+        toast.success('Invoice created successfully!')
+      } else {
+        const errorData = await res.json()
+        toast.error(errorData.error || 'Failed to create invoice')
+      }
+    } catch (error) {
+      console.error('Create invoice error:', error)
+      toast.error('Error creating invoice')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Helper to update invoice form items
+  const updateInvoiceItem = (index, field, value) => {
+    setNewInvoiceForm(prev => {
+      const newItems = [...prev.items]
+      newItems[index] = { ...newItems[index], [field]: value }
+      // Auto-calculate amount
+      if (field === 'quantity' || field === 'rate') {
+        newItems[index].amount = newItems[index].quantity * newItems[index].rate
+      }
+      return { ...prev, items: newItems }
+    })
+  }
+
+  const addInvoiceItem = () => {
+    setNewInvoiceForm(prev => ({
+      ...prev,
+      items: [...prev.items, { name: '', description: '', quantity: 1, rate: 0, amount: 0 }]
+    }))
+  }
+
+  const removeInvoiceItem = (index) => {
+    if (newInvoiceForm.items.length <= 1) return
+    setNewInvoiceForm(prev => ({
+      ...prev,
+      items: prev.items.filter((_, i) => i !== index)
+    }))
+  }
+
   // =============================================
   // VALIDATION HELPER FUNCTIONS
   // =============================================
