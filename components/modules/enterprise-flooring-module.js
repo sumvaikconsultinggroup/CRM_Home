@@ -2883,32 +2883,32 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               <TableBody>
                 {filteredProjects.map(project => (
                   <TableRow key={project.id} className="hover:bg-slate-50">
-                      <td className="px-4 py-3">
-                        <div>
-                          <p className="font-medium text-slate-900">{project.projectNumber}</p>
-                          <p className="text-sm text-slate-500 line-clamp-1">{project.name}</p>
-                          {project.crmProjectId && (
-                            <span className="inline-flex items-center gap-1 text-xs text-blue-600 mt-0.5">
-                              <CheckCircle2 className="h-3 w-3" /> CRM Synced
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="text-sm font-medium">{project.customerName || '-'}</p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge className={project.segment === 'b2b' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}>
-                          {project.segment === 'b2b' ? 'B2B (Dealer)' : 'B2C (Consumer)'}
-                        </Badge>
-                      </td>
-                      <td className="px-4 py-3">
-                        <Badge variant="outline" className="capitalize">{project.type}</Badge>
-                        <p className="text-xs text-slate-500 mt-1">{project.totalArea || 0} sqft</p>
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="font-semibold text-emerald-600">₹{(project.estimatedValue || 0).toLocaleString()}</p>
-                      </td>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium text-slate-900">{project.projectNumber}</p>
+                        <p className="text-sm text-slate-500 line-clamp-1">{project.name}</p>
+                        {project.crmProjectId && (
+                          <span className="inline-flex items-center gap-1 text-xs text-blue-600 mt-0.5">
+                            <CheckCircle2 className="h-3 w-3" /> CRM Synced
+                          </span>
+                        )}
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <p className="text-sm font-medium">{project.customerName || '-'}</p>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={project.segment === 'b2b' ? 'bg-blue-100 text-blue-700' : 'bg-green-100 text-green-700'}>
+                        {project.segment === 'b2b' ? 'B2B (Dealer)' : 'B2C (Consumer)'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="capitalize">{project.type}</Badge>
+                      <p className="text-xs text-slate-500 mt-1">{project.totalArea || 0} sqft</p>
+                    </TableCell>
+                    <TableCell>
+                      <p className="font-semibold text-emerald-600">₹{(project.estimatedValue || 0).toLocaleString()}</p>
+                    </TableCell>
                       {/* Actions Column - FIRST before Status */}
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-1">
