@@ -256,54 +256,9 @@ export async function PUT(request) {
 
     if (!result) return errorResponse('Product not found', 404)
     
-    // === AUTO-SYNC UPDATE TO BUILD INVENTORY ===
-    const inventoryProducts = db.collection('inventory_products')
-    const product = result
-    
-    // Find existing inventory product by sourceProductId
-    const existingInventory = await inventoryProducts.findOne({ sourceProductId: id })
-    
-    if (existingInventory) {
-      // Update existing inventory product
-      const inventoryUpdate = {
-        name: product.name,
-        sku: product.sku,
-        description: product.description || '',
-        category: product.specs?.construction || product.category || 'Wooden Flooring',
-        subCategory: product.brand || product.subcategory || '',
-        costPrice: product.pricing?.costPrice || 0,
-        sellingPrice: product.pricing?.sellingPrice || product.pricing?.dealerPrice || 0,
-        mrp: product.pricing?.mrp || 0,
-        gstRate: product.gstRate || product.tax?.gstRate || 18,
-        hsnCode: product.hsnCode || product.tax?.hsnCode || '4418',
-        active: product.status !== 'inactive' && product.status !== 'deleted',
-        attributes: {
-          ...(product.specs || {}),
-          brand: product.brand,
-          collection: product.collection
-        },
-        updatedAt: new Date().toISOString(),
-        lastSyncAt: new Date().toISOString()
-      }
-      
-      // Sync stockQuantity if provided
-      if (updateData.stockQuantity !== undefined) {
-        inventoryUpdate.stockQuantity = updateData.stockQuantity
-      }
-      
-      await inventoryProducts.updateOne(
-        { sourceProductId: id },
-        { $set: inventoryUpdate }
-      )
-      
-      // Update sync record
-      const syncCollection = db.collection('inventory_product_sync')
-      await syncCollection.updateOne(
-        { sourceProductId: id },
-        { $set: { lastSyncAt: new Date().toISOString(), updatedAt: new Date().toISOString() } }
-      )
-    }
-    // === END AUTO-SYNC ===
+    // === SYNC DISABLED - Module is Self-Contained ===
+    // No sync to Build Inventory. Products are managed within flooring_products only.
+    // === END SYNC DISABLED ===
     
     return successResponse(sanitizeDocument(result))
   } catch (error) {
