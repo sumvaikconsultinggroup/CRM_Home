@@ -7427,13 +7427,21 @@ export function EnterpriseFlooringModule({ client, user, token }) {
 
                 // Inventory already blocked - show edit/proceed options
                 if (isInventoryBlocked) {
+                  // Check if already invoiced/dispatched/delivered - editing NOT allowed
+                  const isInvoiced = ['invoice_sent', 'payment_received', 'installation_scheduled', 'installation_in_progress', 'completed'].includes(status)
+                  const isInstalling = ['installation_scheduled', 'installation_in_progress'].includes(status)
+                  const isCompleted = status === 'completed'
+                  const canEdit = !isInvoiced // Can only edit if NOT yet invoiced
+                  
                   return (
                     <div className="space-y-3">
                       <div className="flex gap-3 flex-wrap">
                         <Button 
                           variant="outline"
-                          disabled={loading}
+                          disabled={loading || !canEdit}
+                          className={!canEdit ? 'opacity-50 cursor-not-allowed' : ''}
                           onClick={async () => {
+                            if (!canEdit) return
                             setLoading(true)
                             await releaseInventoryForMeasurement()
                             const updatedDetails = { ...measurementDetails, inventoryBlocked: false }
@@ -7446,11 +7454,11 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                             fetchInventory()
                             fetchProjects()
                             setLoading(false)
-                            toast.success('Inventory released. You can now edit the measurement.')
+                            toast.success('Stock released. You can now edit the measurement.')
                           }}
                         >
                           <Unlock className="h-4 w-4 mr-2" />
-                          Edit (Release Inventory)
+                          Edit Materials
                         </Button>
                         {status === 'measurement_done' && (
                           <Button 
@@ -7468,9 +7476,29 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           </Button>
                         )}
                       </div>
-                      <p className="text-sm text-amber-700 flex items-center gap-2">
-                        <Lock className="h-4 w-4" />
-                        Inventory is blocked. Click "Edit" to release and modify.
+                      {/* Professional messaging based on status */}
+                      <p className={`text-sm flex items-center gap-2 ${isCompleted ? 'text-green-700' : isInstalling ? 'text-cyan-700' : isInvoiced ? 'text-purple-700' : 'text-amber-700'}`}>
+                        {isCompleted ? (
+                          <>
+                            <CheckCircle2 className="h-4 w-4" />
+                            Project completed. Materials installed and stock deducted.
+                          </>
+                        ) : isInstalling ? (
+                          <>
+                            <Wrench className="h-4 w-4" />
+                            Installation in progress. Stock has been allocated.
+                          </>
+                        ) : isInvoiced ? (
+                          <>
+                            <Receipt className="h-4 w-4" />
+                            Invoice generated. Stock allocated and deducted.
+                          </>
+                        ) : (
+                          <>
+                            <Lock className="h-4 w-4" />
+                            Stock allocated for this project. Click "Edit Materials" to modify.
+                          </>
+                        )}
                       </p>
                     </div>
                   )
