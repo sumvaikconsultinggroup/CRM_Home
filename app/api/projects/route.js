@@ -243,3 +243,122 @@ export async function POST(request) {
     return errorResponse('Failed to create project', 500, error.message)
   }
 }
+
+// PUT - Update a project (including milestones)
+export async function PUT(request) {
+  try {
+    const user = getAuthUser(request)
+    requireClientAccess(user)
+
+    const body = await request.json()
+    const { id, ...updates } = body
+
+    if (!id) {
+      return errorResponse('Project ID is required', 400)
+    }
+
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const projectsCollection = db.collection('projects')
+
+    // Find existing project
+    const existing = await projectsCollection.findOne({ id })
+    if (!existing) {
+      return errorResponse('Project not found', 404)
+    }
+
+    const now = new Date().toISOString()
+    
+    // Build update object
+    const updateData = {
+      ...updates,
+      updatedAt: now,
+      updatedBy: user.id
+    }
+
+    // If milestones are being updated, handle milestone completion logic
+    if (updates.milestones) {
+      const completedCount = updates.milestones.filter(m => m.status === 'completed').length
+      const totalCount = updates.milestones.length
+      updateData.progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
+    }
+
+    // If status is being updated, add to activity log
+    if (updates.status && updates.status !== existing.status) {
+      const activityEntry = {
+        id: uuidv4(),
+        action: 'status_changed',
+        description: `Status changed from ${existing.status} to ${updates.status}`,
+        userId: user.id,
+        userName: user.name || user.email,
+        timestamp: now,
+        oldValue: existing.status,
+        newValue: updates.status
+      }
+      
+      updateData.activityLog = [...(existing.activityLog || []), activityEntry]
+    }
+
+    // Update the project
+    await projectsCollection.updateOne(
+      { id },
+      { $set: updateData }
+    )
+
+    // Fetch and return updated project
+    const updated = await projectsCollection.findOne({ id })
+
+    return successResponse(sanitizeDocument(updated))
+  } catch (error) {
+    console.error('Projects PUT API Error:', error)
+    if (error.message === 'Unauthorized' || error.message.includes('Forbidden')) {
+      return errorResponse(error.message, 401)
+    }
+    return errorResponse('Failed to update project', 500, error.message)
+  }
+}
+
+// DELETE - Delete a project
+export async function DELETE(request) {
+  try {
+    const user = getAuthUser(request)
+    requireClientAccess(user)
+
+    const { searchParams } = new URL(request.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return errorResponse('Project ID is required', 400)
+    }
+
+    const dbName = getUserDatabaseName(user)
+    const db = await getClientDb(dbName)
+    const projectsCollection = db.collection('projects')
+
+    // Check if project exists
+    const existing = await projectsCollection.findOne({ id })
+    if (!existing) {
+      return errorResponse('Project not found', 404)
+    }
+
+    // Soft delete by marking as deleted
+    await projectsCollection.updateOne(
+      { id },
+      { 
+        $set: { 
+          status: 'deleted',
+          deletedAt: new Date().toISOString(),
+          deletedBy: user.id
+        } 
+      }
+    )
+
+    return successResponse({ message: 'Project deleted successfully', id })
+  } catch (error) {
+    console.error('Projects DELETE API Error:', error)
+    if (error.message === 'Unauthorized' || error.message.includes('Forbidden')) {
+      return errorResponse(error.message, 401)
+    }
+    return errorResponse('Failed to delete project', 500, error.message)
+  }
+}
