@@ -120,8 +120,11 @@ When a client purchases Build CRM + Build Inventory + Build Finance as a bundle:
 - `/app/app/api/flooring/enhanced/route.js` - Dashboard uses flooring stock
 - `/app/app/api/inventory/products/route.js` - Disabled bi-directional sync
 
-### D&W Module Changes (Pending)
-Same pattern to be applied to Doors & Windows module.
+### D&W Module Changes (Completed)
+1. ✅ Already had self-contained Inventory Tab using `dw_inventory`
+2. ✅ Already had self-contained Finance features using `dw_invoices`, `dw_payment_collections`
+3. ✅ Disabled sync to central `finance_invoices` and `finance_payments`
+4. ✅ CRM sync for Projects and Contacts kept (appropriate for module-CRM integration)
 
 ## Migration Notes
 
