@@ -2909,70 +2909,70 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     <TableCell>
                       <p className="font-semibold text-emerald-600">₹{(project.estimatedValue || 0).toLocaleString()}</p>
                     </TableCell>
-                      {/* Actions Column - FIRST before Status */}
-                      <td className="px-4 py-3">
-                        <div className="flex items-center gap-1">
-                          {/* B2C: Send for Measurement */}
-                          {project.segment !== 'b2b' && !['measurement_done', 'quote_pending', 'quote_sent', 'quote_approved', 'invoice_sent', 'payment_received', 'installation_scheduled', 'installation_in_progress', 'completed'].includes(project.status) && (
-                            <Button 
-                              size="sm" 
-                              className="bg-blue-600 hover:bg-blue-700 text-white"
-                              onClick={() => handleSendForMeasurement(project)}
-                            >
-                              <Ruler className="h-4 w-4 mr-1" />
-                              Measurement
-                            </Button>
-                          )}
-                          {/* B2B: Send for Material Requisition */}
-                          {project.segment === 'b2b' && !['material_processing', 'material_ready', 'quote_pending', 'quote_sent', 'quote_approved', 'invoice_sent', 'in_transit', 'delivered', 'completed'].includes(project.status) && (
-                            <Button 
-                              size="sm" 
-                              className="bg-purple-600 hover:bg-purple-700 text-white"
-                              onClick={() => handleSendForMaterialRequisition(project)}
-                            >
-                              <Package className="h-4 w-4 mr-1" />
-                              Material Req
-                            </Button>
-                          )}
-                          {/* B2B: Mark as Delivered (when In Transit) */}
-                          {project.segment === 'b2b' && project.status === 'in_transit' && (
-                            <Button 
-                              size="sm" 
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white"
-                              onClick={() => handleB2BDelivery(project.id)}
-                            >
-                              <CheckCircle2 className="h-4 w-4 mr-1" />
-                              Delivered
-                            </Button>
-                          )}
-                          <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'project', data: project })} title="Edit">
-                            <Edit className="h-4 w-4" />
+                    {/* Actions Column - FIRST before Status */}
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        {/* B2C: Send for Measurement */}
+                        {project.segment !== 'b2b' && !['measurement_done', 'quote_pending', 'quote_sent', 'quote_approved', 'invoice_sent', 'payment_received', 'installation_scheduled', 'installation_in_progress', 'completed'].includes(project.status) && (
+                          <Button 
+                            size="sm" 
+                            className="bg-blue-600 hover:bg-blue-700 text-white"
+                            onClick={() => handleSendForMeasurement(project)}
+                          >
+                            <Ruler className="h-4 w-4 mr-1" />
+                            Measurement
                           </Button>
-                          <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'view_project', data: project })} title="View">
-                            <Eye className="h-4 w-4" />
+                        )}
+                        {/* B2B: Send for Material Requisition */}
+                        {project.segment === 'b2b' && !['material_processing', 'material_ready', 'quote_pending', 'quote_sent', 'quote_approved', 'invoice_sent', 'in_transit', 'delivered', 'completed'].includes(project.status) && (
+                          <Button 
+                            size="sm" 
+                            className="bg-purple-600 hover:bg-purple-700 text-white"
+                            onClick={() => handleSendForMaterialRequisition(project)}
+                          >
+                            <Package className="h-4 w-4 mr-1" />
+                            Material Req
                           </Button>
-                        </div>
-                      </td>
-                      {/* Status Column - After Actions */}
-                      <td className="px-4 py-3">
-                        <Select 
-                          value={project.status} 
-                          onValueChange={(v) => handleUpdateProjectStatus(project.id, v)}
-                        >
-                          <SelectTrigger className="w-[160px] h-8">
-                            <Badge className={ProjectStatus[project.status]?.color || 'bg-slate-100 text-slate-700'}>
-                              {ProjectStatus[project.status]?.label || project.status}
-                            </Badge>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {Object.entries(getProjectStatusBySegment(project.segment)).map(([key, { label, color }]) => (
-                              <SelectItem key={key} value={key}>
-                                <span className={`px-2 py-0.5 rounded text-xs ${color}`}>{label}</span>
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </td>
+                        )}
+                        {/* B2B: Mark as Delivered (when In Transit) */}
+                        {project.segment === 'b2b' && project.status === 'in_transit' && (
+                          <Button 
+                            size="sm" 
+                            className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                            onClick={() => handleB2BDelivery(project.id)}
+                          >
+                            <CheckCircle2 className="h-4 w-4 mr-1" />
+                            Delivered
+                          </Button>
+                        )}
+                        <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'project', data: project })} title="Edit">
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'view_project', data: project })} title="View">
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </TableCell>
+                    {/* Status Column - After Actions */}
+                    <TableCell>
+                      <Select 
+                        value={project.status} 
+                        onValueChange={(v) => handleUpdateProjectStatus(project.id, v)}
+                      >
+                        <SelectTrigger className="w-[160px] h-8">
+                          <Badge className={ProjectStatus[project.status]?.color || 'bg-slate-100 text-slate-700'}>
+                            {ProjectStatus[project.status]?.label || project.status}
+                          </Badge>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {Object.entries(getProjectStatusBySegment(project.segment)).map(([key, { label, color }]) => (
+                            <SelectItem key={key} value={key}>
+                              <span className={`px-2 py-0.5 rounded text-xs ${color}`}>{label}</span>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
