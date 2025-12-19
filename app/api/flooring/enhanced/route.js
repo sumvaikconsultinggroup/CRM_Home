@@ -36,23 +36,29 @@ export async function GET(request) {
     periodStart.setDate(periodStart.getDate() - parseInt(period))
 
     if (type === 'dashboard') {
-      // Comprehensive dashboard data - use inventory_products for stock
-      const [allLeads, allProjects, allProducts, allInventory, allQuotes, allInvoices, allPayments, allInstallations] = await Promise.all([
+      // Comprehensive dashboard data - SELF-CONTAINED: uses flooring module's own stock
+      const [allLeads, allProjects, allProducts, allStockRecords, allQuotes, allInvoices, allPayments, allInstallations] = await Promise.all([
         leads.find({}).toArray(),
         projects.find({}).toArray(),
         products.find({}).toArray(),
-        // Get inventory from Build Inventory (central source of truth)
-        inventoryProducts.find({ 
-          $or: [
-            { sourceModuleId: 'wooden-flooring' },
-            { category: { $regex: /flooring|wood/i } }
-          ]
-        }).toArray(),
+        // Get stock from Flooring Module's own stock collection
+        flooringStock.find({}).toArray(),
         quotes.find({}).toArray(),
         invoices.find({}).toArray(),
         payments.find({}).toArray(),
         installations.find({}).toArray()
       ])
+      
+      // Merge product info with stock data for unified view
+      const allInventory = allProducts.map(product => {
+        const stockRecord = allStockRecords.find(s => s.productId === product.id)
+        return {
+          ...product,
+          stockQuantity: stockRecord?.currentQty || product.stockQuantity || 0,
+          reservedQuantity: stockRecord?.reservedQty || product.reservedQuantity || 0,
+          reorderLevel: stockRecord?.reorderLevel || product.reorderLevel || 10
+        }
+      })
 
       // Calculate metrics
       const totalQuoteValue = allQuotes.reduce((sum, q) => sum + (q.grandTotal || 0), 0)
