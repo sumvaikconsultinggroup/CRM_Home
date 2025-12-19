@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react'
 import { FlooringProductDialog, ImportProductsDialog, CategoryManagerDialog } from '@/components/modules/flooring-products-ui'
 import { ViewQuoteDialog as ViewQuoteDialogNew, QuoteEditDialog as QuoteEditDialogNew, QuoteStatusConfig as QuoteStatusConfigShared } from '@/components/modules/flooring/QuoteDialogs'
-import { EnterpriseInventory } from '@/components/modules/flooring/EnterpriseInventory'
+// EnterpriseInventory removed - use Build Inventory module instead
 import { motion, AnimatePresence } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -276,6 +276,40 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   const [dispatchLoading, setDispatchLoading] = useState(false)
   const [dispatches, setDispatches] = useState([])
   const dispatchPhotoRef = useRef(null)
+  
+  // Settings States (moved to component level to fix hook issues)
+  const [settingsTab, setSettingsTab] = useState('general')
+  const [whatsappConfig, setWhatsappConfig] = useState({
+    provider: '',
+    apiKey: '',
+    apiSecret: '',
+    phoneNumberId: '',
+    webhookUrl: '',
+    enabled: false
+  })
+  const [generalSettings, setGeneralSettings] = useState({
+    companyName: '',
+    gstin: '',
+    defaultTaxRate: 18,
+    quoteValidityDays: 30,
+    invoicePrefix: 'INV',
+    quotePrefix: 'FLQ',
+    defaultPaymentTerms: 'Net 30',
+    laborRatePerSqft: 25,
+    defaultWastagePercent: 10
+  })
+  const [bankDetails, setBankDetails] = useState({
+    bankName: '',
+    accountName: '',
+    accountNumber: '',
+    ifscCode: '',
+    upiId: ''
+  })
+  const [savingSettings, setSavingSettings] = useState(false)
+  
+  // Reports States (moved to component level)
+  const [reportPeriod, setReportPeriod] = useState('30')
+  const [selectedReportType, setSelectedReportType] = useState('summary')
   
   // Filter States
   const [searchTerm, setSearchTerm] = useState('')
@@ -5218,8 +5252,6 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   // Reports Tab
   const renderReports = () => {
     const summaryReport = reports.summary || {}
-    const [reportPeriod, setReportPeriod] = useState('30')
-    const [selectedReportType, setSelectedReportType] = useState('summary')
 
     const reportTypes = [
       { id: 'summary', name: 'Executive Summary', icon: LayoutDashboard },
@@ -5649,37 +5681,40 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     )
   }
 
+  // Initialize settings values when moduleSettings loads
+  useEffect(() => {
+    if (moduleSettings) {
+      setWhatsappConfig({
+        provider: moduleSettings?.whatsapp?.provider || '',
+        apiKey: moduleSettings?.whatsapp?.apiKey || '',
+        apiSecret: moduleSettings?.whatsapp?.apiSecret || '',
+        phoneNumberId: moduleSettings?.whatsapp?.phoneNumberId || '',
+        webhookUrl: moduleSettings?.whatsapp?.webhookUrl || '',
+        enabled: moduleSettings?.whatsapp?.enabled || false
+      })
+      setGeneralSettings({
+        companyName: moduleSettings?.companyName || client?.name || '',
+        gstin: moduleSettings?.gstin || '',
+        defaultTaxRate: moduleSettings?.defaultTaxRate || 18,
+        quoteValidityDays: moduleSettings?.quoteValidityDays || 30,
+        invoicePrefix: moduleSettings?.invoicePrefix || 'INV',
+        quotePrefix: moduleSettings?.quotePrefix || 'FLQ',
+        defaultPaymentTerms: moduleSettings?.defaultPaymentTerms || 'Net 30',
+        laborRatePerSqft: moduleSettings?.laborRatePerSqft || 25,
+        defaultWastagePercent: moduleSettings?.defaultWastagePercent || 10
+      })
+      setBankDetails({
+        bankName: moduleSettings?.bankDetails?.bankName || '',
+        accountName: moduleSettings?.bankDetails?.accountName || '',
+        accountNumber: moduleSettings?.bankDetails?.accountNumber || '',
+        ifscCode: moduleSettings?.bankDetails?.ifscCode || '',
+        upiId: moduleSettings?.bankDetails?.upiId || ''
+      })
+    }
+  }, [moduleSettings, client?.name])
+
   // Settings Tab
   const renderSettings = () => {
-    const [settingsTab, setSettingsTab] = useState('general')
-    const [whatsappConfig, setWhatsappConfig] = useState({
-      provider: moduleSettings?.whatsapp?.provider || '',
-      apiKey: moduleSettings?.whatsapp?.apiKey || '',
-      apiSecret: moduleSettings?.whatsapp?.apiSecret || '',
-      phoneNumberId: moduleSettings?.whatsapp?.phoneNumberId || '',
-      webhookUrl: moduleSettings?.whatsapp?.webhookUrl || '',
-      enabled: moduleSettings?.whatsapp?.enabled || false
-    })
-    const [generalSettings, setGeneralSettings] = useState({
-      companyName: moduleSettings?.companyName || client?.name || '',
-      gstin: moduleSettings?.gstin || '',
-      defaultTaxRate: moduleSettings?.defaultTaxRate || 18,
-      quoteValidityDays: moduleSettings?.quoteValidityDays || 30,
-      invoicePrefix: moduleSettings?.invoicePrefix || 'INV',
-      quotePrefix: moduleSettings?.quotePrefix || 'FLQ',
-      defaultPaymentTerms: moduleSettings?.defaultPaymentTerms || 'Net 30',
-      laborRatePerSqft: moduleSettings?.laborRatePerSqft || 25,
-      defaultWastagePercent: moduleSettings?.defaultWastagePercent || 10
-    })
-    const [bankDetails, setBankDetails] = useState({
-      bankName: moduleSettings?.bankDetails?.bankName || '',
-      accountName: moduleSettings?.bankDetails?.accountName || '',
-      accountNumber: moduleSettings?.bankDetails?.accountNumber || '',
-      ifscCode: moduleSettings?.bankDetails?.ifscCode || '',
-      upiId: moduleSettings?.bankDetails?.upiId || ''
-    })
-    const [savingSettings, setSavingSettings] = useState(false)
-
     const saveSettings = async () => {
       try {
         setSavingSettings(true)
@@ -7682,9 +7717,6 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           <TabsTrigger value="installations" className="flex items-center gap-2">
             <Wrench className="h-4 w-4" /> Installations
           </TabsTrigger>
-          <TabsTrigger value="inventory" className="flex items-center gap-2">
-            <Warehouse className="h-4 w-4" /> Inventory
-          </TabsTrigger>
           <TabsTrigger value="reports" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" /> Reports
           </TabsTrigger>
@@ -7702,13 +7734,6 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           <TabsContent value="quotes">{renderQuotes()}</TabsContent>
           <TabsContent value="invoices">{renderInvoices()}</TabsContent>
           <TabsContent value="installations">{renderInstallations()}</TabsContent>
-          <TabsContent value="inventory">
-            <EnterpriseInventory 
-              token={token} 
-              products={products}
-              onRefreshProducts={fetchProducts}
-            />
-          </TabsContent>
           <TabsContent value="reports">{renderReports()}</TabsContent>
           <TabsContent value="settings">{renderSettings()}</TabsContent>
         </div>

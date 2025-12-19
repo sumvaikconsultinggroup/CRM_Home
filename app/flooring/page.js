@@ -6,7 +6,7 @@ import { motion } from 'framer-motion'
 import { Button } from '@/components/ui/button'
 import { ArrowLeft, Sparkles } from 'lucide-react'
 import { toast } from 'sonner'
-import { WoodenFlooringModule } from '@/components/wooden-flooring-module'
+import { EnterpriseFlooringModule } from '@/components/modules/enterprise-flooring-module'
 import { FlooringMeeAgent } from '@/components/flooring-mee-agent'
 
 export default function FlooringPage() {
@@ -102,7 +102,7 @@ export default function FlooringPage() {
       <div className="flex h-[calc(100vh-57px)]">
         {/* Module */}
         <div className={`flex-1 transition-all duration-300 ${showMeeAgent ? 'mr-96' : ''}`}>
-          <WoodenFlooringModule client={client} user={user} />
+          <EnterpriseFlooringModule client={client} user={user} />
         </div>
 
         {/* Mee AI Agent Panel */}

@@ -349,47 +349,33 @@ const FunnelChart = ({ data = [] }) => {
   const max = data[0]?.value || 1
   
   return (
-    <div className="space-y-3">
+    <div className="space-y-2">
       {data.map((item, i) => {
-        const widthPercent = Math.max((item.value / max) * 100, 30)
+        const widthPercent = Math.max((item.value / max) * 100, 40)
         return (
           <motion.div
             key={i}
-            initial={{ opacity: 0, x: -50 }}
+            initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: i * 0.12, duration: 0.6, ease: [0.34, 1.56, 0.64, 1] }}
-            className="relative"
+            transition={{ delay: i * 0.1, duration: 0.4 }}
+            className="flex justify-center"
           >
             <motion.div 
-              className="h-11 rounded-xl flex items-center justify-between px-4 text-white text-sm font-semibold shadow-lg cursor-pointer relative overflow-hidden"
+              className="h-9 rounded-lg flex items-center justify-between px-3 text-white text-xs font-semibold shadow-md cursor-pointer overflow-hidden"
               style={{ 
                 background: `linear-gradient(135deg, ${item.color}, ${item.color}dd)`,
-                marginLeft: `${(100 - widthPercent) / 2}%`
+                width: `${widthPercent}%`
               }}
-              initial={{ width: 0 }}
-              animate={{ width: `${widthPercent}%` }}
-              transition={{ delay: i * 0.12 + 0.2, duration: 0.8, ease: "easeOut" }}
               whileHover={{ 
-                scale: 1.03, 
-                boxShadow: "0 8px 30px rgba(0,0,0,0.2)",
+                scale: 1.02, 
+                boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
                 transition: { duration: 0.2 }
               }}
             >
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/30 to-white/0"
-                initial={{ x: '-100%' }}
-                animate={{ x: '100%' }}
-                transition={{ delay: i * 0.12 + 0.5, duration: 0.8 }}
-              />
-              <span className="relative z-10">{item.label}</span>
-              <motion.span 
-                className="relative z-10 bg-white/20 px-2 py-0.5 rounded-md"
-                initial={{ scale: 0 }}
-                animate={{ scale: 1 }}
-                transition={{ delay: i * 0.12 + 0.6, duration: 0.3, ease: [0.34, 1.56, 0.64, 1] }}
-              >
+              <span>{item.label}</span>
+              <span className="bg-white/20 px-1.5 py-0.5 rounded text-xs">
                 {item.value}
-              </motion.span>
+              </span>
             </motion.div>
           </motion.div>
         )
@@ -782,7 +768,7 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
       </div>
 
       {/* ==================== MAIN ANALYTICS GRID ==================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
         
         {/* Revenue Overview Chart */}
         <Card className="lg:col-span-2 overflow-hidden">
@@ -834,7 +820,7 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
         </Card>
 
         {/* Lead Funnel */}
-        <Card>
+        <Card className="overflow-visible">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               <Layers className="h-5 w-5 text-blue-600" />
@@ -842,7 +828,7 @@ export function EnhancedDashboard({ stats, leads = [], projects = [], tasks = []
             </CardTitle>
             <CardDescription>Lead conversion stages</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="pb-6">
             {leads.length > 0 ? (
               <>
                 <FunnelChart data={leadFunnel} />
