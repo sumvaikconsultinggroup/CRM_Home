@@ -87,47 +87,109 @@ export function ReportsTab({ headers, glassStyles }) {
   })
 
   const popularReports = REPORTS.filter(r => r.popular)
+  const [reportData, setReportData] = useState(null)
+
+  // Map report IDs to API types
+  const reportTypeMap = {
+    'sales-summary': 'sales-funnel',
+    'quote-conversion': 'quotation-analysis',
+    'stock-levels': 'inventory-status',
+    'production-summary': 'production-performance',
+    'monthly-sales': 'sales-funnel',
+    'pending-payments': 'financial-summary',
+    'customer-list': 'customer-analysis',
+    'installation-summary': 'installation-performance'
+  }
 
   const handleGenerateReport = async (report) => {
     setSelectedReport(report)
     setGenerating(true)
+    setReportData(null)
     
-    // Simulate report generation
-    await new Promise(r => setTimeout(r, 2000))
-    
-    setGenerating(false)
-    toast.success(`${report.name} generated successfully`)
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+      const apiType = reportTypeMap[report.id] || 'sales-funnel'
+      
+      const res = await fetch(`${API_BASE}/reports?type=${apiType}&format=json`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (res.ok) {
+        const data = await res.json()
+        setReportData(data)
+        toast.success(`${report.name} generated successfully`)
+      } else {
+        toast.error('Failed to generate report')
+      }
+    } catch (error) {
+      console.error('Report generation error:', error)
+      toast.error('Error generating report')
+    } finally {
+      setGenerating(false)
+    }
   }
 
-  const handleDownloadReport = (format) => {
-    toast.success(`Downloading report as ${format.toUpperCase()}`)
+  const handleDownloadReport = async (format) => {
+    if (!selectedReport) return
+    
+    try {
+      const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+      const apiType = reportTypeMap[selectedReport.id] || 'sales-funnel'
+      
+      const res = await fetch(`${API_BASE}/reports?type=${apiType}&format=${format}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      })
+      
+      if (res.ok) {
+        if (format === 'csv') {
+          const blob = await res.blob()
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = `${selectedReport.id}-report.csv`
+          document.body.appendChild(a)
+          a.click()
+          document.body.removeChild(a)
+        }
+        toast.success(`Downloading report as ${format.toUpperCase()}`)
+      }
+    } catch (error) {
+      toast.error('Failed to download report')
+    }
   }
 
   const handleShareReport = () => {
+    const shareUrl = `${window.location.origin}/reports/${selectedReport?.id}`
+    navigator.clipboard.writeText(shareUrl)
     toast.success('Report sharing link copied!')
   }
 
-  // Sample data for report preview
-  const sampleMetrics = {
-    'sales-summary': {
-      totalSales: '₹45.2L',
-      ordersCount: 156,
-      avgOrderValue: '₹29,000',
-      growth: '+12%'
-    },
-    'stock-levels': {
-      totalItems: 248,
-      lowStock: 12,
-      outOfStock: 3,
-      totalValue: '₹18.5L'
-    },
-    'production-summary': {
-      activeWO: 24,
-      completed: 89,
-      onTime: '92%',
-      avgDays: 5.2
+  // Dynamic metrics based on fetched data
+  const getMetricsFromData = () => {
+    if (!reportData || !reportData.summary) {
+      return {
+        metric1: { label: 'Total', value: '0' },
+        metric2: { label: 'Active', value: '0' },
+        metric3: { label: 'Rate', value: '0%' },
+        metric4: { label: 'Growth', value: '0%' }
+      }
+    }
+    const s = reportData.summary
+    return {
+      metric1: { label: 'Surveys', value: s.surveys || s.total || 0 },
+      metric2: { label: 'Quotations', value: s.quotations || s.activeWO || 0 },
+      metric3: { label: 'Orders', value: s.orders || s.completed || 0 },
+      metric4: { label: 'Conversion', value: `${s.overallConversion || s.onTimeDeliveryRate || 0}%` }
     }
   }
+
+  const dynamicMetrics = getMetricsFromData()
 
   return (
     <div className="space-y-6">
