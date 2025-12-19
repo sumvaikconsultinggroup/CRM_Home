@@ -73,7 +73,12 @@ export async function GET(request) {
       driverPhone: d.driverPhone || d.driver?.driverPhone || '',
       vehicleNumber: d.vehicleNumber || d.driver?.vehicleNumber || '',
       // Ensure totalValue
-      totalValue: d.totalValue || d.grandTotal || 0
+      totalValue: d.totalValue || d.grandTotal || 0,
+      // IMPORTANT: Normalize workflow timestamp fields for Build Inventory UI
+      // Flooring uses: transitStartedAt, loadedAt, deliveredAt
+      // Build Inventory expects: dispatchStartedAt, goodsLoadedAt, deliveredAt
+      dispatchStartedAt: d.dispatchStartedAt || d.transitStartedAt || d.loadedAt || (d.status !== 'pending' ? d.createdAt : null),
+      goodsLoadedAt: d.goodsLoadedAt || d.loadedAt || (d.status === 'in_transit' || d.status === 'delivered' ? d.transitStartedAt : null)
     }))
 
     // Get summary stats
