@@ -4857,10 +4857,37 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                   <DropdownMenuItem onClick={() => handleInvoiceAction(invoice.id, 'sync_crm')}>
                                     <RefreshCw className="h-4 w-4 mr-2" /> Sync to CRM
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => window.open(`/api/flooring/enhanced/invoices/pdf?id=${invoice.id}`, '_blank')}>
+                                  <DropdownMenuItem onClick={async () => {
+                                    try {
+                                      const token = localStorage.getItem('token')
+                                      const response = await fetch(`/api/flooring/enhanced/invoices/pdf?id=${invoice.id}`, {
+                                        headers: { 'Authorization': `Bearer ${token}` }
+                                      })
+                                      const html = await response.text()
+                                      const newWindow = window.open('', '_blank')
+                                      newWindow.document.write(html)
+                                      newWindow.document.close()
+                                    } catch (error) {
+                                      toast.error('Failed to open invoice')
+                                    }
+                                  }}>
                                     <Download className="h-4 w-4 mr-2" /> Download PDF
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem onClick={() => window.print()}>
+                                  <DropdownMenuItem onClick={async () => {
+                                    try {
+                                      const token = localStorage.getItem('token')
+                                      const response = await fetch(`/api/flooring/enhanced/invoices/pdf?id=${invoice.id}`, {
+                                        headers: { 'Authorization': `Bearer ${token}` }
+                                      })
+                                      const html = await response.text()
+                                      const printWindow = window.open('', '_blank')
+                                      printWindow.document.write(html)
+                                      printWindow.document.close()
+                                      setTimeout(() => printWindow.print(), 500)
+                                    } catch (error) {
+                                      toast.error('Failed to print invoice')
+                                    }
+                                  }}>
                                     <Printer className="h-4 w-4 mr-2" /> Print
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
