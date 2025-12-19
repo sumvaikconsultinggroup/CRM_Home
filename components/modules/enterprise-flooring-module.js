@@ -3405,11 +3405,22 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                 <Package className="h-3 w-3 inline mr-1" />
                                 {project.materialRequisition.items.length} items • ₹{(project.materialRequisition.totalValue || 0).toLocaleString()}
                               </span>
-                              {project.materialRequisition.inventoryBlocked && (
-                                <Badge variant="outline" className="text-xs text-amber-600 border-amber-400">
-                                  <Lock className="h-3 w-3 mr-1" /> Inventory Blocked
-                                </Badge>
-                              )}
+                              {project.materialRequisition.inventoryBlocked && (() => {
+                                const projStatus = project.status
+                                const isDelivered = ['delivered', 'completed'].includes(projStatus)
+                                const isDispatched = ['in_transit'].includes(projStatus)
+                                const isInvoiced = ['invoice_sent'].includes(projStatus)
+                                
+                                if (isDelivered) {
+                                  return <Badge variant="outline" className="bg-green-100 text-green-700 text-xs"><CheckCircle2 className="h-3 w-3 mr-1" /> Stock Deducted</Badge>
+                                } else if (isDispatched) {
+                                  return <Badge variant="outline" className="bg-blue-100 text-blue-700 text-xs"><Truck className="h-3 w-3 mr-1" /> Dispatched</Badge>
+                                } else if (isInvoiced) {
+                                  return <Badge variant="outline" className="bg-purple-100 text-purple-700 text-xs"><Receipt className="h-3 w-3 mr-1" /> Invoiced</Badge>
+                                } else {
+                                  return <Badge variant="outline" className="bg-amber-100 text-amber-700 text-xs"><Lock className="h-3 w-3 mr-1" /> Stock Reserved</Badge>
+                                }
+                              })()}
                             </div>
                           )}
                         </div>
