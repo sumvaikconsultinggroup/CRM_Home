@@ -2868,22 +2868,21 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         {/* Projects Table */}
         {filteredProjects.length > 0 ? (
           <Card>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-50 border-b">
-                  <tr>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Project</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Customer</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Segment</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Type</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Value</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
-                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
-                  {filteredProjects.map(project => (
-                    <tr key={project.id} className="hover:bg-slate-50">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50 border-b">
+                  <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Project</TableHead>
+                  <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Customer</TableHead>
+                  <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Segment</TableHead>
+                  <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Type</TableHead>
+                  <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Value</TableHead>
+                  <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</TableHead>
+                  <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredProjects.map(project => (
+                  <TableRow key={project.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3">
                         <div>
                           <p className="font-medium text-slate-900">{project.projectNumber}</p>
