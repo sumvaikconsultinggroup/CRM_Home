@@ -2872,13 +2872,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               <table className="w-full">
                 <thead className="bg-slate-50 border-b">
                   <tr>
-                    <TableHeader>Project</TableHeader>
-                    <TableHeader>Customer</TableHeader>
-                    <TableHeader>Segment</TableHeader>
-                    <TableHeader>Type</TableHeader>
-                    <TableHeader>Value</TableHeader>
-                    <TableHeader>Actions</TableHeader>
-                    <TableHeader>Status</TableHeader>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Project</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Customer</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Segment</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Type</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Value</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y">
