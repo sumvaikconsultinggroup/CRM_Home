@@ -444,6 +444,19 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }, [token])
 
+  const fetchPayments = useCallback(async () => {
+    try {
+      const res = await fetch('/api/flooring/enhanced/payments', { headers })
+      const data = await res.json()
+      if (data.payments) setPayments(data.payments)
+      else if (data.data?.payments) setPayments(data.data.payments)
+      else setPayments([])
+    } catch (error) {
+      console.error('Payments fetch error:', error)
+      setPayments([])
+    }
+  }, [token])
+
   const fetchInstallations = useCallback(async () => {
     try {
       const res = await fetch('/api/flooring/enhanced/installations', { headers })
