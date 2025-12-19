@@ -4813,8 +4813,10 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                             
                             {/* Show dispatch status if dispatched but not delivered */}
                             {invoice.dispatchId && invoice.dispatchStatus !== 'delivered' && (
-                              <Badge className="bg-orange-100 text-orange-700">
-                                <Truck className="h-3 w-3 mr-1" /> {invoice.dispatchStatus === 'in_transit' ? 'In Transit' : 'Dispatched'}
+                              <Badge className={invoice.dispatchStatus === 'in_transit' ? "bg-blue-100 text-blue-700" : "bg-amber-100 text-amber-700"}>
+                                <Truck className="h-3 w-3 mr-1" /> 
+                                {invoice.dispatchStatus === 'in_transit' ? 'In Transit' : 
+                                 invoice.dispatchStatus === 'pending' ? 'Ready to Ship' : 'Dispatched'}
                               </Badge>
                             )}
                             
