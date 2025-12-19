@@ -775,7 +775,13 @@ export function DoorsWindowsModule({ client, user }) {
                     </CardTitle>
                     <CardDescription>Manage orders, invoices and payments</CardDescription>
                   </div>
-                  <Button className="bg-gradient-to-r from-indigo-600 to-purple-600">
+                  <Button 
+                    className="bg-gradient-to-r from-indigo-600 to-purple-600"
+                    onClick={() => {
+                      toast.info('Orders are created from approved quotes. Go to Quotes tab and approve a quote to create an order.')
+                      setActiveTab('quotes')
+                    }}
+                  >
                     <Plus className="h-4 w-4 mr-2" /> Create Order
                   </Button>
                 </div>
