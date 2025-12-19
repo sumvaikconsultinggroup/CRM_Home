@@ -73,7 +73,7 @@ export async function GET(request) {
       const periodInvoices = allInvoices.filter(i => new Date(i.createdAt) >= periodStart)
       const periodPayments = allPayments.filter(p => new Date(p.createdAt) >= periodStart)
 
-      // Low stock items (from Build Inventory)
+      // Low stock items (from Flooring Module's own inventory)
       const lowStockItems = allInventory.filter(i => {
         const available = (i.stockQuantity || 0) - (i.reservedQuantity || 0)
         return available <= (i.reorderLevel || 10)
