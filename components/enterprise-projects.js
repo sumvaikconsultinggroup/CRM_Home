@@ -2168,38 +2168,88 @@ export function EnterpriseProjects({ authToken, onProjectSelect, onRefresh }) {
 
                 <TabsContent value="milestones" className="mt-4">
                   <GlassCard className="p-4">
-                    <h4 className="font-medium mb-4 flex items-center gap-2">
-                      <Milestone className="h-4 w-4" /> Project Milestones
-                    </h4>
-                    <div className="space-y-3">
-                      {projectDetail.project.milestones?.map((milestone, idx) => (
-                        <div 
-                          key={milestone.id} 
-                          className={`flex items-center gap-4 p-3 rounded-lg border ${
-                            milestone.status === 'completed' ? 'bg-emerald-50 border-emerald-200' : 'bg-white'
-                          }`}
-                        >
-                          <Checkbox
-                            checked={milestone.status === 'completed'}
-                            onCheckedChange={() => handleMilestoneToggle(projectDetail.project.id, milestone.id, milestone.status)}
-                          />
-                          <div className="flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className={`font-medium ${milestone.status === 'completed' ? 'line-through text-slate-400' : ''}`}>
-                                {milestone.name}
-                              </span>
-                              <Badge variant="outline" className="text-xs">{milestone.phase}</Badge>
-                            </div>
-                            {milestone.completedAt && (
-                              <p className="text-xs text-slate-400 mt-1">
-                                Completed on {formatDate(milestone.completedAt)}
-                              </p>
-                            )}
-                          </div>
-                          <span className="text-slate-400 text-sm">#{idx + 1}</span>
-                        </div>
-                      ))}
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-medium flex items-center gap-2">
+                        <Milestone className="h-4 w-4" /> Project Milestones
+                      </h4>
+                      <Button size="sm" onClick={handleOpenAddMilestone}>
+                        <Plus className="h-4 w-4 mr-1" /> Add Milestone
+                      </Button>
                     </div>
+                    
+                    {(!projectDetail.project.milestones || projectDetail.project.milestones.length === 0) ? (
+                      <div className="text-center py-8 text-slate-400">
+                        <Milestone className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                        <p>No milestones defined for this project</p>
+                        <p className="text-xs mt-1">Add milestones to track project progress</p>
+                        <Button size="sm" variant="outline" className="mt-3" onClick={handleOpenAddMilestone}>
+                          <Plus className="h-4 w-4 mr-1" /> Add First Milestone
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {projectDetail.project.milestones?.map((milestone, idx) => (
+                          <div 
+                            key={milestone.id} 
+                            className={`flex items-center gap-4 p-3 rounded-lg border ${
+                              milestone.status === 'completed' ? 'bg-emerald-50 border-emerald-200' : 'bg-white'
+                            }`}
+                          >
+                            <Checkbox
+                              checked={milestone.status === 'completed'}
+                              onCheckedChange={() => handleMilestoneToggle(projectDetail.project.id, milestone.id, milestone.status)}
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-center gap-2">
+                                <span className={`font-medium ${milestone.status === 'completed' ? 'line-through text-slate-400' : ''}`}>
+                                  {milestone.name}
+                                </span>
+                                <Badge variant="outline" className="text-xs">{milestone.phase}</Badge>
+                                <Badge 
+                                  className={`text-xs ${
+                                    milestone.status === 'completed' ? 'bg-emerald-100 text-emerald-700' :
+                                    milestone.status === 'in_progress' ? 'bg-blue-100 text-blue-700' :
+                                    'bg-slate-100 text-slate-700'
+                                  }`}
+                                >
+                                  {milestone.status}
+                                </Badge>
+                              </div>
+                              {milestone.description && (
+                                <p className="text-xs text-slate-500 mt-1">{milestone.description}</p>
+                              )}
+                              <div className="flex gap-3 mt-1 text-xs text-slate-400">
+                                {milestone.dueDate && (
+                                  <span>Due: {formatDate(milestone.dueDate)}</span>
+                                )}
+                                {milestone.completedAt && (
+                                  <span>Completed: {formatDate(milestone.completedAt)}</span>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-slate-400 text-sm">#{idx + 1}</span>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-7 w-7"
+                                onClick={() => handleOpenEditMilestone(milestone)}
+                              >
+                                <Edit className="h-3.5 w-3.5 text-slate-500" />
+                              </Button>
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                className="h-7 w-7"
+                                onClick={() => handleDeleteMilestone(milestone.id)}
+                              >
+                                <Trash2 className="h-3.5 w-3.5 text-red-500" />
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </GlassCard>
                 </TabsContent>
 
