@@ -232,6 +232,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   const [projects, setProjects] = useState([])
   const [quotes, setQuotes] = useState([])
   const [invoices, setInvoices] = useState([])
+  const [payments, setPayments] = useState([])
   const [installations, setInstallations] = useState([])
   const [inventory, setInventory] = useState({ inventory: [], summary: {} })
   const [crmProjects, setCrmProjects] = useState([]) // CRM Projects for sync
