@@ -43,6 +43,7 @@ const CHART_COLORS = ['#10B981', '#3B82F6', '#F59E0B', '#EF4444', '#8B5CF6', '#E
 export function BuildFinance({ token, user }) {
   const [activeTab, setActiveTab] = useState('dashboard')
   const [loading, setLoading] = useState(false)
+  const [savingSettings, setSavingSettings] = useState(false)
   const [stats, setStats] = useState({
     totalRevenue: 0,
     totalExpenses: 0,
@@ -58,6 +59,45 @@ export function BuildFinance({ token, user }) {
   const [createType, setCreateType] = useState('invoice') // invoice, expense, payment
   const [searchTerm, setSearchTerm] = useState('')
   const [dateRange, setDateRange] = useState('this_month')
+  
+  // Finance Settings State
+  const [financeSettings, setFinanceSettings] = useState({
+    brandLogo: '',
+    brandName: '',
+    companyName: '',
+    gstin: '',
+    pan: '',
+    placeOfSupply: '',
+    address: {
+      line1: '',
+      line2: '',
+      city: '',
+      state: '',
+      pincode: '',
+      country: 'India'
+    },
+    phone: '',
+    email: '',
+    website: '',
+    bankDetails: {
+      accountHolderName: '',
+      accountNumber: '',
+      ifscCode: '',
+      bankName: '',
+      branchName: '',
+      accountType: 'Current',
+      upiId: ''
+    },
+    paymentQRCode: '',
+    termsAndConditions: [
+      'Payment is due within 15 days from the invoice date.',
+      'Interest @ 18% per annum will be charged on overdue payments.',
+      'Please quote the invoice number for all remittances.'
+    ],
+    invoicePrefix: 'INV-',
+    defaultPaymentDays: 15,
+    authorizedSignatoryName: ''
+  })
 
   // Fetch dashboard stats
   const fetchStats = useCallback(async () => {
