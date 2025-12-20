@@ -1179,6 +1179,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   // State for fulfillment settings
   const [fulfillmentSettings, setFulfillmentSettings] = useState(null)
   const [pickListDialog, setPickListDialog] = useState({ open: false, data: null })
+  const [pickListConfirmations, setPickListConfirmations] = useState({}) // Track per-item confirmations
   const [dcDialog, setDcDialog] = useState({ open: false, data: null })
 
   // Fetch fulfillment settings on mount
