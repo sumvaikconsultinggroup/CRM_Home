@@ -488,3 +488,197 @@ export function FlooringProductDialog({ open, onClose, product, schema, categori
     </Dialog>
   )
 }
+
+// View-only Product Dialog
+export function ViewProductDialog({ open, onClose, product, categories }) {
+  const flat = useMemo(() => flattenCategories(categories), [categories])
+  const categoryName = flat.find(c => c.id === product?.categoryId || c.id === product?.category)?.name || product?.category || 'N/A'
+
+  if (!product) return null
+
+  const specs = product.specs || {}
+  const pricing = product.pricing || {}
+  const pack = product.pack || {}
+  const tax = product.tax || {}
+  const installation = product.installation || {}
+  const compliance = product.compliance || {}
+
+  const InfoRow = ({ label, value, className = '' }) => (
+    value ? (
+      <div className={`flex justify-between py-1.5 border-b border-slate-100 ${className}`}>
+        <span className="text-sm text-slate-500">{label}</span>
+        <span className="text-sm font-medium text-slate-900">{value}</span>
+      </div>
+    ) : null
+  )
+
+  const BooleanBadge = ({ value, label }) => (
+    <Badge variant={value ? 'default' : 'secondary'} className={`${value ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+      {value ? <CheckCircle2 className="h-3 w-3 mr-1" /> : <XCircle className="h-3 w-3 mr-1" />}
+      {label}
+    </Badge>
+  )
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <div className="flex items-start justify-between">
+            <div>
+              <DialogTitle className="text-xl">{product.name}</DialogTitle>
+              <DialogDescription className="flex items-center gap-2 mt-1">
+                <Badge variant="outline">{product.sku || 'No SKU'}</Badge>
+                <Badge className="bg-slate-100 text-slate-700">{categoryName}</Badge>
+                <Badge className={product.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
+                  {product.status || 'active'}
+                </Badge>
+              </DialogDescription>
+            </div>
+            {product.images?.[0] && (
+              <img src={product.images[0]} alt={product.name} className="w-20 h-20 object-cover rounded-lg border" />
+            )}
+          </div>
+        </DialogHeader>
+
+        <div className="space-y-6 py-4">
+          {/* Core Info */}
+          <Card>
+            <CardContent className="p-4">
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <Package className="h-4 w-4" /> Product Details
+              </h4>
+              <div className="grid grid-cols-2 gap-x-6">
+                <InfoRow label="Brand" value={product.brand} />
+                <InfoRow label="Collection" value={product.collection} />
+                <InfoRow label="Construction" value={specs.construction} />
+                <InfoRow label="Species / Wood Type" value={specs.species} />
+                <InfoRow label="Origin" value={specs.origin} />
+                <InfoRow label="Grade" value={specs.grade} />
+                <InfoRow label="Core Type" value={specs.coreType} />
+              </div>
+              {product.description && (
+                <p className="text-sm text-slate-600 mt-3 pt-3 border-t">{product.description}</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Dimensions */}
+          <Card>
+            <CardContent className="p-4">
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <Ruler className="h-4 w-4" /> Dimensions & Packaging
+              </h4>
+              <div className="grid grid-cols-2 gap-x-6">
+                <InfoRow label="Thickness" value={specs.thicknessMm ? `${specs.thicknessMm} mm` : null} />
+                <InfoRow label="Width" value={specs.widthMm ? `${specs.widthMm} mm` : null} />
+                <InfoRow label="Length" value={specs.lengthMm ? `${specs.lengthMm} mm` : null} />
+                <InfoRow label="Wear Layer" value={specs.wearLayerMm ? `${specs.wearLayerMm} mm` : null} />
+                <InfoRow label="Plank Type" value={specs.plankType} />
+                <InfoRow label="Coverage per Box" value={pack.coverageSqftPerBox ? `${pack.coverageSqftPerBox} sqft` : null} />
+                <InfoRow label="Planks per Box" value={pack.planksPerBox} />
+                <InfoRow label="Weight per Box" value={pack.weightKgPerBox ? `${pack.weightKgPerBox} kg` : null} />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Finish & Performance */}
+          <div className="grid grid-cols-2 gap-4">
+            <Card>
+              <CardContent className="p-4">
+                <h4 className="font-semibold mb-3">Finish & Look</h4>
+                <InfoRow label="Finish" value={specs.finish} />
+                <InfoRow label="Color Tone" value={specs.colorTone} />
+                <InfoRow label="Stain" value={specs.stain} />
+                <InfoRow label="Texture" value={specs.texture} />
+                <InfoRow label="Edge / Bevel" value={specs.edge} />
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <h4 className="font-semibold mb-3">Performance</h4>
+                <InfoRow label="Janka Hardness" value={specs.janka} />
+                <InfoRow label="AC Rating" value={specs.acRating} />
+                <InfoRow label="Water Resistance" value={specs.waterResistance} />
+                <InfoRow label="Warranty (Residential)" value={specs.warrantyYearsResidential ? `${specs.warrantyYearsResidential} years` : null} />
+                <InfoRow label="Warranty (Commercial)" value={specs.warrantyYearsCommercial ? `${specs.warrantyYearsCommercial} years` : null} />
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* Pricing */}
+          <Card className="border-emerald-200 bg-emerald-50">
+            <CardContent className="p-4">
+              <h4 className="font-semibold mb-3 flex items-center gap-2 text-emerald-800">
+                <DollarSign className="h-4 w-4" /> Pricing (per sqft)
+              </h4>
+              <div className="grid grid-cols-4 gap-4">
+                <div className="text-center p-3 bg-white rounded-lg border">
+                  <p className="text-xs text-slate-500 mb-1">Cost Price</p>
+                  <p className="text-lg font-bold text-slate-700">₹{pricing.costPrice || 0}</p>
+                </div>
+                <div className="text-center p-3 bg-white rounded-lg border">
+                  <p className="text-xs text-slate-500 mb-1">MRP</p>
+                  <p className="text-lg font-bold text-slate-700">₹{pricing.mrp || 0}</p>
+                </div>
+                <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
+                  <p className="text-xs text-blue-600 mb-1">Dealer Price (B2B)</p>
+                  <p className="text-lg font-bold text-blue-700">₹{pricing.dealerPrice || 0}</p>
+                </div>
+                <div className="text-center p-3 bg-green-50 rounded-lg border border-green-200">
+                  <p className="text-xs text-green-600 mb-1">Retail Price (B2C)</p>
+                  <p className="text-lg font-bold text-green-700">₹{pricing.sellingPrice || 0}</p>
+                </div>
+              </div>
+              <div className="flex gap-4 mt-3 pt-3 border-t border-emerald-200">
+                <InfoRow label="HSN Code" value={tax.hsnCode || product.hsnCode} />
+                <InfoRow label="GST Rate" value={tax.gstRate != null ? `${tax.gstRate}%` : (product.gstRate != null ? `${product.gstRate}%` : null)} />
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Installation */}
+          <Card>
+            <CardContent className="p-4">
+              <h4 className="font-semibold mb-3 flex items-center gap-2">
+                <Info className="h-4 w-4" /> Installation
+              </h4>
+              <div className="grid grid-cols-2 gap-x-6">
+                <InfoRow label="Method" value={installation.method} />
+                <InfoRow label="Suitable Subfloor" value={installation.subfloor} />
+              </div>
+              <div className="flex gap-2 mt-3 flex-wrap">
+                <BooleanBadge value={installation.underlayment} label="Underlayment Required" />
+                <BooleanBadge value={installation.radiantHeat} label="Radiant Heat Compatible" />
+              </div>
+              {installation.installationNotes && (
+                <p className="text-sm text-slate-600 mt-3 pt-3 border-t">{installation.installationNotes}</p>
+              )}
+            </CardContent>
+          </Card>
+
+          {/* Compliance */}
+          {(compliance.fsc || compliance.greenguard || compliance.voc || compliance.fireRating) && (
+            <Card>
+              <CardContent className="p-4">
+                <h4 className="font-semibold mb-3">Compliance & Sustainability</h4>
+                <div className="flex gap-2 flex-wrap">
+                  <BooleanBadge value={compliance.fsc} label="FSC Certified" />
+                  <BooleanBadge value={compliance.greenguard} label="Greenguard" />
+                  <BooleanBadge value={compliance.voc} label="Low VOC" />
+                  {compliance.fireRating && <Badge variant="outline">Fire: {compliance.fireRating}</Badge>}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Close</Button>
+          <Button onClick={() => { onClose(); /* caller can handle edit */ }}>
+            <Edit className="h-4 w-4 mr-2" /> Edit Product
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
