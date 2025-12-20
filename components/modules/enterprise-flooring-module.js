@@ -7661,12 +7661,25 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                   className="w-20 h-7 text-sm"
                                   value={item.quantity}
                                   min="1"
+                                  max={totalArea}
                                   onChange={(e) => {
+                                    const newQty = parseInt(e.target.value) || 0
+                                    // Calculate total of other selected products
+                                    const otherProductsTotal = Object.values(measurementProducts)
+                                      .filter(p => p.selected && p.product.id !== item.product.id)
+                                      .reduce((sum, p) => sum + (p.quantity || 0), 0)
+                                    const maxAllowed = totalArea - otherProductsTotal
+                                    
+                                    if (newQty > maxAllowed) {
+                                      toast.error(`Max quantity allowed: ${maxAllowed} sqft (Total area: ${totalArea} sqft)`)
+                                      return
+                                    }
+                                    
                                     setMeasurementProducts(prev => ({
                                       ...prev,
                                       [item.product.id]: {
                                         ...prev[item.product.id],
-                                        quantity: parseInt(e.target.value) || totalArea
+                                        quantity: newQty
                                       }
                                     }))
                                   }}
