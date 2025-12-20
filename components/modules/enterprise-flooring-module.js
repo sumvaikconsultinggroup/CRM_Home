@@ -597,6 +597,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       setTechnicianName(measurementDetails.technicianName || '')
       setMeasurementDate(measurementDetails.measurementDate || new Date().toISOString().split('T')[0])
       setMeasurementNotes(measurementDetails.notes || '')
+      setIsEditingMaterials(false) // Reset edit mode when project changes
     }
   }, [selectedProject?.id, selectedProject?.measurementDetails])
 
