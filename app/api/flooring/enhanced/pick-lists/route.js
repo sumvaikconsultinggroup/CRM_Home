@@ -469,16 +469,18 @@ export async function PUT(request) {
           notes: data?.reason || 'Pick list cancelled'
         }
         
-        // Clear the pick list reference from the quote
+        // Clear the pick list reference from the quote completely
         await quotes.updateOne(
           { id: pickList.quoteId },
           { 
-            $set: { 
-              pickListId: null,
-              pickListNumber: null,
-              pickListStatus: null,
+            $unset: { 
+              pickListId: '',
+              pickListNumber: '',
+              pickListStatus: ''
+            },
+            $set: {
               updatedAt: now
-            } 
+            }
           }
         )
         break
