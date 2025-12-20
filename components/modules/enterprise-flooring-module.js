@@ -9256,22 +9256,22 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           <p className="text-xs text-slate-500">{item.productCode || item.sku || ''}</p>
                         </TableCell>
                         <TableCell className="text-right font-medium">
-                          {item.quote_qty_boxes || item.quotedQty || 0} boxes
+                          {item.quoteQtyBoxes || item.quote_qty_boxes || item.quotedQty || 0} boxes
                         </TableCell>
                         <TableCell className="text-right">
-                          {(item.quote_qty_area || item.quotedArea || 0).toFixed(1)} sqft
+                          {(item.quoteQtyArea || item.quote_qty_area || item.quotedArea || 0).toFixed(1)} sqft
                         </TableCell>
                         <TableCell className="text-right">
-                          {item.confirmed_qty_boxes !== undefined ? (
-                            <span className={item.confirmed_qty_boxes > 0 ? 'text-green-600 font-medium' : 'text-slate-400'}>
-                              {item.confirmed_qty_boxes} boxes
+                          {(item.confirmedQtyBoxes !== undefined && item.confirmedQtyBoxes !== null) || (item.confirmed_qty_boxes !== undefined && item.confirmed_qty_boxes !== null) ? (
+                            <span className={(item.confirmedQtyBoxes || item.confirmed_qty_boxes) > 0 ? 'text-green-600 font-medium' : 'text-slate-400'}>
+                              {item.confirmedQtyBoxes || item.confirmed_qty_boxes || 0} boxes
                             </span>
                           ) : (
                             <span className="text-slate-400">Pending</span>
                           )}
                         </TableCell>
                         <TableCell>
-                          <span className="text-slate-500">{item.bin_location || item.binLocation || '-'}</span>
+                          <span className="text-slate-500">{item.bin_location || item.binLocation || item.lotNo || '-'}</span>
                         </TableCell>
                       </TableRow>
                     ))}
