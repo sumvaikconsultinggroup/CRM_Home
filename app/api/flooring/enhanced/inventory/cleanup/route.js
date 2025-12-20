@@ -140,8 +140,95 @@ export async function POST(request) {
         })
         break
 
+      case 'consolidate_all':
+        // Comprehensive cleanup across ALL inventory collections
+        // This merges wf_inventory_stock, flooring_inventory_v2, flooring_inventory into one
+        const wfStockCol = db.collection('wf_inventory_stock')
+        const v2Col = db.collection('flooring_inventory_v2')
+        const v1Col = db.collection('flooring_inventory')
+        const productsCol = db.collection('flooring_products')
+        
+        // Get all products for reference
+        const productsForCleanup = await productsCol.find({}).toArray()
+        const productIdSet = new Set(productsForCleanup.map(p => p.id))
+        
+        // Collect all inventory from all sources
+        const wfItems = await wfStockCol.find({}).toArray()
+        const v2Items = await v2Col.find({}).toArray()
+        const v1Items = await v1Col.find({}).toArray()
+        
+        // Build consolidated map by productId
+        const consolidated = new Map()
+        
+        const processItem = (item, source) => {
+          if (!item.productId) return // Skip orphan entries
+          
+          const key = `${item.productId}-${item.warehouseId || 'default'}`
+          const existing = consolidated.get(key)
+          
+          if (existing) {
+            // Merge quantities - take the entry with more data, higher quantity, or newer update
+            if ((item.quantity || 0) > (existing.quantity || 0)) {
+              consolidated.set(key, { ...item, source, mergedFrom: [...(existing.mergedFrom || []), existing.source] })
+            }
+          } else {
+            consolidated.set(key, { ...item, source, mergedFrom: [] })
+          }
+        }
+        
+        // Process all items (priority: wf_inventory_stock > flooring_inventory_v2 > flooring_inventory)
+        v1Items.forEach(i => processItem(i, 'flooring_inventory'))
+        v2Items.forEach(i => processItem(i, 'flooring_inventory_v2'))
+        wfItems.forEach(i => processItem(i, 'wf_inventory_stock'))
+        
+        // Remove orphan entries (productId not in products collection)
+        for (const [key, item] of consolidated) {
+          if (!productIdSet.has(item.productId)) {
+            // Remove from all collections
+            await wfStockCol.deleteMany({ productId: item.productId })
+            await v2Col.deleteMany({ productId: item.productId })
+            await v1Col.deleteMany({ productId: item.productId })
+            results.removed++
+            results.details.push({
+              action: 'removed_orphan',
+              productId: item.productId,
+              reason: 'Product no longer exists'
+            })
+            consolidated.delete(key)
+          }
+        }
+        
+        // Clear wf_inventory_stock and rebuild with consolidated data
+        await wfStockCol.deleteMany({})
+        
+        for (const [key, item] of consolidated) {
+          const product = productsForCleanup.find(p => p.id === item.productId)
+          await wfStockCol.insertOne({
+            id: item.id || `inv-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+            productId: item.productId,
+            productName: product?.name || item.productName,
+            sku: product?.sku || item.sku,
+            warehouseId: item.warehouseId || 'default',
+            quantity: Math.max(0, item.quantity || 0),
+            reservedQuantity: Math.max(0, item.reservedQuantity || item.reservedQty || 0),
+            reorderLevel: item.reorderLevel || 100,
+            avgCostPrice: item.avgCostPrice || item.costPrice || 0,
+            batches: item.batches || [],
+            createdAt: item.createdAt || new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          })
+          results.fixed++
+        }
+        
+        results.details.push({
+          action: 'consolidate_all',
+          totalRecords: consolidated.size,
+          message: 'All inventory consolidated into wf_inventory_stock'
+        })
+        break
+
       default:
-        return errorResponse('Invalid action. Use: remove_negative, fix_negative_to_zero, remove_duplicates, reset_reserved', 400)
+        return errorResponse('Invalid action. Use: remove_negative, fix_negative_to_zero, remove_duplicates, reset_reserved, consolidate_all', 400)
     }
 
     return successResponse({
