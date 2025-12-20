@@ -9210,15 +9210,20 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       </Dialog>
 
       {/* ===== PICK LIST DIALOG - View and Confirm Materials ===== */}
-      <Dialog open={pickListDialog.open} onOpenChange={(open) => !open && setPickListDialog({ open: false, data: null })}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <Dialog open={pickListDialog.open} onOpenChange={(open) => {
+        if (!open) {
+          setPickListDialog({ open: false, data: null })
+          setPickListConfirmations({}) // Reset confirmations when closing
+        }
+      }}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Package className="h-5 w-5 text-blue-600" />
               Pick List {pickListDialog.data?.pickListNumber || ''}
             </DialogTitle>
             <DialogDescription>
-              Warehouse material preparation list for order fulfillment
+              Warehouse material preparation - Enter confirmed quantities for each item
             </DialogDescription>
           </DialogHeader>
           
@@ -9242,37 +9247,26 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   <p className="font-medium">{pickListDialog.data.quoteNumber || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 uppercase">Total Boxes</p>
+                  <p className="text-xs text-slate-500 uppercase">Required Boxes</p>
                   <p className="font-medium text-lg">{pickListDialog.data.totalBoxes || (pickListDialog.data.items || []).reduce((sum, i) => sum + (i.quoteQtyBoxes || 0), 0)}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 uppercase">Total Area</p>
+                  <p className="text-xs text-slate-500 uppercase">Required Area</p>
                   <p className="font-medium text-lg">{(pickListDialog.data.totalArea || (pickListDialog.data.items || []).reduce((sum, i) => sum + (i.quoteQtyArea || 0), 0)).toFixed(1)} sqft</p>
                 </div>
               </div>
 
-              {/* ACTION REQUIRED - Prominent section for warehouse */}
+              {/* Instructions for CREATED status */}
               {pickListDialog.data.status === 'CREATED' && (
-                <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-5">
-                  <div className="flex items-start gap-4">
-                    <div className="p-3 bg-amber-100 rounded-full">
-                      <AlertTriangle className="h-6 w-6 text-amber-600" />
-                    </div>
-                    <div className="flex-1">
-                      <h4 className="font-bold text-amber-800 text-lg mb-1">Action Required: Confirm Materials</h4>
-                      <p className="text-amber-700 mb-4">
-                        Please verify that all materials listed below are available and ready for dispatch. 
-                        Once confirmed, you can proceed to create a Delivery Challan.
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-start gap-3">
+                    <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+                    <div>
+                      <h4 className="font-semibold text-blue-800">How to Confirm Materials</h4>
+                      <p className="text-sm text-blue-700 mt-1">
+                        Enter the <strong>actual available quantity</strong> in the warehouse for each product. 
+                        If stock differs from required, enter what you have available. Click &quot;Confirm Material&quot; when done.
                       </p>
-                      <Button 
-                        onClick={() => handleConfirmPickList(pickListDialog.data.id)}
-                        className="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-6 py-2"
-                        disabled={loading}
-                        size="lg"
-                      >
-                        {loading ? <RefreshCw className="h-5 w-5 mr-2 animate-spin" /> : <CheckCircle2 className="h-5 w-5 mr-2" />}
-                        Confirm All Materials Ready
-                      </Button>
                     </div>
                   </div>
                 </div>
@@ -9286,9 +9280,9 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                       <CheckCircle2 className="h-6 w-6 text-green-600" />
                     </div>
                     <div className="flex-1">
-                      <h4 className="font-bold text-green-800 text-lg mb-1">Materials Confirmed Ready!</h4>
+                      <h4 className="font-bold text-green-800 text-lg mb-1">Materials Confirmed!</h4>
                       <p className="text-green-700 mb-4">
-                        All materials have been confirmed. You can now create a Delivery Challan to dispatch.
+                        Material quantities have been confirmed. You can now create a Delivery Challan.
                       </p>
                       <Button 
                         onClick={() => {
@@ -9318,53 +9312,191 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                 </div>
               )}
 
-              {/* Items Table */}
+              {/* Items Table with Editable Confirmations */}
               <div>
-                <h4 className="font-medium mb-3 flex items-center gap-2">
-                  <Package className="h-4 w-4" /> Materials to Pick ({(pickListDialog.data.items || []).length} items)
-                </h4>
+                <div className="flex items-center justify-between mb-3">
+                  <h4 className="font-medium flex items-center gap-2">
+                    <Package className="h-4 w-4" /> Materials to Pick ({(pickListDialog.data.items || []).length} items)
+                  </h4>
+                  {pickListDialog.data.status === 'CREATED' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => {
+                        // Auto-fill all with required quantities
+                        const newConfirmations = {}
+                        ;(pickListDialog.data.items || []).forEach(item => {
+                          newConfirmations[item.id] = {
+                            confirmedQtyBoxes: item.quoteQtyBoxes || 0,
+                            confirmedQtyArea: item.quoteQtyArea || 0,
+                            lotNo: '',
+                            notes: ''
+                          }
+                        })
+                        setPickListConfirmations(newConfirmations)
+                        toast.info('Auto-filled with required quantities')
+                      }}
+                    >
+                      <CheckCircle2 className="h-4 w-4 mr-1" /> Auto-fill All
+                    </Button>
+                  )}
+                </div>
                 <div className="border rounded-lg overflow-hidden">
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-slate-100">
-                        <TableHead className="font-semibold">Product</TableHead>
-                        <TableHead className="text-right font-semibold">Boxes Required</TableHead>
-                        <TableHead className="text-right font-semibold">Area (sqft)</TableHead>
-                        <TableHead className="text-center font-semibold">Status</TableHead>
+                        <TableHead className="font-semibold w-[200px]">Product</TableHead>
+                        <TableHead className="text-center font-semibold w-[120px]">Required</TableHead>
+                        {pickListDialog.data.status === 'CREATED' ? (
+                          <>
+                            <TableHead className="text-center font-semibold w-[150px]">Confirmed Qty</TableHead>
+                            <TableHead className="text-center font-semibold w-[120px]">Lot/Batch No</TableHead>
+                            <TableHead className="font-semibold">Notes</TableHead>
+                          </>
+                        ) : (
+                          <>
+                            <TableHead className="text-center font-semibold w-[120px]">Confirmed</TableHead>
+                            <TableHead className="text-center font-semibold w-[100px]">Variance</TableHead>
+                            <TableHead className="font-semibold">Lot/Notes</TableHead>
+                          </>
+                        )}
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {(pickListDialog.data.items || []).map((item, idx) => (
-                        <TableRow key={idx} className="hover:bg-slate-50">
-                          <TableCell>
-                            <p className="font-medium">{item.productName || 'Product'}</p>
-                            <p className="text-xs text-slate-500">{item.sku || ''}</p>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <span className="font-bold text-lg">{item.quoteQtyBoxes || 0}</span>
-                            <span className="text-slate-500 text-sm ml-1">boxes</span>
-                          </TableCell>
-                          <TableCell className="text-right">
-                            <span className="font-medium">{(item.quoteQtyArea || 0).toFixed(1)}</span>
-                            <span className="text-slate-500 text-sm ml-1">sqft</span>
-                          </TableCell>
-                          <TableCell className="text-center">
-                            {pickListDialog.data.status === 'MATERIAL_READY' ? (
-                              <Badge className="bg-green-100 text-green-700">
-                                <CheckCircle2 className="h-3 w-3 mr-1" /> Ready
-                              </Badge>
+                      {(pickListDialog.data.items || []).map((item, idx) => {
+                        const confirmation = pickListConfirmations[item.id] || {}
+                        const variance = pickListDialog.data.status === 'MATERIAL_READY' 
+                          ? (item.confirmedQtyBoxes || 0) - (item.quoteQtyBoxes || 0)
+                          : (confirmation.confirmedQtyBoxes || 0) - (item.quoteQtyBoxes || 0)
+                        
+                        return (
+                          <TableRow key={idx} className="hover:bg-slate-50">
+                            <TableCell>
+                              <p className="font-medium">{item.productName || 'Product'}</p>
+                              <p className="text-xs text-slate-500">{item.sku || ''}</p>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <div className="font-bold text-lg">{item.quoteQtyBoxes || 0}</div>
+                              <div className="text-xs text-slate-500">{(item.quoteQtyArea || 0).toFixed(1)} sqft</div>
+                            </TableCell>
+                            
+                            {pickListDialog.data.status === 'CREATED' ? (
+                              <>
+                                <TableCell>
+                                  <Input
+                                    type="number"
+                                    min="0"
+                                    className="w-24 text-center mx-auto"
+                                    placeholder="0"
+                                    value={confirmation.confirmedQtyBoxes ?? ''}
+                                    onChange={(e) => {
+                                      const boxes = parseInt(e.target.value) || 0
+                                      const coveragePerBox = item.coveragePerBoxSnapshot || 25
+                                      setPickListConfirmations(prev => ({
+                                        ...prev,
+                                        [item.id]: {
+                                          ...prev[item.id],
+                                          confirmedQtyBoxes: boxes,
+                                          confirmedQtyArea: boxes * coveragePerBox
+                                        }
+                                      }))
+                                    }}
+                                  />
+                                  {confirmation.confirmedQtyBoxes !== undefined && (
+                                    <div className="text-xs text-slate-500 text-center mt-1">
+                                      {(confirmation.confirmedQtyArea || 0).toFixed(1)} sqft
+                                    </div>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <Input
+                                    type="text"
+                                    className="w-28"
+                                    placeholder="Lot #"
+                                    value={confirmation.lotNo ?? ''}
+                                    onChange={(e) => {
+                                      setPickListConfirmations(prev => ({
+                                        ...prev,
+                                        [item.id]: {
+                                          ...prev[item.id],
+                                          lotNo: e.target.value
+                                        }
+                                      }))
+                                    }}
+                                  />
+                                </TableCell>
+                                <TableCell>
+                                  <Input
+                                    type="text"
+                                    placeholder="Notes (optional)"
+                                    value={confirmation.notes ?? ''}
+                                    onChange={(e) => {
+                                      setPickListConfirmations(prev => ({
+                                        ...prev,
+                                        [item.id]: {
+                                          ...prev[item.id],
+                                          notes: e.target.value
+                                        }
+                                      }))
+                                    }}
+                                  />
+                                </TableCell>
+                              </>
                             ) : (
-                              <Badge variant="outline" className="text-amber-600 border-amber-300">
-                                Pending
-                              </Badge>
+                              <>
+                                <TableCell className="text-center">
+                                  <div className="font-bold text-lg">{item.confirmedQtyBoxes || 0}</div>
+                                  <div className="text-xs text-slate-500">{(item.confirmedQtyArea || 0).toFixed(1)} sqft</div>
+                                </TableCell>
+                                <TableCell className="text-center">
+                                  {variance === 0 ? (
+                                    <Badge className="bg-green-100 text-green-700">Match</Badge>
+                                  ) : variance < 0 ? (
+                                    <Badge className="bg-red-100 text-red-700">{variance} boxes</Badge>
+                                  ) : (
+                                    <Badge className="bg-blue-100 text-blue-700">+{variance} boxes</Badge>
+                                  )}
+                                </TableCell>
+                                <TableCell>
+                                  <p className="text-sm">{item.lotNo || '-'}</p>
+                                  {item.notes && <p className="text-xs text-slate-500">{item.notes}</p>}
+                                </TableCell>
+                              </>
                             )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
+                          </TableRow>
+                        )
+                      })}
                     </TableBody>
                   </Table>
                 </div>
               </div>
+
+              {/* Summary when confirming */}
+              {pickListDialog.data.status === 'CREATED' && Object.keys(pickListConfirmations).length > 0 && (
+                <div className="bg-slate-50 border rounded-lg p-4">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-slate-600">
+                        <strong>Confirmed Total:</strong>{' '}
+                        {Object.values(pickListConfirmations).reduce((sum, c) => sum + (c.confirmedQtyBoxes || 0), 0)} boxes
+                        {' / '}
+                        {Object.values(pickListConfirmations).reduce((sum, c) => sum + (c.confirmedQtyArea || 0), 0).toFixed(1)} sqft
+                      </p>
+                      <p className="text-xs text-slate-500 mt-1">
+                        Required: {(pickListDialog.data.items || []).reduce((sum, i) => sum + (i.quoteQtyBoxes || 0), 0)} boxes
+                      </p>
+                    </div>
+                    {(() => {
+                      const totalConfirmed = Object.values(pickListConfirmations).reduce((sum, c) => sum + (c.confirmedQtyBoxes || 0), 0)
+                      const totalRequired = (pickListDialog.data.items || []).reduce((sum, i) => sum + (i.quoteQtyBoxes || 0), 0)
+                      const diff = totalConfirmed - totalRequired
+                      if (diff === 0) return <Badge className="bg-green-100 text-green-700">Exact Match</Badge>
+                      if (diff < 0) return <Badge className="bg-amber-100 text-amber-700">Short by {Math.abs(diff)} boxes</Badge>
+                      return <Badge className="bg-blue-100 text-blue-700">Excess by {diff} boxes</Badge>
+                    })()}
+                  </div>
+                </div>
+              )}
             </div>
           ) : (
             <div className="flex items-center justify-center py-12">
@@ -9372,10 +9504,72 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             </div>
           )}
 
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setPickListDialog({ open: false, data: null })}>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => {
+              setPickListDialog({ open: false, data: null })
+              setPickListConfirmations({})
+            }}>
               Close
             </Button>
+            {pickListDialog.data?.status === 'CREATED' && (
+              <Button 
+                onClick={async () => {
+                  // Validate all items have confirmation
+                  const items = pickListDialog.data.items || []
+                  const allConfirmed = items.every(item => 
+                    pickListConfirmations[item.id]?.confirmedQtyBoxes !== undefined
+                  )
+                  
+                  if (!allConfirmed) {
+                    toast.warning('Please enter confirmed quantity for all items')
+                    return
+                  }
+                  
+                  try {
+                    setLoading(true)
+                    const confirmationItems = items.map(item => ({
+                      itemId: item.id,
+                      confirmedQtyBoxes: pickListConfirmations[item.id]?.confirmedQtyBoxes || 0,
+                      confirmedQtyArea: pickListConfirmations[item.id]?.confirmedQtyArea || 0,
+                      lotNo: pickListConfirmations[item.id]?.lotNo || '',
+                      notes: pickListConfirmations[item.id]?.notes || ''
+                    }))
+                    
+                    const res = await fetch('/api/flooring/enhanced/pick-lists', {
+                      method: 'PUT',
+                      headers,
+                      body: JSON.stringify({
+                        id: pickListDialog.data.id,
+                        action: 'material_ready',
+                        data: { 
+                          items: confirmationItems
+                        }
+                      })
+                    })
+
+                    if (res.ok) {
+                      toast.success('Material quantities confirmed!')
+                      fetchQuotes()
+                      // Refresh the pick list data
+                      handleViewPickList(pickListDialog.data.id)
+                      setPickListConfirmations({})
+                    } else {
+                      const error = await res.json()
+                      toast.error(error.error || 'Failed to confirm material')
+                    }
+                  } catch (error) {
+                    toast.error('Error confirming material')
+                  } finally {
+                    setLoading(false)
+                  }
+                }}
+                className="bg-green-600 hover:bg-green-700"
+                disabled={loading || Object.keys(pickListConfirmations).length === 0}
+              >
+                {loading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                Confirm Material Quantities
+              </Button>
+            )}
           </DialogFooter>
         </DialogContent>
       </Dialog>
