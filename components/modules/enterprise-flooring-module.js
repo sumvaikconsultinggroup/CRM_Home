@@ -7762,6 +7762,56 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                 const hasProducts = Object.values(measurementProducts).some(p => p.selected)
                 const isInventoryBlocked = measurementDetails.inventoryBlocked
 
+                // If in edit mode, show Complete Measurement button
+                if (isEditingMaterials) {
+                  return (
+                    <div className="space-y-3">
+                      <div className="flex gap-3 flex-wrap">
+                        <Button 
+                          variant="outline"
+                          onClick={() => setDialogOpen({ type: 'room', data: { projectId: selectedProject.id } })}
+                        >
+                          <Plus className="h-4 w-4 mr-2" /> Add Room
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          disabled={loading || !technicianName.trim()}
+                          onClick={async () => {
+                            const saved = await saveMeasurementDetails(false)
+                            if (saved) toast.success('Details saved')
+                          }}
+                        >
+                          <RefreshCw className={`h-4 w-4 mr-2 ${loading ? 'animate-spin' : ''}`} /> Save Details
+                        </Button>
+                        <Button 
+                          className="bg-cyan-600 hover:bg-cyan-700"
+                          disabled={!hasRooms || loading}
+                          onClick={async () => {
+                            if (!technicianName.trim()) {
+                              toast.error('Please enter Technician/Visit Person name first')
+                              return
+                            }
+                            const saved = await saveMeasurementDetails(true)
+                            if (saved) {
+                              await handleUpdateProjectStatus(selectedProject.id, 'measurement_done')
+                              setSelectedProject(prev => ({ ...prev, status: 'measurement_done' }))
+                              setIsEditingMaterials(false)
+                              toast.success('Measurement completed! Inventory blocked.')
+                            }
+                          }}
+                        >
+                          {loading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Lock className="h-4 w-4 mr-2" />}
+                          Complete Measurement & Block Inventory
+                        </Button>
+                      </div>
+                      <p className="text-sm text-amber-600 flex items-center gap-2">
+                        <Info className="h-4 w-4" />
+                        Edit mode active. Make changes and click Complete Measurement to save.
+                      </p>
+                    </div>
+                  )
+                }
+
                 // Inventory already blocked - show edit/proceed options
                 if (isInventoryBlocked) {
                   // Check if already invoiced/dispatched/delivered - editing NOT allowed
@@ -7785,7 +7835,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           <Unlock className="h-4 w-4 mr-2" />
                           Edit Measurements & Materials
                         </Button>
-                        {status === 'measurement_done' && (
+                        {status === 'measurement_done' && !isEditingMaterials && (
                           <Button 
                             className="bg-emerald-600 hover:bg-emerald-700"
                             disabled={loading || !hasProducts}
