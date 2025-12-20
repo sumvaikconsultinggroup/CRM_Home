@@ -758,6 +758,52 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }
 
+  // Handler to save CRM contact directly (for Add Contact from Project dialog)
+  const handleSaveCrmContact = async (contactData) => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/contacts', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          ...contactData,
+          type: 'customer', // Always set as customer
+        })
+      })
+      
+      if (res.ok) {
+        const newContact = await res.json()
+        toast.success('Contact created & synced to CRM!')
+        
+        // Refresh CRM contacts
+        await fetchCrmContacts()
+        
+        // If we were adding from project dialog, go back to project dialog
+        // and auto-select the new contact
+        if (pendingProjectData !== null) {
+          setDialogOpen({ 
+            type: 'project', 
+            data: {
+              ...pendingProjectData,
+              customerId: newContact.contact?.id || newContact.id,
+              customerName: contactData.name
+            }
+          })
+          setPendingProjectData(null)
+        } else {
+          setDialogOpen({ type: null, data: null })
+        }
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to save contact')
+      }
+    } catch (error) {
+      toast.error('An error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleSaveProject = async (projectData) => {
     try {
       setLoading(true)
