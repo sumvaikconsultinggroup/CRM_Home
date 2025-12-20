@@ -5133,6 +5133,27 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                   >
                                     <Package className="h-3.5 w-3.5 mr-1" /> Prepare Material
                                   </Button>
+                                ) : quote.dcId ? (
+                                  // DC already exists - show DC status
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => {
+                                      // Navigate to challans tab with this DC selected
+                                      setActiveTab('challans')
+                                    }}
+                                    className={
+                                      quote.dcStatus === 'ISSUED' ? 'border-green-300 text-green-600 bg-green-50' :
+                                      quote.dcStatus === 'DELIVERED' ? 'border-purple-300 text-purple-600 bg-purple-50' :
+                                      'border-blue-300 text-blue-600 bg-blue-50'
+                                    }
+                                  >
+                                    <Truck className="h-3.5 w-3.5 mr-1" /> 
+                                    {quote.dcNumber || 'View DC'} 
+                                    <Badge variant="outline" className="ml-1 text-xs">
+                                      {quote.dcStatus || 'DRAFT'}
+                                    </Badge>
+                                  </Button>
                                 ) : quote.pickListStatus === 'MATERIAL_READY' ? (
                                   <Button 
                                     size="sm" 
