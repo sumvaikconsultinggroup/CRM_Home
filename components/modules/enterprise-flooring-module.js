@@ -9982,6 +9982,143 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                 )}
               </div>
 
+              {/* Third-Party Delivery / Dealer Customer Section */}
+              <div className="space-y-4 p-4 border-2 rounded-lg bg-amber-50 border-amber-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <input
+                      type="checkbox"
+                      id="third-party-delivery"
+                      checked={dcFormData.isThirdPartyDelivery}
+                      onChange={(e) => setDcFormData(prev => ({ ...prev, isThirdPartyDelivery: e.target.checked }))}
+                      className="h-5 w-5 rounded border-amber-400 text-amber-600 focus:ring-amber-500"
+                    />
+                    <label htmlFor="third-party-delivery" className="font-medium text-amber-800 cursor-pointer">
+                      Third-Party Delivery (Dealer Customer)
+                    </label>
+                  </div>
+                  <Badge variant="outline" className="bg-amber-100 text-amber-700 border-amber-300">
+                    Dealer Flow
+                  </Badge>
+                </div>
+                <p className="text-sm text-amber-700">
+                  Enable this when the dealer is billed but delivery goes to their end customer. 
+                  The challan PDF will only show receiver details.
+                </p>
+
+                {dcFormData.isThirdPartyDelivery && (
+                  <div className="space-y-4 pt-4 border-t border-amber-200">
+                    {/* PDF Options */}
+                    <div className="flex items-center gap-3">
+                      <input
+                        type="checkbox"
+                        id="hide-sender-pdf"
+                        checked={dcFormData.hideSenderOnPdf}
+                        onChange={(e) => setDcFormData(prev => ({ ...prev, hideSenderOnPdf: e.target.checked }))}
+                        className="h-4 w-4 rounded border-slate-300"
+                      />
+                      <label htmlFor="hide-sender-pdf" className="text-sm text-slate-700">
+                        Hide Sender on PDF (recommended for dealer-direct dispatch)
+                      </label>
+                    </div>
+
+                    {/* Delivery On Behalf Of */}
+                    <div>
+                      <Label>Delivery On Behalf Of (Optional)</Label>
+                      <Input
+                        placeholder="Dealer name for audit trail"
+                        value={dcFormData.deliveryOnBehalfOf}
+                        onChange={(e) => setDcFormData(prev => ({ ...prev, deliveryOnBehalfOf: e.target.value }))}
+                      />
+                      <p className="text-xs text-slate-500 mt-1">This is stored internally for audit, not printed on PDF</p>
+                    </div>
+
+                    {/* Bill To (Internal Reference) */}
+                    <div className="p-3 bg-slate-100 rounded-lg">
+                      <h5 className="font-medium text-sm text-slate-700 mb-2 flex items-center gap-2">
+                        <Building className="h-4 w-4" /> Bill To (Internal Reference)
+                        <Badge variant="outline" className="text-xs">Hidden on PDF</Badge>
+                      </h5>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs">Dealer/Bill To Name</Label>
+                          <Input
+                            placeholder="Dealer company name"
+                            value={dcFormData.billToName || dcDialog.data?.quote?.customer?.name || ''}
+                            onChange={(e) => setDcFormData(prev => ({ ...prev, billToName: e.target.value }))}
+                            className="h-9"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">GSTIN</Label>
+                          <Input
+                            placeholder="GST Number"
+                            value={dcFormData.billToGstin}
+                            onChange={(e) => setDcFormData(prev => ({ ...prev, billToGstin: e.target.value }))}
+                            className="h-9"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Ship To / End Customer */}
+                    <div className="p-3 bg-green-50 border border-green-200 rounded-lg">
+                      <h5 className="font-medium text-sm text-green-800 mb-2 flex items-center gap-2">
+                        <MapPin className="h-4 w-4" /> Ship To / Deliver To (End Customer) *
+                        <Badge className="bg-green-100 text-green-700 text-xs">Shown on PDF</Badge>
+                      </h5>
+                      <div className="grid grid-cols-2 gap-3 mb-3">
+                        <div>
+                          <Label className="text-xs">Site / Customer Name *</Label>
+                          <Input
+                            placeholder="End customer or site name"
+                            value={dcFormData.shipToName}
+                            onChange={(e) => setDcFormData(prev => ({ ...prev, shipToName: e.target.value }))}
+                            className="h-9"
+                          />
+                        </div>
+                        <div className="col-span-2">
+                          <Label className="text-xs">Delivery Site Address *</Label>
+                          <Textarea
+                            placeholder="Complete site address for delivery"
+                            value={dcFormData.shipToAddress}
+                            onChange={(e) => setDcFormData(prev => ({ ...prev, shipToAddress: e.target.value }))}
+                            rows={2}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Site Incharge / Receiver Contact */}
+                    <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+                      <h5 className="font-medium text-sm text-blue-800 mb-2 flex items-center gap-2">
+                        <User className="h-4 w-4" /> Site Incharge / Receiver Contact *
+                      </h5>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <Label className="text-xs">Receiver Name *</Label>
+                          <Input
+                            placeholder="Person receiving goods"
+                            value={dcFormData.siteInchargeName}
+                            onChange={(e) => setDcFormData(prev => ({ ...prev, siteInchargeName: e.target.value }))}
+                            className="h-9"
+                          />
+                        </div>
+                        <div>
+                          <Label className="text-xs">Receiver Phone *</Label>
+                          <Input
+                            placeholder="+91 98765 43210"
+                            value={dcFormData.siteInchargePhone}
+                            onChange={(e) => setDcFormData(prev => ({ ...prev, siteInchargePhone: e.target.value }))}
+                            className="h-9"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+
               {/* Photo Upload - Required for all */}
               <div className="space-y-3">
                 <h4 className="font-medium flex items-center gap-2">
