@@ -4694,14 +4694,137 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                               </div>
                             )}
                             
+                            {/* FULFILLMENT WORKFLOW for Approved Quotes */}
                             {quote.status === 'approved' && (
-                              <Button 
-                                size="sm" 
-                                onClick={() => handleCreateInvoiceFromQuote(quote)}
-                                className="bg-purple-600 hover:bg-purple-700 text-white"
-                              >
-                                <Receipt className="h-3.5 w-3.5 mr-1" /> Create Invoice
-                              </Button>
+                              <div className="flex items-center gap-1">
+                                {/* Primary Action: Prepare Material (Pick List) */}
+                                {!quote.pickListId ? (
+                                  <Button 
+                                    size="sm" 
+                                    onClick={() => handleCreatePickList(quote)}
+                                    className="bg-amber-600 hover:bg-amber-700 text-white"
+                                  >
+                                    <Package className="h-3.5 w-3.5 mr-1" /> Prepare Material
+                                  </Button>
+                                ) : quote.pickListStatus === 'MATERIAL_READY' ? (
+                                  <Button 
+                                    size="sm" 
+                                    onClick={() => handleCreateDCFromQuote(quote)}
+                                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                                  >
+                                    <Truck className="h-3.5 w-3.5 mr-1" /> Create DC
+                                  </Button>
+                                ) : (
+                                  <Button 
+                                    size="sm" 
+                                    variant="outline"
+                                    onClick={() => handleViewPickList(quote.pickListId)}
+                                    className="border-amber-300 text-amber-600"
+                                  >
+                                    <Package className="h-3.5 w-3.5 mr-1" /> {quote.pickListStatus || 'View Pick List'}
+                                  </Button>
+                                )}
+                                
+                                {/* Fulfillment Actions Dropdown */}
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="outline" size="sm" className="px-2">
+                                      <ChevronDown className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end" className="w-56">
+                                    <DropdownMenuLabel className="text-xs text-slate-500">Fulfillment Actions</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    
+                                    {/* Pick List Actions */}
+                                    {!quote.pickListId ? (
+                                      <DropdownMenuItem onClick={() => handleCreatePickList(quote)}>
+                                        <Package className="h-4 w-4 mr-2 text-amber-600" /> Create Pick List
+                                      </DropdownMenuItem>
+                                    ) : (
+                                      <>
+                                        <DropdownMenuItem onClick={() => handleViewPickList(quote.pickListId)}>
+                                          <Eye className="h-4 w-4 mr-2" /> View Pick List
+                                          <Badge variant="outline" className="ml-auto text-xs">{quote.pickListStatus}</Badge>
+                                        </DropdownMenuItem>
+                                        {quote.pickListStatus !== 'MATERIAL_READY' && quote.pickListStatus !== 'CLOSED' && (
+                                          <DropdownMenuItem onClick={() => handleConfirmPickList(quote.pickListId)}>
+                                            <CheckCircle className="h-4 w-4 mr-2 text-green-600" /> Confirm Material Ready
+                                          </DropdownMenuItem>
+                                        )}
+                                      </>
+                                    )}
+                                    
+                                    <DropdownMenuSeparator />
+                                    
+                                    {/* DC Actions */}
+                                    <DropdownMenuItem 
+                                      onClick={() => handleCreateDCFromQuote(quote)}
+                                      disabled={quote.pickListStatus !== 'MATERIAL_READY' && !fulfillmentSettings?.allowBypassPickListForDC}
+                                    >
+                                      <Truck className="h-4 w-4 mr-2 text-blue-600" /> Create Delivery Challan
+                                      {quote.pickListStatus !== 'MATERIAL_READY' && (
+                                        <Lock className="h-3 w-3 ml-auto text-slate-400" />
+                                      )}
+                                    </DropdownMenuItem>
+                                    
+                                    {(quote.challanIds?.length > 0) && (
+                                      <DropdownMenuItem onClick={() => handleViewChallans(quote.id)}>
+                                        <FileText className="h-4 w-4 mr-2" /> View Challans ({quote.challanIds.length})
+                                      </DropdownMenuItem>
+                                    )}
+                                    
+                                    <DropdownMenuSeparator />
+                                    
+                                    {/* Invoice Actions */}
+                                    <DropdownMenuItem 
+                                      onClick={() => handleCreateInvoiceFromQuote(quote)}
+                                      disabled={quote.pickListStatus !== 'MATERIAL_READY' && !fulfillmentSettings?.allowBypassPickListForInvoice}
+                                    >
+                                      <Receipt className="h-4 w-4 mr-2 text-purple-600" /> Create Invoice
+                                      {quote.pickListStatus !== 'MATERIAL_READY' && (
+                                        <Lock className="h-3 w-3 ml-auto text-slate-400" />
+                                      )}
+                                    </DropdownMenuItem>
+                                    
+                                    {quote.invoiceId && (
+                                      <DropdownMenuItem onClick={() => handleViewInvoice(quote.invoiceId)}>
+                                        <Receipt className="h-4 w-4 mr-2" /> View Invoice
+                                      </DropdownMenuItem>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                                
+                                {/* Status Badges */}
+                                <div className="hidden xl:flex items-center gap-1 ml-2">
+                                  {quote.pickListId && (
+                                    <Badge 
+                                      variant="outline" 
+                                      className={`text-xs ${
+                                        quote.pickListStatus === 'MATERIAL_READY' ? 'bg-green-50 text-green-700 border-green-200' :
+                                        quote.pickListStatus === 'PICKING' ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                                        'bg-slate-50 text-slate-600'
+                                      }`}
+                                    >
+                                      <Package className="h-3 w-3 mr-1" />
+                                      {quote.pickListStatus === 'MATERIAL_READY' ? 'Ready' : quote.pickListStatus}
+                                    </Badge>
+                                  )}
+                                  {quote.dispatchStatus && quote.dispatchStatus !== 'PENDING' && (
+                                    <Badge 
+                                      variant="outline" 
+                                      className={`text-xs ${
+                                        quote.dispatchStatus === 'DELIVERED' ? 'bg-green-50 text-green-700 border-green-200' :
+                                        quote.dispatchStatus === 'DISPATCHED' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                        'bg-slate-50 text-slate-600'
+                                      }`}
+                                    >
+                                      <Truck className="h-3 w-3 mr-1" />
+                                      {quote.dispatchStatus}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
                             )}
                             
                             {quote.status === 'rejected' && (
