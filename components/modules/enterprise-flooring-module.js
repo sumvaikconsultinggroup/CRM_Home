@@ -3332,9 +3332,23 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                             Delivered
                           </Button>
                         )}
-                        <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'project', data: project })} title="Edit">
-                          <Edit className="h-4 w-4" />
-                        </Button>
+                        {/* Edit button - disabled for advanced workflow stages */}
+                        {(() => {
+                          const nonEditableStatuses = ['quote_approved', 'invoice_sent', 'in_transit', 'delivered', 'payment_received', 'installation_scheduled', 'installation_in_progress', 'completed']
+                          const isEditable = !nonEditableStatuses.includes(project.status)
+                          return (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => isEditable && setDialogOpen({ type: 'project', data: project })} 
+                              title={isEditable ? "Edit" : "Cannot edit - project has progressed past editable stage"}
+                              disabled={!isEditable}
+                              className={!isEditable ? "opacity-50 cursor-not-allowed" : ""}
+                            >
+                              <Edit className="h-4 w-4" />
+                            </Button>
+                          )
+                        })()}
                         <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'view_project', data: project })} title="View">
                           <Eye className="h-4 w-4" />
                         </Button>
