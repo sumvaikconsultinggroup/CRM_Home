@@ -445,16 +445,20 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, cust
     }))
   }
 
-  // Calculate totals
+  // Calculate totals - GST from product level
   const subtotal = form.items.reduce((sum, item) => sum + (item.totalPrice || 0), 0)
   const discountAmount = form.discountType === 'percentage' 
     ? subtotal * (form.discountValue / 100) 
     : form.discountValue
   const taxableAmount = subtotal - discountAmount
-  const cgstAmount = taxableAmount * (form.cgstRate / 100)
-  const sgstAmount = taxableAmount * (form.sgstRate / 100)
-  const igstAmount = taxableAmount * (form.igstRate / 100)
-  const totalTax = cgstAmount + sgstAmount + igstAmount
+  
+  // Calculate GST from each item's individual GST rate
+  const totalTax = form.items.reduce((sum, item) => {
+    const itemTaxable = (item.totalPrice || 0) * (1 - (form.discountValue / 100 * (form.discountType === 'percentage' ? 1 : 0)))
+    const gstRate = item.gstRate || 18
+    return sum + (itemTaxable * gstRate / 100)
+  }, 0)
+  
   const grandTotal = taxableAmount + totalTax
 
   // Handle save - supports both regular save and save as draft
