@@ -96,8 +96,8 @@ export async function GET(request) {
     ]).toArray()
 
     return successResponse({
-      products: sanitizeDocuments(result),
-      total,
+      products: sanitizeDocuments(mergedProducts),
+      total: total + additionalProducts.length,
       categories: categorySummary.map(c => ({ categoryId: c._id, count: c.count }))
     })
   } catch (error) {
