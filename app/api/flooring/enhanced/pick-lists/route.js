@@ -367,6 +367,35 @@ export async function PUT(request) {
           return errorResponse('Invalid status transition to MATERIAL_READY', 400)
         }
 
+        // If items are provided, update them first
+        if (data?.items && Array.isArray(data.items) && data.items.length > 0) {
+          for (const itemUpdate of data.items) {
+            if (!itemUpdate.itemId) continue
+            
+            const itemUpdateData = {
+              updatedAt: now
+            }
+            
+            if (itemUpdate.confirmedQtyArea !== undefined) {
+              itemUpdateData.confirmedQtyArea = itemUpdate.confirmedQtyArea
+            }
+            if (itemUpdate.confirmedQtyBoxes !== undefined) {
+              itemUpdateData.confirmedQtyBoxes = itemUpdate.confirmedQtyBoxes
+            }
+            if (itemUpdate.lotNo !== undefined) {
+              itemUpdateData.lotNo = itemUpdate.lotNo
+            }
+            if (itemUpdate.notes !== undefined) {
+              itemUpdateData.notes = itemUpdate.notes
+            }
+
+            await pickListItems.updateOne(
+              { id: itemUpdate.itemId },
+              { $set: itemUpdateData }
+            )
+          }
+        }
+
         // Verify all items have been confirmed
         const allItems = await pickListItems.find({ pickListId: id }).toArray()
         const unconfirmedItems = allItems.filter(i => 
