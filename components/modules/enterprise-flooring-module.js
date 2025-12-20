@@ -9225,7 +9225,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           {pickListDialog.data ? (
             <div className="space-y-6">
               {/* Pick List Header Info */}
-              <div className="grid grid-cols-3 gap-4 p-4 bg-slate-50 rounded-lg">
+              <div className="grid grid-cols-4 gap-4 p-4 bg-slate-50 rounded-lg">
                 <div>
                   <p className="text-xs text-slate-500 uppercase">Status</p>
                   <Badge className={
@@ -9242,74 +9242,127 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   <p className="font-medium">{pickListDialog.data.quoteNumber || '-'}</p>
                 </div>
                 <div>
-                  <p className="text-xs text-slate-500 uppercase">Created</p>
-                  <p className="font-medium">{pickListDialog.data.createdAt ? new Date(pickListDialog.data.createdAt).toLocaleDateString() : (pickListDialog.data.created_at ? new Date(pickListDialog.data.created_at).toLocaleDateString() : '-')}</p>
+                  <p className="text-xs text-slate-500 uppercase">Total Boxes</p>
+                  <p className="font-medium text-lg">{pickListDialog.data.totalBoxes || (pickListDialog.data.items || []).reduce((sum, i) => sum + (i.quoteQtyBoxes || 0), 0)}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Total Area</p>
+                  <p className="font-medium text-lg">{(pickListDialog.data.totalArea || (pickListDialog.data.items || []).reduce((sum, i) => sum + (i.quoteQtyArea || 0), 0)).toFixed(1)} sqft</p>
                 </div>
               </div>
+
+              {/* ACTION REQUIRED - Prominent section for warehouse */}
+              {pickListDialog.data.status === 'CREATED' && (
+                <div className="bg-amber-50 border-2 border-amber-300 rounded-lg p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-amber-100 rounded-full">
+                      <AlertTriangle className="h-6 w-6 text-amber-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-amber-800 text-lg mb-1">Action Required: Confirm Materials</h4>
+                      <p className="text-amber-700 mb-4">
+                        Please verify that all materials listed below are available and ready for dispatch. 
+                        Once confirmed, you can proceed to create a Delivery Challan.
+                      </p>
+                      <Button 
+                        onClick={() => handleConfirmPickList(pickListDialog.data.id)}
+                        className="bg-amber-600 hover:bg-amber-700 text-white font-semibold px-6 py-2"
+                        disabled={loading}
+                        size="lg"
+                      >
+                        {loading ? <RefreshCw className="h-5 w-5 mr-2 animate-spin" /> : <CheckCircle2 className="h-5 w-5 mr-2" />}
+                        Confirm All Materials Ready
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Material Ready Success */}
+              {pickListDialog.data.status === 'MATERIAL_READY' && (
+                <div className="bg-green-50 border-2 border-green-300 rounded-lg p-5">
+                  <div className="flex items-start gap-4">
+                    <div className="p-3 bg-green-100 rounded-full">
+                      <CheckCircle2 className="h-6 w-6 text-green-600" />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className="font-bold text-green-800 text-lg mb-1">Materials Confirmed Ready!</h4>
+                      <p className="text-green-700 mb-4">
+                        All materials have been confirmed. You can now create a Delivery Challan to dispatch.
+                      </p>
+                      <Button 
+                        onClick={() => {
+                          setPickListDialog({ open: false, data: null })
+                          const quote = quotes.find(q => q.id === pickListDialog.data.quoteId)
+                          if (quote) {
+                            setDcDialog({ 
+                              open: true, 
+                              data: { 
+                                source: 'pick_list',
+                                sourceId: pickListDialog.data.id,
+                                pickList: pickListDialog.data,
+                                quote,
+                                customer: quote.customer
+                              } 
+                            })
+                          }
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-semibold px-6 py-2"
+                        size="lg"
+                      >
+                        <Truck className="h-5 w-5 mr-2" />
+                        Create Delivery Challan
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              )}
 
               {/* Items Table */}
               <div>
                 <h4 className="font-medium mb-3 flex items-center gap-2">
-                  <Package className="h-4 w-4" /> Materials to Pick
+                  <Package className="h-4 w-4" /> Materials to Pick ({(pickListDialog.data.items || []).length} items)
                 </h4>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-slate-50">
-                      <TableHead>Product</TableHead>
-                      <TableHead className="text-right">Quoted Qty</TableHead>
-                      <TableHead className="text-right">Area (sqft)</TableHead>
-                      <TableHead className="text-right">Confirmed</TableHead>
-                      <TableHead>Bin/Location</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(pickListDialog.data.items || []).map((item, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell>
-                          <p className="font-medium">{item.productName || item.product_name || 'Product'}</p>
-                          <p className="text-xs text-slate-500">{item.productCode || item.sku || ''}</p>
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {item.quoteQtyBoxes || item.quote_qty_boxes || item.quotedQty || 0} boxes
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {(item.quoteQtyArea || item.quote_qty_area || item.quotedArea || 0).toFixed(1)} sqft
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {(item.confirmedQtyBoxes !== undefined && item.confirmedQtyBoxes !== null) || (item.confirmed_qty_boxes !== undefined && item.confirmed_qty_boxes !== null) ? (
-                            <span className={(item.confirmedQtyBoxes || item.confirmed_qty_boxes) > 0 ? 'text-green-600 font-medium' : 'text-slate-400'}>
-                              {item.confirmedQtyBoxes || item.confirmed_qty_boxes || 0} boxes
-                            </span>
-                          ) : (
-                            <span className="text-slate-400">Pending</span>
-                          )}
-                        </TableCell>
-                        <TableCell>
-                          <span className="text-slate-500">{item.bin_location || item.binLocation || item.lotNo || '-'}</span>
-                        </TableCell>
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-100">
+                        <TableHead className="font-semibold">Product</TableHead>
+                        <TableHead className="text-right font-semibold">Boxes Required</TableHead>
+                        <TableHead className="text-right font-semibold">Area (sqft)</TableHead>
+                        <TableHead className="text-center font-semibold">Status</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-
-              {/* Summary */}
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-blue-700">
-                      <strong>Total Items:</strong> {(pickListDialog.data.items || []).length} products
-                    </p>
-                    <p className="text-sm text-blue-700">
-                      <strong>Total Boxes:</strong> {(pickListDialog.data.items || []).reduce((sum, i) => sum + (i.quoteQtyBoxes || i.quote_qty_boxes || i.quotedQty || 0), 0)}
-                    </p>
-                  </div>
-                  {pickListDialog.data.status === 'CREATED' && (
-                    <div className="text-sm text-blue-600">
-                      <Package className="h-4 w-4 inline mr-1" />
-                      Waiting for warehouse to confirm materials
-                    </div>
-                  )}
+                    </TableHeader>
+                    <TableBody>
+                      {(pickListDialog.data.items || []).map((item, idx) => (
+                        <TableRow key={idx} className="hover:bg-slate-50">
+                          <TableCell>
+                            <p className="font-medium">{item.productName || 'Product'}</p>
+                            <p className="text-xs text-slate-500">{item.sku || ''}</p>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <span className="font-bold text-lg">{item.quoteQtyBoxes || 0}</span>
+                            <span className="text-slate-500 text-sm ml-1">boxes</span>
+                          </TableCell>
+                          <TableCell className="text-right">
+                            <span className="font-medium">{(item.quoteQtyArea || 0).toFixed(1)}</span>
+                            <span className="text-slate-500 text-sm ml-1">sqft</span>
+                          </TableCell>
+                          <TableCell className="text-center">
+                            {pickListDialog.data.status === 'MATERIAL_READY' ? (
+                              <Badge className="bg-green-100 text-green-700">
+                                <CheckCircle2 className="h-3 w-3 mr-1" /> Ready
+                              </Badge>
+                            ) : (
+                              <Badge variant="outline" className="text-amber-600 border-amber-300">
+                                Pending
+                              </Badge>
+                            )}
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
                 </div>
               </div>
             </div>
@@ -9319,25 +9372,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             </div>
           )}
 
-          <DialogFooter className="gap-2">
+          <DialogFooter>
             <Button variant="outline" onClick={() => setPickListDialog({ open: false, data: null })}>
               Close
             </Button>
-            {pickListDialog.data?.status === 'CREATED' && (
-              <Button 
-                onClick={() => handleConfirmPickList(pickListDialog.data.id)}
-                className="bg-green-600 hover:bg-green-700"
-                disabled={loading}
-              >
-                {loading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
-                Confirm Material Ready
-              </Button>
-            )}
-            {pickListDialog.data?.status === 'MATERIAL_READY' && (
-              <Button 
-                onClick={() => {
-                  setPickListDialog({ open: false, data: null })
-                  // Find the quote and open DC dialog
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
                   const quote = quotes.find(q => q.id === pickListDialog.data.quote_id)
                   if (quote) {
                     setDcDialog({ 
