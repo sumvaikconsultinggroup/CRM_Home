@@ -7923,9 +7923,6 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                             Quote created. Material changes locked. Edit through quote revision if needed.
                           </>
                         ) : (
-                            Invoice generated. Stock allocated and deducted.
-                          </>
-                        ) : (
                           <>
                             <Lock className="h-4 w-4" />
                             Stock allocated for this project. Click "Edit Materials" to modify.
