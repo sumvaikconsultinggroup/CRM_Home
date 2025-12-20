@@ -4493,9 +4493,9 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     const projectDisplay = quote.projectNumber || linkedProject?.projectNumber || '-'
                     
                     return (
-                      <tr key={quote.id} className={`hover:bg-slate-50 transition-colors ${isLocked ? 'bg-purple-50/30' : ''} ${isExpired ? 'bg-red-50/30' : ''}`}>
+                      <TableRow key={quote.id} className={`hover:bg-slate-50 transition-colors ${isLocked ? 'bg-purple-50/30' : ''} ${isExpired ? 'bg-red-50/30' : ''}`}>
                         {/* Quote Number */}
-                        <td className="px-4 py-3">
+                        <TableCell className="px-4 py-3">
                           <div className="flex items-center gap-2">
                             <div className={`p-1.5 rounded ${actualConfig.color.split(' ')[0]}`}>
                               <StatusIcon className={`h-4 w-4 ${actualConfig.color.split(' ')[1]}`} />
@@ -4506,28 +4506,28 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                             </div>
                             {quote.version > 1 && <Badge variant="outline" className="text-xs">v{quote.version}</Badge>}
                           </div>
-                        </td>
+                        </TableCell>
                         
                         {/* Customer */}
-                        <td className="px-4 py-3">
+                        <TableCell className="px-4 py-3">
                           <div>
                             <p className="font-medium text-slate-900">{quote.customer?.name || '-'}</p>
                             <p className="text-xs text-slate-500">{quote.customer?.phone || quote.customer?.email || ''}</p>
                           </div>
-                        </td>
+                        </TableCell>
                         
                         {/* Project */}
-                        <td className="px-4 py-3">
+                        <TableCell className="px-4 py-3">
                           <Badge variant="outline" className="font-mono text-xs">
                             {projectDisplay}
                           </Badge>
-                        </td>
+                        </TableCell>
                         
                         {/* Items & Area */}
-                        <td className="px-4 py-3">
+                        <TableCell className="px-4 py-3">
                           <p className="font-medium">{quote.items?.length || 0} items</p>
                           <p className="text-xs text-slate-500">{(quote.totalArea || 0).toFixed(0)} sqft</p>
-                        </td>
+                        </TableCell>
                         
                         {/* Amount */}
                         <td className="px-4 py-3">
