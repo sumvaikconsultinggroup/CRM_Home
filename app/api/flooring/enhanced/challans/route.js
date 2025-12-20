@@ -247,7 +247,7 @@ export async function POST(request) {
     const challanItems = db.collection('flooring_challan_items')
     const pickLists = db.collection('flooring_pick_lists')
     const pickListItems = db.collection('flooring_pick_list_items')
-    const quotes = db.collection('flooring_quotes')
+    const quotes = db.collection('flooring_quotes_v2')
     const invoices = db.collection('flooring_invoices')
     const products = db.collection('flooring_products')
 
@@ -508,7 +508,7 @@ export async function PUT(request) {
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
     const challans = db.collection('flooring_challans')
-    const quotes = db.collection('flooring_quotes')
+    const quotes = db.collection('flooring_quotes_v2')
     const invoices = db.collection('flooring_invoices')
     const projects = db.collection('flooring_projects')
 
