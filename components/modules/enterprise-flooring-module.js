@@ -4530,30 +4530,30 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                         </TableCell>
                         
                         {/* Amount */}
-                        <td className="px-4 py-3">
+                        <TableCell className="px-4 py-3">
                           <p className={`font-bold ${isLocked ? 'text-purple-600' : 'text-emerald-600'}`}>
                             ₹{(quote.grandTotal || 0).toLocaleString('en-IN')}
                           </p>
                           {quote.discountAmount > 0 && (
                             <p className="text-xs text-emerald-500">Disc: ₹{quote.discountAmount.toLocaleString()}</p>
                           )}
-                        </td>
+                        </TableCell>
                         
                         {/* Created Date */}
-                        <td className="px-4 py-3 text-sm text-slate-600">
+                        <TableCell className="px-4 py-3 text-sm text-slate-600">
                           {new Date(quote.createdAt).toLocaleDateString('en-IN')}
-                        </td>
+                        </TableCell>
                         
                         {/* Valid Until */}
-                        <td className="px-4 py-3 text-sm">
+                        <TableCell className="px-4 py-3 text-sm">
                           <span className={isExpired ? 'text-red-600 font-medium' : 'text-slate-500'}>
                             {new Date(quote.validUntil).toLocaleDateString('en-IN')}
                           </span>
                           {isExpired && <p className="text-xs text-red-500">Expired</p>}
-                        </td>
+                        </TableCell>
                         
                         {/* Status */}
-                        <td className="px-4 py-3">
+                        <TableCell className="px-4 py-3">
                           <Badge className={`${actualConfig.color} border flex items-center gap-1 w-fit`}>
                             <StatusIcon className="h-3 w-3" />
                             {actualConfig.label}
@@ -4563,10 +4563,10 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                               <Lock className="h-3 w-3" /> Locked
                             </p>
                           )}
-                        </td>
+                        </TableCell>
                         
                         {/* Actions - SAP/Zoho Style with Clear Workflow Buttons */}
-                        <td className="px-4 py-3">
+                        <TableCell className="px-4 py-3">
                           <div className="flex items-center gap-2">
                             {/* Primary Action Button based on Status */}
                             {quote.status === 'draft' && (
