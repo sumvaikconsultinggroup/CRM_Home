@@ -4763,14 +4763,29 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                   <Download className="h-4 w-4 mr-2 text-emerald-600" /> Download PDF
                                 </DropdownMenuItem>
                                 
-                                {/* Edit - Only for draft/revised */}
-                                {canEdit && (
+                                {/* For Cancelled quotes - Show locked message and cancellation reason */}
+                                {quote.status === 'cancelled' && (
+                                  <>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem disabled className="text-gray-400">
+                                      <Lock className="h-4 w-4 mr-2" /> Quote Cancelled
+                                    </DropdownMenuItem>
+                                    {quote.cancellationReason && (
+                                      <div className="px-2 py-1.5 text-xs text-gray-500 italic">
+                                        Reason: {quote.cancellationReason}
+                                      </div>
+                                    )}
+                                  </>
+                                )}
+                                
+                                {/* Edit - Only for draft/revised (not cancelled) */}
+                                {canEdit && quote.status !== 'cancelled' && (
                                   <DropdownMenuItem onClick={() => setDialogOpen({ type: 'quote', data: quote })}>
                                     <Edit className="h-4 w-4 mr-2 text-blue-600" /> Edit Quote
                                   </DropdownMenuItem>
                                 )}
                                 
-                                <DropdownMenuSeparator />
+                                {quote.status !== 'cancelled' && <DropdownMenuSeparator />}
                                 
                                 {/* Status-specific secondary actions */}
                                 {quote.status === 'draft' && (
