@@ -493,42 +493,97 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, modu
     onSave(quoteData)
   }
 
+  // Payment terms options
+  const paymentTermsOptions = [
+    { value: 'advance100', label: '100% Advance' },
+    { value: 'advance50', label: '50% Advance, 50% on Delivery' },
+    { value: 'advance30', label: '30% Advance, 70% on Completion' },
+    { value: 'net15', label: 'Net 15 Days' },
+    { value: 'net30', label: 'Net 30 Days' },
+    { value: 'net45', label: 'Net 45 Days' },
+    { value: 'net60', label: 'Net 60 Days' },
+    { value: 'cod', label: 'Cash on Delivery' },
+    { value: 'milestone', label: 'Milestone Based' },
+    { value: 'custom', label: 'Custom Terms' }
+  ]
+
+  // Subfloor type options
+  const subfloorOptions = [
+    { value: 'concrete', label: 'Concrete' },
+    { value: 'plywood', label: 'Plywood' },
+    { value: 'osb', label: 'OSB (Oriented Strand Board)' },
+    { value: 'existing_tile', label: 'Existing Tile' },
+    { value: 'existing_hardwood', label: 'Existing Hardwood' },
+    { value: 'cement_board', label: 'Cement Board' },
+    { value: 'other', label: 'Other' }
+  ]
+
   return (
     <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-5xl max-h-[90vh] overflow-hidden flex flex-col">
-        <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <FileText className="h-5 w-5 text-blue-600" />
-            {quote?.id ? `Edit Quote ${quote.quoteNumber}` : 'Create New Quote'}
-          </DialogTitle>
-          <DialogDescription>
-            {quote?.id ? 'Update the quote details below' : 'Fill in the details to create a new quote'}
-          </DialogDescription>
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden flex flex-col">
+        <DialogHeader className="border-b pb-4">
+          <div className="flex items-center justify-between">
+            <div>
+              <DialogTitle className="flex items-center gap-2 text-xl">
+                <FileText className="h-5 w-5 text-blue-600" />
+                {quote?.id ? `Edit Quote ${quote.quoteNumber}` : 'Create New Quote'}
+              </DialogTitle>
+              <DialogDescription>
+                {quote?.id ? 'Update the quote details below' : 'Enterprise-level quotation for flooring projects'}
+              </DialogDescription>
+            </div>
+            {form.salesRepName && (
+              <div className="text-right text-sm">
+                <p className="text-slate-500">Sales Representative</p>
+                <p className="font-medium">{form.salesRepName}</p>
+              </div>
+            )}
+          </div>
         </DialogHeader>
 
-        <ScrollArea className="flex-1 pr-4">
-          <div className="space-y-6 py-4">
-            {/* Project Selection */}
-            <Card className="p-4">
-              <h4 className="font-semibold mb-3 flex items-center gap-2">
-                <ClipboardList className="h-4 w-4" /> Link to Project
-              </h4>
-              <Select value={form.projectId} onValueChange={handleProjectSelect}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a project (optional)" />
-                </SelectTrigger>
-                <SelectContent>
-                  {projects.filter(p => p.status !== 'completed' && p.status !== 'cancelled').map(proj => (
-                    <SelectItem key={proj.id} value={proj.id}>
-                      {proj.projectNumber} - {proj.customer?.name || proj.customerName || 'No Customer'}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </Card>
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+          <TabsList className="grid w-full grid-cols-5 mb-4">
+            <TabsTrigger value="basic" className="flex items-center gap-1">
+              <Users className="h-3.5 w-3.5" /> Basic Info
+            </TabsTrigger>
+            <TabsTrigger value="items" className="flex items-center gap-1">
+              <Package className="h-3.5 w-3.5" /> Items
+            </TabsTrigger>
+            <TabsTrigger value="terms" className="flex items-center gap-1">
+              <CreditCard className="h-3.5 w-3.5" /> Payment & Terms
+            </TabsTrigger>
+            <TabsTrigger value="site" className="flex items-center gap-1">
+              <Ruler className="h-3.5 w-3.5" /> Site Details
+            </TabsTrigger>
+            <TabsTrigger value="summary" className="flex items-center gap-1">
+              <FileText className="h-3.5 w-3.5" /> Summary
+            </TabsTrigger>
+          </TabsList>
 
-            {/* Customer Details */}
-            <div className="grid grid-cols-2 gap-4">
+          <ScrollArea className="flex-1 pr-4">
+            {/* TAB 1: Basic Info */}
+            <TabsContent value="basic" className="space-y-4 mt-0">
+              {/* Project Selection */}
+              <Card className="p-4">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <ClipboardList className="h-4 w-4" /> Link to Project
+                </h4>
+                <Select value={form.projectId} onValueChange={handleProjectSelect}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a project (optional)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {projects.filter(p => p.status !== 'completed' && p.status !== 'cancelled').map(proj => (
+                      <SelectItem key={proj.id} value={proj.id}>
+                        {proj.projectNumber} - {proj.customer?.name || proj.customerName || 'No Customer'}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </Card>
+
+              {/* Customer & Sales Rep in 2 columns */}
+              <div className="grid grid-cols-2 gap-4">
               <Card className="p-4">
                 <h4 className="font-semibold mb-3 flex items-center gap-2">
                   <Users className="h-4 w-4" /> Customer Details
