@@ -106,7 +106,7 @@ export async function POST(request) {
     const db = await getClientDb(dbName)
     const pickLists = db.collection('flooring_pick_lists')
     const pickListItems = db.collection('flooring_pick_list_items')
-    const quotes = db.collection('flooring_quotes')
+    const quotes = db.collection('flooring_quotes_v2')  // Use v2 collection for enhanced quotes
     const products = db.collection('flooring_products')
 
     // Check for existing active pick list for this quote
