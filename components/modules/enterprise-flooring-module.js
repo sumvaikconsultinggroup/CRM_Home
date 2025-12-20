@@ -7448,21 +7448,35 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           />
         )}
 
-        {/* Product Selection with Inventory - Show when rooms exist */}
-        {rooms.length > 0 && (
-          <Card className="border-2 border-cyan-200">
+        {/* Product Selection with Inventory - Show when rooms exist and NOT blocked (or editing) */}
+        {rooms.length > 0 && (!measurementDetails.inventoryBlocked || isEditingMaterials) && (
+          <Card className={`border-2 ${isEditingMaterials ? 'border-amber-300 bg-amber-50/30' : 'border-cyan-200'}`}>
             <CardHeader className="pb-2">
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-sm flex items-center gap-2 text-cyan-800">
-                    <Package className="h-4 w-4" /> Select Products for Quote (with Real-time Inventory)
+                    <Package className="h-4 w-4" /> {isEditingMaterials ? 'Edit Materials' : 'Select Products for Quote'} (with Real-time Inventory)
                   </CardTitle>
-                  <CardDescription>Select flooring products. Inventory will be blocked when measurement is marked done.</CardDescription>
+                  <CardDescription>
+                    {isEditingMaterials 
+                      ? 'Modify material selection. Changes will update inventory reservations.' 
+                      : 'Select flooring products. Inventory will be blocked when measurement is marked done.'}
+                  </CardDescription>
                 </div>
-                {/* Material to be decided later toggle */}
-                <div className="flex items-center gap-2 bg-amber-50 px-3 py-2 rounded-lg">
-                  <Checkbox
-                    id="materialDecideLater"
+                {isEditingMaterials ? (
+                  <Button 
+                    variant="outline" 
+                    size="sm"
+                    onClick={() => setIsEditingMaterials(false)}
+                    className="border-amber-400 text-amber-700 hover:bg-amber-100"
+                  >
+                    <X className="h-4 w-4 mr-1" /> Close Edit
+                  </Button>
+                ) : (
+                  /* Material to be decided later toggle */
+                  <div className="flex items-center gap-2 bg-amber-50 px-3 py-2 rounded-lg">
+                    <Checkbox
+                      id="materialDecideLater"
                     checked={materialDecideLater}
                     onCheckedChange={(checked) => {
                       setMaterialDecideLater(checked)
