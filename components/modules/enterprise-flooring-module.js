@@ -28,11 +28,11 @@ import {
   TrendingUp, TrendingDown, DollarSign, CheckCircle2, Clock, Send,
   AlertTriangle, ArrowUpRight, Calculator, Home, Square, ChevronRight,
   MoreVertical, Copy, Printer, Image, Camera, MapPin, Phone, Mail,
-  Calendar, Building2, Layers, Grid3X3, Box, Boxes, Truck, Settings, BarChart3,
+  Calendar, Building2, Building, Layers, Grid3X3, Box, Boxes, Truck, Settings, BarChart3,
   PieChart, Target, Award, Zap, Star, X, FileSpreadsheet, Receipt,
   CreditCard, Banknote, ChevronDown, ArrowLeft, ArrowRight, Sparkles,
   MessageSquare, Bot, ClipboardList, Hammer, ShieldCheck, History, ExternalLink, Tags,
-  Lock, Unlock, Info, Bell, IndianRupee, Landmark, Wallet, Check, Loader2
+  Lock, Unlock, Info, Bell, IndianRupee, Landmark, Wallet, Check, Loader2, User
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { PhoneInput } from '@/components/ui/phone-input'
