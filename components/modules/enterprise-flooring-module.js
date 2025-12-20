@@ -5325,7 +5325,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             total: { label: 'Total', icon: FileText, color: 'text-slate-600' },
             DRAFT: { label: 'Draft', icon: FileText, color: 'text-slate-600' },
             ISSUED: { label: 'Issued', icon: Truck, color: 'text-blue-600' },
-            DELIVERED: { label: 'Delivered', icon: CheckCircle, color: 'text-green-600' },
+            DELIVERED: { label: 'Delivered', icon: CheckCircle2, color: 'text-green-600' },
             CLOSED: { label: 'Closed', icon: Lock, color: 'text-gray-500' }
           }).map(([key, config]) => {
             const count = key === 'total' 
