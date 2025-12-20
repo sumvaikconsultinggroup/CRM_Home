@@ -404,6 +404,7 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, cust
 
   // Add product to items
   const handleAddProduct = (product) => {
+    const gstRate = product.gstRate || product.taxRate || 18
     const newItem = {
       productId: product.id,
       sku: product.sku,
@@ -412,7 +413,9 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, cust
       quantity: 1,
       unit: product.unit || 'sqft',
       unitPrice: product.sellingPrice || product.price || 0,
-      totalPrice: product.sellingPrice || product.price || 0
+      totalPrice: product.sellingPrice || product.price || 0,
+      gstRate: gstRate,
+      hsnCode: product.hsnCode || ''
     }
     setForm(prev => ({
       ...prev,
