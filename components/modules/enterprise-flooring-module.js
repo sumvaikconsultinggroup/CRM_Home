@@ -4735,13 +4735,12 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
-                        </td>
-                      </tr>
+                        </TableCell>
+                      </TableRow>
                     )
                   })}
-                </tbody>
-              </table>
-            </div>
+              </TableBody>
+            </Table>
           </Card>
         ) : (
           <EmptyState
