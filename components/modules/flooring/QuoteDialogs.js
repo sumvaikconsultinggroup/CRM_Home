@@ -264,7 +264,7 @@ export function ViewQuoteDialog({ open, onClose, quote, moduleSettings, onDownlo
 // =============================================
 // QUOTE EDIT DIALOG
 // =============================================
-export function QuoteEditDialog({ open, onClose, quote, projects, products, moduleSettings, onSave, loading, user }) {
+export function QuoteEditDialog({ open, onClose, quote, projects, products, customers, moduleSettings, onSave, loading, user }) {
   const [form, setForm] = useState({
     projectId: '',
     projectNumber: '',
