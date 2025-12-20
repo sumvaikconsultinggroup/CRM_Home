@@ -583,6 +583,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     if (activeTab === 'finance') { fetchInvoices(); fetchPayments(); }
     if (activeTab === 'installations') fetchInstallations()
     if (activeTab === 'inventory') fetchInventory()
+    if (activeTab === 'measurements') fetchInventory() // Also fetch inventory for measurements tab
     if (activeTab === 'settings') fetchModuleSettings()
     if (activeTab === 'reports') fetchReports('summary')
   }, [activeTab, fetchQuotes, fetchInvoices, fetchPayments, fetchInstallations, fetchInventory, fetchModuleSettings, fetchReports])
