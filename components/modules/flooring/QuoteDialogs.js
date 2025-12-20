@@ -542,18 +542,12 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, modu
         </DialogHeader>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
-          <TabsList className="grid w-full grid-cols-5 mb-4">
+          <TabsList className="grid w-full grid-cols-3 mb-4">
             <TabsTrigger value="basic" className="flex items-center gap-1">
               <Users className="h-3.5 w-3.5" /> Basic Info
             </TabsTrigger>
             <TabsTrigger value="items" className="flex items-center gap-1">
-              <Package className="h-3.5 w-3.5" /> Items
-            </TabsTrigger>
-            <TabsTrigger value="terms" className="flex items-center gap-1">
-              <CreditCard className="h-3.5 w-3.5" /> Payment & Terms
-            </TabsTrigger>
-            <TabsTrigger value="site" className="flex items-center gap-1">
-              <Ruler className="h-3.5 w-3.5" /> Site Details
+              <Package className="h-3.5 w-3.5" /> Items & Pricing
             </TabsTrigger>
             <TabsTrigger value="summary" className="flex items-center gap-1">
               <FileText className="h-3.5 w-3.5" /> Summary
@@ -563,24 +557,64 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, modu
           <ScrollArea className="flex-1 pr-4">
             {/* TAB 1: Basic Info */}
             <TabsContent value="basic" className="space-y-4 mt-0">
-              {/* Project Selection */}
-              <Card className="p-4">
-                <h4 className="font-semibold mb-3 flex items-center gap-2">
-                  <ClipboardList className="h-4 w-4" /> Link to Project
-                </h4>
-                <Select value={form.projectId} onValueChange={handleProjectSelect}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a project (optional)" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {projects.filter(p => p.status !== 'completed' && p.status !== 'cancelled').map(proj => (
-                      <SelectItem key={proj.id} value={proj.id}>
-                        {proj.projectNumber} - {proj.customer?.name || proj.customerName || 'No Customer'}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </Card>
+              {/* Project OR Customer Selection */}
+              <div className="grid grid-cols-2 gap-4">
+                <Card className="p-4">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <ClipboardList className="h-4 w-4" /> Link to Project
+                  </h4>
+                  <Select value={form.projectId} onValueChange={handleProjectSelect}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a project (optional)" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {projects.filter(p => p.status !== 'completed' && p.status !== 'cancelled').map(proj => (
+                        <SelectItem key={proj.id} value={proj.id}>
+                          {proj.projectNumber} - {proj.customer?.name || proj.customerName || 'No Customer'}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-slate-500 mt-2">Selecting a project auto-fills customer & site details</p>
+                </Card>
+
+                <Card className="p-4">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <Users className="h-4 w-4" /> Or Select Customer
+                  </h4>
+                  <Select 
+                    value={form.customer?.id || ''} 
+                    onValueChange={(customerId) => {
+                      const cust = customers?.find(c => c.id === customerId)
+                      if (cust) {
+                        setForm(prev => ({
+                          ...prev,
+                          customer: {
+                            id: cust.id,
+                            name: cust.name,
+                            email: cust.email,
+                            phone: cust.phone,
+                            company: cust.company,
+                            gstin: cust.gstin
+                          }
+                        }))
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select existing customer" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {(customers || []).map(cust => (
+                        <SelectItem key={cust.id} value={cust.id}>
+                          {cust.name} {cust.company ? `(${cust.company})` : ''}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  <p className="text-xs text-slate-500 mt-2">Or manually enter details below</p>
+                </Card>
+              </div>
 
               {/* Customer & Sales Rep in 2 columns */}
               <div className="grid grid-cols-2 gap-4">
