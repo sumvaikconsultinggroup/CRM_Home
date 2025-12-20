@@ -7456,11 +7456,11 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               <div className="flex items-center justify-between">
                 <div>
                   <CardTitle className="text-sm flex items-center gap-2 text-cyan-800">
-                    <Package className="h-4 w-4" /> {isEditingMaterials ? 'Edit Materials' : 'Select Products for Quote'} (with Real-time Inventory)
+                    <Package className="h-4 w-4" /> {isEditingMaterials ? 'Edit Measurements & Materials' : 'Select Products for Quote'} (with Real-time Inventory)
                   </CardTitle>
                   <CardDescription>
                     {isEditingMaterials 
-                      ? 'Modify material selection. Changes will update inventory reservations.' 
+                      ? 'You can now modify rooms and material selection. Changes will update inventory reservations.' 
                       : 'Select flooring products. Inventory will be blocked when measurement is marked done.'}
                   </CardDescription>
                 </div>
