@@ -5490,7 +5490,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           )}
                           {dc.status === 'DELIVERED' && (
                             <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                              <CheckCircle className="h-3 w-3 mr-1" /> Complete
+                              <CheckCircle2 className="h-3 w-3 mr-1" /> Complete
                             </Badge>
                           )}
 
