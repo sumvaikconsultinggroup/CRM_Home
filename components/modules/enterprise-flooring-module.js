@@ -5758,10 +5758,10 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                               </Button>
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end" className="w-48">
-                              <DropdownMenuItem onClick={() => window.open(`/api/flooring/enhanced/challans/pdf?id=${dc.id}`, '_blank')}>
+                              <DropdownMenuItem onClick={() => handleViewDCPdf(dc.id, 'view')}>
                                 <FileText className="h-4 w-4 mr-2" /> View/Print DC
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => window.open(`/api/flooring/enhanced/challans/pdf?id=${dc.id}`, '_blank')}>
+                              <DropdownMenuItem onClick={() => handleViewDCPdf(dc.id, 'download')}>
                                 <Download className="h-4 w-4 mr-2" /> Download PDF
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
