@@ -5286,6 +5286,278 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }
   
+  // ============================================
+  // CHALLANS / DISPATCH TAB
+  // ============================================
+  const renderChallans = () => {
+    const DCStatusConfig = {
+      DRAFT: { label: 'Draft', color: 'bg-slate-100 text-slate-700', icon: FileText },
+      ISSUED: { label: 'Issued', color: 'bg-blue-100 text-blue-700', icon: Truck },
+      DELIVERED: { label: 'Delivered', color: 'bg-green-100 text-green-700', icon: CheckCircle },
+      CLOSED: { label: 'Closed', color: 'bg-gray-100 text-gray-500', icon: Lock },
+      CANCELLED: { label: 'Cancelled', color: 'bg-red-100 text-red-700', icon: X }
+    }
+
+    return (
+      <div className="space-y-4">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-xl font-bold text-slate-800">Delivery Challans / Dispatch</h2>
+            <p className="text-sm text-slate-500">Manage dispatch and delivery tracking</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={fetchChallans}
+              disabled={challansLoading}
+            >
+              <RefreshCcw className={`h-4 w-4 mr-2 ${challansLoading ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
+        </div>
+
+        {/* Stats Cards */}
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {Object.entries({
+            total: { label: 'Total', icon: FileText, color: 'text-slate-600' },
+            DRAFT: { label: 'Draft', icon: FileText, color: 'text-slate-600' },
+            ISSUED: { label: 'Issued', icon: Truck, color: 'text-blue-600' },
+            DELIVERED: { label: 'Delivered', icon: CheckCircle, color: 'text-green-600' },
+            CLOSED: { label: 'Closed', icon: Lock, color: 'text-gray-500' }
+          }).map(([key, config]) => {
+            const count = key === 'total' 
+              ? challans.length 
+              : challans.filter(c => c.status === key).length
+            const Icon = config.icon
+            return (
+              <Card key={key} className="p-4">
+                <div className="flex items-center gap-3">
+                  <Icon className={`h-5 w-5 ${config.color}`} />
+                  <div>
+                    <p className="text-2xl font-bold">{count}</p>
+                    <p className="text-xs text-slate-500">{config.label}</p>
+                  </div>
+                </div>
+              </Card>
+            )
+          })}
+        </div>
+
+        {/* Challans Table */}
+        <Card>
+          {challansLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+              <span className="ml-2 text-slate-500">Loading challans...</span>
+            </div>
+          ) : challans.length === 0 ? (
+            <div className="text-center py-12">
+              <Truck className="h-12 w-12 mx-auto text-slate-300 mb-4" />
+              <h3 className="text-lg font-semibold text-slate-700">No Delivery Challans Yet</h3>
+              <p className="text-slate-500 mt-1">
+                Create a DC from an approved quote to start dispatching materials.
+              </p>
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50">
+                  <TableHead className="px-4">DC Number</TableHead>
+                  <TableHead>Customer / Ship To</TableHead>
+                  <TableHead>Quote / Invoice</TableHead>
+                  <TableHead className="text-center">Items</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Transport</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {challans.map((dc) => {
+                  const statusConfig = DCStatusConfig[dc.status] || DCStatusConfig.DRAFT
+                  const StatusIcon = statusConfig.icon
+
+                  return (
+                    <TableRow key={dc.id} className={`hover:bg-slate-50 ${dc.status === 'CANCELLED' ? 'bg-gray-50 opacity-70' : ''}`}>
+                      {/* DC Number */}
+                      <TableCell className="px-4">
+                        <div className="flex items-center gap-2">
+                          <div className={`p-1.5 rounded ${statusConfig.color.split(' ')[0]}`}>
+                            <StatusIcon className={`h-4 w-4 ${statusConfig.color.split(' ')[1]}`} />
+                          </div>
+                          <div>
+                            <p className="font-semibold text-slate-900">{dc.dcNo}</p>
+                            <p className="text-xs text-slate-500">
+                              {new Date(dc.createdAt).toLocaleDateString('en-IN')}
+                            </p>
+                          </div>
+                        </div>
+                      </TableCell>
+
+                      {/* Customer / Ship To */}
+                      <TableCell>
+                        <div>
+                          <p className="font-medium text-slate-800">{dc.billToName || '-'}</p>
+                          {dc.thirdPartyDelivery && dc.shipToName !== dc.billToName && (
+                            <p className="text-xs text-purple-600 flex items-center gap-1">
+                              <MapPin className="h-3 w-3" />
+                              Ship to: {dc.shipToName}
+                            </p>
+                          )}
+                          {dc.receiverName && dc.receiverName !== dc.shipToName && (
+                            <p className="text-xs text-slate-500">
+                              Receiver: {dc.receiverName}
+                            </p>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      {/* Quote / Invoice */}
+                      <TableCell>
+                        <div className="text-sm">
+                          {dc.quoteNumber && (
+                            <p className="text-slate-600">Quote: {dc.quoteNumber}</p>
+                          )}
+                          {dc.invoiceNumber && (
+                            <p className="text-slate-600">Invoice: {dc.invoiceNumber}</p>
+                          )}
+                          {dc.pickListNumber && (
+                            <p className="text-xs text-amber-600">
+                              <Package className="h-3 w-3 inline mr-1" />
+                              {dc.pickListNumber}
+                            </p>
+                          )}
+                        </div>
+                      </TableCell>
+
+                      {/* Items */}
+                      <TableCell className="text-center">
+                        <div>
+                          <p className="font-medium">{dc.totalBoxes || 0} boxes</p>
+                          <p className="text-xs text-slate-500">{dc.totalArea?.toFixed(0) || 0} sqft</p>
+                        </div>
+                      </TableCell>
+
+                      {/* Status */}
+                      <TableCell>
+                        <Badge className={statusConfig.color}>
+                          {statusConfig.label}
+                        </Badge>
+                        {dc.issuedAt && dc.status !== 'DRAFT' && (
+                          <p className="text-xs text-slate-500 mt-1">
+                            {new Date(dc.issuedAt).toLocaleDateString('en-IN')}
+                          </p>
+                        )}
+                        {dc.deliveredAt && (
+                          <p className="text-xs text-green-600 mt-1">
+                            ✓ {new Date(dc.deliveredAt).toLocaleDateString('en-IN')}
+                          </p>
+                        )}
+                      </TableCell>
+
+                      {/* Transport */}
+                      <TableCell>
+                        <div className="text-sm text-slate-600">
+                          {dc.vehicleNo && <p>{dc.vehicleNo}</p>}
+                          {dc.driverName && <p className="text-xs">{dc.driverName}</p>}
+                          {!dc.vehicleNo && !dc.driverName && <span className="text-slate-400">-</span>}
+                        </div>
+                      </TableCell>
+
+                      {/* Actions */}
+                      <TableCell className="text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {/* Primary Action based on status */}
+                          {dc.status === 'DRAFT' && (
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleIssueDC(dc.id)}
+                              className="bg-blue-600 hover:bg-blue-700 text-white"
+                            >
+                              <Truck className="h-3.5 w-3.5 mr-1" /> Issue DC
+                            </Button>
+                          )}
+                          {dc.status === 'ISSUED' && (
+                            <Button 
+                              size="sm" 
+                              onClick={() => handleMarkDCDelivered(dc.id)}
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                            >
+                              <CheckCircle className="h-3.5 w-3.5 mr-1" /> Mark Delivered
+                            </Button>
+                          )}
+                          {dc.status === 'DELIVERED' && (
+                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                              <CheckCircle className="h-3 w-3 mr-1" /> Complete
+                            </Badge>
+                          )}
+
+                          {/* More Actions */}
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-48">
+                              <DropdownMenuItem onClick={() => window.open(`/api/flooring/enhanced/challans/pdf?id=${dc.id}`, '_blank')}>
+                                <FileText className="h-4 w-4 mr-2" /> View/Print DC
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => window.open(`/api/flooring/enhanced/challans/pdf?id=${dc.id}`, '_blank')}>
+                                <Download className="h-4 w-4 mr-2" /> Download PDF
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              {dc.status === 'DRAFT' && (
+                                <>
+                                  <DropdownMenuItem onClick={() => setDcDialog({ open: true, data: { ...dc, editing: true } })}>
+                                    <Edit className="h-4 w-4 mr-2" /> Edit Details
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem 
+                                    onClick={async () => {
+                                      if (confirm('Cancel this delivery challan?')) {
+                                        try {
+                                          await fetch(`/api/flooring/enhanced/challans?id=${dc.id}`, {
+                                            method: 'DELETE',
+                                            headers
+                                          })
+                                          toast.success('DC cancelled')
+                                          fetchChallans()
+                                        } catch {
+                                          toast.error('Failed to cancel DC')
+                                        }
+                                      }
+                                    }}
+                                    className="text-red-600"
+                                  >
+                                    <X className="h-4 w-4 mr-2" /> Cancel DC
+                                  </DropdownMenuItem>
+                                </>
+                              )}
+                              {dc.status === 'DELIVERED' && !dc.invoiceId && (
+                                <DropdownMenuItem onClick={() => {
+                                  // Create invoice from DC
+                                  toast.info('Invoice creation from DC - coming soon')
+                                }}>
+                                  <Receipt className="h-4 w-4 mr-2" /> Create Invoice
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  )
+                })}
+              </TableBody>
+            </Table>
+          )}
+        </Card>
+      </div>
+    )
+  }
+  
   const renderInvoices = () => {
     // Filter invoices based on status filter
     const filteredInvoices = invoiceStatusFilter === 'all' 
