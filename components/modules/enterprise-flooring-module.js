@@ -7783,7 +7783,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           }}
                         >
                           <Unlock className="h-4 w-4 mr-2" />
-                          Edit Materials
+                          Edit Measurements & Materials
                         </Button>
                         {status === 'measurement_done' && (
                           <Button 
