@@ -678,6 +678,16 @@ export async function POST(request) {
       }
     }
 
+    // Check fulfillment settings - should stock be deducted on invoice or DC?
+    const settingsCollection = db.collection('flooring_settings')
+    const fulfillmentSettings = await settingsCollection.findOne({ type: 'fulfillment' })
+    const requireDCForStockOut = fulfillmentSettings?.requireDCForInvoiceDispatch !== false // default true
+    
+    // Set dispatch status - stock will be deducted on DC issue, not invoice creation
+    invoice.dispatchStatus = 'PENDING'
+    invoice.inventoryDeducted = false
+    invoice.challanIds = []
+
     await invoices.insertOne(invoice)
 
     // Update lead status
@@ -688,24 +698,45 @@ export async function POST(request) {
       )
     }
 
-    // CONVERT INVENTORY RESERVATIONS when invoice is created from quote
-    // This moves items from "blocked/reserved" to "sold/deducted" in inventory
-    // Also handles direct deduction for items without reservations
-    const inventoryResult = await convertInventoryReservation(
-      db, 
-      user.clientId, 
-      body.quoteId || null,
-      invoice.items || [],
-      invoice.id,
-      invoice.invoiceNumber
-    )
-    invoice.inventoryConversionResult = inventoryResult
+    // STOCK HANDLING - DC-based flow (new enterprise workflow)
+    // Stock is NO LONGER deducted on invoice creation
+    // Stock OUT happens ONLY when Delivery Challan (DC) is ISSUED
+    // This prevents double-deduction and allows proper dispatch tracking
+    
+    if (!requireDCForStockOut) {
+      // LEGACY MODE: If DC not required, deduct stock immediately (backward compatibility)
+      // This is for tenants who haven't migrated to DC-based workflow
+      const inventoryResult = await convertInventoryReservation(
+        db, 
+        user.clientId, 
+        body.quoteId || null,
+        invoice.items || [],
+        invoice.id,
+        invoice.invoiceNumber
+      )
+      invoice.inventoryConversionResult = inventoryResult
+      invoice.inventoryDeducted = true
+      invoice.dispatchStatus = 'LEGACY_DEDUCTED'
 
-    // Update invoice with inventory result
-    await invoices.updateOne(
-      { id: invoice.id },
-      { $set: { inventoryDeducted: true, inventoryResult, updatedAt: now } }
-    )
+      await invoices.updateOne(
+        { id: invoice.id },
+        { $set: { inventoryDeducted: true, inventoryResult, dispatchStatus: 'LEGACY_DEDUCTED', updatedAt: now } }
+      )
+    } else {
+      // DC-BASED FLOW: Stock remains reserved, will be deducted when DC is issued
+      // Update invoice to indicate dispatch is pending
+      await invoices.updateOne(
+        { id: invoice.id },
+        { 
+          $set: { 
+            inventoryDeducted: false, 
+            dispatchStatus: 'PENDING',
+            dispatchNote: 'Stock will be deducted when Delivery Challan is issued',
+            updatedAt: now 
+          } 
+        }
+      )
+    }
 
     return successResponse(sanitizeDocument(invoice), 201)
   } catch (error) {
