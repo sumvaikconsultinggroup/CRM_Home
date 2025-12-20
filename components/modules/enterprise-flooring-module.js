@@ -7868,9 +7868,10 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                 if (isInventoryBlocked) {
                   // Check if already invoiced/dispatched/delivered - editing NOT allowed
                   const isInvoiced = ['invoice_sent', 'payment_received', 'installation_scheduled', 'installation_in_progress', 'completed'].includes(status)
+                  const hasQuote = ['quote_pending', 'quote_sent', 'approved', 'invoice_sent', 'payment_received', 'installation_scheduled', 'installation_in_progress', 'completed'].includes(status)
                   const isInstalling = ['installation_scheduled', 'installation_in_progress'].includes(status)
                   const isCompleted = status === 'completed'
-                  const canEdit = !isInvoiced // Can only edit if NOT yet invoiced
+                  const canEdit = !hasQuote // Can only edit if quote NOT yet created
                   
                   return (
                     <div className="space-y-3">
@@ -7883,6 +7884,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                             if (!canEdit) return
                             setIsEditingMaterials(true)
                           }}
+                          title={!canEdit ? 'Cannot edit after quote is created' : ''}
                         >
                           <Unlock className="h-4 w-4 mr-2" />
                           Edit Measurements & Materials
@@ -7897,14 +7899,14 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                             Create Quote (₹{(getSelectedProductsTotal() + totalArea * 25).toLocaleString()})
                           </Button>
                         )}
-                        {['quote_pending', 'quote_sent'].includes(status) && (
-                          <Button onClick={() => setActiveTab('quotes')}>
+                        {hasQuote && (
+                          <Button onClick={() => setActiveTab('quotes')} variant="outline">
                             <FileText className="h-4 w-4 mr-2" /> View Quotes
                           </Button>
                         )}
                       </div>
                       {/* Professional messaging based on status */}
-                      <p className={`text-sm flex items-center gap-2 ${isCompleted ? 'text-green-700' : isInstalling ? 'text-cyan-700' : isInvoiced ? 'text-purple-700' : 'text-amber-700'}`}>
+                      <p className={`text-sm flex items-center gap-2 ${isCompleted ? 'text-green-700' : isInstalling ? 'text-cyan-700' : hasQuote ? 'text-purple-700' : 'text-amber-700'}`}>
                         {isCompleted ? (
                           <>
                             <CheckCircle2 className="h-4 w-4" />
@@ -7915,9 +7917,12 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                             <Wrench className="h-4 w-4" />
                             Installation in progress. Stock has been allocated.
                           </>
-                        ) : isInvoiced ? (
+                        ) : hasQuote ? (
                           <>
-                            <Receipt className="h-4 w-4" />
+                            <Lock className="h-4 w-4" />
+                            Quote created. Material changes locked. Edit through quote revision if needed.
+                          </>
+                        ) : (
                             Invoice generated. Stock allocated and deducted.
                           </>
                         ) : (
