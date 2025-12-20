@@ -9012,7 +9012,7 @@ function ProjectDialog({ open, onClose, project, customers, crmContacts, onSave,
   const customerContacts = (crmContacts || []).filter(c => c.type === 'customer')
 
   useEffect(() => {
-    if (project) {
+    if (open && project) {
       // Find the matching customer contact to ensure customerId is valid
       const matchingContact = customerContacts.find(c => 
         c.id === project.customerId || 
@@ -9030,13 +9030,14 @@ function ProjectDialog({ open, onClose, project, customers, crmContacts, onSave,
         siteState: project.site?.state || project.siteState || '',
         sitePincode: project.site?.pincode || project.sitePincode || ''
       })
-    } else {
+    } else if (open && !project) {
       setForm({
         name: '', customerId: '', customerName: '', type: 'residential', segment: 'b2c', flooringType: 'hardwood',
         siteAddress: '', siteCity: '', siteState: '', sitePincode: '', estimatedValue: 0, notes: ''
       })
     }
-  }, [project, open, customerContacts])
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [project, open])
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
