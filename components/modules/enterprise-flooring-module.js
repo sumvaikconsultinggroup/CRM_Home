@@ -7534,8 +7534,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                             const isSelected = measurementProducts[product.id]?.selected
                             const quantity = measurementProducts[product.id]?.quantity || totalArea
                             const price = getProductPrice(product, 'b2c') // B2C uses retail price
-                            const inv = getProductInventory(product.id)
-                            const invStatus = getInventoryStatus(product.id, isSelected ? quantity : 0)
+                            const inv = getProductInventory(product.id, product)
+                            const invStatus = getInventoryStatus(product.id, isSelected ? quantity : 0, product)
                             
                             return (
                               <div 
