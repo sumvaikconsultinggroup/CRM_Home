@@ -139,6 +139,18 @@ const getProjectStatusBySegment = (segment) => {
   return segment === 'b2b' ? ProjectStatusB2B : ProjectStatusB2C
 }
 
+// Helper to get correct price based on segment (B2B uses dealerPrice, B2C uses sellingPrice)
+const getProductPrice = (product, segment) => {
+  if (!product) return 0
+  const pricing = product.pricing || product
+  if (segment === 'b2b') {
+    // B2B: Use dealer price, fallback to selling price
+    return pricing.dealerPrice || pricing.sellingPrice || pricing.price || 0
+  }
+  // B2C: Use selling/retail price
+  return pricing.sellingPrice || pricing.price || 0
+}
+
 const QuoteTemplates = [
   { id: 'professional', name: 'Professional', description: 'Clean, modern design' },
   { id: 'premium', name: 'Premium', description: 'Detailed breakdown with images' },
