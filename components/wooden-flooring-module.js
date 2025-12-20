@@ -707,20 +707,31 @@ export function WoodenFlooringModule({ client, user }) {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
-                <Label>Status</Label>
-                <Select value={formData.status || 'inquiry'} onValueChange={(v) => setFormData({...formData, status: v})}>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="inquiry">Inquiry</SelectItem>
-                    <SelectItem value="site_visit">Site Visit</SelectItem>
-                    <SelectItem value="quotation_sent">Quotation Sent</SelectItem>
-                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                    <SelectItem value="in_progress">In Progress</SelectItem>
-                    <SelectItem value="completed">Completed</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+              {/* Status field - only show when EDITING, auto-managed otherwise */}
+              {selectedItem ? (
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <Select value={formData.status || 'inquiry'} onValueChange={(v) => setFormData({...formData, status: v})}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="inquiry">Inquiry</SelectItem>
+                      <SelectItem value="site_visit">Site Visit</SelectItem>
+                      <SelectItem value="quotation_sent">Quotation Sent</SelectItem>
+                      <SelectItem value="confirmed">Confirmed</SelectItem>
+                      <SelectItem value="in_progress">In Progress</SelectItem>
+                      <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              ) : (
+                <div className="space-y-2">
+                  <Label>Status</Label>
+                  <div className="h-10 px-3 py-2 bg-slate-100 border rounded-md text-sm text-slate-600 flex items-center">
+                    <span className="text-green-600 font-medium">Inquiry</span>
+                    <span className="text-xs text-slate-400 ml-2">(auto-managed)</span>
+                  </div>
+                </div>
+              )}
               <div className="space-y-2">
                 <Label>Priority</Label>
                 <Select value={formData.priority || 'medium'} onValueChange={(v) => setFormData({...formData, priority: v})}>
