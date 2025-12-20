@@ -109,10 +109,10 @@ export async function POST(request) {
     const quotes = db.collection('flooring_quotes_v2')  // Use v2 collection for enhanced quotes
     const products = db.collection('flooring_products')
 
-    // Check for existing active pick list for this quote
+    // Check for existing active pick list for this quote (exclude CLOSED and CANCELLED)
     const existingPickList = await pickLists.findOne({ 
       quoteId, 
-      status: { $ne: 'CLOSED' } 
+      status: { $nin: ['CLOSED', 'CANCELLED'] } 
     })
     
     if (existingPickList) {
