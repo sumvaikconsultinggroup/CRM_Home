@@ -11,9 +11,11 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import {
   FileText, Edit, Trash2, Eye, Download, CheckCircle2, Clock, Send,
-  Calendar, Package, X, Receipt, Users, Phone, Mail, MapPin, Plus, ClipboardList
+  Calendar, Package, X, Receipt, Users, Phone, Mail, MapPin, Plus, ClipboardList,
+  Truck, Shield, Settings, Building2, User, CreditCard, Ruler, AlertTriangle
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { PhoneInput } from '@/components/ui/phone-input'
