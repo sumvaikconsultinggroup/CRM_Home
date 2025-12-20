@@ -73,7 +73,8 @@ const QuoteStatus = {
   approved: { label: 'Approved', color: 'bg-emerald-100 text-emerald-700' },
   rejected: { label: 'Rejected', color: 'bg-red-100 text-red-700' },
   revised: { label: 'Revised', color: 'bg-amber-100 text-amber-700' },
-  converted: { label: 'Converted to Invoice', color: 'bg-green-100 text-green-700' }
+  converted: { label: 'Converted to Invoice', color: 'bg-green-100 text-green-700' },
+  cancelled: { label: 'Cancelled', color: 'bg-gray-200 text-gray-500' }
 }
 
 const InvoiceStatus = {
