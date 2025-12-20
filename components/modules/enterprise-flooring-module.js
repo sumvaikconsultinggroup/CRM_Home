@@ -2953,25 +2953,11 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                         </Button>
                       </div>
                     </TableCell>
-                    {/* Status Column - After Actions */}
+                    {/* Status Column - Display Only (auto-managed by workflow) */}
                     <TableCell>
-                      <Select 
-                        value={project.status} 
-                        onValueChange={(v) => handleUpdateProjectStatus(project.id, v)}
-                      >
-                        <SelectTrigger className="w-[160px] h-8">
-                          <Badge className={ProjectStatus[project.status]?.color || 'bg-slate-100 text-slate-700'}>
-                            {ProjectStatus[project.status]?.label || project.status}
-                          </Badge>
-                        </SelectTrigger>
-                        <SelectContent>
-                          {Object.entries(getProjectStatusBySegment(project.segment)).map(([key, { label, color }]) => (
-                            <SelectItem key={key} value={key}>
-                              <span className={`px-2 py-0.5 rounded text-xs ${color}`}>{label}</span>
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                      <Badge className={ProjectStatus[project.status]?.color || 'bg-slate-100 text-slate-700'}>
+                        {ProjectStatus[project.status]?.label || project.status}
+                      </Badge>
                     </TableCell>
                   </TableRow>
                 ))}
