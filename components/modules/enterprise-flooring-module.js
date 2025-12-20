@@ -7680,6 +7680,39 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                         <span className="text-sm text-cyan-700">Material Total:</span>
                         <span className="text-lg font-bold text-cyan-800">₹{getSelectedProductsTotal().toLocaleString()}</span>
                       </div>
+                      {/* Save/Cancel buttons when editing materials */}
+                      {isEditingMaterials && (
+                        <div className="flex gap-2 mt-4 pt-3 border-t">
+                          <Button 
+                            variant="outline"
+                            onClick={() => {
+                              // Reset to original products and close edit mode
+                              setMeasurementProducts(measurementDetails.selectedProducts || {})
+                              setIsEditingMaterials(false)
+                            }}
+                          >
+                            <X className="h-4 w-4 mr-1" /> Cancel
+                          </Button>
+                          <Button 
+                            className="bg-cyan-600 hover:bg-cyan-700"
+                            disabled={loading}
+                            onClick={async () => {
+                              setLoading(true)
+                              // Save updated materials
+                              const saved = await saveMeasurementDetails(true)
+                              if (saved) {
+                                toast.success('Materials updated successfully')
+                                setIsEditingMaterials(false)
+                                fetchInventory()
+                              }
+                              setLoading(false)
+                            }}
+                          >
+                            {loading ? <RefreshCw className="h-4 w-4 mr-1 animate-spin" /> : <Check className="h-4 w-4 mr-1" />}
+                            Save Changes
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
