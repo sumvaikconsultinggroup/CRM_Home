@@ -4641,6 +4641,28 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                         {/* Actions - SAP/Zoho Style with Clear Workflow Buttons */}
                         <TableCell className="px-4 py-3">
                           <div className="flex items-center gap-2">
+                            {/* Cancelled Quote - Only View/Download */}
+                            {quote.status === 'cancelled' && (
+                              <div className="flex gap-1">
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => setDialogOpen({ type: 'view_quote', data: quote })}
+                                  className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                                >
+                                  <Eye className="h-3.5 w-3.5 mr-1" /> View
+                                </Button>
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handleDownloadQuote(quote)}
+                                  className="border-gray-300 text-gray-600 hover:bg-gray-50"
+                                >
+                                  <Download className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            )}
+                            
                             {/* Primary Action Button based on Status */}
                             {quote.status === 'draft' && (
                               <Button 
