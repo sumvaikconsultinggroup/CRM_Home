@@ -1181,6 +1181,29 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   const [pickListDialog, setPickListDialog] = useState({ open: false, data: null })
   const [pickListConfirmations, setPickListConfirmations] = useState({}) // Track per-item confirmations
   const [dcDialog, setDcDialog] = useState({ open: false, data: null })
+  const [dcFormData, setDcFormData] = useState({
+    deliveryType: 'self',
+    expectedDeliveryDate: new Date().toISOString().split('T')[0],
+    shipToAddress: '',
+    notes: '',
+    // Self Pickup fields
+    receiverName: '',
+    receiverPhone: '',
+    // Company Delivery fields
+    vehicleNumber: '',
+    driverName: '',
+    driverPhone: '',
+    chargesType: 'free', // free, cod, add_to_bill
+    chargesAmount: 0,
+    // Transporter fields
+    transporterName: '',
+    transporterPhone: '',
+    transporterCharges: 0,
+    lrNumber: '', // Lorry Receipt Number
+    // Photo upload
+    proofPhotoUrl: '',
+    proofPhotoFile: null
+  })
 
   // Fetch fulfillment settings on mount
   useEffect(() => {
