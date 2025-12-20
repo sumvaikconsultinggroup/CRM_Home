@@ -2791,10 +2791,10 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                         <p className="text-[10px] text-slate-400">{product.pack?.coverageSqftPerBox || product.pricing?.sqftPerBox || 0} sqft/box</p>
                       </div>
                       <div className="flex gap-0.5">
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDialogOpen({ type: 'product', data: product })}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDialogOpen({ type: 'view_product', data: product })} title="View Details">
                           <Eye className="h-3.5 w-3.5" />
                         </Button>
-                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDialogOpen({ type: 'product', data: product })}>
+                        <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setDialogOpen({ type: 'product', data: product })} title="Edit Product">
                           <Edit className="h-3.5 w-3.5" />
                         </Button>
                       </div>
