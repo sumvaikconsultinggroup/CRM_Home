@@ -6953,11 +6953,11 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     const totalArea = rooms.reduce((sum, r) => sum + (r.netArea || 0), 0)
     const measurementDetails = selectedProject.measurementDetails || {}
 
-    // Calculate totals for selected products
+    // Calculate totals for selected products - B2C uses retail/selling price
     const getSelectedProductsTotal = () => {
       return Object.values(measurementProducts).reduce((sum, item) => {
         if (item.selected) {
-          const price = item.product?.price || item.product?.pricing?.sellingPrice || 0
+          const price = getProductPrice(item.product, 'b2c')
           return sum + (price * (item.quantity || totalArea))
         }
         return sum
