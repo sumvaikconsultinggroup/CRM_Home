@@ -489,6 +489,23 @@ export function FlooringProductDialog({ open, onClose, product, schema, categori
   )
 }
 
+// Helper components for ViewProductDialog
+const InfoRow = ({ label, value, className = '' }) => (
+  value ? (
+    <div className={`flex justify-between py-1.5 border-b border-slate-100 ${className}`}>
+      <span className="text-sm text-slate-500">{label}</span>
+      <span className="text-sm font-medium text-slate-900">{value}</span>
+    </div>
+  ) : null
+)
+
+const BooleanBadge = ({ value, label }) => (
+  <Badge variant={value ? 'default' : 'secondary'} className={`${value ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
+    {value ? <CheckCircle2 className="h-3 w-3 mr-1" /> : <XCircle className="h-3 w-3 mr-1" />}
+    {label}
+  </Badge>
+)
+
 // View-only Product Dialog
 export function ViewProductDialog({ open, onClose, product, categories }) {
   const flat = useMemo(() => flattenCategories(categories), [categories])
@@ -502,22 +519,6 @@ export function ViewProductDialog({ open, onClose, product, categories }) {
   const tax = product.tax || {}
   const installation = product.installation || {}
   const compliance = product.compliance || {}
-
-  const InfoRow = ({ label, value, className = '' }) => (
-    value ? (
-      <div className={`flex justify-between py-1.5 border-b border-slate-100 ${className}`}>
-        <span className="text-sm text-slate-500">{label}</span>
-        <span className="text-sm font-medium text-slate-900">{value}</span>
-      </div>
-    ) : null
-  )
-
-  const BooleanBadge = ({ value, label }) => (
-    <Badge variant={value ? 'default' : 'secondary'} className={`${value ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-500'}`}>
-      {value ? <CheckCircle2 className="h-3 w-3 mr-1" /> : <XCircle className="h-3 w-3 mr-1" />}
-      {label}
-    </Badge>
-  )
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
