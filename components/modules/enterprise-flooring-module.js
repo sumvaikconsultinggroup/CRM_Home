@@ -9013,13 +9013,22 @@ function ProjectDialog({ open, onClose, project, customers, crmContacts, onSave,
 
   useEffect(() => {
     if (project) {
+      // Find the matching customer contact to ensure customerId is valid
+      const matchingContact = customerContacts.find(c => 
+        c.id === project.customerId || 
+        c.name === project.customerName ||
+        c.displayName === project.customerName
+      )
+      
       setForm({
         ...project,
+        customerId: matchingContact?.id || project.customerId || '',
+        customerName: matchingContact?.displayName || matchingContact?.name || project.customerName || '',
         segment: project.segment || 'b2c',
-        siteAddress: project.site?.address || '',
-        siteCity: project.site?.city || '',
-        siteState: project.site?.state || '',
-        sitePincode: project.site?.pincode || ''
+        siteAddress: project.site?.address || project.siteAddress || '',
+        siteCity: project.site?.city || project.siteCity || '',
+        siteState: project.site?.state || project.siteState || '',
+        sitePincode: project.site?.pincode || project.sitePincode || ''
       })
     } else {
       setForm({
@@ -9027,7 +9036,7 @@ function ProjectDialog({ open, onClose, project, customers, crmContacts, onSave,
         siteAddress: '', siteCity: '', siteState: '', sitePincode: '', estimatedValue: 0, notes: ''
       })
     }
-  }, [project, open])
+  }, [project, open, customerContacts])
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
