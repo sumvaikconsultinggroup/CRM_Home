@@ -56,33 +56,60 @@ export async function GET(request) {
     const v1Stock = await db.collection('flooring_inventory').find(query).toArray()
     allInventoryItems.push(...v1Stock.map(i => ({ ...i, source: 'flooring_inventory' })))
 
-    // CONSOLIDATE: Aggregate by productId + warehouseId
-    // This prevents duplicate entries for the same product
+    // CONSOLIDATE: Aggregate by productId only (ignore warehouse for display purposes)
+    // This prevents duplicate entries for the same product from different sources
     const consolidatedMap = new Map()
     
     for (const item of allInventoryItems) {
       if (!item.productId) continue // Skip entries without productId
       
-      const key = `${item.productId}-${item.warehouseId || 'default'}`
+      // Use productId as the key - we want ONE entry per product for display
+      const key = item.productId
       const existing = consolidatedMap.get(key)
       
+      const itemQty = item.quantity || 0
+      const itemReserved = item.reservedQuantity || item.reservedQty || 0
+      const itemAvailable = itemQty - itemReserved
+      
       if (existing) {
-        // Merge: take higher quantity (or sum them based on source)
-        // For now, take the entry with the higher available quantity as the primary
-        const existingQty = (existing.quantity || 0) - (existing.reservedQuantity || existing.reservedQty || 0)
-        const newQty = (item.quantity || 0) - (item.reservedQuantity || item.reservedQty || 0)
+        // Merge: Keep the entry with actual stock data (quantity > 0) and valid warehouse
+        const existingQty = existing.quantity || 0
+        const existingReserved = existing.reservedQuantity || existing.reservedQty || 0
+        const existingAvailable = existingQty - existingReserved
         
-        if (newQty > existingQty) {
-          // Replace with better entry
+        // Prefer entries with:
+        // 1. Higher available quantity
+        // 2. Valid warehouse (not 'default' or 'main')
+        // 3. Valid SKU
+        const existingHasRealWarehouse = existing.warehouseId && !['default', 'main'].includes(existing.warehouseId)
+        const itemHasRealWarehouse = item.warehouseId && !['default', 'main'].includes(item.warehouseId)
+        
+        let shouldReplace = false
+        if (itemAvailable > existingAvailable) {
+          shouldReplace = true
+        } else if (itemAvailable === existingAvailable && itemHasRealWarehouse && !existingHasRealWarehouse) {
+          shouldReplace = true
+        } else if (itemAvailable === existingAvailable && item.sku && !existing.sku) {
+          shouldReplace = true
+        }
+        
+        if (shouldReplace) {
           consolidatedMap.set(key, item)
         }
-        // Could also sum: existing.quantity += item.quantity, but that may double-count
       } else {
         consolidatedMap.set(key, item)
       }
     }
     
-    let inventoryItems = Array.from(consolidatedMap.values())
+    // After consolidation, filter out entries with 0 stock that don't have valid warehouse info
+    // These are orphan entries created by reservation systems
+    let inventoryItems = Array.from(consolidatedMap.values()).filter(item => {
+      const qty = item.quantity || 0
+      const hasRealWarehouse = item.warehouseId && !['default', 'main'].includes(item.warehouseId)
+      
+      // Keep if: has stock OR has a valid warehouse assignment
+      return qty > 0 || hasRealWarehouse || item.sku
+    })
     
     // Sort by updatedAt
     inventoryItems.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
