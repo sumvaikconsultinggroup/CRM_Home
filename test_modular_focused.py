@@ -9,7 +9,7 @@ import json
 import time
 
 # Configuration
-BASE_URL = "https://image-upload-fix-16.preview.emergentagent.com/api"
+BASE_URL = "https://quoteflow-enhance.preview.emergentagent.com/api"
 SUPER_ADMIN_EMAIL = "admin@buildcrm.com"
 SUPER_ADMIN_PASSWORD = "admin123"
 
