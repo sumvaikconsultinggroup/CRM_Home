@@ -1172,6 +1172,267 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }
 
+  // ============================================
+  // ENTERPRISE FULFILLMENT WORKFLOW HANDLERS
+  // ============================================
+
+  // State for fulfillment settings
+  const [fulfillmentSettings, setFulfillmentSettings] = useState(null)
+  const [pickListDialog, setPickListDialog] = useState({ open: false, data: null })
+  const [dcDialog, setDcDialog] = useState({ open: false, data: null })
+
+  // Fetch fulfillment settings on mount
+  useEffect(() => {
+    const fetchFulfillmentSettings = async () => {
+      try {
+        const res = await fetch('/api/flooring/enhanced/fulfillment?settings=true', { headers })
+        if (res.ok) {
+          const data = await res.json()
+          setFulfillmentSettings(data.settings)
+        }
+      } catch (error) {
+        console.error('Failed to fetch fulfillment settings:', error)
+      }
+    }
+    fetchFulfillmentSettings()
+  }, [])
+
+  // Create Pick List from Quote
+  const handleCreatePickList = async (quote) => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/flooring/enhanced/pick-lists', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          quoteId: quote.id,
+          notes: `Pick list for quote ${quote.quoteNumber}`
+        })
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        toast.success(`Pick List ${data.pickList?.pickListNumber} created! Warehouse can now prepare materials.`)
+        fetchQuotes() // Refresh quotes to show pick list status
+        // Open pick list view
+        setPickListDialog({ open: true, data: data.pickList })
+      } else {
+        const error = await res.json()
+        if (error.details?.existingPickListId) {
+          toast.info('A pick list already exists for this quote')
+          handleViewPickList(error.details.existingPickListId)
+        } else {
+          toast.error(error.error || 'Failed to create pick list')
+        }
+      }
+    } catch (error) {
+      toast.error('Error creating pick list')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // View Pick List
+  const handleViewPickList = async (pickListId) => {
+    try {
+      setLoading(true)
+      const res = await fetch(`/api/flooring/enhanced/pick-lists?id=${pickListId}`, { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setPickListDialog({ open: true, data: data })
+      } else {
+        toast.error('Failed to load pick list')
+      }
+    } catch (error) {
+      toast.error('Error loading pick list')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Confirm Pick List as Material Ready
+  const handleConfirmPickList = async (pickListId) => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/flooring/enhanced/pick-lists', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          id: pickListId,
+          action: 'material_ready',
+          data: { forceReady: true } // Auto-confirm with quote quantities
+        })
+      })
+
+      if (res.ok) {
+        toast.success('Material confirmed ready! You can now create DC or Invoice.')
+        fetchQuotes()
+        setPickListDialog({ open: false, data: null })
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to confirm material')
+      }
+    } catch (error) {
+      toast.error('Error confirming material')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Create Delivery Challan from Quote
+  const handleCreateDCFromQuote = async (quote) => {
+    // Check if material is ready
+    if (quote.pickListStatus !== 'MATERIAL_READY' && !fulfillmentSettings?.allowBypassPickListForDC) {
+      toast.warning('Please confirm material as ready before creating Delivery Challan')
+      if (quote.pickListId) {
+        handleViewPickList(quote.pickListId)
+      } else {
+        handleCreatePickList(quote)
+      }
+      return
+    }
+
+    // Open DC creation dialog
+    setDcDialog({ 
+      open: true, 
+      data: { 
+        source: quote.pickListId ? 'pick_list' : 'quote',
+        sourceId: quote.pickListId || quote.id,
+        quote,
+        customer: quote.customer
+      } 
+    })
+  }
+
+  // Create Delivery Challan
+  const handleCreateDC = async (dcData) => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/flooring/enhanced/challans', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(dcData)
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        toast.success(`Delivery Challan ${data.challan?.dcNo} created! Ready to issue.`)
+        fetchQuotes()
+        setDcDialog({ open: false, data: null })
+        // Switch to Challans tab
+        setActiveTab('challans')
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to create DC')
+      }
+    } catch (error) {
+      toast.error('Error creating delivery challan')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Issue Delivery Challan (performs stock OUT)
+  const handleIssueDC = async (dcId) => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/flooring/enhanced/challans', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          id: dcId,
+          action: 'issue'
+        })
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        if (data.challan?.stockOutResult?.skipped) {
+          toast.info('DC issued (stock was already deducted)')
+        } else {
+          toast.success('DC issued successfully! Stock has been deducted.')
+        }
+        fetchChallans()
+        fetchQuotes()
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to issue DC')
+      }
+    } catch (error) {
+      toast.error('Error issuing delivery challan')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Mark DC as Delivered
+  const handleMarkDCDelivered = async (dcId, deliveryData = {}) => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/flooring/enhanced/challans', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          id: dcId,
+          action: 'mark_delivered',
+          data: deliveryData
+        })
+      })
+
+      if (res.ok) {
+        toast.success('Delivery confirmed!')
+        fetchChallans()
+        fetchQuotes()
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to mark as delivered')
+      }
+    } catch (error) {
+      toast.error('Error updating delivery status')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // View Challans for a Quote
+  const handleViewChallans = (quoteId) => {
+    setActiveTab('challans')
+    // Could also filter challans by quoteId
+    toast.info('Showing challans for this quote')
+  }
+
+  // View Invoice
+  const handleViewInvoice = (invoiceId) => {
+    setActiveTab('invoices')
+    // Could scroll to specific invoice
+  }
+
+  // Fetch Challans
+  const [challans, setChallans] = useState([])
+  const [challansLoading, setChallansLoading] = useState(false)
+
+  const fetchChallans = async () => {
+    try {
+      setChallansLoading(true)
+      const res = await fetch('/api/flooring/enhanced/challans', { headers })
+      if (res.ok) {
+        const data = await res.json()
+        setChallans(data.challans || [])
+      }
+    } catch (error) {
+      console.error('Failed to fetch challans:', error)
+    } finally {
+      setChallansLoading(false)
+    }
+  }
+
+  // Fetch challans when tab changes
+  useEffect(() => {
+    if (activeTab === 'challans') {
+      fetchChallans()
+    }
+  }, [activeTab])
+
   // Create standalone invoice (not from quote)
   const handleCreateStandaloneInvoice = async () => {
     try {
