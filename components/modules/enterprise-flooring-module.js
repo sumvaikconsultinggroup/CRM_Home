@@ -8823,6 +8823,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           <TabsContent value="measurements">{renderMeasurements()}</TabsContent>
           <TabsContent value="materials">{renderMaterials()}</TabsContent>
           <TabsContent value="quotes">{renderQuotes()}</TabsContent>
+          <TabsContent value="challans">{renderChallans()}</TabsContent>
           <TabsContent value="invoices">{renderInvoices()}</TabsContent>
           <TabsContent value="installations">{renderInstallations()}</TabsContent>
           <TabsContent value="inventory">
