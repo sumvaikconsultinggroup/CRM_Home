@@ -1280,6 +1280,91 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }
 
+  // Cancel Pick List
+  const handleCancelPickList = async (quote) => {
+    if (!quote.pickListId) {
+      toast.error('No pick list found for this quote')
+      return
+    }
+    
+    try {
+      setLoading(true)
+      const res = await fetch('/api/flooring/enhanced/pick-lists', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          id: quote.pickListId,
+          action: 'cancel',
+          data: { reason: 'User requested cancellation' }
+        })
+      })
+
+      if (res.ok) {
+        toast.success('Pick list cancelled successfully')
+        fetchQuotes()
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to cancel pick list')
+      }
+    } catch (error) {
+      toast.error('Error cancelling pick list')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  // Recreate Pick List (cancel old and create new)
+  const handleRecreatePickList = async (quote) => {
+    if (!confirm('This will cancel the existing pick list and create a new one. Continue?')) {
+      return
+    }
+    
+    try {
+      setLoading(true)
+      
+      // First cancel the existing pick list if any
+      if (quote.pickListId) {
+        const cancelRes = await fetch('/api/flooring/enhanced/pick-lists', {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({
+            id: quote.pickListId,
+            action: 'cancel',
+            data: { reason: 'Recreating pick list' }
+          })
+        })
+        
+        if (!cancelRes.ok) {
+          const error = await cancelRes.json()
+          toast.error(error.error || 'Failed to cancel existing pick list')
+          return
+        }
+      }
+      
+      // Now create a new pick list
+      const createRes = await fetch('/api/flooring/enhanced/pick-lists', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          quoteId: quote.id
+        })
+      })
+
+      if (createRes.ok) {
+        const data = await createRes.json()
+        toast.success(`New pick list ${data.pickListNumber} created!`)
+        fetchQuotes()
+      } else {
+        const error = await createRes.json()
+        toast.error(error.error || 'Failed to create new pick list')
+      }
+    } catch (error) {
+      toast.error('Error recreating pick list')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Create Delivery Challan from Quote
   const handleCreateDCFromQuote = async (quote) => {
     // Check if material is ready
