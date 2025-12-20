@@ -147,8 +147,12 @@ function ImageFieldInput({ imagesText, setImagesText }) {
         formData.append('file', file)
         formData.append('folder', 'products')
         
+        // Get auth token from localStorage
+        const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+        
         const res = await fetch('/api/upload', {
           method: 'POST',
+          headers: token ? { 'Authorization': `Bearer ${token}` } : {},
           body: formData
         })
         
