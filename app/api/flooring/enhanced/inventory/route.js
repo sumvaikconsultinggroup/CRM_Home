@@ -77,11 +77,42 @@ export async function GET(request) {
     // Sort by updatedAt
     inventoryItems.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
 
-    // Enrich with product data
-    inventoryItems = inventoryItems.map(item => ({
-      ...item,
-      product: productMap.get(item.productId) || null
-    }))
+    // Build additional lookup maps for fallback matching
+    const productBySkuMap = new Map()
+    const productByNameMap = new Map()
+    for (const p of allProducts) {
+      if (p.sku) productBySkuMap.set(p.sku.toLowerCase(), p)
+      if (p.name) productByNameMap.set(p.name.toLowerCase(), p)
+    }
+
+    // Enrich with product data - try multiple matching strategies
+    inventoryItems = inventoryItems.map(item => {
+      // Try direct productId match first
+      let product = productMap.get(item.productId)
+      
+      // Fallback: try matching by SKU
+      if (!product && item.sku) {
+        product = productBySkuMap.get(item.sku.toLowerCase())
+        if (product) {
+          // Fix the productId to match
+          item.productId = product.id
+        }
+      }
+      
+      // Fallback: try matching by product name
+      if (!product && item.productName) {
+        product = productByNameMap.get(item.productName.toLowerCase())
+        if (product) {
+          // Fix the productId to match
+          item.productId = product.id
+        }
+      }
+      
+      return {
+        ...item,
+        product: product || null
+      }
+    })
 
     // Apply filters
     if (lowStock === 'true') {
