@@ -1354,6 +1354,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         const data = await createRes.json()
         toast.success(`New pick list ${data.pickListNumber} created!`)
         fetchQuotes()
+        // Open the new pick list dialog
+        handleViewPickList(data.id)
       } else {
         const error = await createRes.json()
         toast.error(error.error || 'Failed to create new pick list')
