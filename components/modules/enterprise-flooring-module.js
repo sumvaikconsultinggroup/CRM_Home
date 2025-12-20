@@ -9487,31 +9487,31 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   
                   // Get items from pick list or quote
                   const items = (pickList?.items || quote?.items || []).map(item => ({
-                    product_id: item.product_id || item.productId,
-                    product_name: item.productName || item.product_name,
-                    sku: item.productCode || item.sku,
-                    qty_boxes: item.quote_qty_boxes || item.quotedQty || item.boxes || item.quantity || 0,
-                    qty_area: item.quote_qty_area || item.quotedArea || item.totalArea || 0,
-                    coverage_per_box_snapshot: item.coveragePerBox || item.coverage_per_box || 0
+                    productId: item.productId || item.product_id,
+                    productName: item.productName || item.product_name,
+                    sku: item.sku || item.productCode,
+                    qtyBoxes: item.quoteQtyBoxes || item.quote_qty_boxes || item.boxes || item.quantity || 0,
+                    qtyArea: item.quoteQtyArea || item.quote_qty_area || item.area || item.totalArea || 0,
+                    coveragePerBoxSnapshot: item.coveragePerBoxSnapshot || item.coveragePerBox || 0
                   }))
 
                   const res = await fetch('/api/flooring/enhanced/challans', {
                     method: 'POST',
                     headers,
                     body: JSON.stringify({
-                      quote_id: quote.id,
-                      pick_list_id: pickList?.id || null,
-                      project_id: quote.projectId || quote.project_id,
-                      bill_to_account_id: quote.customerId || quote.customer_id,
-                      ship_to_address: quote.customer?.address || '',
-                      third_party_delivery: false,
+                      source: pickList?.id ? 'pick_list' : 'quote',
+                      sourceId: pickList?.id || quote.id,
+                      billToAccountId: quote.customerId || quote.customer_id || quote.customer?.id,
+                      billToName: quote.customer?.name,
+                      shipToAddress: quote.customer?.address || '',
+                      thirdPartyDelivery: false,
                       items
                     })
                   })
 
                   if (res.ok) {
                     const data = await res.json()
-                    toast.success(`Delivery Challan ${data.dc_no} created successfully!`)
+                    toast.success(`Delivery Challan ${data.challan?.dcNo || data.dc_no} created successfully!`)
                     setDcDialog({ open: false, data: null })
                     fetchQuotes()
                     // Refresh challans if on that tab
