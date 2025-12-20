@@ -5485,7 +5485,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                               onClick={() => handleMarkDCDelivered(dc.id)}
                               className="bg-green-600 hover:bg-green-700 text-white"
                             >
-                              <CheckCircle className="h-3.5 w-3.5 mr-1" /> Mark Delivered
+                              <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Mark Delivered
                             </Button>
                           )}
                           {dc.status === 'DELIVERED' && (
