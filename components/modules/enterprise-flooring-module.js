@@ -3145,7 +3145,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
 
     const getTotalValue = () => {
       return getSelectedProducts().reduce((sum, item) => {
-        const price = item.product.price || item.product.pricing?.sellingPrice || 0
+        const price = getProductPrice(item.product, 'b2b') // B2B uses dealer price
         return sum + (price * item.quantity)
       }, 0)
     }
