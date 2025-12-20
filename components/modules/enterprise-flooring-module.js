@@ -7580,7 +7580,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                       </div>
                       <div className="space-y-2 max-h-40 overflow-y-auto">
                         {Object.values(measurementProducts).filter(p => p.selected).map(item => {
-                          const price = item.product.price || item.product.pricing?.sellingPrice || 0
+                          const price = getProductPrice(item.product, 'b2c') // B2C uses retail price
                           return (
                             <div key={item.product.id} className="flex items-center justify-between bg-white rounded px-3 py-2">
                               <div className="flex items-center gap-2">
