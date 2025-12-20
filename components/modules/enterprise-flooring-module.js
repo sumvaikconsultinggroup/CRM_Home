@@ -5293,7 +5293,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     const DCStatusConfig = {
       DRAFT: { label: 'Draft', color: 'bg-slate-100 text-slate-700', icon: FileText },
       ISSUED: { label: 'Issued', color: 'bg-blue-100 text-blue-700', icon: Truck },
-      DELIVERED: { label: 'Delivered', color: 'bg-green-100 text-green-700', icon: CheckCircle },
+      DELIVERED: { label: 'Delivered', color: 'bg-green-100 text-green-700', icon: CheckCircle2 },
       CLOSED: { label: 'Closed', color: 'bg-gray-100 text-gray-500', icon: Lock },
       CANCELLED: { label: 'Cancelled', color: 'bg-red-100 text-red-700', icon: X }
     }
