@@ -10229,6 +10229,18 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   return
                 }
                 
+                // Validate Third-Party Delivery fields
+                if (dcFormData.isThirdPartyDelivery) {
+                  if (!dcFormData.shipToName || !dcFormData.shipToAddress) {
+                    toast.warning('Please enter Ship To name and address for third-party delivery')
+                    return
+                  }
+                  if (!dcFormData.siteInchargeName || !dcFormData.siteInchargePhone) {
+                    toast.warning('Please enter site incharge name and phone')
+                    return
+                  }
+                }
+                
                 if (dcFormData.deliveryType === 'self') {
                   if (!dcFormData.receiverName || !dcFormData.receiverPhone) {
                     toast.warning('Please enter receiver name and phone number')
