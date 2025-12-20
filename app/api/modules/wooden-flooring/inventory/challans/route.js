@@ -119,13 +119,16 @@ export async function POST(request) {
         return errorResponse(`Insufficient stock for ${product.name}. Available: ${availableQty}`, 400)
       }
 
+      // Get price from product pricing structure or stock
+      const productPrice = product.pricing?.sellingPrice || product.sellingPrice || stock?.sellingPrice || 0
+      
       validatedItems.push({
         productId: item.productId,
         productName: product.name,
         sku: product.sku,
         quantity: parseFloat(item.quantity),
-        unitPrice: item.unitPrice || stock?.sellingPrice || product.sellingPrice || 0,
-        totalPrice: parseFloat(item.quantity) * (item.unitPrice || stock?.sellingPrice || product.sellingPrice || 0),
+        unitPrice: item.unitPrice || productPrice,
+        totalPrice: parseFloat(item.quantity) * (item.unitPrice || productPrice),
         batchNumber: item.batchNumber || null,
         notes: item.notes || ''
       })
