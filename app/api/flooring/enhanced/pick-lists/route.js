@@ -267,7 +267,7 @@ export async function PUT(request) {
     const db = await getClientDb(dbName)
     const pickLists = db.collection('flooring_pick_lists')
     const pickListItems = db.collection('flooring_pick_list_items')
-    const quotes = db.collection('flooring_quotes')
+    const quotes = db.collection('flooring_quotes_v2')  // Use v2 collection
 
     const pickList = await pickLists.findOne({ id })
     if (!pickList) return errorResponse('Pick list not found', 404)
@@ -498,7 +498,7 @@ export async function DELETE(request) {
     const db = await getClientDb(dbName)
     const pickLists = db.collection('flooring_pick_lists')
     const pickListItems = db.collection('flooring_pick_list_items')
-    const quotes = db.collection('flooring_quotes')
+    const quotes = db.collection('flooring_quotes_v2')  // Use v2 collection
 
     const pickList = await pickLists.findOne({ id })
     if (!pickList) return errorResponse('Pick list not found', 404)
