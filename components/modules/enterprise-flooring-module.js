@@ -4464,22 +4464,21 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         {/* Quotes Table */}
         {filteredQuotes.length > 0 ? (
           <Card>
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-50 border-b">
-                  <tr>
-                    <TableHeader>Quote #</TableHeader>
-                    <TableHeader>Customer</TableHeader>
-                    <TableHeader>Project</TableHeader>
-                    <TableHeader>Items</TableHeader>
-                    <TableHeader>Amount</TableHeader>
-                    <TableHeader>Created</TableHeader>
-                    <TableHeader>Valid Until</TableHeader>
-                    <TableHeader>Status</TableHeader>
-                    <TableHeader>Actions</TableHeader>
-                  </tr>
-                </thead>
-                <tbody className="divide-y">
+            <Table>
+              <TableHeader>
+                <TableRow className="bg-slate-50 border-b">
+                  <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Quote #</TableHead>
+                  <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Customer</TableHead>
+                  <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Project</TableHead>
+                  <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Items</TableHead>
+                  <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Amount</TableHead>
+                  <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Created</TableHead>
+                  <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Valid Until</TableHead>
+                  <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Status</TableHead>
+                  <TableHead className="text-xs font-semibold text-slate-600 uppercase tracking-wider">Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
                   {filteredQuotes.map((quote) => {
                     const statusConfig = QuoteStatusConfig[quote.status] || QuoteStatusConfig.draft
                     const isExpired = new Date(quote.validUntil) < new Date() && !['approved', 'invoiced'].includes(quote.status)
