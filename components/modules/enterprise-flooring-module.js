@@ -3830,7 +3830,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           {products.map(product => {
                             const isSelected = materialRequisition[product.id]?.selected
                             const quantity = materialRequisition[product.id]?.quantity || 1
-                            const price = product.price || product.pricing?.sellingPrice || 0
+                            const price = getProductPrice(product, 'b2b') // B2B uses dealer price
                             const inv = getProductInventory(product.id)
                             const status = getInventoryStatus(product.id, isSelected ? quantity : 0)
                             
