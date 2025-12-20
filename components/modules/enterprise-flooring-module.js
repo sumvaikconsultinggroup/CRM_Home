@@ -7945,16 +7945,35 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         {/* Project Dialog */}
         <ProjectDialog
           open={type === 'project'}
-          onClose={() => setDialogOpen({ type: null, data: null })}
+          onClose={() => {
+            setDialogOpen({ type: null, data: null })
+            setPendingProjectData(null)
+          }}
           project={data}
           customers={customers}
           crmContacts={crmContacts}
           onSave={handleSaveProject}
           loading={loading}
-          onAddContact={() => {
-            // Navigate to CRM contacts - open in new tab
-            window.open('/?tab=contacts', '_blank')
+          onAddContact={(currentFormData) => {
+            // Store current project form data and open CRM contact dialog
+            setPendingProjectData(currentFormData || data)
+            setDialogOpen({ type: 'crm_contact', data: null })
           }}
+        />
+
+        {/* CRM Contact Dialog (for adding contact from Project dialog) */}
+        <CrmContactDialog
+          open={type === 'crm_contact'}
+          onClose={() => {
+            // Go back to project dialog if we have pending data
+            if (pendingProjectData) {
+              setDialogOpen({ type: 'project', data: pendingProjectData })
+            } else {
+              setDialogOpen({ type: null, data: null })
+            }
+          }}
+          onSave={handleSaveCrmContact}
+          loading={loading}
         />
 
         {/* View Project Dialog */}
