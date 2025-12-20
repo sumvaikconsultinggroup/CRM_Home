@@ -7705,6 +7705,31 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                         })}
                       </div>
                       <Separator className="my-2" />
+                      {/* Area Coverage Indicator */}
+                      {(() => {
+                        const selectedQty = Object.values(measurementProducts).filter(p => p.selected).reduce((sum, p) => sum + (p.quantity || 0), 0)
+                        const coveragePercent = totalArea > 0 ? Math.round((selectedQty / totalArea) * 100) : 0
+                        const isComplete = selectedQty === totalArea
+                        const isOver = selectedQty > totalArea
+                        return (
+                          <div className="mb-2">
+                            <div className="flex justify-between text-sm mb-1">
+                              <span className={isComplete ? 'text-emerald-600' : isOver ? 'text-red-600' : 'text-amber-600'}>
+                                Area Coverage: {selectedQty} / {totalArea} sqft ({coveragePercent}%)
+                              </span>
+                              {!isComplete && !isOver && <span className="text-amber-600">Need {totalArea - selectedQty} more sqft</span>}
+                              {isOver && <span className="text-red-600">Reduce {selectedQty - totalArea} sqft</span>}
+                              {isComplete && <span className="text-emerald-600">✓ Complete</span>}
+                            </div>
+                            <div className="h-2 bg-slate-200 rounded-full overflow-hidden">
+                              <div 
+                                className={`h-full transition-all ${isComplete ? 'bg-emerald-500' : isOver ? 'bg-red-500' : 'bg-amber-500'}`}
+                                style={{ width: `${Math.min(coveragePercent, 100)}%` }}
+                              />
+                            </div>
+                          </div>
+                        )
+                      })()}
                       <div className="flex justify-between items-center">
                         <span className="text-sm text-cyan-700">Material Total:</span>
                         <span className="text-lg font-bold text-cyan-800">₹{getSelectedProductsTotal().toLocaleString()}</span>
