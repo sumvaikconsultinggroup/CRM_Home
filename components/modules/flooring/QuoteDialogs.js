@@ -262,7 +262,7 @@ export function ViewQuoteDialog({ open, onClose, quote, moduleSettings, onDownlo
 // =============================================
 // QUOTE EDIT DIALOG
 // =============================================
-export function QuoteEditDialog({ open, onClose, quote, projects, products, moduleSettings, onSave, loading }) {
+export function QuoteEditDialog({ open, onClose, quote, projects, products, moduleSettings, onSave, loading, user }) {
   const [form, setForm] = useState({
     projectId: '',
     projectNumber: '',
@@ -275,10 +275,28 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, modu
     discountValue: 0,
     cgstRate: 9,
     sgstRate: 9,
-    igstRate: 0
+    igstRate: 0,
+    // Enterprise Fields
+    salesRepName: '',
+    salesRepEmail: '',
+    salesRepPhone: '',
+    paymentTerms: 'net30',
+    advancePercent: 50,
+    warrantyTerms: '1 year manufacturer warranty on materials',
+    installationNotes: '',
+    siteConditions: '',
+    deliveryTerms: 'Ex-warehouse, delivery charges extra',
+    specialInstructions: '',
+    estimatedDeliveryDays: 7,
+    estimatedInstallDays: 3,
+    subfloorType: '',
+    moistureLevel: '',
+    transportCharges: 0,
+    installationCharges: 0
   })
   const [selectedProject, setSelectedProject] = useState(null)
   const [showProductSelector, setShowProductSelector] = useState(false)
+  const [activeTab, setActiveTab] = useState('basic') // basic, items, terms, site
 
   // Initialize form when quote changes
   useEffect(() => {
