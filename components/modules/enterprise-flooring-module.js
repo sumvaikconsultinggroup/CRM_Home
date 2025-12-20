@@ -7500,7 +7500,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           {displayProducts.map(product => {
                             const isSelected = measurementProducts[product.id]?.selected
                             const quantity = measurementProducts[product.id]?.quantity || totalArea
-                            const price = product.price || product.pricing?.sellingPrice || 0
+                            const price = getProductPrice(product, 'b2c') // B2C uses retail price
                             const inv = getProductInventory(product.id)
                             const invStatus = getInventoryStatus(product.id, isSelected ? quantity : 0)
                             
