@@ -668,6 +668,89 @@ export async function PUT(request) {
         }
         break
 
+      case 'reverse_issue':
+        // Reverse an ISSUED DC - create stock IN entries to restore stock
+        if (challan.status !== 'ISSUED') {
+          return errorResponse('Can only reverse ISSUED challans', 400)
+        }
+
+        // Get challan items
+        const challanItemsColl = db.collection('flooring_challan_items')
+        const movements = db.collection('wf_inventory_movements')
+        const stockCollection = db.collection('wf_inventory_stock')
+        const productsCollection = db.collection('flooring_products')
+        
+        const itemsToReverse = await challanItemsColl.find({ challanId: id }).toArray()
+        
+        // Create reverse stock entries
+        for (const item of itemsToReverse) {
+          const qtyToRestore = item.qtyBoxes || 0
+          if (qtyToRestore <= 0) continue
+
+          // Create IN movement (reverse)
+          await movements.insertOne({
+            id: uuidv4(),
+            productId: item.productId,
+            productName: item.productName,
+            type: 'reversal',
+            movementType: 'in',
+            quantity: qtyToRestore, // Positive = stock IN
+            referenceType: 'DC_REVERSAL',
+            referenceId: id,
+            referenceNumber: challan.dcNo,
+            quoteId: challan.quoteId,
+            notes: `Stock reversal - DC ${challan.dcNo} cancelled`,
+            createdBy: user.id,
+            createdByName: user.name || user.email,
+            createdAt: now
+          })
+
+          // Restore stock
+          const stockRecord = await stockCollection.findOne({ productId: item.productId })
+          if (stockRecord) {
+            await stockCollection.updateOne(
+              { productId: item.productId },
+              {
+                $inc: { quantity: qtyToRestore, currentQty: qtyToRestore },
+                $set: { updatedAt: now }
+              }
+            )
+          } else {
+            // Restore to product directly
+            await productsCollection.updateOne(
+              { id: item.productId },
+              {
+                $inc: { stockQuantity: qtyToRestore },
+                $set: { updatedAt: now }
+              }
+            )
+          }
+        }
+
+        updateData.status = 'CANCELLED'
+        updateData.cancelledAt = now
+        updateData.cancelledBy = user.id
+        updateData.cancellationReason = data?.reason || 'Reversed after issue'
+        updateData.stockReversed = true
+        updateData.stockReversedAt = now
+
+        statusHistoryEntry = {
+          status: 'CANCELLED',
+          timestamp: now,
+          by: user.id,
+          userName: user.name || user.email,
+          notes: `DC reversed and cancelled. Stock restored for ${itemsToReverse.length} items.`
+        }
+
+        // Update quote dispatch status
+        if (challan.quoteId) {
+          await quotes.updateOne(
+            { id: challan.quoteId },
+            { $set: { dispatchStatus: 'PENDING', updatedAt: now } }
+          )
+        }
+        break
+
       default:
         return errorResponse('Invalid action', 400)
     }
