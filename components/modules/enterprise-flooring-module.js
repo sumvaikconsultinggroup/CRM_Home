@@ -8225,9 +8225,11 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           quote={data}
           projects={projects}
           products={products}
+          customers={customers}
           moduleSettings={moduleSettings}
           onSave={handleSaveQuote}
           loading={loading}
+          user={user}
         />
       </>
     )
