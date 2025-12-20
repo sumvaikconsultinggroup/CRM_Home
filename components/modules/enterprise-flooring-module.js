@@ -7307,6 +7307,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   value={technicianName}
                   onChange={(e) => setTechnicianName(e.target.value)}
                   className="bg-white"
+                  disabled={measurementDetails.inventoryBlocked && !isEditingMaterials}
                 />
               </div>
               <div className="space-y-1">
@@ -7324,6 +7325,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     setMeasurementDate(selectedDate)
                   }}
                   className="bg-white"
+                  disabled={measurementDetails.inventoryBlocked && !isEditingMaterials}
                 />
                 <p className="text-xs text-slate-500">* Backdates not allowed</p>
               </div>
@@ -7334,6 +7336,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   value={measurementNotes}
                   onChange={(e) => setMeasurementNotes(e.target.value)}
                   className="bg-white"
+                  disabled={measurementDetails.inventoryBlocked && !isEditingMaterials}
                 />
               </div>
             </div>
