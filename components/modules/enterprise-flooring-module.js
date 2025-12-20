@@ -5135,6 +5135,28 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                             <CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> Confirm Material Ready
                                           </DropdownMenuItem>
                                         )}
+                                        {/* Cancel and Recreate options */}
+                                        {quote.pickListStatus !== 'CLOSED' && (
+                                          <>
+                                            <DropdownMenuSeparator />
+                                            <DropdownMenuItem 
+                                              onClick={() => handleRecreatePickList(quote)}
+                                              className="text-amber-600"
+                                            >
+                                              <RefreshCw className="h-4 w-4 mr-2" /> Recreate Pick List
+                                            </DropdownMenuItem>
+                                            <DropdownMenuItem 
+                                              onClick={() => {
+                                                if (confirm('Are you sure you want to cancel this pick list?')) {
+                                                  handleCancelPickList(quote)
+                                                }
+                                              }}
+                                              className="text-red-600"
+                                            >
+                                              <X className="h-4 w-4 mr-2" /> Cancel Pick List
+                                            </DropdownMenuItem>
+                                          </>
+                                        )}
                                       </>
                                     )}
                                     
