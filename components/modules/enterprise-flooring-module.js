@@ -5471,6 +5471,10 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     <RefreshCw className="h-4 w-4 mr-2 text-amber-600" />
                     Consolidate Duplicates
                   </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => handleInventoryCleanup('consolidate_all')}>
+                    <Wrench className="h-4 w-4 mr-2 text-purple-600" />
+                    Full Cleanup & Consolidate
+                  </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => handleInventoryCleanup('reset_reserved')}>
                     <Lock className="h-4 w-4 mr-2 text-blue-600" />
                     Reset All Reservations
