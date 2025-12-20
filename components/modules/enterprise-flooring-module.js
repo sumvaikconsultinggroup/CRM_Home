@@ -7002,7 +7002,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       const insufficientItems = []
       Object.values(measurementProducts).forEach(item => {
         if (item.selected) {
-          const inv = getProductInventory(item.product.id)
+          const inv = getProductInventory(item.product.id, item.product)
           const requiredQty = item.quantity || totalArea
           if (inv.availableQty < requiredQty) {
             insufficientItems.push({
