@@ -4566,7 +4566,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     const projectDisplay = quote.projectNumber || linkedProject?.projectNumber || '-'
                     
                     return (
-                      <TableRow key={quote.id} className={`hover:bg-slate-50 transition-colors ${isLocked ? 'bg-purple-50/30' : ''} ${isExpired ? 'bg-red-50/30' : ''}`}>
+                      <TableRow key={quote.id} className={`hover:bg-slate-50 transition-colors ${quote.status === 'cancelled' ? 'bg-gray-100 opacity-70' : isLocked ? 'bg-purple-50/30' : ''} ${isExpired ? 'bg-red-50/30' : ''}`}>
                         {/* Quote Number */}
                         <TableCell className="px-4 py-3">
                           <div className="flex items-center gap-2">
@@ -4574,7 +4574,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                               <StatusIcon className={`h-4 w-4 ${actualConfig.color.split(' ')[1]}`} />
                             </div>
                             <div>
-                              <p className="font-semibold text-slate-900">{quote.quoteNumber}</p>
+                              <p className={`font-semibold ${quote.status === 'cancelled' ? 'text-gray-500 line-through' : 'text-slate-900'}`}>{quote.quoteNumber}</p>
                               <p className="text-xs text-slate-500">{new Date(quote.createdAt).toLocaleDateString('en-IN')}</p>
                             </div>
                             {quote.version > 1 && <Badge variant="outline" className="text-xs">v{quote.version}</Badge>}
