@@ -3336,16 +3336,24 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                         {(() => {
                           const nonEditableStatuses = ['quote_approved', 'invoice_sent', 'in_transit', 'delivered', 'payment_received', 'installation_scheduled', 'installation_in_progress', 'completed']
                           const isEditable = !nonEditableStatuses.includes(project.status)
-                          return (
+                          return isEditable ? (
                             <Button 
                               variant="ghost" 
                               size="sm" 
-                              onClick={() => isEditable && setDialogOpen({ type: 'project', data: project })} 
-                              title={isEditable ? "Edit" : "Cannot edit - project has progressed past editable stage"}
-                              disabled={!isEditable}
-                              className={!isEditable ? "opacity-50 cursor-not-allowed" : ""}
+                              onClick={() => setDialogOpen({ type: 'project', data: project })} 
+                              title="Edit"
                             >
                               <Edit className="h-4 w-4" />
+                            </Button>
+                          ) : (
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              disabled
+                              title="Cannot edit - project has progressed past editable stage"
+                              className="opacity-30 cursor-not-allowed text-slate-300"
+                            >
+                              <Edit className="h-4 w-4 text-slate-300" />
                             </Button>
                           )
                         })()}
