@@ -9698,8 +9698,32 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       </Dialog>
 
       {/* ===== DELIVERY CHALLAN CREATION DIALOG ===== */}
-      <Dialog open={dcDialog.open} onOpenChange={(open) => !open && setDcDialog({ open: false, data: null })}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <Dialog open={dcDialog.open} onOpenChange={(open) => {
+        if (!open) {
+          setDcDialog({ open: false, data: null })
+          // Reset form data
+          setDcFormData({
+            deliveryType: 'self',
+            expectedDeliveryDate: new Date().toISOString().split('T')[0],
+            shipToAddress: '',
+            notes: '',
+            receiverName: '',
+            receiverPhone: '',
+            vehicleNumber: '',
+            driverName: '',
+            driverPhone: '',
+            chargesType: 'free',
+            chargesAmount: 0,
+            transporterName: '',
+            transporterPhone: '',
+            transporterCharges: 0,
+            lrNumber: '',
+            proofPhotoUrl: '',
+            proofPhotoFile: null
+          })
+        }
+      }}>
+        <DialogContent className="max-w-5xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Truck className="h-5 w-5 text-blue-600" />
@@ -9713,10 +9737,14 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           {dcDialog.data ? (
             <div className="space-y-6">
               {/* Source Info */}
-              <div className="grid grid-cols-2 gap-4 p-4 bg-slate-50 rounded-lg">
+              <div className="grid grid-cols-3 gap-4 p-4 bg-slate-50 rounded-lg">
                 <div>
                   <p className="text-xs text-slate-500 uppercase">Quote</p>
                   <p className="font-medium">{dcDialog.data.quote?.quoteNumber || '-'}</p>
+                </div>
+                <div>
+                  <p className="text-xs text-slate-500 uppercase">Pick List</p>
+                  <p className="font-medium">{dcDialog.data.pickList?.pickListNumber || '-'}</p>
                 </div>
                 <div>
                   <p className="text-xs text-slate-500 uppercase">Customer</p>
@@ -9724,83 +9752,307 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                 </div>
               </div>
 
-              {/* Items to be dispatched */}
+              {/* Items to be dispatched - Use CONFIRMED quantities from Pick List */}
               <div>
                 <h4 className="font-medium mb-3 flex items-center gap-2">
-                  <Package className="h-4 w-4" /> Items for Dispatch
+                  <Package className="h-4 w-4" /> Items for Dispatch (Confirmed Quantities)
                 </h4>
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-slate-50">
-                      <TableHead>Product</TableHead>
-                      <TableHead className="text-right">Qty (Boxes)</TableHead>
-                      <TableHead className="text-right">Area (sqft)</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {(dcDialog.data.pickList?.items || dcDialog.data.quote?.items || []).map((item, idx) => (
-                      <TableRow key={idx}>
-                        <TableCell>
-                          <p className="font-medium">{item.productName || item.product_name || item.name || 'Product'}</p>
-                          <p className="text-xs text-slate-500">{item.sku || item.productCode || ''}</p>
-                        </TableCell>
-                        <TableCell className="text-right font-medium">
-                          {item.quoteQtyBoxes || item.quote_qty_boxes || item.boxes || item.quantity || 0}
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {(item.quoteQtyArea || item.quote_qty_area || item.area || item.totalArea || 0).toFixed(1)}
-                        </TableCell>
+                <div className="border rounded-lg overflow-hidden">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-slate-100">
+                        <TableHead>Product</TableHead>
+                        <TableHead className="text-right">Confirmed Boxes</TableHead>
+                        <TableHead className="text-right">Confirmed Area (sqft)</TableHead>
+                        <TableHead>Lot No</TableHead>
                       </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
+                    </TableHeader>
+                    <TableBody>
+                      {(dcDialog.data.pickList?.items || dcDialog.data.quote?.items || []).map((item, idx) => (
+                        <TableRow key={idx}>
+                          <TableCell>
+                            <p className="font-medium">{item.productName || item.product_name || item.name || 'Product'}</p>
+                            <p className="text-xs text-slate-500">{item.sku || item.productCode || ''}</p>
+                          </TableCell>
+                          <TableCell className="text-right font-bold text-lg">
+                            {item.confirmedQtyBoxes ?? item.quoteQtyBoxes ?? item.boxes ?? 0}
+                          </TableCell>
+                          <TableCell className="text-right">
+                            {(item.confirmedQtyArea ?? item.quoteQtyArea ?? item.area ?? 0).toFixed(1)}
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm text-slate-600">{item.lotNo || '-'}</span>
+                          </TableCell>
+                        </TableRow>
+                      ))}
+                    </TableBody>
+                  </Table>
+                </div>
+                {/* Total Summary */}
+                <div className="mt-2 text-right text-sm text-slate-600">
+                  <strong>Total:</strong>{' '}
+                  {(dcDialog.data.pickList?.items || dcDialog.data.quote?.items || []).reduce((sum, i) => sum + (i.confirmedQtyBoxes ?? i.quoteQtyBoxes ?? 0), 0)} boxes /{' '}
+                  {(dcDialog.data.pickList?.items || dcDialog.data.quote?.items || []).reduce((sum, i) => sum + (i.confirmedQtyArea ?? i.quoteQtyArea ?? 0), 0).toFixed(1)} sqft
+                </div>
               </div>
 
-              {/* Delivery Details */}
+              {/* Delivery Type Selection */}
               <div className="space-y-4">
                 <h4 className="font-medium flex items-center gap-2">
-                  <MapPin className="h-4 w-4" /> Delivery Details
+                  <Truck className="h-4 w-4" /> Delivery Method
                 </h4>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <Label>Delivery Type</Label>
-                    <Select defaultValue="self">
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select delivery type" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="self">Self Pickup</SelectItem>
-                        <SelectItem value="company">Company Delivery</SelectItem>
-                        <SelectItem value="third_party">Third Party Logistics</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div>
-                    <Label>Expected Delivery Date</Label>
-                    <Input type="date" defaultValue={new Date().toISOString().split('T')[0]} />
-                  </div>
+                <div className="grid grid-cols-3 gap-4">
+                  {[
+                    { value: 'self', label: 'Self Pickup', icon: Users, desc: 'Customer picks up' },
+                    { value: 'company', label: 'Company Delivery', icon: Truck, desc: 'Our vehicle' },
+                    { value: 'transporter', label: 'Transporter', icon: Box, desc: 'Third party logistics' }
+                  ].map(option => (
+                    <div
+                      key={option.value}
+                      onClick={() => setDcFormData(prev => ({ ...prev, deliveryType: option.value }))}
+                      className={`p-4 border-2 rounded-lg cursor-pointer transition-all ${
+                        dcFormData.deliveryType === option.value 
+                          ? 'border-blue-500 bg-blue-50' 
+                          : 'border-slate-200 hover:border-slate-300'
+                      }`}
+                    >
+                      <option.icon className={`h-6 w-6 mb-2 ${dcFormData.deliveryType === option.value ? 'text-blue-600' : 'text-slate-400'}`} />
+                      <p className="font-medium">{option.label}</p>
+                      <p className="text-xs text-slate-500">{option.desc}</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Delivery Type Specific Fields */}
+              <div className="space-y-4 p-4 border rounded-lg bg-slate-50">
+                {/* Self Pickup Fields */}
+                {dcFormData.deliveryType === 'self' && (
+                  <>
+                    <h5 className="font-medium text-sm text-slate-700">Receiver Details</h5>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Receiver Name *</Label>
+                        <Input
+                          placeholder="Person collecting the goods"
+                          value={dcFormData.receiverName}
+                          onChange={(e) => setDcFormData(prev => ({ ...prev, receiverName: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <Label>Receiver Phone *</Label>
+                        <Input
+                          placeholder="+91 98765 43210"
+                          value={dcFormData.receiverPhone}
+                          onChange={(e) => setDcFormData(prev => ({ ...prev, receiverPhone: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Company Delivery Fields */}
+                {dcFormData.deliveryType === 'company' && (
+                  <>
+                    <h5 className="font-medium text-sm text-slate-700">Vehicle & Driver Details</h5>
+                    <div className="grid grid-cols-3 gap-4">
+                      <div>
+                        <Label>Vehicle Number *</Label>
+                        <Input
+                          placeholder="MH01AB1234"
+                          value={dcFormData.vehicleNumber}
+                          onChange={(e) => setDcFormData(prev => ({ ...prev, vehicleNumber: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <Label>Driver Name *</Label>
+                        <Input
+                          placeholder="Driver full name"
+                          value={dcFormData.driverName}
+                          onChange={(e) => setDcFormData(prev => ({ ...prev, driverName: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <Label>Driver Phone *</Label>
+                        <Input
+                          placeholder="+91 98765 43210"
+                          value={dcFormData.driverPhone}
+                          onChange={(e) => setDcFormData(prev => ({ ...prev, driverPhone: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <Label>Transportation Charges</Label>
+                        <Select 
+                          value={dcFormData.chargesType} 
+                          onValueChange={(value) => setDcFormData(prev => ({ 
+                            ...prev, 
+                            chargesType: value,
+                            chargesAmount: value === 'free' ? 0 : prev.chargesAmount
+                          }))}
+                        >
+                          <SelectTrigger>
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="free">Free Delivery</SelectItem>
+                            <SelectItem value="cod">Cash on Delivery (COD)</SelectItem>
+                            <SelectItem value="add_to_bill">Add to Bill</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div>
+                        <Label>Charges Amount (₹) {dcFormData.chargesType !== 'free' && '*'}</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={dcFormData.chargesAmount}
+                          onChange={(e) => setDcFormData(prev => ({ ...prev, chargesAmount: parseFloat(e.target.value) || 0 }))}
+                          disabled={dcFormData.chargesType === 'free'}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+
+                {/* Transporter Fields */}
+                {dcFormData.deliveryType === 'transporter' && (
+                  <>
+                    <h5 className="font-medium text-sm text-slate-700">Transporter Details</h5>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label>Transporter Name *</Label>
+                        <Input
+                          placeholder="Transport company name"
+                          value={dcFormData.transporterName}
+                          onChange={(e) => setDcFormData(prev => ({ ...prev, transporterName: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <Label>Transporter Phone *</Label>
+                        <Input
+                          placeholder="+91 98765 43210"
+                          value={dcFormData.transporterPhone}
+                          onChange={(e) => setDcFormData(prev => ({ ...prev, transporterPhone: e.target.value }))}
+                        />
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      <div>
+                        <Label>LR / Docket Number</Label>
+                        <Input
+                          placeholder="Lorry Receipt Number"
+                          value={dcFormData.lrNumber}
+                          onChange={(e) => setDcFormData(prev => ({ ...prev, lrNumber: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <Label>Transport Charges (₹) *</Label>
+                        <Input
+                          type="number"
+                          min="0"
+                          placeholder="0"
+                          value={dcFormData.transporterCharges}
+                          onChange={(e) => setDcFormData(prev => ({ ...prev, transporterCharges: parseFloat(e.target.value) || 0 }))}
+                        />
+                      </div>
+                    </div>
+                  </>
+                )}
+              </div>
+
+              {/* Photo Upload - Required for all */}
+              <div className="space-y-3">
+                <h4 className="font-medium flex items-center gap-2">
+                  <Camera className="h-4 w-4" /> Proof Photo *
+                  <Badge variant="outline" className="text-xs">Required</Badge>
+                </h4>
+                <div className="border-2 border-dashed border-slate-300 rounded-lg p-6 text-center">
+                  {dcFormData.proofPhotoUrl ? (
+                    <div className="space-y-2">
+                      <img 
+                        src={dcFormData.proofPhotoUrl} 
+                        alt="Proof" 
+                        className="max-h-40 mx-auto rounded-lg"
+                      />
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={() => setDcFormData(prev => ({ ...prev, proofPhotoUrl: '', proofPhotoFile: null }))}
+                      >
+                        <X className="h-4 w-4 mr-1" /> Remove Photo
+                      </Button>
+                    </div>
+                  ) : (
+                    <div>
+                      <Camera className="h-10 w-10 mx-auto text-slate-400 mb-2" />
+                      <p className="text-sm text-slate-600 mb-2">
+                        Upload photo of goods ready for dispatch
+                      </p>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        id="dc-proof-photo"
+                        onChange={(e) => {
+                          const file = e.target.files?.[0]
+                          if (file) {
+                            const reader = new FileReader()
+                            reader.onloadend = () => {
+                              setDcFormData(prev => ({ 
+                                ...prev, 
+                                proofPhotoUrl: reader.result,
+                                proofPhotoFile: file
+                              }))
+                            }
+                            reader.readAsDataURL(file)
+                          }
+                        }}
+                      />
+                      <Button variant="outline" onClick={() => document.getElementById('dc-proof-photo')?.click()}>
+                        <Upload className="h-4 w-4 mr-2" /> Upload Photo
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              {/* Additional Details */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label>Expected Delivery Date *</Label>
+                  <Input 
+                    type="date" 
+                    value={dcFormData.expectedDeliveryDate}
+                    onChange={(e) => setDcFormData(prev => ({ ...prev, expectedDeliveryDate: e.target.value }))}
+                  />
                 </div>
                 <div>
                   <Label>Ship To Address</Label>
-                  <Textarea 
-                    placeholder="Enter delivery address..."
-                    defaultValue={dcDialog.data.customer?.address || dcDialog.data.quote?.customer?.address || ''}
-                    rows={3}
+                  <Input
+                    placeholder="Delivery address"
+                    value={dcFormData.shipToAddress || dcDialog.data.quote?.customer?.address || ''}
+                    onChange={(e) => setDcFormData(prev => ({ ...prev, shipToAddress: e.target.value }))}
                   />
                 </div>
-                <div>
-                  <Label>Notes / Instructions</Label>
-                  <Textarea 
-                    placeholder="Any special delivery instructions..."
-                    rows={2}
-                  />
-                </div>
+              </div>
+              
+              <div>
+                <Label>Notes / Instructions</Label>
+                <Textarea 
+                  placeholder="Any special delivery instructions..."
+                  value={dcFormData.notes}
+                  onChange={(e) => setDcFormData(prev => ({ ...prev, notes: e.target.value }))}
+                  rows={2}
+                />
               </div>
 
               {/* Warning */}
               <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
                 <AlertTriangle className="h-4 w-4 inline mr-2" />
-                <strong>Note:</strong> Stock will be deducted from inventory only when the DC is marked as "Issued".
+                <strong>Note:</strong> Stock will be deducted from inventory only when the DC is marked as &quot;Issued&quot;.
               </div>
             </div>
           ) : (
@@ -9815,12 +10067,109 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             </Button>
             <Button 
               onClick={async () => {
+                // Validate required fields
+                if (!dcFormData.proofPhotoUrl) {
+                  toast.warning('Please upload a proof photo')
+                  return
+                }
+                
+                if (dcFormData.deliveryType === 'self') {
+                  if (!dcFormData.receiverName || !dcFormData.receiverPhone) {
+                    toast.warning('Please enter receiver name and phone number')
+                    return
+                  }
+                } else if (dcFormData.deliveryType === 'company') {
+                  if (!dcFormData.vehicleNumber || !dcFormData.driverName || !dcFormData.driverPhone) {
+                    toast.warning('Please enter vehicle number, driver name and phone')
+                    return
+                  }
+                  if (dcFormData.chargesType !== 'free' && !dcFormData.chargesAmount) {
+                    toast.warning('Please enter transportation charges amount')
+                    return
+                  }
+                } else if (dcFormData.deliveryType === 'transporter') {
+                  if (!dcFormData.transporterName || !dcFormData.transporterPhone) {
+                    toast.warning('Please enter transporter details')
+                    return
+                  }
+                }
+                
                 try {
                   setLoading(true)
                   const quote = dcDialog.data.quote
                   const pickList = dcDialog.data.pickList
                   
-                  // Get items from pick list or quote
+                  // Get items from pick list (use confirmed quantities) or quote
+                  const items = (pickList?.items || quote?.items || []).map(item => ({
+                    productId: item.productId || item.product_id,
+                    productName: item.productName || item.product_name,
+                    sku: item.sku || item.productCode,
+                    qtyBoxes: item.confirmedQtyBoxes ?? item.quoteQtyBoxes ?? item.boxes ?? 0,
+                    qtyArea: item.confirmedQtyArea ?? item.quoteQtyArea ?? item.area ?? 0,
+                    coveragePerBoxSnapshot: item.coveragePerBoxSnapshot || item.coveragePerBox || 0,
+                    lotNo: item.lotNo || ''
+                  }))
+
+                  const res = await fetch('/api/flooring/enhanced/challans', {
+                    method: 'POST',
+                    headers,
+                    body: JSON.stringify({
+                      source: pickList?.id ? 'pick_list' : 'quote',
+                      sourceId: pickList?.id || quote.id,
+                      billToAccountId: quote.customerId || quote.customer_id || quote.customer?.id,
+                      billToName: quote.customer?.name,
+                      shipToAddress: dcFormData.shipToAddress || quote.customer?.address || '',
+                      expectedDeliveryDate: dcFormData.expectedDeliveryDate,
+                      deliveryType: dcFormData.deliveryType,
+                      notes: dcFormData.notes,
+                      proofPhotoUrl: dcFormData.proofPhotoUrl,
+                      // Delivery type specific data
+                      ...(dcFormData.deliveryType === 'self' && {
+                        receiverName: dcFormData.receiverName,
+                        receiverPhone: dcFormData.receiverPhone
+                      }),
+                      ...(dcFormData.deliveryType === 'company' && {
+                        vehicleNumber: dcFormData.vehicleNumber,
+                        driverName: dcFormData.driverName,
+                        driverPhone: dcFormData.driverPhone,
+                        chargesType: dcFormData.chargesType,
+                        chargesAmount: dcFormData.chargesAmount
+                      }),
+                      ...(dcFormData.deliveryType === 'transporter' && {
+                        transporterName: dcFormData.transporterName,
+                        transporterPhone: dcFormData.transporterPhone,
+                        transporterCharges: dcFormData.transporterCharges,
+                        lrNumber: dcFormData.lrNumber
+                      }),
+                      items
+                    })
+                  })
+
+                  if (res.ok) {
+                    const data = await res.json()
+                    toast.success(`Delivery Challan ${data.challan?.dcNo || data.dc_no} created successfully!`)
+                    setDcDialog({ open: false, data: null })
+                    fetchQuotes()
+                  } else {
+                    const error = await res.json()
+                    toast.error(error.error || 'Failed to create DC')
+                  }
+                } catch (error) {
+                  console.error('DC creation error:', error)
+                  toast.error('Error creating delivery challan')
+                } finally {
+                  setLoading(false)
+                }
+              }}
+              className="bg-blue-600 hover:bg-blue-700"
+              disabled={loading}
+            >
+              {loading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Truck className="h-4 w-4 mr-2" />}
+              Create Delivery Challan
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
                   const items = (pickList?.items || quote?.items || []).map(item => ({
                     productId: item.productId || item.product_id,
                     productName: item.productName || item.product_name,
