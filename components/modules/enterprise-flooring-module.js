@@ -8418,6 +8418,54 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         <Bot className="h-6 w-6" />
       </motion.button>
 
+      {/* Cancel Quote Dialog */}
+      <Dialog open={cancelQuoteDialog.open} onOpenChange={(open) => !open && setCancelQuoteDialog({ open: false, quoteId: null, reason: '' })}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2 text-red-600">
+              <X className="h-5 w-5" />
+              Cancel Quote
+            </DialogTitle>
+            <DialogDescription>
+              Please provide a reason for cancelling this quote. This will reopen the measurements for a new quote.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div>
+              <Label>Cancellation Reason *</Label>
+              <Textarea 
+                value={cancelQuoteDialog.reason}
+                onChange={(e) => setCancelQuoteDialog(prev => ({ ...prev, reason: e.target.value }))}
+                placeholder="e.g., Customer requested changes, Pricing revision needed, Project scope changed..."
+                rows={4}
+              />
+            </div>
+            <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-sm text-amber-800">
+              <AlertTriangle className="h-4 w-4 inline mr-2" />
+              <strong>Note:</strong> Cancelling this quote will:
+              <ul className="list-disc list-inside ml-4 mt-1">
+                <li>Mark the quote as cancelled with your reason</li>
+                <li>Reopen the measurement for new quote generation</li>
+                <li>Keep the blocked inventory for the new quote</li>
+              </ul>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCancelQuoteDialog({ open: false, quoteId: null, reason: '' })}>
+              Keep Quote
+            </Button>
+            <Button 
+              variant="destructive" 
+              onClick={handleCancelQuote}
+              disabled={loading || !cancelQuoteDialog.reason.trim()}
+            >
+              {loading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <X className="h-4 w-4 mr-2" />}
+              Cancel Quote
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Create Invoice Dialog */}
       <Dialog open={dialogOpen.type === 'invoice'} onOpenChange={(open) => !open && setDialogOpen({ type: null, data: null })}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
