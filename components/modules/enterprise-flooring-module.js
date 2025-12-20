@@ -7476,7 +7476,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   </CardTitle>
                   <CardDescription>
                     {isEditingMaterials 
-                      ? 'You can now modify rooms and material selection. Changes will update inventory reservations.' 
+                      ? 'You can now modify rooms and material selection. Material must cover total area.' 
                       : 'Select flooring products. Inventory will be blocked when measurement is marked done.'}
                   </CardDescription>
                 </div>
@@ -7489,8 +7489,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   >
                     <X className="h-4 w-4 mr-1" /> Close Edit
                   </Button>
-                ) : (
-                  /* Material to be decided later toggle */
+                ) : !measurementDetails.inventoryBlocked ? (
+                  /* Material to be decided later toggle - only show before measurement is completed */
                   <div className="flex items-center gap-2 bg-amber-50 px-3 py-2 rounded-lg">
                     <Checkbox
                       id="materialDecideLater"
@@ -7507,7 +7507,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     Material to be decided later
                   </Label>
                 </div>
-                )}
+                ) : null}
               </div>
             </CardHeader>
             <CardContent>
