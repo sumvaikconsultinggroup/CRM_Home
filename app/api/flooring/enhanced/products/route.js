@@ -57,6 +57,33 @@ export async function GET(request) {
       products.find(query).sort(sort).skip(skip).limit(limit).toArray(),
       products.countDocuments(query)
     ])
+    
+    // Also get products from wf_inventory that might not be in flooring_products
+    const wfInventory = db.collection('wf_inventory')
+    const wfProducts = await wfInventory.find({ status: { $ne: 'deleted' } }).toArray()
+    
+    // Merge: add wf_inventory products that are not already in flooring_products
+    const existingIds = new Set(result.map(p => p.id))
+    const existingSkus = new Set(result.filter(p => p.sku).map(p => p.sku.toLowerCase()))
+    
+    const additionalProducts = wfProducts.filter(wp => {
+      // Skip if same ID exists
+      if (existingIds.has(wp.id)) return false
+      // Skip if same SKU exists (case insensitive)
+      if (wp.sku && existingSkus.has(wp.sku.toLowerCase())) return false
+      // Apply search filter if present
+      if (search) {
+        const searchLower = search.toLowerCase()
+        const nameMatch = wp.name?.toLowerCase().includes(searchLower)
+        const skuMatch = wp.sku?.toLowerCase().includes(searchLower)
+        const brandMatch = wp.brand?.toLowerCase().includes(searchLower)
+        if (!nameMatch && !skuMatch && !brandMatch) return false
+      }
+      return true
+    })
+    
+    // Merge results
+    const mergedProducts = [...result, ...additionalProducts]
 
     // Get categories summary (new: categoryId, backward compatible: category)
     const categorySummary = await products.aggregate([
