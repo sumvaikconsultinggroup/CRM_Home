@@ -9379,29 +9379,6 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-                  const quote = quotes.find(q => q.id === pickListDialog.data.quote_id)
-                  if (quote) {
-                    setDcDialog({ 
-                      open: true, 
-                      data: { 
-                        source: 'pick_list',
-                        sourceId: pickListDialog.data.id,
-                        pickList: pickListDialog.data,
-                        quote,
-                        customer: quote.customer
-                      } 
-                    })
-                  }
-                }}
-                className="bg-blue-600 hover:bg-blue-700"
-              >
-                <Truck className="h-4 w-4 mr-2" />
-                Create Delivery Challan
-              </Button>
-            )}
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* ===== DELIVERY CHALLAN CREATION DIALOG ===== */}
       <Dialog open={dcDialog.open} onOpenChange={(open) => !open && setDcDialog({ open: false, data: null })}>
