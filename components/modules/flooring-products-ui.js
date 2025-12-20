@@ -81,6 +81,203 @@ function buildDefaultForm(schema) {
   return form
 }
 
+// Image Field Component with Upload and URL options
+function ImageFieldInput({ imagesText, setImagesText }) {
+  const [activeTab, setActiveTab] = useState('url')
+  const [urlInput, setUrlInput] = useState('')
+  const [uploading, setUploading] = useState(false)
+  
+  // Parse current images
+  const currentImages = (imagesText || '').split(',').map(s => s.trim()).filter(Boolean)
+  
+  const addImageUrl = () => {
+    const url = urlInput.trim()
+    if (!url) return
+    if (!url.match(/^https?:\/\/.+/)) {
+      toast.error('Please enter a valid URL starting with http:// or https://')
+      return
+    }
+    const newImages = [...currentImages, url]
+    setImagesText(newImages.join(', '))
+    setUrlInput('')
+    toast.success('Image URL added')
+  }
+  
+  const removeImage = (index) => {
+    const newImages = currentImages.filter((_, i) => i !== index)
+    setImagesText(newImages.join(', '))
+  }
+  
+  const handleFileUpload = async (e) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    
+    // Validate file size (max 1MB)
+    if (file.size > 1 * 1024 * 1024) {
+      toast.error('Image size must be less than 1MB')
+      e.target.value = ''
+      return
+    }
+    
+    // Validate file type
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file')
+      e.target.value = ''
+      return
+    }
+    
+    // Validate dimensions
+    const img = new Image()
+    img.src = URL.createObjectURL(file)
+    
+    img.onload = async () => {
+      URL.revokeObjectURL(img.src)
+      
+      // Recommended: 800x800 to 1200x1200, max 2000x2000
+      if (img.width > 2000 || img.height > 2000) {
+        toast.error('Image dimensions should not exceed 2000x2000 pixels')
+        e.target.value = ''
+        return
+      }
+      
+      // Upload the file
+      try {
+        setUploading(true)
+        const formData = new FormData()
+        formData.append('file', file)
+        formData.append('folder', 'products')
+        
+        const res = await fetch('/api/upload', {
+          method: 'POST',
+          body: formData
+        })
+        
+        if (res.ok) {
+          const data = await res.json()
+          const imageUrl = data.url || data.fileUrl
+          if (imageUrl) {
+            const newImages = [...currentImages, imageUrl]
+            setImagesText(newImages.join(', '))
+            toast.success('Image uploaded successfully')
+          }
+        } else {
+          const error = await res.json().catch(() => ({}))
+          toast.error(error.error || 'Upload failed')
+        }
+      } catch (err) {
+        console.error(err)
+        toast.error('Upload failed')
+      } finally {
+        setUploading(false)
+        e.target.value = ''
+      }
+    }
+    
+    img.onerror = () => {
+      URL.revokeObjectURL(img.src)
+      toast.error('Invalid image file')
+      e.target.value = ''
+    }
+  }
+  
+  return (
+    <div className="space-y-3">
+      {/* Guidelines */}
+      <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-800">
+        <p className="font-semibold mb-1 flex items-center gap-1">
+          <ImageIcon className="h-3.5 w-3.5" /> Image Guidelines
+        </p>
+        <ul className="space-y-0.5 text-blue-700">
+          <li>• Max file size: <strong>1 MB</strong></li>
+          <li>• Recommended: <strong>800×800</strong> to <strong>1200×1200</strong> pixels</li>
+          <li>• Max dimensions: <strong>2000×2000</strong> pixels</li>
+          <li>• Formats: JPG, PNG, WebP</li>
+        </ul>
+      </div>
+      
+      {/* Tabs for Upload vs URL */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="upload" className="text-xs">
+            <Upload className="h-3.5 w-3.5 mr-1" /> Upload Image
+          </TabsTrigger>
+          <TabsTrigger value="url" className="text-xs">
+            <Link className="h-3.5 w-3.5 mr-1" /> Image URL
+          </TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="upload" className="mt-2">
+          <div className="border-2 border-dashed border-slate-300 rounded-lg p-4 text-center hover:border-blue-400 transition-colors">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleFileUpload}
+              className="hidden"
+              id="product-image-upload"
+              disabled={uploading}
+            />
+            <label htmlFor="product-image-upload" className="cursor-pointer">
+              {uploading ? (
+                <div className="flex items-center justify-center gap-2 text-blue-600">
+                  <div className="animate-spin h-5 w-5 border-2 border-blue-600 border-t-transparent rounded-full" />
+                  <span>Uploading...</span>
+                </div>
+              ) : (
+                <>
+                  <Upload className="h-8 w-8 mx-auto text-slate-400 mb-2" />
+                  <p className="text-sm text-slate-600">Click to upload image</p>
+                  <p className="text-xs text-slate-400 mt-1">Max 1MB, 2000×2000px</p>
+                </>
+              )}
+            </label>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="url" className="mt-2">
+          <div className="flex gap-2">
+            <Input
+              value={urlInput}
+              onChange={(e) => setUrlInput(e.target.value)}
+              placeholder="https://example.com/image.jpg"
+              className="flex-1"
+              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addImageUrl())}
+            />
+            <Button type="button" onClick={addImageUrl} size="sm">
+              Add
+            </Button>
+          </div>
+        </TabsContent>
+      </Tabs>
+      
+      {/* Current Images Preview */}
+      {currentImages.length > 0 && (
+        <div className="space-y-2">
+          <Label className="text-xs text-slate-500">Added Images ({currentImages.length})</Label>
+          <div className="flex flex-wrap gap-2">
+            {currentImages.map((url, idx) => (
+              <div key={idx} className="relative group">
+                <img 
+                  src={url} 
+                  alt={`Product ${idx + 1}`}
+                  className="w-16 h-16 object-cover rounded-lg border"
+                  onError={(e) => { e.target.src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64"><rect fill="%23f1f5f9" width="64" height="64"/><text x="50%" y="50%" text-anchor="middle" dy=".3em" fill="%2394a3b8" font-size="10">Error</text></svg>' }}
+                />
+                <button
+                  type="button"
+                  onClick={() => removeImage(idx)}
+                  className="absolute -top-1.5 -right-1.5 bg-red-500 text-white rounded-full p-0.5 opacity-0 group-hover:opacity-100 transition-opacity"
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function ImportProductsDialog({ open, onClose, onImport, loading, categories }) {
   const [csvText, setCsvText] = useState('')
 
