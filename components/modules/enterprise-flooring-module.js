@@ -7743,21 +7743,9 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           variant="outline"
                           disabled={loading || !canEdit}
                           className={!canEdit ? 'opacity-50 cursor-not-allowed' : ''}
-                          onClick={async () => {
+                          onClick={() => {
                             if (!canEdit) return
-                            setLoading(true)
-                            await releaseInventoryForMeasurement()
-                            const updatedDetails = { ...measurementDetails, inventoryBlocked: false }
-                            await fetch('/api/flooring/enhanced/projects', {
-                              method: 'PUT',
-                              headers,
-                              body: JSON.stringify({ id: selectedProject.id, measurementDetails: updatedDetails, status: 'measurement_scheduled' })
-                            })
-                            setSelectedProject(prev => ({ ...prev, status: 'measurement_scheduled', measurementDetails: updatedDetails }))
-                            fetchInventory()
-                            fetchProjects()
-                            setLoading(false)
-                            toast.success('Stock released. You can now edit the measurement.')
+                            setIsEditingMaterials(true)
                           }}
                         >
                           <Unlock className="h-4 w-4 mr-2" />
