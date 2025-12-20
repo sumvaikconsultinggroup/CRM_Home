@@ -152,72 +152,121 @@ export async function POST(request) {
         const productsForCleanup = await productsCol.find({}).toArray()
         const productIdSet = new Set(productsForCleanup.map(p => p.id))
         
+        // Build additional lookup maps for matching
+        const productBySkuMap = new Map()
+        const productByNameMap = new Map()
+        for (const p of productsForCleanup) {
+          if (p.sku) productBySkuMap.set(p.sku.toLowerCase(), p)
+          if (p.name) productByNameMap.set(p.name.toLowerCase(), p)
+        }
+        
         // Collect all inventory from all sources
         const wfItems = await wfStockCol.find({}).toArray()
         const v2Items = await v2Col.find({}).toArray()
         const v1Items = await v1Col.find({}).toArray()
         
-        // Build consolidated map by productId
+        // Build consolidated map by productId (after matching)
         const consolidated = new Map()
         
         const processItem = (item, source) => {
-          if (!item.productId) return // Skip orphan entries
+          // Try to find matching product using multiple strategies
+          let product = null
+          let matchedProductId = item.productId
           
-          const key = `${item.productId}-${item.warehouseId || 'default'}`
+          // 1. Direct productId match
+          product = productsForCleanup.find(p => p.id === item.productId)
+          
+          // 2. Try SKU match
+          if (!product && item.sku && item.sku !== '-') {
+            product = productBySkuMap.get(item.sku.toLowerCase())
+            if (product) matchedProductId = product.id
+          }
+          
+          // 3. Try name match
+          if (!product && item.productName) {
+            product = productByNameMap.get(item.productName.toLowerCase())
+            if (product) matchedProductId = product.id
+          }
+          
+          // Skip if no match and no valid data
+          if (!product && (!item.quantity || item.quantity <= 0)) {
+            results.removed++
+            results.details.push({
+              action: 'skipped_orphan',
+              productId: item.productId,
+              productName: item.productName,
+              sku: item.sku,
+              source
+            })
+            return
+          }
+          
+          // Skip if no product match at all
+          if (!product) {
+            results.removed++
+            results.details.push({
+              action: 'skipped_no_match',
+              productId: item.productId,
+              productName: item.productName,
+              sku: item.sku,
+              source
+            })
+            return
+          }
+          
+          const key = `${matchedProductId}-${item.warehouseId || 'default'}`
           const existing = consolidated.get(key)
           
           if (existing) {
-            // Merge quantities - take the entry with more data, higher quantity, or newer update
+            // Merge: take higher quantity
             if ((item.quantity || 0) > (existing.quantity || 0)) {
-              consolidated.set(key, { ...item, source, mergedFrom: [...(existing.mergedFrom || []), existing.source] })
+              consolidated.set(key, { 
+                ...item, 
+                productId: matchedProductId,
+                source, 
+                mergedFrom: [...(existing.mergedFrom || []), existing.source] 
+              })
             }
           } else {
-            consolidated.set(key, { ...item, source, mergedFrom: [] })
+            consolidated.set(key, { 
+              ...item, 
+              productId: matchedProductId,
+              source, 
+              mergedFrom: [] 
+            })
           }
         }
         
-        // Process all items (priority: wf_inventory_stock > flooring_inventory_v2 > flooring_inventory)
+        // Process all items (priority: v1 < v2 < wf)
         v1Items.forEach(i => processItem(i, 'flooring_inventory'))
         v2Items.forEach(i => processItem(i, 'flooring_inventory_v2'))
         wfItems.forEach(i => processItem(i, 'wf_inventory_stock'))
         
-        // Remove orphan entries (productId not in products collection)
-        for (const [key, item] of consolidated) {
-          if (!productIdSet.has(item.productId)) {
-            // Remove from all collections
-            await wfStockCol.deleteMany({ productId: item.productId })
-            await v2Col.deleteMany({ productId: item.productId })
-            await v1Col.deleteMany({ productId: item.productId })
-            results.removed++
-            results.details.push({
-              action: 'removed_orphan',
-              productId: item.productId,
-              reason: 'Product no longer exists'
-            })
-            consolidated.delete(key)
-          }
-        }
-        
-        // Clear wf_inventory_stock and rebuild with consolidated data
+        // Clear ALL inventory collections
         await wfStockCol.deleteMany({})
+        await v2Col.deleteMany({})
+        await v1Col.deleteMany({})
         
+        // Rebuild wf_inventory_stock with consolidated data
         for (const [key, item] of consolidated) {
           const product = productsForCleanup.find(p => p.id === item.productId)
-          await wfStockCol.insertOne({
-            id: item.id || `inv-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-            productId: item.productId,
-            productName: product?.name || item.productName,
-            sku: product?.sku || item.sku,
-            warehouseId: item.warehouseId || 'default',
-            quantity: Math.max(0, item.quantity || 0),
-            reservedQuantity: Math.max(0, item.reservedQuantity || item.reservedQty || 0),
-            reorderLevel: item.reorderLevel || 100,
-            avgCostPrice: item.avgCostPrice || item.costPrice || 0,
-            batches: item.batches || [],
-            createdAt: item.createdAt || new Date().toISOString(),
-            updatedAt: new Date().toISOString()
-          })
-          results.fixed++
+          if (product) {
+            await wfStockCol.insertOne({
+              id: item.id || `inv-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+              productId: product.id,
+              productName: product.name,
+              sku: product.sku || '',
+              warehouseId: item.warehouseId || 'default',
+              quantity: Math.max(0, item.quantity || 0),
+              reservedQuantity: Math.max(0, item.reservedQuantity || item.reservedQty || 0),
+              reorderLevel: item.reorderLevel || 100,
+              avgCostPrice: item.avgCostPrice || item.costPrice || 0,
+              batches: item.batches || [],
+              createdAt: item.createdAt || new Date().toISOString(),
+              updatedAt: new Date().toISOString()
+            })
+            results.fixed++
+          }
         }
         
         results.details.push({
