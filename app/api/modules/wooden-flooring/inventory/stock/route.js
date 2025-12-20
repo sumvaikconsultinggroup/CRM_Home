@@ -37,8 +37,68 @@ export async function GET(request) {
     if (lowStock) query.$expr = { $lte: ['$quantity', '$reorderLevel'] }
     if (outOfStock) query.quantity = { $lte: 0 }
 
-    // Get stock records
+    // Get stock records from all sources
     let stocks = await stockCollection.find(query).sort({ productName: 1 }).toArray()
+    
+    // Also get from flooring_inventory_v2 for completeness
+    const v2Stocks = await db.collection('flooring_inventory_v2').find({}).toArray()
+    
+    // Combine all stock sources
+    const allStocks = [...stocks]
+    for (const v2 of v2Stocks) {
+      // Add v2 stocks with proper field mapping
+      allStocks.push({
+        ...v2,
+        reservedQty: v2.reservedQty || 0,
+        source: 'flooring_inventory_v2'
+      })
+    }
+    
+    // CONSOLIDATE: Remove duplicates by keeping the best entry per productId
+    // This fixes the issue of same product appearing twice
+    const consolidatedMap = new Map()
+    for (const stock of allStocks) {
+      if (!stock.productId) continue
+      
+      const existing = consolidatedMap.get(stock.productId)
+      const stockQty = stock.quantity || 0
+      const stockReserved = stock.reservedQty || stock.reservedQuantity || 0
+      const stockAvailable = stockQty - stockReserved
+      const hasRealWarehouse = stock.warehouseId && !['default', 'main'].includes(stock.warehouseId)
+      const hasSku = !!stock.sku
+      
+      if (existing) {
+        const existingQty = existing.quantity || 0
+        const existingAvailable = existingQty - (existing.reservedQty || existing.reservedQuantity || 0)
+        const existingHasRealWarehouse = existing.warehouseId && !['default', 'main'].includes(existing.warehouseId)
+        
+        // Replace if: better quantity, or better warehouse, or has SKU
+        let shouldReplace = false
+        if (stockAvailable > existingAvailable) {
+          shouldReplace = true
+        } else if (stockAvailable === existingAvailable && hasRealWarehouse && !existingHasRealWarehouse) {
+          shouldReplace = true
+        } else if (stockQty > 0 && existingQty === 0) {
+          shouldReplace = true
+        } else if (hasSku && !existing.sku) {
+          shouldReplace = true
+        }
+        
+        if (shouldReplace) {
+          consolidatedMap.set(stock.productId, stock)
+        }
+      } else {
+        consolidatedMap.set(stock.productId, stock)
+      }
+    }
+    
+    // Filter out entries with 0 stock and no real warehouse (orphan entries)
+    stocks = Array.from(consolidatedMap.values()).filter(stock => {
+      const qty = stock.quantity || 0
+      const hasRealWarehouse = stock.warehouseId && !['default', 'main'].includes(stock.warehouseId)
+      // Keep if has stock OR has a proper warehouse assignment
+      return qty > 0 || hasRealWarehouse
+    })
 
     // Search filter
     if (search) {
