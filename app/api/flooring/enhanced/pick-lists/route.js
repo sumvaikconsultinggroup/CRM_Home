@@ -453,6 +453,36 @@ export async function PUT(request) {
         }
         break
 
+      case 'cancel':
+        // Cancel the pick list and remove reference from quote
+        updateData.status = 'CANCELLED'
+        updateData.cancelledAt = now
+        updateData.cancelledBy = user.id
+        updateData.cancelledByName = user.name || user.email
+        updateData.cancelReason = data?.reason || 'User cancelled'
+        
+        statusHistoryEntry = {
+          status: 'CANCELLED',
+          timestamp: now,
+          by: user.id,
+          userName: user.name || user.email,
+          notes: data?.reason || 'Pick list cancelled'
+        }
+        
+        // Clear the pick list reference from the quote
+        await quotes.updateOne(
+          { id: pickList.quoteId },
+          { 
+            $set: { 
+              pickListId: null,
+              pickListNumber: null,
+              pickListStatus: null,
+              updatedAt: now
+            } 
+          }
+        )
+        break
+
       case 'close':
         updateData.status = 'CLOSED'
         updateData.closedAt = now
