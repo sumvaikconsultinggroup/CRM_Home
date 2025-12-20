@@ -21,10 +21,20 @@ export async function GET(request) {
 
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
-    const products = db.collection('flooring_products')
-
-    // Get all products first for lookup
-    const allProducts = await products.find({}).toArray()
+    
+    // Get products from BOTH collections (flooring_products and wf_inventory)
+    const flooringProducts = await db.collection('flooring_products').find({}).toArray()
+    const wfInventoryProducts = await db.collection('wf_inventory').find({}).toArray()
+    
+    // Merge products - flooring_products takes priority
+    const allProducts = [...flooringProducts]
+    const flooringProductIds = new Set(flooringProducts.map(p => p.id))
+    for (const wp of wfInventoryProducts) {
+      if (!flooringProductIds.has(wp.id)) {
+        allProducts.push(wp)
+      }
+    }
+    
     const productMap = new Map(allProducts.map(p => [p.id, p]))
 
     // Build query
