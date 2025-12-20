@@ -8793,6 +8793,9 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           <TabsTrigger value="quotes" className="flex items-center gap-2">
             <FileText className="h-4 w-4" /> Quotes
           </TabsTrigger>
+          <TabsTrigger value="challans" className="flex items-center gap-2">
+            <Truck className="h-4 w-4" /> Challans
+          </TabsTrigger>
           <TabsTrigger value="invoices" className="flex items-center gap-2">
             <Receipt className="h-4 w-4" /> Invoices
           </TabsTrigger>
