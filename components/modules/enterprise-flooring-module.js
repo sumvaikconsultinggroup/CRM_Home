@@ -4752,8 +4752,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                       <Copy className="h-4 w-4 mr-2 text-slate-600" /> Duplicate Quote
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => handleDeleteQuote(quote.id)} className="text-red-600 focus:text-red-600">
-                                      <Trash2 className="h-4 w-4 mr-2" /> Delete Quote
+                                    <DropdownMenuItem onClick={() => openCancelQuoteDialog(quote.id)} className="text-red-600 focus:text-red-600">
+                                      <X className="h-4 w-4 mr-2" /> Cancel Quote
                                     </DropdownMenuItem>
                                   </>
                                 )}
@@ -4766,13 +4766,23 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                     <DropdownMenuItem onClick={() => handleQuoteAction(quote.id, 'send')}>
                                       <RefreshCw className="h-4 w-4 mr-2 text-blue-600" /> Resend Quote
                                     </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => openCancelQuoteDialog(quote.id)} className="text-red-600 focus:text-red-600">
+                                      <X className="h-4 w-4 mr-2" /> Cancel Quote
+                                    </DropdownMenuItem>
                                   </>
                                 )}
                                 
                                 {quote.status === 'approved' && (
-                                  <DropdownMenuItem onClick={() => handleDownloadQuote(quote)}>
-                                    <Printer className="h-4 w-4 mr-2 text-slate-600" /> Print for Records
-                                  </DropdownMenuItem>
+                                  <>
+                                    <DropdownMenuItem onClick={() => handleDownloadQuote(quote)}>
+                                      <Printer className="h-4 w-4 mr-2 text-slate-600" /> Print for Records
+                                    </DropdownMenuItem>
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onClick={() => openCancelQuoteDialog(quote.id)} className="text-red-600 focus:text-red-600">
+                                      <X className="h-4 w-4 mr-2" /> Cancel Quote
+                                    </DropdownMenuItem>
+                                  </>
                                 )}
                                 
                                 {['rejected', 'revised'].includes(quote.status) && (
@@ -4784,8 +4794,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                       <Copy className="h-4 w-4 mr-2 text-slate-600" /> Create New Version
                                     </DropdownMenuItem>
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onClick={() => handleDeleteQuote(quote.id)} className="text-red-600 focus:text-red-600">
-                                      <Trash2 className="h-4 w-4 mr-2" /> Delete Quote
+                                    <DropdownMenuItem onClick={() => openCancelQuoteDialog(quote.id)} className="text-red-600 focus:text-red-600">
+                                      <X className="h-4 w-4 mr-2" /> Cancel Quote
                                     </DropdownMenuItem>
                                   </>
                                 )}
