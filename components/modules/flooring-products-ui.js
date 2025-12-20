@@ -9,7 +9,9 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Separator } from '@/components/ui/separator'
 import { Switch } from '@/components/ui/switch'
-import { Download, Edit, Trash2, Upload } from 'lucide-react'
+import { Download, Edit, Trash2, Upload, Package, DollarSign, Ruler, Info, CheckCircle2, XCircle } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Card, CardContent } from '@/components/ui/card'
 
 function getByPath(obj, path) {
   if (!path) return undefined
