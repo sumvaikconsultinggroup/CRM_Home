@@ -5313,7 +5313,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               onClick={fetchChallans}
               disabled={challansLoading}
             >
-              <RefreshCcw className={`h-4 w-4 mr-2 ${challansLoading ? 'animate-spin' : ''}`} />
+              <RefreshCw className={`h-4 w-4 mr-2 ${challansLoading ? 'animate-spin' : ''}`} />
               Refresh
             </Button>
           </div>
