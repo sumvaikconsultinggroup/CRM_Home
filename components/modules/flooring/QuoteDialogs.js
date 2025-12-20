@@ -720,28 +720,22 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, cust
                       value={form.validUntil}
                       onChange={(e) => setForm(prev => ({ ...prev, validUntil: e.target.value }))}
                     />
+                    <p className="text-xs text-amber-600 mt-1">⚠️ Stock will be auto-released after this date if quote not approved</p>
                   </div>
                   <div>
-                    <Label>Estimated Delivery (Days)</Label>
-                    <Input 
-                      type="number" 
-                      value={form.estimatedDeliveryDays}
-                      onChange={(e) => setForm(prev => ({ ...prev, estimatedDeliveryDays: parseInt(e.target.value) || 0 }))}
-                    />
-                  </div>
-                  <div>
-                    <Label>Installation Time (Days)</Label>
-                    <Input 
-                      type="number" 
-                      value={form.estimatedInstallDays}
-                      onChange={(e) => setForm(prev => ({ ...prev, estimatedInstallDays: parseInt(e.target.value) || 0 }))}
+                    <Label>Notes</Label>
+                    <Textarea 
+                      value={form.notes} 
+                      onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
+                      placeholder="Any additional notes for this quote..."
+                      rows={2}
                     />
                   </div>
                 </div>
               </Card>
             </TabsContent>
 
-            {/* TAB 2: Items */}
+            {/* TAB 2: Items & Pricing */}
             <TabsContent value="items" className="space-y-4 mt-0">
               <Card>
                 <div className="p-4 border-b flex items-center justify-between">
@@ -758,6 +752,121 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, cust
                     <table className="w-full text-sm">
                       <thead>
                         <tr className="bg-slate-50">
+                          <th className="px-4 py-2 text-left">Product</th>
+                          <th className="px-4 py-2 text-right w-24">Qty</th>
+                          <th className="px-4 py-2 text-center w-20">Unit</th>
+                          <th className="px-4 py-2 text-right w-28">Rate (₹)</th>
+                          <th className="px-4 py-2 text-center w-20">GST %</th>
+                          <th className="px-4 py-2 text-right w-28">Amount</th>
+                          <th className="px-4 py-2 w-16"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {form.items.map((item, idx) => (
+                          <tr key={idx} className="border-b">
+                            <td className="px-4 py-2">
+                              <p className="font-medium">{item.name}</p>
+                              {item.sku && <p className="text-xs text-slate-400">SKU: {item.sku}</p>}
+                            </td>
+                            <td className="px-4 py-2">
+                              <Input 
+                                type="number" 
+                                value={item.quantity} 
+                                onChange={(e) => handleItemChange(idx, 'quantity', parseFloat(e.target.value) || 0)}
+                                className="w-20 text-right"
+                              />
+                            </td>
+                            <td className="px-4 py-2 text-center">{item.unit}</td>
+                            <td className="px-4 py-2">
+                              <Input 
+                                type="number" 
+                                value={item.unitPrice} 
+                                onChange={(e) => handleItemChange(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
+                                className="w-24 text-right"
+                              />
+                            </td>
+                            <td className="px-4 py-2 text-center">
+                              <span className="text-slate-600">{item.gstRate || 18}%</span>
+                            </td>
+                            <td className="px-4 py-2 text-right font-medium">₹{(item.totalPrice || 0).toLocaleString()}</td>
+                            <td className="px-4 py-2">
+                              <Button variant="ghost" size="sm" onClick={() => handleRemoveItem(idx)}>
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="p-8 text-center text-slate-500">
+                    <Package className="h-8 w-8 mx-auto mb-2 text-slate-300" />
+                    <p>No items added yet</p>
+                    <Button variant="link" onClick={() => setShowProductSelector(true)}>
+                      Add your first product
+                    </Button>
+                  </div>
+                )}
+              </Card>
+
+              {/* Discount Only - GST from Products */}
+              <Card className="p-4">
+                <h4 className="font-semibold mb-3">Discount</h4>
+                <div className="flex gap-2">
+                  <div className="flex-1">
+                    <Label>Discount</Label>
+                    <Input 
+                      type="number" 
+                      value={form.discountValue} 
+                      onChange={(e) => setForm(prev => ({ ...prev, discountValue: parseFloat(e.target.value) || 0 }))}
+                    />
+                  </div>
+                  <div className="w-32">
+                    <Label>Type</Label>
+                    <Select value={form.discountType} onValueChange={(v) => setForm(prev => ({ ...prev, discountType: v }))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="percentage">%</SelectItem>
+                        <SelectItem value="fixed">Fixed ₹</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+              </Card>
+
+              {/* Pricing Summary */}
+              <Card className="p-4 bg-emerald-50">
+                <h4 className="font-semibold mb-3 text-emerald-800">Pricing Summary</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Subtotal ({form.items.length} items)</span>
+                    <span>₹{subtotal.toLocaleString()}</span>
+                  </div>
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between text-emerald-600">
+                      <span>Discount ({form.discountType === 'percentage' ? `${form.discountValue}%` : 'Fixed'})</span>
+                      <span>-₹{discountAmount.toLocaleString()}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span>Taxable Amount</span>
+                    <span>₹{taxableAmount.toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between text-slate-600">
+                    <span>GST (from products)</span>
+                    <span>₹{totalTax.toLocaleString()}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between text-xl font-bold text-emerald-700">
+                    <span>Grand Total</span>
+                    <span>₹{grandTotal.toLocaleString()}</span>
+                  </div>
+                </div>
+              </Card>
+            </TabsContent>
                           <th className="px-4 py-2 text-left">Product</th>
                           <th className="px-4 py-2 text-right w-24">Qty</th>
                           <th className="px-4 py-2 text-center w-20">Unit</th>
