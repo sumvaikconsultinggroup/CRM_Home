@@ -7266,13 +7266,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   <p className="text-xs text-amber-600 mt-1"><Lock className="h-3 w-3 inline" /> Stock Blocked</p>
                 )}
               </div>
-              {/* Only show Add Room when editing is allowed - NOT when measurement_done */}
-              {['pending', 'site_visit_pending', 'measurement_scheduled'].includes(selectedProject.status) && (
+              {/* Show Add Room when editing is allowed OR when in edit mode */}
+              {(['pending', 'site_visit_pending', 'measurement_scheduled'].includes(selectedProject.status) || isEditingMaterials) && (
                 <Button onClick={() => setDialogOpen({ type: 'room', data: { projectId: selectedProject.id } })}>
                   <Plus className="h-4 w-4 mr-2" /> Add Room
                 </Button>
               )}
-              {selectedProject.status === 'measurement_done' && (
+              {selectedProject.status === 'measurement_done' && !isEditingMaterials && (
                 <Button 
                   variant="outline" 
                   disabled 
@@ -7282,7 +7282,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   <Plus className="h-4 w-4 mr-2" /> Add Room
                 </Button>
               )}
-              {!['pending', 'site_visit_pending', 'measurement_scheduled', 'measurement_done'].includes(selectedProject.status) && (
+              {!['pending', 'site_visit_pending', 'measurement_scheduled', 'measurement_done'].includes(selectedProject.status) && !isEditingMaterials && (
                 <Badge variant="outline" className="text-amber-600 border-amber-300">
                   <Lock className="h-3 w-3 mr-1" /> Locked
                 </Badge>
