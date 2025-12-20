@@ -7095,7 +7095,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           return
         }
 
-        // Calculate totals
+        // Calculate totals - B2C uses retail/selling price
         const items = selectedItems.map(item => ({
           itemType: 'material',
           productId: item.product.id,
@@ -7104,8 +7104,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           description: item.product.description || '',
           quantity: item.quantity || totalArea,
           unit: item.product.unit || 'sqft',
-          unitPrice: item.product.price || item.product.pricing?.sellingPrice || 0,
-          totalPrice: (item.product.price || item.product.pricing?.sellingPrice || 0) * (item.quantity || totalArea),
+          unitPrice: getProductPrice(item.product, 'b2c'),
+          totalPrice: getProductPrice(item.product, 'b2c') * (item.quantity || totalArea),
           area: item.quantity || totalArea
         }))
 
