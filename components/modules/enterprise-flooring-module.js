@@ -3421,9 +3421,9 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               return { product, quantity: item.quantity, selected: true }
             })
 
-        // Calculate totals
+        // Calculate totals - B2B uses dealer price
         const subtotal = items.reduce((sum, item) => {
-          const price = item.product?.price || item.product?.pricing?.sellingPrice || item.unitPrice || 0
+          const price = getProductPrice(item.product, 'b2b')
           return sum + (price * item.quantity)
         }, 0)
 
@@ -3451,8 +3451,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             description: item.product?.description || '',
             quantity: item.quantity,
             unit: item.product?.unit || 'sqft',
-            unitPrice: item.product?.price || item.product?.pricing?.sellingPrice || item.unitPrice || 0,
-            totalPrice: (item.product?.price || item.product?.pricing?.sellingPrice || item.unitPrice || 0) * item.quantity,
+            unitPrice: getProductPrice(item.product, 'b2b'), // B2B uses dealer price
+            totalPrice: getProductPrice(item.product, 'b2b') * item.quantity,
             area: item.quantity
           })),
           template: 'professional',
