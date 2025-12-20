@@ -450,11 +450,122 @@ export async function PUT(request) {
           $push: { statusHistory: { status: 'approved', timestamp: now, by: body.approvedBy || user.id, notes: body.approvalNotes || '' } }
         })
         if (quote.projectId) {
-          await projects.updateOne({ id: quote.projectId }, { $set: { status: 'approved', updatedAt: now } })
+          await projects.updateOne({ id: quote.projectId }, { $set: { status: 'quote_approved', updatedAt: now } })
         }
         if (quote.leadId) {
           await leads.updateOne({ id: quote.leadId }, { $set: { flooringStatus: 'quote_approved' } })
         }
+        
+        // Check fulfillment settings - auto-create pick list if enabled
+        const settingsCollection = db.collection('flooring_settings')
+        const fulfillmentSettings = await settingsCollection.findOne({ type: 'fulfillment' })
+        
+        if (fulfillmentSettings?.autoCreatePickListOnApproval) {
+          try {
+            // Auto-create pick list
+            const pickLists = db.collection('flooring_pick_lists')
+            const pickListItems = db.collection('flooring_pick_list_items')
+            const products = db.collection('flooring_products')
+            
+            // Check if pick list already exists
+            const existingPL = await pickLists.findOne({ quoteId: id, status: { $ne: 'CLOSED' } })
+            
+            if (!existingPL) {
+              const plCount = await pickLists.countDocuments()
+              const year = new Date().getFullYear()
+              const month = String(new Date().getMonth() + 1).padStart(2, '0')
+              const pickListNumber = `PL-${year}${month}-${String(plCount + 1).padStart(4, '0')}`
+              const pickListId = uuidv4()
+              
+              // Get updated quote
+              const updatedQuote = await quotes.findOne({ id })
+              
+              const pickList = {
+                id: pickListId,
+                pickListNumber,
+                quoteId: id,
+                quoteNumber: updatedQuote.quoteNumber,
+                projectId: updatedQuote.projectId,
+                projectNumber: updatedQuote.projectNumber,
+                customer: updatedQuote.customer,
+                status: 'CREATED',
+                notes: 'Auto-created on quote approval',
+                totalItems: 0,
+                totalArea: 0,
+                totalBoxes: 0,
+                statusHistory: [{
+                  status: 'CREATED',
+                  timestamp: now,
+                  by: user.id,
+                  userName: user.name || user.email,
+                  notes: 'Auto-created on quote approval'
+                }],
+                createdBy: user.id,
+                createdByName: user.name || user.email,
+                createdAt: now,
+                updatedAt: now
+              }
+              
+              // Create items from quote
+              const materialItems = (updatedQuote.items || []).filter(item => item.itemType === 'material' || !item.itemType)
+              const plItems = []
+              let totalArea = 0, totalBoxes = 0
+              
+              for (const quoteItem of materialItems) {
+                const product = await products.findOne({ id: quoteItem.productId || quoteItem.id })
+                const coveragePerBox = product?.coveragePerBox || quoteItem.coveragePerBox || 25
+                const wastagePercent = quoteItem.wastagePercent || product?.wastagePercent || 10
+                const area = quoteItem.area || quoteItem.quantity || 0
+                const boxes = Math.ceil(area * (1 + wastagePercent / 100) / coveragePerBox)
+                
+                plItems.push({
+                  id: uuidv4(),
+                  pickListId,
+                  productId: quoteItem.productId || quoteItem.id,
+                  productName: quoteItem.productName || quoteItem.name,
+                  sku: quoteItem.sku || product?.sku,
+                  quoteQtyArea: area,
+                  quoteQtyBoxes: boxes,
+                  confirmedQtyArea: null,
+                  confirmedQtyBoxes: null,
+                  coveragePerBoxSnapshot: coveragePerBox,
+                  wastagePercentSnapshot: wastagePercent,
+                  unitPriceSnapshot: quoteItem.rate || quoteItem.unitPrice,
+                  createdAt: now,
+                  updatedAt: now
+                })
+                totalArea += area
+                totalBoxes += boxes
+              }
+              
+              pickList.totalItems = plItems.length
+              pickList.totalArea = totalArea
+              pickList.totalBoxes = totalBoxes
+              
+              await pickLists.insertOne(pickList)
+              if (plItems.length > 0) {
+                await pickListItems.insertMany(plItems)
+              }
+              
+              // Update quote with pick list reference
+              await quotes.updateOne(
+                { id },
+                { $set: { pickListId, pickListNumber, pickListStatus: 'CREATED', updatedAt: now } }
+              )
+              
+              return successResponse({ 
+                message: 'Quote approved', 
+                pickListCreated: true, 
+                pickListId, 
+                pickListNumber 
+              })
+            }
+          } catch (plError) {
+            console.error('Auto-create pick list error:', plError)
+            // Continue even if pick list creation fails
+          }
+        }
+        
         return successResponse({ message: 'Quote approved' })
 
       case 'reject':
