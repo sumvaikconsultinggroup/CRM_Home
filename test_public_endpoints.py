@@ -6,7 +6,7 @@ Quick test for public endpoints to verify they're working
 import requests
 import time
 
-BASE_URL = "https://quoteflow-enhance.preview.emergentagent.com/api"
+BASE_URL = "https://order-workflow-2.preview.emergentagent.com/api"
 
 def test_public_endpoints():
     print("Testing public endpoints...")
