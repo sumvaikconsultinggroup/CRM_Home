@@ -88,7 +88,9 @@ export async function POST(request) {
     const db = await getClientDb(dbName)
     const grnCollection = db.collection('wf_inventory_grn')
     const warehouseCollection = db.collection('wf_warehouses')
-    const productCollection = db.collection('wf_inventory')
+    // Check both product collections - flooring_products is the primary catalog
+    const flooringProductsCollection = db.collection('flooring_products')
+    const wfInventoryCollection = db.collection('wf_inventory')
 
     // Verify warehouse
     const warehouse = await warehouseCollection.findOne({ id: warehouseId })
@@ -101,16 +103,23 @@ export async function POST(request) {
         return errorResponse('Each item must have productId and positive quantity', 400)
       }
 
-      const product = await productCollection.findOne({ id: item.productId })
+      // Try to find product in flooring_products first, then wf_inventory
+      let product = await flooringProductsCollection.findOne({ id: item.productId })
+      if (!product) {
+        product = await wfInventoryCollection.findOne({ id: item.productId })
+      }
       if (!product) return errorResponse(`Product not found: ${item.productId}`, 404)
+
+      // Get cost price from product pricing structure
+      const costPrice = product.pricing?.costPrice || product.costPrice || 0
 
       validatedItems.push({
         productId: item.productId,
         productName: product.name,
         sku: product.sku,
         quantity: parseFloat(item.quantity),
-        unitCost: parseFloat(item.unitCost) || product.costPrice || 0,
-        totalCost: parseFloat(item.quantity) * (parseFloat(item.unitCost) || product.costPrice || 0),
+        unitCost: parseFloat(item.unitCost) || costPrice,
+        totalCost: parseFloat(item.quantity) * (parseFloat(item.unitCost) || costPrice),
         batchNumber: item.batchNumber || null,
         lotNumber: item.lotNumber || null,
         manufacturingDate: item.manufacturingDate ? new Date(item.manufacturingDate) : null,
