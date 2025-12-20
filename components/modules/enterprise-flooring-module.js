@@ -5010,7 +5010,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                         </DropdownMenuItem>
                                         {quote.pickListStatus !== 'MATERIAL_READY' && quote.pickListStatus !== 'CLOSED' && (
                                           <DropdownMenuItem onClick={() => handleConfirmPickList(quote.pickListId)}>
-                                            <CheckCircle className="h-4 w-4 mr-2 text-green-600" /> Confirm Material Ready
+                                            <CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> Confirm Material Ready
                                           </DropdownMenuItem>
                                         )}
                                       </>
