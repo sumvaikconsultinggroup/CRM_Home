@@ -10170,58 +10170,6 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-                  const items = (pickList?.items || quote?.items || []).map(item => ({
-                    productId: item.productId || item.product_id,
-                    productName: item.productName || item.product_name,
-                    sku: item.sku || item.productCode,
-                    qtyBoxes: item.quoteQtyBoxes || item.quote_qty_boxes || item.boxes || item.quantity || 0,
-                    qtyArea: item.quoteQtyArea || item.quote_qty_area || item.area || item.totalArea || 0,
-                    coveragePerBoxSnapshot: item.coveragePerBoxSnapshot || item.coveragePerBox || 0
-                  }))
-
-                  const res = await fetch('/api/flooring/enhanced/challans', {
-                    method: 'POST',
-                    headers,
-                    body: JSON.stringify({
-                      source: pickList?.id ? 'pick_list' : 'quote',
-                      sourceId: pickList?.id || quote.id,
-                      billToAccountId: quote.customerId || quote.customer_id || quote.customer?.id,
-                      billToName: quote.customer?.name,
-                      shipToAddress: quote.customer?.address || '',
-                      thirdPartyDelivery: false,
-                      items
-                    })
-                  })
-
-                  if (res.ok) {
-                    const data = await res.json()
-                    toast.success(`Delivery Challan ${data.challan?.dcNo || data.dc_no} created successfully!`)
-                    setDcDialog({ open: false, data: null })
-                    fetchQuotes()
-                    // Refresh challans if on that tab
-                    if (activeTab === 'challans') {
-                      // Trigger challan refresh
-                    }
-                  } else {
-                    const error = await res.json()
-                    toast.error(error.error || 'Failed to create DC')
-                  }
-                } catch (error) {
-                  console.error('DC creation error:', error)
-                  toast.error('Error creating delivery challan')
-                } finally {
-                  setLoading(false)
-                }
-              }}
-              className="bg-blue-600 hover:bg-blue-700"
-              disabled={loading}
-            >
-              {loading ? <RefreshCw className="h-4 w-4 mr-2 animate-spin" /> : <Truck className="h-4 w-4 mr-2" />}
-              Create Delivery Challan
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
 
       {/* Create Invoice Dialog */}
       <Dialog open={dialogOpen.type === 'invoice'} onOpenChange={(open) => !open && setDialogOpen({ type: null, data: null })}>
