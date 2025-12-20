@@ -7086,7 +7086,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             ...(measurementDetails.auditTrail || []),
             {
               action: blockInventory ? 'measurement_completed' : 'measurement_updated',
-              by: technicianName,
+              by: user?.name || user?.email || 'System',
+              userId: user?.id,
               at: new Date().toISOString(),
               details: `${rooms.length} rooms, ${totalArea.toFixed(0)} sqft, ${Object.values(measurementProducts).filter(p => p.selected).length} products`
             }
