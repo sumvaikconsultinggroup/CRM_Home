@@ -31,24 +31,48 @@ export async function GET(request) {
     const query = {}
     if (productId) query.productId = productId
 
-    // Check multiple inventory collections
-    let inventoryItems = []
+    // Collect inventory from all sources
+    const allInventoryItems = []
     
-    // First try wf_inventory_stock (from Inventory > Stock Management)
+    // Get from wf_inventory_stock (primary source from Inventory > Stock Management)
     const wfStock = await db.collection('wf_inventory_stock').find(query).toArray()
-    if (wfStock.length > 0) {
-      inventoryItems = wfStock
+    allInventoryItems.push(...wfStock.map(i => ({ ...i, source: 'wf_inventory_stock' })))
+    
+    // Get from flooring_inventory_v2
+    const v2Stock = await db.collection('flooring_inventory_v2').find(query).toArray()
+    allInventoryItems.push(...v2Stock.map(i => ({ ...i, source: 'flooring_inventory_v2' })))
+    
+    // Get from flooring_inventory
+    const v1Stock = await db.collection('flooring_inventory').find(query).toArray()
+    allInventoryItems.push(...v1Stock.map(i => ({ ...i, source: 'flooring_inventory' })))
+
+    // CONSOLIDATE: Aggregate by productId + warehouseId
+    // This prevents duplicate entries for the same product
+    const consolidatedMap = new Map()
+    
+    for (const item of allInventoryItems) {
+      if (!item.productId) continue // Skip entries without productId
+      
+      const key = `${item.productId}-${item.warehouseId || 'default'}`
+      const existing = consolidatedMap.get(key)
+      
+      if (existing) {
+        // Merge: take higher quantity (or sum them based on source)
+        // For now, take the entry with the higher available quantity as the primary
+        const existingQty = (existing.quantity || 0) - (existing.reservedQuantity || existing.reservedQty || 0)
+        const newQty = (item.quantity || 0) - (item.reservedQuantity || item.reservedQty || 0)
+        
+        if (newQty > existingQty) {
+          // Replace with better entry
+          consolidatedMap.set(key, item)
+        }
+        // Could also sum: existing.quantity += item.quantity, but that may double-count
+      } else {
+        consolidatedMap.set(key, item)
+      }
     }
     
-    // Then check flooring_inventory_v2
-    if (inventoryItems.length === 0) {
-      inventoryItems = await db.collection('flooring_inventory_v2').find(query).toArray()
-    }
-    
-    // Also check original flooring_inventory
-    if (inventoryItems.length === 0) {
-      inventoryItems = await db.collection('flooring_inventory').find(query).toArray()
-    }
+    let inventoryItems = Array.from(consolidatedMap.values())
     
     // Sort by updatedAt
     inventoryItems.sort((a, b) => new Date(b.updatedAt || 0) - new Date(a.updatedAt || 0))
