@@ -265,6 +265,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   const [measurementNotes, setMeasurementNotes] = useState('')
   const [materialDecideLater, setMaterialDecideLater] = useState(false) // Skip material selection
   const [productSearchTerm, setProductSearchTerm] = useState('') // Search term for product selection
+  const [isEditingMaterials, setIsEditingMaterials] = useState(false) // Toggle for editing materials when inventory blocked
   
   // Selection States
   const [selectedProject, setSelectedProject] = useState(null)
