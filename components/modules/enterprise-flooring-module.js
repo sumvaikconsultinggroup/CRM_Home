@@ -7066,6 +7066,16 @@ export function EnterpriseFlooringModule({ client, user, token }) {
 
         const hasSelectedProducts = Object.values(measurementProducts).some(p => p.selected)
         
+        // Validate total quantity doesn't exceed total area
+        const totalSelectedQty = Object.values(measurementProducts)
+          .filter(p => p.selected)
+          .reduce((sum, p) => sum + (p.quantity || 0), 0)
+        
+        if (totalSelectedQty > totalArea) {
+          toast.error(`Total product quantity (${totalSelectedQty} sqft) cannot exceed total room area (${totalArea} sqft)`)
+          return false
+        }
+        
         if (blockInventory && hasSelectedProducts) {
           const { allAvailable, insufficientItems } = checkMeasurementInventory()
           if (!allAvailable) {
