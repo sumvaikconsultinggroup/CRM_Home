@@ -10285,12 +10285,22 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                       source: pickList?.id ? 'pick_list' : 'quote',
                       sourceId: pickList?.id || quote.id,
                       billToAccountId: quote.customerId || quote.customer_id || quote.customer?.id,
-                      billToName: quote.customer?.name,
+                      billToName: dcFormData.billToName || quote.customer?.name,
+                      billToGstin: dcFormData.billToGstin,
                       shipToAddress: dcFormData.shipToAddress || quote.customer?.address || '',
                       expectedDeliveryDate: dcFormData.expectedDeliveryDate,
                       deliveryType: dcFormData.deliveryType,
                       notes: dcFormData.notes,
                       proofPhotoUrl: dcFormData.proofPhotoUrl,
+                      // Third-Party Delivery (Dealer Customer) data
+                      isThirdPartyDelivery: dcFormData.isThirdPartyDelivery,
+                      hideSenderOnPdf: dcFormData.hideSenderOnPdf,
+                      deliveryOnBehalfOf: dcFormData.deliveryOnBehalfOf,
+                      // Ship To (End Customer)
+                      shipToName: dcFormData.shipToName,
+                      // Site Incharge / Receiver Contact
+                      siteInchargeName: dcFormData.siteInchargeName,
+                      siteInchargePhone: dcFormData.siteInchargePhone,
                       // Delivery type specific data
                       ...(dcFormData.deliveryType === 'self' && {
                         receiverName: dcFormData.receiverName,
