@@ -7914,6 +7914,14 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           loading={loading}
         />
 
+        {/* View Product Dialog (read-only) */}
+        <ViewProductDialog
+          open={type === 'view_product'}
+          onClose={() => setDialogOpen({ type: null, data: null })}
+          product={data}
+          categories={productCategories}
+        />
+
         {/* Customer Dialog */}
         <CustomerDialog
           open={type === 'customer'}
