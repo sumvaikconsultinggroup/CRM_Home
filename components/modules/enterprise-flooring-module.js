@@ -7369,11 +7369,10 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               }
               const appType = appTypeIcons[room.applicationType] || appTypeIcons.flooring
               
-              // Check if editing is allowed (in initial phases OR when explicitly editing materials)
+              // Check if editing is allowed (in initial phases OR when explicitly editing materials in B2C)
               const measurementAllowedStatuses = ['pending', 'site_visit_pending', 'measurement_scheduled']
-              const isEditingAllowed = measurementAllowedStatuses.includes(selectedProject.status) || 
-                (selectedProject.status === 'measurement_done' && isEditingMaterials)
-              const isLocked = !isEditingAllowed || measurementDetails.inventoryBlocked
+              const isEditingAllowed = measurementAllowedStatuses.includes(selectedProject.status) || isEditingMaterials
+              const isLocked = !isEditingAllowed
               
               return (
                 <Card key={room.id} className={`overflow-hidden transition-shadow ${isLocked ? 'opacity-70 bg-slate-50' : 'hover:shadow-lg'}`}>
