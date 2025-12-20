@@ -1545,6 +1545,49 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     toast.info('Showing challans for this quote')
   }
 
+  // View/Download DC PDF
+  const handleViewDCPdf = async (dcId, action = 'view') => {
+    try {
+      setLoading(true)
+      const res = await fetch(`/api/flooring/enhanced/challans/pdf?id=${dcId}`, { headers })
+      
+      if (!res.ok) {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to load DC PDF')
+        return
+      }
+      
+      const html = await res.text()
+      
+      if (action === 'view' || action === 'print') {
+        // Open in new window for viewing/printing
+        const newWindow = window.open('', '_blank')
+        newWindow.document.write(html)
+        newWindow.document.close()
+        if (action === 'print') {
+          newWindow.print()
+        }
+      } else if (action === 'download') {
+        // Download as HTML file
+        const blob = new Blob([html], { type: 'text/html' })
+        const url = URL.createObjectURL(blob)
+        const a = document.createElement('a')
+        a.href = url
+        a.download = `DC-${dcId}.html`
+        document.body.appendChild(a)
+        a.click()
+        document.body.removeChild(a)
+        URL.revokeObjectURL(url)
+        toast.success('DC downloaded')
+      }
+    } catch (error) {
+      console.error('DC PDF error:', error)
+      toast.error('Error loading DC PDF')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // View Invoice
   const handleViewInvoice = (invoiceId) => {
     setActiveTab('invoices')
