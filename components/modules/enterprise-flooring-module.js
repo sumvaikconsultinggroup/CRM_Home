@@ -1292,6 +1292,19 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       return
     }
 
+    // If we have a pick list, fetch its data first
+    let pickList = null
+    if (quote.pickListId) {
+      try {
+        const res = await fetch(`/api/flooring/enhanced/pick-lists?id=${quote.pickListId}`, { headers })
+        if (res.ok) {
+          pickList = await res.json()
+        }
+      } catch (error) {
+        console.error('Error fetching pick list:', error)
+      }
+    }
+
     // Open DC creation dialog
     setDcDialog({ 
       open: true, 
@@ -1299,6 +1312,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         source: quote.pickListId ? 'pick_list' : 'quote',
         sourceId: quote.pickListId || quote.id,
         quote,
+        pickList,
         customer: quote.customer
       } 
     })
