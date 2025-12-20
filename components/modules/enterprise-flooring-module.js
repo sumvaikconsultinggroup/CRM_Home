@@ -9104,7 +9104,7 @@ function ProjectDialog({ open, onClose, project, customers, crmContacts, onSave,
             <div className="flex items-center justify-between">
               <Label className="text-blue-800 font-semibold">Customer * (from CRM Contacts)</Label>
               {onAddContact && (
-                <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={onAddContact}>
+                <Button type="button" variant="outline" size="sm" className="h-7 text-xs" onClick={() => onAddContact(form)}>
                   <Plus className="h-3 w-3 mr-1" /> Add Contact
                 </Button>
               )}
