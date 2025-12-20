@@ -1202,7 +1202,26 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     lrNumber: '', // Lorry Receipt Number
     // Photo upload
     proofPhotoUrl: '',
-    proofPhotoFile: null
+    proofPhotoFile: null,
+    // Third-Party Delivery (Dealer Customer)
+    isThirdPartyDelivery: false,
+    deliveryOnBehalfOf: '', // Dealer name for audit trail
+    hideSenderOnPdf: true, // Default to hide sender on PDF
+    // Bill To (internal reference, may be hidden on PDF)
+    billToName: '',
+    billToAddress: '',
+    billToPhone: '',
+    billToGstin: '',
+    // Ship To / Receiver (end customer site)
+    shipToName: '', // Site name / End customer name
+    shipToAddress: '', // Delivery site address
+    // Site Incharge / Receiver Contact
+    siteInchargeName: '',
+    siteInchargePhone: '',
+    // Proof of Delivery
+    podType: 'photo', // photo, signature, otp
+    podOtp: '',
+    podSignatureUrl: ''
   })
 
   // Fetch fulfillment settings on mount
