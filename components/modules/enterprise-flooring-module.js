@@ -6836,17 +6836,45 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     // Filter to show only B2C projects
     const b2cProjects = projects.filter(p => p.segment === 'b2c' || !p.segment)
     
-    // Get inventory data for products
+    // Get inventory data for products - build multiple lookup maps for robust matching
     const inventoryMap = new Map()
+    const inventoryBySkuMap = new Map()
+    const inventoryByNameMap = new Map()
+    
     if (inventory?.inventory) {
       inventory.inventory.forEach(inv => {
-        inventoryMap.set(inv.productId, inv)
+        // Primary: by productId
+        if (inv.productId) {
+          inventoryMap.set(inv.productId, inv)
+        }
+        // Fallback: by SKU
+        if (inv.product?.sku || inv.sku) {
+          const sku = (inv.product?.sku || inv.sku).toLowerCase()
+          inventoryBySkuMap.set(sku, inv)
+        }
+        // Fallback: by product name
+        if (inv.product?.name || inv.productName) {
+          const name = (inv.product?.name || inv.productName).toLowerCase()
+          inventoryByNameMap.set(name, inv)
+        }
       })
     }
 
-    // Get inventory for a product
-    const getProductInventory = (productId) => {
-      const inv = inventoryMap.get(productId)
+    // Get inventory for a product - try multiple matching strategies
+    const getProductInventory = (productId, product = null) => {
+      // Try direct productId match first
+      let inv = inventoryMap.get(productId)
+      
+      // Fallback: try SKU match
+      if (!inv && product?.sku) {
+        inv = inventoryBySkuMap.get(product.sku.toLowerCase())
+      }
+      
+      // Fallback: try name match
+      if (!inv && product?.name) {
+        inv = inventoryByNameMap.get(product.name.toLowerCase())
+      }
+      
       return {
         totalQty: inv?.quantity || 0,
         availableQty: inv?.availableQty || 0,
@@ -6856,8 +6884,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
 
     // Get inventory status
-    const getInventoryStatus = (productId, requiredQty = 0) => {
-      const inv = getProductInventory(productId)
+    const getInventoryStatus = (productId, requiredQty = 0, product = null) => {
+      const inv = getProductInventory(productId, product)
       if (inv.availableQty <= 0) return { status: 'out_of_stock', color: 'text-red-600 bg-red-50', label: 'Out of Stock' }
       if (requiredQty > 0 && inv.availableQty < requiredQty) return { status: 'insufficient', color: 'text-amber-600 bg-amber-50', label: 'Insufficient' }
       if (inv.availableQty <= inv.reorderLevel) return { status: 'low_stock', color: 'text-amber-600 bg-amber-50', label: 'Low Stock' }
