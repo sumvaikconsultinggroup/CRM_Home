@@ -607,12 +607,6 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, modu
                           const email = e.target.value
                           setForm(prev => ({ ...prev, customer: { ...prev.customer, email } }))
                         }}
-                        onBlur={(e) => {
-                          const email = e.target.value
-                          if (email && !/^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/.test(email)) {
-                            toast.error('Please enter a valid email address')
-                          }
-                        }}
                         placeholder="customer@example.com"
                       />
                     </div>
@@ -626,132 +620,197 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, modu
                       defaultCountry="IN"
                     />
                   </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <Label>Company</Label>
+                      <Input 
+                        value={form.customer?.company || ''} 
+                        onChange={(e) => setForm(prev => ({ ...prev, customer: { ...prev.customer, company: e.target.value } }))}
+                        placeholder="Company name"
+                      />
+                    </div>
+                    <div>
+                      <Label>GSTIN</Label>
+                      <Input 
+                        value={form.customer?.gstin || ''} 
+                        onChange={(e) => setForm(prev => ({ ...prev, customer: { ...prev.customer, gstin: e.target.value.toUpperCase() } }))}
+                        placeholder="22AAAAA0000A1Z5"
+                        maxLength={15}
+                      />
+                    </div>
+                  </div>
                 </div>
               </Card>
 
-              <Card className="p-4">
-                <h4 className="font-semibold mb-3 flex items-center gap-2">
-                  <MapPin className="h-4 w-4" /> Site Address
+              {/* Sales Representative */}
+              <Card className="p-4 border-blue-200 bg-blue-50/30">
+                <h4 className="font-semibold mb-3 flex items-center gap-2 text-blue-800">
+                  <User className="h-4 w-4" /> Sales Representative
                 </h4>
                 <div className="space-y-3">
                   <div>
-                    <Label>Address</Label>
+                    <Label>Sales Rep Name *</Label>
                     <Input 
-                      value={form.site?.address || ''} 
-                      onChange={(e) => setForm(prev => ({ ...prev, site: { ...prev.site, address: e.target.value } }))}
-                      placeholder="Street address"
+                      value={form.salesRepName} 
+                      onChange={(e) => setForm(prev => ({ ...prev, salesRepName: e.target.value }))}
+                      placeholder="Enter sales representative name"
                     />
                   </div>
-                  <div className="grid grid-cols-3 gap-2">
+                  <div className="grid grid-cols-2 gap-2">
                     <div>
-                      <Label>City</Label>
+                      <Label>Email</Label>
                       <Input 
-                        value={form.site?.city || ''} 
-                        onChange={(e) => setForm(prev => ({ ...prev, site: { ...prev.site, city: e.target.value } }))}
+                        type="email"
+                        value={form.salesRepEmail} 
+                        onChange={(e) => setForm(prev => ({ ...prev, salesRepEmail: e.target.value }))}
+                        placeholder="sales@company.com"
                       />
                     </div>
-                    <div>
-                      <Label>State</Label>
-                      <Input 
-                        value={form.site?.state || ''} 
-                        onChange={(e) => setForm(prev => ({ ...prev, site: { ...prev.site, state: e.target.value } }))}
-                      />
-                    </div>
-                    <div>
-                      <Label>Pincode</Label>
-                      <Input 
-                        type="text"
-                        maxLength={6}
-                        value={form.site?.pincode || ''} 
-                        onChange={(e) => {
-                          const pincode = e.target.value.replace(/\D/g, '').slice(0, 6)
-                          setForm(prev => ({ ...prev, site: { ...prev.site, pincode } }))
-                        }}
-                        onBlur={(e) => {
-                          const pincode = e.target.value
-                          if (pincode && !/^[1-9][0-9]{5}$/.test(pincode)) {
-                            toast.error('Please enter a valid 6-digit pincode')
-                          }
-                        }}
-                        placeholder="400001"
-                      />
-                    </div>
+                    <PhoneInput
+                      label="Phone"
+                      name="salesRepPhone"
+                      value={form.salesRepPhone} 
+                      onChange={(e) => setForm(prev => ({ ...prev, salesRepPhone: e.target.value }))}
+                      defaultCountry="IN"
+                    />
                   </div>
                 </div>
               </Card>
-            </div>
-
-            {/* Items */}
-            <Card>
-              <div className="p-4 border-b flex items-center justify-between">
-                <h4 className="font-semibold flex items-center gap-2">
-                  <Package className="h-4 w-4" /> Quote Items
-                </h4>
-                <Button size="sm" onClick={() => setShowProductSelector(true)}>
-                  <Plus className="h-4 w-4 mr-1" /> Add Product
-                </Button>
               </div>
-              
-              {form.items.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm">
-                    <thead>
-                      <tr className="bg-slate-50">
-                        <th className="px-4 py-2 text-left">Product</th>
-                        <th className="px-4 py-2 text-right w-24">Qty</th>
-                        <th className="px-4 py-2 text-center w-20">Unit</th>
-                        <th className="px-4 py-2 text-right w-28">Rate (₹)</th>
-                        <th className="px-4 py-2 text-right w-28">Amount</th>
-                        <th className="px-4 py-2 w-16"></th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {form.items.map((item, idx) => (
-                        <tr key={idx} className="border-b">
-                          <td className="px-4 py-2">
-                            <p className="font-medium">{item.name}</p>
-                            {item.sku && <p className="text-xs text-slate-400">SKU: {item.sku}</p>}
-                          </td>
-                          <td className="px-4 py-2">
-                            <Input 
-                              type="number" 
-                              value={item.quantity} 
-                              onChange={(e) => handleItemChange(idx, 'quantity', parseFloat(e.target.value) || 0)}
-                              className="w-20 text-right"
-                            />
-                          </td>
-                          <td className="px-4 py-2 text-center">{item.unit}</td>
-                          <td className="px-4 py-2">
-                            <Input 
-                              type="number" 
-                              value={item.unitPrice} 
-                              onChange={(e) => handleItemChange(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
-                              className="w-24 text-right"
-                            />
-                          </td>
-                          <td className="px-4 py-2 text-right font-medium">₹{(item.totalPrice || 0).toLocaleString()}</td>
-                          <td className="px-4 py-2">
-                            <Button variant="ghost" size="sm" onClick={() => handleRemoveItem(idx)}>
-                              <Trash2 className="h-4 w-4 text-red-500" />
-                            </Button>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
+
+              {/* Quote Validity */}
+              <Card className="p-4">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <Calendar className="h-4 w-4" /> Quote Validity
+                </h4>
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label>Valid Until *</Label>
+                    <Input 
+                      type="date" 
+                      value={form.validUntil}
+                      onChange={(e) => setForm(prev => ({ ...prev, validUntil: e.target.value }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Estimated Delivery (Days)</Label>
+                    <Input 
+                      type="number" 
+                      value={form.estimatedDeliveryDays}
+                      onChange={(e) => setForm(prev => ({ ...prev, estimatedDeliveryDays: parseInt(e.target.value) || 0 }))}
+                    />
+                  </div>
+                  <div>
+                    <Label>Installation Time (Days)</Label>
+                    <Input 
+                      type="number" 
+                      value={form.estimatedInstallDays}
+                      onChange={(e) => setForm(prev => ({ ...prev, estimatedInstallDays: parseInt(e.target.value) || 0 }))}
+                    />
+                  </div>
                 </div>
-              ) : (
-                <div className="p-8 text-center text-slate-500">
-                  <Package className="h-8 w-8 mx-auto mb-2 text-slate-300" />
-                  <p>No items added yet</p>
-                  <Button variant="link" onClick={() => setShowProductSelector(true)}>
-                    Add your first product
+              </Card>
+            </TabsContent>
+
+            {/* TAB 2: Items */}
+            <TabsContent value="items" className="space-y-4 mt-0">
+              <Card>
+                <div className="p-4 border-b flex items-center justify-between">
+                  <h4 className="font-semibold flex items-center gap-2">
+                    <Package className="h-4 w-4" /> Quote Items
+                  </h4>
+                  <Button size="sm" onClick={() => setShowProductSelector(true)}>
+                    <Plus className="h-4 w-4 mr-1" /> Add Product
                   </Button>
                 </div>
-              )}
-            </Card>
+                
+                {form.items.length > 0 ? (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-slate-50">
+                          <th className="px-4 py-2 text-left">Product</th>
+                          <th className="px-4 py-2 text-right w-24">Qty</th>
+                          <th className="px-4 py-2 text-center w-20">Unit</th>
+                          <th className="px-4 py-2 text-right w-28">Rate (₹)</th>
+                          <th className="px-4 py-2 text-right w-28">Amount</th>
+                          <th className="px-4 py-2 w-16"></th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {form.items.map((item, idx) => (
+                          <tr key={idx} className="border-b">
+                            <td className="px-4 py-2">
+                              <p className="font-medium">{item.name}</p>
+                              {item.sku && <p className="text-xs text-slate-400">SKU: {item.sku}</p>}
+                            </td>
+                            <td className="px-4 py-2">
+                              <Input 
+                                type="number" 
+                                value={item.quantity} 
+                                onChange={(e) => handleItemChange(idx, 'quantity', parseFloat(e.target.value) || 0)}
+                                className="w-20 text-right"
+                              />
+                            </td>
+                            <td className="px-4 py-2 text-center">{item.unit}</td>
+                            <td className="px-4 py-2">
+                              <Input 
+                                type="number" 
+                                value={item.unitPrice} 
+                                onChange={(e) => handleItemChange(idx, 'unitPrice', parseFloat(e.target.value) || 0)}
+                                className="w-24 text-right"
+                              />
+                            </td>
+                            <td className="px-4 py-2 text-right font-medium">₹{(item.totalPrice || 0).toLocaleString()}</td>
+                            <td className="px-4 py-2">
+                              <Button variant="ghost" size="sm" onClick={() => handleRemoveItem(idx)}>
+                                <Trash2 className="h-4 w-4 text-red-500" />
+                              </Button>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                ) : (
+                  <div className="p-8 text-center text-slate-500">
+                    <Package className="h-8 w-8 mx-auto mb-2 text-slate-300" />
+                    <p>No items added yet</p>
+                    <Button variant="link" onClick={() => setShowProductSelector(true)}>
+                      Add your first product
+                    </Button>
+                  </div>
+                )}
+              </Card>
 
-            {/* Pricing & Taxes */}
+              {/* Additional Charges */}
+              <Card className="p-4">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <Truck className="h-4 w-4" /> Additional Charges
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Transport/Delivery Charges (₹)</Label>
+                    <Input 
+                      type="number" 
+                      value={form.transportCharges}
+                      onChange={(e) => setForm(prev => ({ ...prev, transportCharges: parseFloat(e.target.value) || 0 }))}
+                      placeholder="0"
+                    />
+                  </div>
+                  <div>
+                    <Label>Installation Charges (₹)</Label>
+                    <Input 
+                      type="number" 
+                      value={form.installationCharges}
+                      onChange={(e) => setForm(prev => ({ ...prev, installationCharges: parseFloat(e.target.value) || 0 }))}
+                      placeholder="0"
+                    />
+                  </div>
+                </div>
+              </Card>
+
+              {/* Discount & Taxes */}
             <div className="grid grid-cols-2 gap-4">
               <Card className="p-4">
                 <h4 className="font-semibold mb-3">Discount & Taxes</h4>
