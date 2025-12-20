@@ -986,6 +986,7 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, cust
           <DialogContent className="max-w-2xl">
             <DialogHeader>
               <DialogTitle>Select Product</DialogTitle>
+              <DialogDescription>Products with GST rates from master data</DialogDescription>
             </DialogHeader>
             <ScrollArea className="max-h-96">
               <div className="grid grid-cols-1 gap-2 p-2">
@@ -1001,7 +1002,10 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, cust
                     </div>
                     <div className="text-right">
                       <p className="font-semibold">₹{(product.sellingPrice || product.price || 0).toLocaleString()}</p>
-                      <p className="text-xs text-slate-500">per {product.unit || 'sqft'}</p>
+                      <div className="flex items-center gap-2 text-xs text-slate-500">
+                        <span>per {product.unit || 'sqft'}</span>
+                        <span className="bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded">GST {product.gstRate || product.taxRate || 18}%</span>
+                      </div>
                     </div>
                   </div>
                 ))}
