@@ -253,11 +253,24 @@ export async function PUT(request) {
     updateData.updatedAt = now
     updateData.updatedBy = user.id
 
+    console.log('Updating project with ID:', id)
+    console.log('Update data keys:', Object.keys(updateData))
+
     const result = await projects.findOneAndUpdate(
       { id },
       { $set: updateData },
       { returnDocument: 'after' }
     )
+
+    console.log('Update result:', result ? 'Document found' : 'No document returned')
+
+    // Handle case where findOneAndUpdate returns null or unexpected structure
+    const updatedDoc = result?.value || result
+    
+    if (!updatedDoc) {
+      console.error('Project update failed - no document returned for ID:', id)
+      return errorResponse('Project update failed - document not found', 404)
+    }
 
     // Sync to CRM project
     if (project.crmProjectId) {
@@ -265,15 +278,15 @@ export async function PUT(request) {
         { id: project.crmProjectId },
         {
           $set: {
-            name: updateData.name || result.name,
-            budget: updateData.estimatedValue || result.estimatedValue,
+            name: updateData.name || updatedDoc.name,
+            budget: updateData.estimatedValue || updatedDoc.estimatedValue,
             updatedAt: now
           }
         }
       )
     }
 
-    return successResponse(sanitizeDocument(result))
+    return successResponse(sanitizeDocument(updatedDoc))
   } catch (error) {
     console.error('Projects PUT Error:', error)
     return errorResponse('Failed to update project', 500, error.message)
