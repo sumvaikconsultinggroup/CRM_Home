@@ -9054,6 +9054,77 @@ function CustomerDialog({ open, onClose, customer, onSave, loading }) {
   )
 }
 
+// CRM Contact Dialog - for adding contacts directly to CRM from Project dialog
+function CrmContactDialog({ open, onClose, onSave, loading }) {
+  const [form, setForm] = useState({
+    name: '', email: '', phone: '', company: '',
+    billingAddress: '', city: '', state: '', pincode: '',
+    type: 'customer'
+  })
+
+  useEffect(() => {
+    if (open) {
+      setForm({
+        name: '', email: '', phone: '', company: '',
+        billingAddress: '', city: '', state: '', pincode: '',
+        type: 'customer'
+      })
+    }
+  }, [open])
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="max-w-xl">
+        <DialogHeader>
+          <DialogTitle>Add New Customer Contact</DialogTitle>
+          <DialogDescription>This contact will be added to CRM and available for project selection</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-4 py-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Name *</Label>
+              <Input value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} placeholder="Customer name" />
+            </div>
+            <PhoneInput
+              label="Phone *"
+              name="phone"
+              value={form.phone}
+              onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              defaultCountry="IN"
+              required
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label>Email</Label>
+              <Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} placeholder="Email address" />
+            </div>
+            <div className="space-y-2">
+              <Label>Company</Label>
+              <Input value={form.company} onChange={(e) => setForm({ ...form, company: e.target.value })} placeholder="Company name" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label>Address</Label>
+            <Input value={form.billingAddress} onChange={(e) => setForm({ ...form, billingAddress: e.target.value })} placeholder="Street address" />
+          </div>
+          <div className="grid grid-cols-3 gap-4">
+            <Input value={form.city} onChange={(e) => setForm({ ...form, city: e.target.value })} placeholder="City" />
+            <Input value={form.state} onChange={(e) => setForm({ ...form, state: e.target.value })} placeholder="State" />
+            <Input value={form.pincode} onChange={(e) => setForm({ ...form, pincode: e.target.value })} placeholder="Pincode" />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose}>Cancel</Button>
+          <Button onClick={() => onSave(form)} disabled={loading || !form.name || !form.phone}>
+            {loading ? 'Saving...' : 'Add Contact & Return'}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
 function ProjectDialog({ open, onClose, project, customers, crmContacts, onSave, loading, onAddContact }) {
   const [form, setForm] = useState({
     name: '', customerId: '', customerName: '', type: 'residential', segment: 'b2c', flooringType: 'hardwood',
