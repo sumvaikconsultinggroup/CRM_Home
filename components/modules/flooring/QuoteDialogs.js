@@ -863,19 +863,11 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, modu
                       />
                     </div>
                   </div>
-                  <div>
-                    <Label>Valid Until</Label>
-                    <Input 
-                      type="date" 
-                      value={form.validUntil} 
-                      onChange={(e) => setForm(prev => ({ ...prev, validUntil: e.target.value }))}
-                    />
-                  </div>
                 </div>
               </Card>
 
               <Card className="p-4 bg-slate-50">
-                <h4 className="font-semibold mb-3">Summary</h4>
+                <h4 className="font-semibold mb-3">Items Summary</h4>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
                     <span>Subtotal</span>
@@ -891,24 +883,6 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, modu
                     <span>Taxable Amount</span>
                     <span>₹{taxableAmount.toLocaleString()}</span>
                   </div>
-                  {cgstAmount > 0 && (
-                    <div className="flex justify-between text-slate-500">
-                      <span>CGST ({form.cgstRate}%)</span>
-                      <span>₹{cgstAmount.toLocaleString()}</span>
-                    </div>
-                  )}
-                  {sgstAmount > 0 && (
-                    <div className="flex justify-between text-slate-500">
-                      <span>SGST ({form.sgstRate}%)</span>
-                      <span>₹{sgstAmount.toLocaleString()}</span>
-                    </div>
-                  )}
-                  {igstAmount > 0 && (
-                    <div className="flex justify-between text-slate-500">
-                      <span>IGST ({form.igstRate}%)</span>
-                      <span>₹{igstAmount.toLocaleString()}</span>
-                    </div>
-                  )}
                   <Separator />
                   <div className="flex justify-between text-lg font-bold">
                     <span>Grand Total</span>
@@ -917,19 +891,312 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, modu
                 </div>
               </Card>
             </div>
+            </TabsContent>
 
-            {/* Notes */}
-            <Card className="p-4">
-              <h4 className="font-semibold mb-3">Notes & Terms</h4>
-              <Textarea 
-                value={form.notes} 
-                onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
-                placeholder="Add any notes or terms for this quote..."
-                rows={3}
-              />
-            </Card>
-          </div>
-        </ScrollArea>
+            {/* TAB 3: Payment & Terms */}
+            <TabsContent value="terms" className="space-y-4 mt-0">
+              <div className="grid grid-cols-2 gap-4">
+                <Card className="p-4">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <CreditCard className="h-4 w-4" /> Payment Terms
+                  </h4>
+                  <div className="space-y-3">
+                    <div>
+                      <Label>Payment Terms *</Label>
+                      <Select value={form.paymentTerms} onValueChange={(v) => setForm(prev => ({ ...prev, paymentTerms: v }))}>
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select payment terms" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {paymentTermsOptions.map(opt => (
+                            <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div>
+                      <Label>Advance Payment %</Label>
+                      <Input 
+                        type="number" 
+                        min="0" max="100"
+                        value={form.advancePercent}
+                        onChange={(e) => setForm(prev => ({ ...prev, advancePercent: parseInt(e.target.value) || 0 }))}
+                      />
+                      <p className="text-xs text-slate-500 mt-1">
+                        Advance: ₹{((grandTotal * form.advancePercent) / 100).toLocaleString()}
+                      </p>
+                    </div>
+                  </div>
+                </Card>
+
+                <Card className="p-4">
+                  <h4 className="font-semibold mb-3 flex items-center gap-2">
+                    <Truck className="h-4 w-4" /> Delivery Terms
+                  </h4>
+                  <div className="space-y-3">
+                    <div>
+                      <Label>Delivery Terms</Label>
+                      <Textarea 
+                        value={form.deliveryTerms}
+                        onChange={(e) => setForm(prev => ({ ...prev, deliveryTerms: e.target.value }))}
+                        placeholder="Ex-warehouse, delivery charges extra..."
+                        rows={2}
+                      />
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <Label>Delivery Days</Label>
+                        <Input 
+                          type="number" 
+                          value={form.estimatedDeliveryDays}
+                          onChange={(e) => setForm(prev => ({ ...prev, estimatedDeliveryDays: parseInt(e.target.value) || 0 }))}
+                        />
+                      </div>
+                      <div>
+                        <Label>Install Days</Label>
+                        <Input 
+                          type="number" 
+                          value={form.estimatedInstallDays}
+                          onChange={(e) => setForm(prev => ({ ...prev, estimatedInstallDays: parseInt(e.target.value) || 0 }))}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+
+              <Card className="p-4">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <Shield className="h-4 w-4" /> Warranty & Conditions
+                </h4>
+                <div className="space-y-3">
+                  <div>
+                    <Label>Warranty Terms</Label>
+                    <Textarea 
+                      value={form.warrantyTerms}
+                      onChange={(e) => setForm(prev => ({ ...prev, warrantyTerms: e.target.value }))}
+                      placeholder="1 year manufacturer warranty on materials..."
+                      rows={2}
+                    />
+                  </div>
+                  <div>
+                    <Label>Special Instructions</Label>
+                    <Textarea 
+                      value={form.specialInstructions}
+                      onChange={(e) => setForm(prev => ({ ...prev, specialInstructions: e.target.value }))}
+                      placeholder="Any special instructions for this order..."
+                      rows={2}
+                    />
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4">
+                <h4 className="font-semibold mb-3">Notes & Terms</h4>
+                <Textarea 
+                  value={form.notes} 
+                  onChange={(e) => setForm(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Add any notes or terms for this quote..."
+                  rows={3}
+                />
+              </Card>
+            </TabsContent>
+
+            {/* TAB 4: Site Details */}
+            <TabsContent value="site" className="space-y-4 mt-0">
+              <Card className="p-4">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <MapPin className="h-4 w-4" /> Site Address
+                </h4>
+                <div className="space-y-3">
+                  <div>
+                    <Label>Address</Label>
+                    <Input 
+                      value={form.site?.address || ''} 
+                      onChange={(e) => setForm(prev => ({ ...prev, site: { ...prev.site, address: e.target.value } }))}
+                      placeholder="Street address"
+                    />
+                  </div>
+                  <div className="grid grid-cols-3 gap-2">
+                    <div>
+                      <Label>City</Label>
+                      <Input 
+                        value={form.site?.city || ''} 
+                        onChange={(e) => setForm(prev => ({ ...prev, site: { ...prev.site, city: e.target.value } }))}
+                      />
+                    </div>
+                    <div>
+                      <Label>State</Label>
+                      <Input 
+                        value={form.site?.state || ''} 
+                        onChange={(e) => setForm(prev => ({ ...prev, site: { ...prev.site, state: e.target.value } }))}
+                      />
+                    </div>
+                    <div>
+                      <Label>Pincode</Label>
+                      <Input 
+                        type="text"
+                        maxLength={6}
+                        value={form.site?.pincode || ''} 
+                        onChange={(e) => setForm(prev => ({ ...prev, site: { ...prev.site, pincode: e.target.value.replace(/\D/g, '').slice(0, 6) } }))}
+                        placeholder="400001"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4">
+                <h4 className="font-semibold mb-3 flex items-center gap-2">
+                  <Ruler className="h-4 w-4" /> Site Conditions (Flooring Specific)
+                </h4>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label>Subfloor Type</Label>
+                    <Select value={form.subfloorType} onValueChange={(v) => setForm(prev => ({ ...prev, subfloorType: v }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select subfloor type" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {subfloorOptions.map(opt => (
+                          <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Moisture Level (%)</Label>
+                    <Input 
+                      value={form.moistureLevel}
+                      onChange={(e) => setForm(prev => ({ ...prev, moistureLevel: e.target.value }))}
+                      placeholder="e.g., 8-12%"
+                    />
+                  </div>
+                </div>
+                <div className="mt-3">
+                  <Label>Site Conditions / Assessment Notes</Label>
+                  <Textarea 
+                    value={form.siteConditions}
+                    onChange={(e) => setForm(prev => ({ ...prev, siteConditions: e.target.value }))}
+                    placeholder="Note any site conditions: levelness, existing flooring removal required, access constraints, etc."
+                    rows={3}
+                  />
+                </div>
+                <div className="mt-3">
+                  <Label>Installation Notes</Label>
+                  <Textarea 
+                    value={form.installationNotes}
+                    onChange={(e) => setForm(prev => ({ ...prev, installationNotes: e.target.value }))}
+                    placeholder="Installation instructions: acclimatization period, underlayment requirements, direction of installation..."
+                    rows={3}
+                  />
+                </div>
+              </Card>
+            </TabsContent>
+
+            {/* TAB 5: Summary */}
+            <TabsContent value="summary" className="space-y-4 mt-0">
+              <div className="grid grid-cols-2 gap-4">
+                <Card className="p-4">
+                  <h4 className="font-semibold mb-3">Customer</h4>
+                  <div className="space-y-1 text-sm">
+                    <p className="font-medium text-lg">{form.customer?.name || '-'}</p>
+                    {form.customer?.company && <p className="text-slate-500">{form.customer.company}</p>}
+                    {form.customer?.email && <p>{form.customer.email}</p>}
+                    {form.customer?.phone && <p>{form.customer.phone}</p>}
+                  </div>
+                </Card>
+                <Card className="p-4 bg-blue-50">
+                  <h4 className="font-semibold mb-3 text-blue-800">Sales Representative</h4>
+                  <div className="space-y-1 text-sm">
+                    <p className="font-medium text-lg">{form.salesRepName || '-'}</p>
+                    {form.salesRepEmail && <p>{form.salesRepEmail}</p>}
+                    {form.salesRepPhone && <p>{form.salesRepPhone}</p>}
+                  </div>
+                </Card>
+              </div>
+
+              <Card className="p-4 bg-emerald-50">
+                <h4 className="font-semibold mb-3 text-emerald-800">Quote Summary</h4>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span>Items</span>
+                    <span>{form.items.length} items</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Subtotal</span>
+                    <span>₹{subtotal.toLocaleString()}</span>
+                  </div>
+                  {form.transportCharges > 0 && (
+                    <div className="flex justify-between">
+                      <span>Transport</span>
+                      <span>₹{form.transportCharges.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {form.installationCharges > 0 && (
+                    <div className="flex justify-between">
+                      <span>Installation</span>
+                      <span>₹{form.installationCharges.toLocaleString()}</span>
+                    </div>
+                  )}
+                  {discountAmount > 0 && (
+                    <div className="flex justify-between text-emerald-600">
+                      <span>Discount</span>
+                      <span>-₹{discountAmount.toLocaleString()}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between">
+                    <span>Tax</span>
+                    <span>₹{totalTax.toLocaleString()}</span>
+                  </div>
+                  <Separator />
+                  <div className="flex justify-between text-xl font-bold text-emerald-700">
+                    <span>Grand Total</span>
+                    <span>₹{(grandTotal + (form.transportCharges || 0) + (form.installationCharges || 0)).toLocaleString()}</span>
+                  </div>
+                  {form.advancePercent > 0 && (
+                    <div className="flex justify-between text-blue-600 pt-2 border-t">
+                      <span>Advance ({form.advancePercent}%)</span>
+                      <span>₹{(((grandTotal + (form.transportCharges || 0) + (form.installationCharges || 0)) * form.advancePercent) / 100).toLocaleString()}</span>
+                    </div>
+                  )}
+                </div>
+              </Card>
+
+              <div className="grid grid-cols-3 gap-4 text-sm">
+                <Card className="p-3">
+                  <p className="text-slate-500">Payment Terms</p>
+                  <p className="font-medium">{paymentTermsOptions.find(o => o.value === form.paymentTerms)?.label || form.paymentTerms}</p>
+                </Card>
+                <Card className="p-3">
+                  <p className="text-slate-500">Valid Until</p>
+                  <p className="font-medium">{form.validUntil ? new Date(form.validUntil).toLocaleDateString() : '-'}</p>
+                </Card>
+                <Card className="p-3">
+                  <p className="text-slate-500">Delivery</p>
+                  <p className="font-medium">{form.estimatedDeliveryDays} days</p>
+                </Card>
+              </div>
+
+              {(form.warrantyTerms || form.specialInstructions) && (
+                <Card className="p-4">
+                  {form.warrantyTerms && (
+                    <div className="mb-3">
+                      <p className="text-slate-500 text-sm">Warranty</p>
+                      <p className="text-sm">{form.warrantyTerms}</p>
+                    </div>
+                  )}
+                  {form.specialInstructions && (
+                    <div>
+                      <p className="text-slate-500 text-sm">Special Instructions</p>
+                      <p className="text-sm">{form.specialInstructions}</p>
+                    </div>
+                  )}
+                </Card>
+              )}
+            </TabsContent>
+          </ScrollArea>
+        </Tabs>
 
         <DialogFooter className="border-t pt-4 flex justify-between">
           <Button variant="outline" onClick={onClose}>Cancel</Button>
