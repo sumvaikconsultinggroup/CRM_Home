@@ -637,10 +637,7 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, cust
                       <Input 
                         type="email"
                         value={form.customer?.email || ''} 
-                        onChange={(e) => {
-                          const email = e.target.value
-                          setForm(prev => ({ ...prev, customer: { ...prev.customer, email } }))
-                        }}
+                        onChange={(e) => setForm(prev => ({ ...prev, customer: { ...prev.customer, email: e.target.value } }))}
                         placeholder="customer@example.com"
                       />
                     </div>
@@ -648,9 +645,7 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, cust
                       label="Phone"
                       name="customerPhone"
                       value={form.customer?.phone || ''} 
-                      onChange={(e) => {
-                        setForm(prev => ({ ...prev, customer: { ...prev.customer, phone: e.target.value } }))
-                      }}
+                      onChange={(e) => setForm(prev => ({ ...prev, customer: { ...prev.customer, phone: e.target.value } }))}
                       defaultCountry="IN"
                     />
                   </div>
@@ -676,14 +671,14 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, cust
                 </div>
               </Card>
 
-              {/* Sales Representative */}
-              <Card className="p-4 border-blue-200 bg-blue-50/30">
-                <h4 className="font-semibold mb-3 flex items-center gap-2 text-blue-800">
-                  <User className="h-4 w-4" /> Sales Representative
+              {/* Sales Representative - Optional */}
+              <Card className="p-4 border-slate-200">
+                <h4 className="font-semibold mb-3 flex items-center gap-2 text-slate-700">
+                  <User className="h-4 w-4" /> Sales Representative <span className="text-xs text-slate-400 font-normal">(Optional)</span>
                 </h4>
                 <div className="space-y-3">
                   <div>
-                    <Label>Sales Rep Name *</Label>
+                    <Label>Sales Rep Name</Label>
                     <Input 
                       value={form.salesRepName} 
                       onChange={(e) => setForm(prev => ({ ...prev, salesRepName: e.target.value }))}
@@ -717,7 +712,7 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, cust
                 <h4 className="font-semibold mb-3 flex items-center gap-2">
                   <Calendar className="h-4 w-4" /> Quote Validity
                 </h4>
-                <div className="grid grid-cols-3 gap-4">
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Valid Until *</Label>
                     <Input 
