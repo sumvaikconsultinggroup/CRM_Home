@@ -9389,17 +9389,17 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {(dcDialog.data.quote?.items || dcDialog.data.pickList?.items || []).map((item, idx) => (
+                    {(dcDialog.data.pickList?.items || dcDialog.data.quote?.items || []).map((item, idx) => (
                       <TableRow key={idx}>
                         <TableCell>
-                          <p className="font-medium">{item.productName || item.product_name || 'Product'}</p>
-                          <p className="text-xs text-slate-500">{item.productCode || item.sku || ''}</p>
+                          <p className="font-medium">{item.productName || item.product_name || item.name || 'Product'}</p>
+                          <p className="text-xs text-slate-500">{item.sku || item.productCode || ''}</p>
                         </TableCell>
                         <TableCell className="text-right font-medium">
-                          {item.quote_qty_boxes || item.quotedQty || item.boxes || item.quantity || 0}
+                          {item.quoteQtyBoxes || item.quote_qty_boxes || item.boxes || item.quantity || 0}
                         </TableCell>
                         <TableCell className="text-right">
-                          {(item.quote_qty_area || item.quotedArea || item.totalArea || 0).toFixed(1)}
+                          {(item.quoteQtyArea || item.quote_qty_area || item.area || item.totalArea || 0).toFixed(1)}
                         </TableCell>
                       </TableRow>
                     ))}
