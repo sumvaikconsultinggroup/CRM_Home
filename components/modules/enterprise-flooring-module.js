@@ -7490,6 +7490,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                     Material to be decided later
                   </Label>
                 </div>
+                )}
               </div>
             </CardHeader>
             <CardContent>
