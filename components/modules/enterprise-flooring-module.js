@@ -3249,8 +3249,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             productName: item.product.name,
             sku: item.product.sku,
             quantity: item.quantity,
-            unitPrice: item.product.price || item.product.pricing?.sellingPrice || 0,
-            totalPrice: (item.product.price || item.product.pricing?.sellingPrice || 0) * item.quantity,
+            unitPrice: getProductPrice(item.product, 'b2b'), // B2B uses dealer price
+            totalPrice: getProductPrice(item.product, 'b2b') * item.quantity,
             inventoryReserved: blockInventory
           })),
           totalValue: getTotalValue(),
