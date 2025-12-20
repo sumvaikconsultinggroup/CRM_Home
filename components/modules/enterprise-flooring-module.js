@@ -9287,7 +9287,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                       <strong>Total Items:</strong> {(pickListDialog.data.items || []).length} products
                     </p>
                     <p className="text-sm text-blue-700">
-                      <strong>Total Boxes:</strong> {(pickListDialog.data.items || []).reduce((sum, i) => sum + (i.quote_qty_boxes || i.quotedQty || 0), 0)}
+                      <strong>Total Boxes:</strong> {(pickListDialog.data.items || []).reduce((sum, i) => sum + (i.quoteQtyBoxes || i.quote_qty_boxes || i.quotedQty || 0), 0)}
                     </p>
                   </div>
                   {pickListDialog.data.status === 'CREATED' && (
