@@ -7065,7 +7065,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         const hasSelectedProducts = Object.values(measurementProducts).some(p => p.selected)
         
         if (blockInventory && hasSelectedProducts) {
-          const { allAvailable, insufficientItems } = checkInventoryAvailability()
+          const { allAvailable, insufficientItems } = checkMeasurementInventory()
           if (!allAvailable) {
             toast.error(`Insufficient inventory: ${insufficientItems.map(i => i.product).join(', ')}`)
             return false
