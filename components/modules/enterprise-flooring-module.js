@@ -1949,6 +1949,68 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   }
 
   // Delete quote
+  // Cancel Quote with Reason - Opens dialog
+  const openCancelQuoteDialog = (quoteId) => {
+    setCancelQuoteDialog({ open: true, quoteId, reason: '' })
+  }
+
+  // Handle Cancel Quote Submission
+  const handleCancelQuote = async () => {
+    const { quoteId, reason } = cancelQuoteDialog
+    if (!reason.trim()) {
+      toast.error('Please provide a reason for cancellation')
+      return
+    }
+    
+    try {
+      setLoading(true)
+      
+      // Get the quote to find its project
+      const quote = quotes.find(q => q.id === quoteId)
+      
+      // Cancel the quote
+      const res = await fetch('/api/flooring/enhanced/quotes', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ 
+          id: quoteId, 
+          status: 'cancelled',
+          cancellationReason: reason,
+          cancelledAt: new Date().toISOString(),
+          cancelledBy: user?.id
+        })
+      })
+      
+      if (res.ok) {
+        // If quote has a project, revert project status to measurement_done
+        if (quote?.projectId) {
+          await fetch('/api/flooring/enhanced/projects', {
+            method: 'PUT',
+            headers,
+            body: JSON.stringify({ 
+              id: quote.projectId, 
+              status: 'measurement_done',
+              quoteCancelledAt: new Date().toISOString(),
+              quoteCancellationReason: reason
+            })
+          })
+          await fetchProjects()
+        }
+        
+        toast.success('Quote cancelled. Measurements reopened for new quote.')
+        await fetchQuotes()
+        setCancelQuoteDialog({ open: false, quoteId: null, reason: '' })
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to cancel quote')
+      }
+    } catch (error) {
+      toast.error('An error occurred')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   const handleDeleteQuote = async (quoteId) => {
     if (!confirm('Are you sure you want to delete this quote?')) return
     
