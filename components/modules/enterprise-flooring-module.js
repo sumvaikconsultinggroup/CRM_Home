@@ -4332,6 +4332,15 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         actions: ['revise', 'delete'],
         canEdit: false,
         priority: 7
+      },
+      cancelled: { 
+        label: 'Cancelled', 
+        color: 'bg-gray-200 text-gray-500 border-gray-300', 
+        icon: X,
+        actions: ['view', 'download'],
+        canEdit: false,
+        locked: true,
+        priority: 8
       }
     }
 
