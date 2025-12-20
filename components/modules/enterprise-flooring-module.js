@@ -261,6 +261,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   
   // Dialog States
   const [dialogOpen, setDialogOpen] = useState({ type: null, data: null })
+  const [pendingProjectData, setPendingProjectData] = useState(null) // Store project data when adding contact
   
   // Create Invoice Form State
   const [newInvoiceForm, setNewInvoiceForm] = useState({
