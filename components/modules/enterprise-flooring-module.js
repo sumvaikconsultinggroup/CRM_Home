@@ -5218,15 +5218,29 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                     <DropdownMenuSeparator />
                                     
                                     {/* DC Actions */}
-                                    <DropdownMenuItem 
-                                      onClick={() => handleCreateDCFromQuote(quote)}
-                                      disabled={quote.pickListStatus !== 'MATERIAL_READY' && !fulfillmentSettings?.allowBypassPickListForDC}
-                                    >
-                                      <Truck className="h-4 w-4 mr-2 text-blue-600" /> Create Delivery Challan
-                                      {quote.pickListStatus !== 'MATERIAL_READY' && (
-                                        <Lock className="h-3 w-3 ml-auto text-slate-400" />
-                                      )}
-                                    </DropdownMenuItem>
+                                    {quote.dcId ? (
+                                      <>
+                                        <DropdownMenuItem onClick={() => setActiveTab('challans')}>
+                                          <Truck className="h-4 w-4 mr-2 text-blue-600" /> View DC ({quote.dcNumber})
+                                          <Badge variant="outline" className="ml-auto text-xs">{quote.dcStatus}</Badge>
+                                        </DropdownMenuItem>
+                                        {quote.dcStatus === 'DRAFT' && (
+                                          <DropdownMenuItem onClick={() => handleIssueDC(quote.dcId)}>
+                                            <CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> Issue DC
+                                          </DropdownMenuItem>
+                                        )}
+                                      </>
+                                    ) : (
+                                      <DropdownMenuItem 
+                                        onClick={() => handleCreateDCFromQuote(quote)}
+                                        disabled={quote.pickListStatus !== 'MATERIAL_READY' && !fulfillmentSettings?.allowBypassPickListForDC}
+                                      >
+                                        <Truck className="h-4 w-4 mr-2 text-blue-600" /> Create Delivery Challan
+                                        {quote.pickListStatus !== 'MATERIAL_READY' && (
+                                          <Lock className="h-3 w-3 ml-auto text-slate-400" />
+                                        )}
+                                      </DropdownMenuItem>
+                                    )}
                                     
                                     {(quote.challanIds?.length > 0) && (
                                       <DropdownMenuItem onClick={() => handleViewChallans(quote.id)}>
