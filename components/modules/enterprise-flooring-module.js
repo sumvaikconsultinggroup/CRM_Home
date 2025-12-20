@@ -7209,7 +7209,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               ...(selectedProject.measurementDetails?.auditTrail || []),
               {
                 action: 'quote_created',
-                by: technicianName || user?.name || 'System',
+                by: user?.name || user?.email || 'System',
+                userId: user?.id,
                 at: new Date().toISOString(),
                 details: `Quote ${newQuote.data?.quoteNumber || ''} created for ₹${(subtotal + laborItem.totalPrice).toLocaleString()}`
               }
