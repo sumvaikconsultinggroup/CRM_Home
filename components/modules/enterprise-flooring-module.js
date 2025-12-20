@@ -9229,7 +9229,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                 </div>
                 <div>
                   <p className="text-xs text-slate-500 uppercase">Created</p>
-                  <p className="font-medium">{pickListDialog.data.created_at ? new Date(pickListDialog.data.created_at).toLocaleDateString() : '-'}</p>
+                  <p className="font-medium">{pickListDialog.data.createdAt ? new Date(pickListDialog.data.createdAt).toLocaleDateString() : (pickListDialog.data.created_at ? new Date(pickListDialog.data.created_at).toLocaleDateString() : '-')}</p>
                 </div>
               </div>
 
