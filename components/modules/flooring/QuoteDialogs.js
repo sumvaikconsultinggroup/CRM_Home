@@ -303,7 +303,7 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, modu
     if (quote) {
       setForm({
         id: quote.id,
-        status: quote.status, // Include status for workflow handling
+        status: quote.status,
         projectId: quote.projectId || '',
         projectNumber: quote.projectNumber || '',
         customer: quote.customer || null,
@@ -316,7 +316,24 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, modu
         cgstRate: quote.cgstRate || 9,
         sgstRate: quote.sgstRate || 9,
         igstRate: quote.igstRate || 0,
-        version: quote.version || 1
+        version: quote.version || 1,
+        // Enterprise Fields
+        salesRepName: quote.salesRepName || user?.name || '',
+        salesRepEmail: quote.salesRepEmail || user?.email || '',
+        salesRepPhone: quote.salesRepPhone || '',
+        paymentTerms: quote.paymentTerms || 'net30',
+        advancePercent: quote.advancePercent || 50,
+        warrantyTerms: quote.warrantyTerms || '1 year manufacturer warranty on materials',
+        installationNotes: quote.installationNotes || '',
+        siteConditions: quote.siteConditions || '',
+        deliveryTerms: quote.deliveryTerms || 'Ex-warehouse, delivery charges extra',
+        specialInstructions: quote.specialInstructions || '',
+        estimatedDeliveryDays: quote.estimatedDeliveryDays || 7,
+        estimatedInstallDays: quote.estimatedInstallDays || 3,
+        subfloorType: quote.subfloorType || '',
+        moistureLevel: quote.moistureLevel || '',
+        transportCharges: quote.transportCharges || 0,
+        installationCharges: quote.installationCharges || 0
       })
       if (quote.projectId) {
         const proj = projects.find(p => p.id === quote.projectId)
@@ -336,11 +353,29 @@ export function QuoteEditDialog({ open, onClose, quote, projects, products, modu
         discountValue: 0,
         cgstRate: 9,
         sgstRate: 9,
-        igstRate: 0
+        igstRate: 0,
+        // Enterprise Fields - defaults
+        salesRepName: user?.name || '',
+        salesRepEmail: user?.email || '',
+        salesRepPhone: '',
+        paymentTerms: 'net30',
+        advancePercent: 50,
+        warrantyTerms: '1 year manufacturer warranty on materials',
+        installationNotes: '',
+        siteConditions: '',
+        deliveryTerms: 'Ex-warehouse, delivery charges extra',
+        specialInstructions: '',
+        estimatedDeliveryDays: 7,
+        estimatedInstallDays: 3,
+        subfloorType: '',
+        moistureLevel: '',
+        transportCharges: 0,
+        installationCharges: 0
       })
       setSelectedProject(null)
     }
-  }, [quote, projects, moduleSettings])
+    setActiveTab('basic')
+  }, [quote, projects, moduleSettings, user])
 
   // Handle project selection
   const handleProjectSelect = (projectId) => {
