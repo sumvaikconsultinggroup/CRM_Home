@@ -460,8 +460,10 @@ export async function POST(request) {
       await quotes.updateOne(
         { id: quote.id },
         { 
-          $push: { challanIds: challanId },
           $set: { 
+            dcId: challanId,
+            dcNumber: dcNo,
+            dcStatus: 'DRAFT',
             dispatchStatus: 'PENDING',
             updatedAt: now 
           } 
