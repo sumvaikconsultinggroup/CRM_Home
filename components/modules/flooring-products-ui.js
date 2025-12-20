@@ -398,13 +398,7 @@ export function FlooringProductDialog({ open, onClose, product, schema, categori
     }
 
     if (field.key === 'images') {
-      return (
-        <Input
-          value={imagesText}
-          onChange={(e) => setImagesText(e.target.value)}
-          placeholder="https://... , https://..."
-        />
-      )
+      return <ImageFieldInput imagesText={imagesText} setImagesText={setImagesText} />
     }
 
     return (
