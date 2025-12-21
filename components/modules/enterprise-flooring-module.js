@@ -305,7 +305,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   })
   const [dispatchLoading, setDispatchLoading] = useState(false)
   const [dispatches, setDispatches] = useState([])
-  dispatchPhotoRef = useRef(null)
+  const dispatchPhotoRef = useRef(null)
   
   // Invoice Edit and Void States
   const [editInvoiceDialog, setEditInvoiceDialog] = useState({ open: false, invoice: null, reason: '' })
