@@ -6321,7 +6321,27 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                     <Printer className="h-4 w-4 mr-2" /> Print
                                   </DropdownMenuItem>
                                   <DropdownMenuSeparator />
-                                  {invoice.status !== 'paid' && (
+                                  
+                                  {/* Edit Invoice - Only for draft or sent invoices */}
+                                  {['draft', 'sent'].includes(invoice.status) && (
+                                    <DropdownMenuItem 
+                                      onClick={() => setEditInvoiceDialog({ open: true, invoice, reason: '' })}
+                                    >
+                                      <Edit className="h-4 w-4 mr-2" /> Edit Invoice
+                                    </DropdownMenuItem>
+                                  )}
+                                  
+                                  {/* Void Invoice - For any non-voided invoice */}
+                                  {!['voided', 'cancelled'].includes(invoice.status) && (
+                                    <DropdownMenuItem 
+                                      className="text-red-600"
+                                      onClick={() => setVoidInvoiceDialog({ open: true, invoice, reason: '' })}
+                                    >
+                                      <X className="h-4 w-4 mr-2" /> Void Invoice
+                                    </DropdownMenuItem>
+                                  )}
+                                  
+                                  {invoice.status !== 'paid' && !['voided', 'cancelled'].includes(invoice.status) && (
                                     <DropdownMenuItem 
                                       className="text-red-600"
                                       onClick={() => {
