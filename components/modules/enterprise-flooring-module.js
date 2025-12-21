@@ -5745,9 +5745,21 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                             </Button>
                           )}
                           {dc.status === 'DELIVERED' && (
-                            <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
-                              <CheckCircle2 className="h-3 w-3 mr-1" /> Complete
-                            </Badge>
+                            <>
+                              {!dc.invoiceId ? (
+                                <Button 
+                                  size="sm" 
+                                  onClick={() => handleCreateInvoiceFromDC(dc)}
+                                  className="bg-amber-600 hover:bg-amber-700 text-white"
+                                >
+                                  <Receipt className="h-3.5 w-3.5 mr-1" /> Create Invoice
+                                </Button>
+                              ) : (
+                                <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                                  <CheckCircle2 className="h-3 w-3 mr-1" /> Invoiced
+                                </Badge>
+                              )}
+                            </>
                           )}
 
                           {/* More Actions */}
