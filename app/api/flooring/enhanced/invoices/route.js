@@ -1032,6 +1032,106 @@ export async function PUT(request) {
         })
         return successResponse({ message: 'Note added' })
 
+      case 'void':
+        // Void invoice with reason
+        if (!body.reason) {
+          return errorResponse('Reason for voiding is required', 400)
+        }
+        
+        // Cannot void if already voided
+        if (invoice.status === 'voided') {
+          return errorResponse('Invoice is already voided', 400)
+        }
+
+        await invoices.updateOne({ id }, {
+          $set: { 
+            status: 'voided', 
+            voidedAt: now,
+            voidedBy: user.id,
+            voidedByName: user.name || user.email,
+            voidReason: body.reason,
+            previousStatus: invoice.status,
+            updatedAt: now 
+          },
+          $push: { 
+            statusHistory: { 
+              status: 'voided', 
+              timestamp: now, 
+              by: user.id,
+              userName: user.name || user.email,
+              reason: body.reason,
+              notes: `Invoice voided. Reason: ${body.reason}`
+            } 
+          }
+        })
+        
+        // Sync to CRM
+        const voidedInvoice = { ...invoice, status: 'voided' }
+        await syncInvoiceToCRM(db, voidedInvoice, user)
+        
+        return successResponse({ message: 'Invoice voided successfully', reason: body.reason })
+
+      case 'edit':
+        // Edit invoice with reason (audit trail)
+        if (!body.editReason) {
+          return errorResponse('Reason for edit is required', 400)
+        }
+        
+        // Can only edit draft or sent invoices
+        if (!['draft', 'sent'].includes(invoice.status)) {
+          return errorResponse(`Cannot edit invoice with status '${invoice.status}'`, 400)
+        }
+
+        const editData = {
+          updatedAt: now,
+          updatedBy: user.id,
+          lastEditedAt: now,
+          lastEditedBy: user.id,
+          lastEditedByName: user.name || user.email,
+          lastEditReason: body.editReason
+        }
+
+        // Update editable fields
+        if (body.customerName !== undefined) editData.customerName = body.customerName
+        if (body.customerAddress !== undefined) editData.customerAddress = body.customerAddress
+        if (body.notes !== undefined) editData.notes = body.notes
+        if (body.items !== undefined) editData.items = body.items
+        if (body.subtotal !== undefined) editData.subtotal = body.subtotal
+        if (body.cgst !== undefined) editData.cgst = body.cgst
+        if (body.sgst !== undefined) editData.sgst = body.sgst
+        if (body.grandTotal !== undefined) {
+          editData.grandTotal = body.grandTotal
+          editData.balanceAmount = body.grandTotal - (invoice.paidAmount || 0)
+        }
+
+        await invoices.updateOne({ id }, {
+          $set: editData,
+          $push: { 
+            statusHistory: { 
+              status: invoice.status, 
+              timestamp: now, 
+              by: user.id,
+              userName: user.name || user.email,
+              notes: `Invoice edited. Reason: ${body.editReason}`,
+              editReason: body.editReason
+            },
+            editHistory: {
+              editedAt: now,
+              editedBy: user.id,
+              editedByName: user.name || user.email,
+              reason: body.editReason,
+              previousData: {
+                customerName: invoice.customerName,
+                customerAddress: invoice.customerAddress,
+                items: invoice.items,
+                grandTotal: invoice.grandTotal
+              }
+            }
+          }
+        })
+
+        return successResponse({ message: 'Invoice updated successfully', editReason: body.editReason })
+
       default:
         // Regular update
         updateData.updatedAt = now
