@@ -753,6 +753,26 @@ export async function PUT(request) {
         }
         break
 
+      case 'link_invoice':
+        // Link an invoice to this DC
+        if (!data?.invoiceId) {
+          return errorResponse('Invoice ID is required', 400)
+        }
+        
+        updateData.invoiceId = data.invoiceId
+        updateData.invoiceNumber = data.invoiceNumber || null
+        updateData.invoiceLinkedAt = now
+        updateData.invoiceLinkedBy = user.id
+        
+        statusHistoryEntry = {
+          status: challan.status, // Keep current status
+          timestamp: now,
+          by: user.id,
+          userName: user.name || user.email,
+          notes: `Invoice ${data.invoiceNumber || data.invoiceId} linked to this DC`
+        }
+        break
+
       default:
         return errorResponse('Invalid action', 400)
     }
