@@ -1634,6 +1634,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           sgst,
           grandTotal,
           status: 'draft',
+          dcId: dc.id, // Link to the DC
           notes: `Invoice generated from Delivery Challan ${dc.dcNo}`
         })
       })
