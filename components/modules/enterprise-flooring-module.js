@@ -6217,7 +6217,12 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                             )}
                             
                             {/* STEP 1: Paid - Dispatch Material (Both B2B and B2C) */}
-                            {invoice.status === 'paid' && !invoice.dispatchId && (
+                            {/* Only show Dispatch if:
+                                - Invoice is paid
+                                - No dispatch already exists
+                                - Invoice was NOT created from a DC (source !== 'delivery_challan')
+                            */}
+                            {invoice.status === 'paid' && !invoice.dispatchId && invoice.source !== 'delivery_challan' && !invoice.dcId && (
                               <Button 
                                 size="sm" 
                                 className="bg-orange-600 hover:bg-orange-700 text-white"
@@ -6225,6 +6230,14 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                               >
                                 <Truck className="h-4 w-4 mr-1" /> Dispatch
                               </Button>
+                            )}
+                            
+                            {/* Show "Already Dispatched" badge if invoice was created from DC */}
+                            {invoice.status === 'paid' && (invoice.source === 'delivery_challan' || invoice.dcId) && (
+                              <Badge className="bg-emerald-100 text-emerald-700">
+                                <CheckCircle2 className="h-3 w-3 mr-1" /> Already Dispatched
+                                {invoice.dcNumber && <span className="ml-1 text-xs">({invoice.dcNumber})</span>}
+                              </Badge>
                             )}
                             
                             {/* Show dispatch status if dispatched but not delivered */}
