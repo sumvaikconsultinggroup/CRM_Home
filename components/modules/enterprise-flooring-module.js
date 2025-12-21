@@ -1594,6 +1594,82 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     // Could scroll to specific invoice
   }
 
+  // Create Invoice from Delivered DC
+  const handleCreateInvoiceFromDC = async (dc) => {
+    try {
+      setLoading(true)
+      
+      // Create invoice with items from the DC
+      const invoiceItems = (dc.items || []).map(item => ({
+        productId: item.productId,
+        productName: item.productName || item.product_name,
+        sku: item.sku,
+        quantity: item.qtyBoxes || 0,
+        area: item.qtyArea || 0,
+        rate: item.ratePerBox || item.rate || 0,
+        amount: (item.qtyBoxes || 0) * (item.ratePerBox || item.rate || 0),
+        coveragePerBox: item.coveragePerBox || 0
+      }))
+
+      const subtotal = invoiceItems.reduce((sum, item) => sum + (item.amount || 0), 0)
+      const cgst = subtotal * 0.09
+      const sgst = subtotal * 0.09
+      const grandTotal = subtotal + cgst + sgst
+
+      const res = await fetch('/api/flooring/enhanced/invoices', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          source: 'delivery_challan',
+          sourceId: dc.id,
+          dcNumber: dc.dcNo,
+          quoteId: dc.quoteId,
+          projectId: dc.projectId,
+          customerId: dc.billToAccountId,
+          customerName: dc.billToName || dc.customerName,
+          customerAddress: dc.shipToAddress || dc.billToAddress,
+          items: invoiceItems,
+          subtotal,
+          cgst,
+          sgst,
+          grandTotal,
+          status: 'draft',
+          notes: `Invoice generated from Delivery Challan ${dc.dcNo}`
+        })
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        toast.success(`Invoice ${data.invoice?.invoiceNumber || ''} created successfully!`)
+        
+        // Update DC with invoice reference
+        await fetch('/api/flooring/enhanced/challans', {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({
+            id: dc.id,
+            action: 'link_invoice',
+            data: {
+              invoiceId: data.invoice?.id,
+              invoiceNumber: data.invoice?.invoiceNumber
+            }
+          })
+        })
+        
+        fetchChallans()
+        setActiveTab('invoices')
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Failed to create invoice')
+      }
+    } catch (error) {
+      console.error('Create invoice from DC error:', error)
+      toast.error('Error creating invoice from DC')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   // Fetch Challans
   const [challans, setChallans] = useState([])
   const [challansLoading, setChallansLoading] = useState(false)
