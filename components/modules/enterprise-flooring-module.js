@@ -5803,12 +5803,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                   </DropdownMenuItem>
                                 </>
                               )}
-                              {dc.status === 'DELIVERED' && !dc.invoiceId && (
+                              {dc.status === 'DELIVERED' && dc.invoiceId && (
                                 <DropdownMenuItem onClick={() => {
-                                  // Create invoice from DC
-                                  toast.info('Invoice creation from DC - coming soon')
+                                  // View invoice
+                                  setActiveTab('invoices')
+                                  toast.info(`Showing invoice ${dc.invoiceNumber || dc.invoiceId}`)
                                 }}>
-                                  <Receipt className="h-4 w-4 mr-2" /> Create Invoice
+                                  <Receipt className="h-4 w-4 mr-2" /> View Invoice
                                 </DropdownMenuItem>
                               )}
                             </DropdownMenuContent>
