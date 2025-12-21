@@ -305,7 +305,14 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   })
   const [dispatchLoading, setDispatchLoading] = useState(false)
   const [dispatches, setDispatches] = useState([])
-  const dispatchPhotoRef = useRef(null)
+  dispatchPhotoRef = useRef(null)
+  
+  // Invoice Edit and Void States
+  const [editInvoiceDialog, setEditInvoiceDialog] = useState({ open: false, invoice: null, reason: '' })
+  const [voidInvoiceDialog, setVoidInvoiceDialog] = useState({ open: false, invoice: null, reason: '' })
+  const [editInvoiceForm, setEditInvoiceForm] = useState(null)
+  const [showEditReasonDialog, setShowEditReasonDialog] = useState(false)
+  const [pendingEditData, setPendingEditData] = useState(null)
   
   // Settings States (moved to component level to fix hook issues)
   const [settingsTab, setSettingsTab] = useState('general')
