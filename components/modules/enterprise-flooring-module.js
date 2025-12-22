@@ -581,6 +581,50 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }, [token])
 
+  // Fetch QC records (Phase 2)
+  const fetchQcRecords = useCallback(async () => {
+    try {
+      const res = await fetch('/api/flooring/enhanced/qc', { headers })
+      const data = await res.json()
+      if (data) setQcRecords(data)
+    } catch (error) {
+      console.error('QC records fetch error:', error)
+    }
+  }, [token])
+
+  // Fetch barcodes (Phase 2)
+  const fetchBarcodes = useCallback(async () => {
+    try {
+      const res = await fetch('/api/flooring/enhanced/barcodes', { headers })
+      const data = await res.json()
+      if (data) setBarcodes(data)
+    } catch (error) {
+      console.error('Barcodes fetch error:', error)
+    }
+  }, [token])
+
+  // Fetch bin locations (Phase 2)
+  const fetchBinLocations = useCallback(async () => {
+    try {
+      const res = await fetch('/api/flooring/enhanced/bin-locations', { headers })
+      const data = await res.json()
+      if (data) setBinLocations(data)
+    } catch (error) {
+      console.error('Bin locations fetch error:', error)
+    }
+  }, [token])
+
+  // Fetch stock aging report (Phase 3)
+  const fetchStockAging = useCallback(async (reportType = 'aging') => {
+    try {
+      const res = await fetch(`/api/flooring/enhanced/stock-aging?type=${reportType}`, { headers })
+      const data = await res.json()
+      if (data) setStockAgingReport(data)
+    } catch (error) {
+      console.error('Stock aging fetch error:', error)
+    }
+  }, [token])
+
   // Cleanup inventory issues (negative values, duplicates, etc.)
   const handleInventoryCleanup = async (action) => {
     try {
