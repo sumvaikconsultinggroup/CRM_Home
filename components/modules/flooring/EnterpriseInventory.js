@@ -223,6 +223,16 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
   // Quick Lookup Search Term
   const [lookupSearch, setLookupSearch] = useState('')
 
+  // QC State (Phase 2)
+  const [qcRecords, setQcRecords] = useState([])
+  const [qcSummary, setQcSummary] = useState({})
+  const [qcChecklist, setQcChecklist] = useState([])
+
+  // Bin Locations State (Phase 2)
+  const [binLocations, setBinLocations] = useState([])
+  const [binSummary, setBinSummary] = useState({})
+  const [binViewMode, setBinViewMode] = useState('grid')
+
   // API Headers
   const headers = {
     'Content-Type': 'application/json',
