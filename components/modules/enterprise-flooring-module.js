@@ -532,6 +532,50 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }, [token])
 
+  // Fetch shipments
+  const fetchShipments = useCallback(async () => {
+    try {
+      const res = await fetch('/api/flooring/enhanced/shipments', { headers })
+      const data = await res.json()
+      if (data.shipments) setShipments(data.shipments)
+    } catch (error) {
+      console.error('Shipments fetch error:', error)
+    }
+  }, [token])
+
+  // Fetch lots/batches
+  const fetchLots = useCallback(async () => {
+    try {
+      const res = await fetch('/api/flooring/enhanced/lots', { headers })
+      const data = await res.json()
+      if (data.lots) setLots(data.lots)
+    } catch (error) {
+      console.error('Lots fetch error:', error)
+    }
+  }, [token])
+
+  // Fetch price tiers
+  const fetchPriceTiers = useCallback(async () => {
+    try {
+      const res = await fetch('/api/flooring/enhanced/price-tiers', { headers })
+      const data = await res.json()
+      if (data.tiers) setPriceTiers(data.tiers)
+    } catch (error) {
+      console.error('Price tiers fetch error:', error)
+    }
+  }, [token])
+
+  // Fetch landed costs
+  const fetchLandedCosts = useCallback(async () => {
+    try {
+      const res = await fetch('/api/flooring/enhanced/landed-costs?analysis=true', { headers })
+      const data = await res.json()
+      if (data) setLandedCosts(data)
+    } catch (error) {
+      console.error('Landed costs fetch error:', error)
+    }
+  }, [token])
+
   // Cleanup inventory issues (negative values, duplicates, etc.)
   const handleInventoryCleanup = async (action) => {
     try {
