@@ -169,6 +169,21 @@ export async function POST(request) {
       }
     }
 
+    // Update invoice with installation reference
+    if (body.invoiceId) {
+      await invoices.updateOne(
+        { id: body.invoiceId },
+        { 
+          $set: { 
+            installationCreated: true,
+            installationId: installationId,
+            installationStatus: 'scheduled',
+            updatedAt: now
+          } 
+        }
+      )
+    }
+
     return successResponse(sanitizeDocument(installation), 201)
   } catch (error) {
     console.error('Installations POST Error:', error)
