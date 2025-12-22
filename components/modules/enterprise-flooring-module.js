@@ -5910,6 +5910,20 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                   <Receipt className="h-4 w-4 mr-2" /> View Invoice
                                 </DropdownMenuItem>
                               )}
+                              {dc.status === 'ISSUED' && dc.invoiceId && (
+                                <DropdownMenuItem onClick={() => {
+                                  // View invoice
+                                  setActiveTab('invoices')
+                                  toast.info(`Showing invoice ${dc.invoiceNumber || dc.invoiceId}`)
+                                }}>
+                                  <Receipt className="h-4 w-4 mr-2" /> View Invoice
+                                </DropdownMenuItem>
+                              )}
+                              {(dc.status === 'ISSUED' || dc.status === 'DELIVERED') && !dc.invoiceId && (
+                                <DropdownMenuItem onClick={() => handleCreateInvoiceFromDC(dc)}>
+                                  <Receipt className="h-4 w-4 mr-2" /> Create Invoice
+                                </DropdownMenuItem>
+                              )}
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </div>
