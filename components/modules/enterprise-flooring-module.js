@@ -252,11 +252,16 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   const [inventory, setInventory] = useState({ inventory: [], summary: {} })
   
   // Enterprise Inventory Management
-  const [inventoryTab, setInventoryTab] = useState('stock') // stock, shipments, lots, pricing, costing
+  const [inventoryTab, setInventoryTab] = useState('stock') // stock, shipments, lots, pricing, costing, qc, locations, analytics
   const [shipments, setShipments] = useState([])
   const [lots, setLots] = useState([])
   const [priceTiers, setPriceTiers] = useState([])
   const [landedCosts, setLandedCosts] = useState([])
+  // Phase 2: QC, Barcodes, Locations
+  const [qcRecords, setQcRecords] = useState({ records: [], summary: {}, checklist: [] })
+  const [barcodes, setBarcodes] = useState({ barcodes: [], summary: {}, types: {} })
+  const [binLocations, setBinLocations] = useState({ bins: [], summary: {} })
+  const [stockAgingReport, setStockAgingReport] = useState(null)
   
   const [crmProjects, setCrmProjects] = useState([]) // CRM Projects for sync
   const [crmContacts, setCrmContacts] = useState([]) // CRM Contacts for customer selection
