@@ -657,11 +657,18 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     if (activeTab === 'invoices') fetchInvoices()
     if (activeTab === 'finance') { fetchInvoices(); fetchPayments(); }
     if (activeTab === 'installations') { fetchInstallations(); fetchInstallers(); }
-    if (activeTab === 'inventory') fetchInventory()
+    if (activeTab === 'inventory') {
+      fetchInventory()
+      // Fetch based on inventory sub-tab
+      if (inventoryTab === 'shipments') fetchShipments()
+      if (inventoryTab === 'lots') fetchLots()
+      if (inventoryTab === 'pricing') fetchPriceTiers()
+      if (inventoryTab === 'costing') fetchLandedCosts()
+    }
     if (activeTab === 'measurements') fetchInventory() // Also fetch inventory for measurements tab
     if (activeTab === 'settings') fetchModuleSettings()
     if (activeTab === 'reports') fetchReports('summary')
-  }, [activeTab, fetchQuotes, fetchInvoices, fetchPayments, fetchInstallations, fetchInstallers, fetchInventory, fetchModuleSettings, fetchReports])
+  }, [activeTab, inventoryTab, fetchQuotes, fetchInvoices, fetchPayments, fetchInstallations, fetchInstallers, fetchInventory, fetchShipments, fetchLots, fetchPriceTiers, fetchLandedCosts, fetchModuleSettings, fetchReports])
 
   // Initialize measurement state when project changes (for B2C workflow)
   useEffect(() => {
