@@ -5822,13 +5822,25 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                             </Button>
                           )}
                           {dc.status === 'ISSUED' && (
-                            <Button 
-                              size="sm" 
-                              onClick={() => handleMarkDCDelivered(dc.id)}
-                              className="bg-green-600 hover:bg-green-700 text-white"
-                            >
-                              <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Mark Delivered
-                            </Button>
+                            <div className="flex items-center gap-2">
+                              <Button 
+                                size="sm" 
+                                onClick={() => handleMarkDCDelivered(dc.id)}
+                                className="bg-green-600 hover:bg-green-700 text-white"
+                              >
+                                <CheckCircle2 className="h-3.5 w-3.5 mr-1" /> Mark Delivered
+                              </Button>
+                              {!dc.invoiceId && (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => handleCreateInvoiceFromDC(dc)}
+                                  className="border-amber-300 text-amber-700 hover:bg-amber-50"
+                                >
+                                  <Receipt className="h-3.5 w-3.5 mr-1" /> Create Invoice
+                                </Button>
+                              )}
+                            </div>
                           )}
                           {dc.status === 'DELIVERED' && (
                             <>
