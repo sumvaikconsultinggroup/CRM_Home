@@ -247,6 +247,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   const [invoices, setInvoices] = useState([])
   const [payments, setPayments] = useState([])
   const [installations, setInstallations] = useState([])
+  const [installers, setInstallers] = useState([]) // Installers & Third-Party Vendors
+  const [installersTab, setInstallersTab] = useState('installations') // 'installations', 'installers', 'calendar'
   const [inventory, setInventory] = useState({ inventory: [], summary: {} })
   const [crmProjects, setCrmProjects] = useState([]) // CRM Projects for sync
   const [crmContacts, setCrmContacts] = useState([]) // CRM Contacts for customer selection
