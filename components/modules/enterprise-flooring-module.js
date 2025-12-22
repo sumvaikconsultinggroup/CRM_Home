@@ -7013,30 +7013,6 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     )
   }
 
-  // Handle installation action
-  const handleInstallationAction = async (installationId, action, data = {}) => {
-    try {
-      setLoading(true)
-      const res = await fetch('/api/flooring/enhanced/installations', {
-        method: 'PUT',
-        headers,
-        body: JSON.stringify({ id: installationId, action, ...data })
-      })
-      
-      if (res.ok) {
-        toast.success(`Installation ${action.replace('_', ' ')} successful`)
-        fetchInstallations()
-      } else {
-        const error = await res.json()
-        toast.error(error.error || 'Action failed')
-      }
-    } catch (error) {
-      toast.error('Error performing action')
-    } finally {
-      setLoading(false)
-    }
-  }
-
   // Handle installer actions
   const handleInstallerAction = async (installerId, action, data = {}) => {
     try {
