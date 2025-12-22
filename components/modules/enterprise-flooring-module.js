@@ -7890,6 +7890,518 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             actionLabel="Add Goods Receipt"
           />
         )}
+          </>
+        )}
+
+        {/* Shipments Tab */}
+        {inventoryTab === 'shipments' && (
+          <ShipmentsTab 
+            shipments={shipments} 
+            onRefresh={fetchShipments}
+            headers={headers}
+            setDialogOpen={setDialogOpen}
+          />
+        )}
+
+        {/* Lots/Batches Tab */}
+        {inventoryTab === 'lots' && (
+          <LotsTab 
+            lots={lots}
+            onRefresh={fetchLots}
+            headers={headers}
+            setDialogOpen={setDialogOpen}
+          />
+        )}
+
+        {/* Pricing Tab */}
+        {inventoryTab === 'pricing' && (
+          <PricingTab 
+            priceTiers={priceTiers}
+            onRefresh={fetchPriceTiers}
+            headers={headers}
+            setDialogOpen={setDialogOpen}
+          />
+        )}
+
+        {/* Costing Tab */}
+        {inventoryTab === 'costing' && (
+          <CostingTab 
+            landedCosts={landedCosts}
+            onRefresh={fetchLandedCosts}
+            headers={headers}
+          />
+        )}
+      </div>
+    )
+  }
+
+  // Shipments Sub-Tab Component
+  const ShipmentsTab = ({ shipments, onRefresh, headers, setDialogOpen }) => {
+    const shipmentSummary = {
+      total: shipments.length,
+      inTransit: shipments.filter(s => s.status === 'in_transit').length,
+      atPort: shipments.filter(s => ['at_port', 'customs_clearance'].includes(s.status)).length,
+      received: shipments.filter(s => s.status === 'received').length,
+      totalValue: shipments.reduce((sum, s) => sum + (s.totalValueInr || 0), 0)
+    }
+
+    const getStatusColor = (status) => {
+      const colors = {
+        draft: 'bg-slate-100 text-slate-700',
+        booked: 'bg-blue-100 text-blue-700',
+        in_transit: 'bg-purple-100 text-purple-700',
+        at_port: 'bg-amber-100 text-amber-700',
+        customs_clearance: 'bg-orange-100 text-orange-700',
+        cleared: 'bg-teal-100 text-teal-700',
+        received: 'bg-green-100 text-green-700',
+        cancelled: 'bg-red-100 text-red-700'
+      }
+      return colors[status] || 'bg-slate-100 text-slate-700'
+    }
+
+    return (
+      <div className="space-y-4">
+        {/* Summary */}
+        <div className="grid grid-cols-5 gap-4">
+          <Card className="p-4 border-l-4 border-l-blue-500">
+            <p className="text-sm text-slate-500">Total Shipments</p>
+            <p className="text-2xl font-bold">{shipmentSummary.total}</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-purple-500">
+            <p className="text-sm text-slate-500">In Transit</p>
+            <p className="text-2xl font-bold text-purple-600">{shipmentSummary.inTransit}</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-amber-500">
+            <p className="text-sm text-slate-500">At Port/Clearing</p>
+            <p className="text-2xl font-bold text-amber-600">{shipmentSummary.atPort}</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-green-500">
+            <p className="text-sm text-slate-500">Received</p>
+            <p className="text-2xl font-bold text-green-600">{shipmentSummary.received}</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-slate-500">
+            <p className="text-sm text-slate-500">Total Value</p>
+            <p className="text-2xl font-bold">₹{(shipmentSummary.totalValue / 100000).toFixed(1)}L</p>
+          </Card>
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <Input placeholder="Search shipments..." className="w-64" />
+          <Button onClick={() => setDialogOpen({ type: 'create_shipment', data: null })}>
+            <Plus className="h-4 w-4 mr-2" /> New Shipment
+          </Button>
+        </div>
+
+        {/* Shipments List */}
+        {shipments.length > 0 ? (
+          <Card>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Shipment #</TableHead>
+                  <TableHead>Supplier</TableHead>
+                  <TableHead>Origin</TableHead>
+                  <TableHead>Containers</TableHead>
+                  <TableHead>Sqft</TableHead>
+                  <TableHead>Value (INR)</TableHead>
+                  <TableHead>ETA</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Actions</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {shipments.map(shp => (
+                  <TableRow key={shp.id}>
+                    <TableCell className="font-mono font-medium">{shp.shipmentNo}</TableCell>
+                    <TableCell>{shp.supplierName || '-'}</TableCell>
+                    <TableCell>{shp.origin?.country || '-'}</TableCell>
+                    <TableCell>{shp.containers?.length || 0}</TableCell>
+                    <TableCell>{(shp.totalSqft || 0).toLocaleString()}</TableCell>
+                    <TableCell>₹{(shp.totalValueInr || 0).toLocaleString()}</TableCell>
+                    <TableCell>{shp.dates?.eta ? new Date(shp.dates.eta).toLocaleDateString() : '-'}</TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(shp.status)}>
+                        {shp.status?.replace('_', ' ').toUpperCase()}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'view_shipment', data: shp })}>
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        ) : (
+          <EmptyState
+            icon={Ship}
+            title="No shipments"
+            description="Create your first import/export shipment to track containers and landed costs."
+            action={() => setDialogOpen({ type: 'create_shipment', data: null })}
+            actionLabel="Create Shipment"
+          />
+        )}
+      </div>
+    )
+  }
+
+  // Lots/Batches Sub-Tab Component
+  const LotsTab = ({ lots, onRefresh, headers, setDialogOpen }) => {
+    const lotsSummary = {
+      total: lots.length,
+      totalSqft: lots.reduce((sum, l) => sum + (l.sqft || 0), 0),
+      available: lots.filter(l => l.status === 'available').length,
+      uniqueShades: [...new Set(lots.map(l => l.shade).filter(Boolean))].length,
+      avgCost: lots.length > 0 
+        ? lots.reduce((sum, l) => sum + (l.landedCostPerSqft || 0), 0) / lots.length 
+        : 0
+    }
+
+    return (
+      <div className="space-y-4">
+        {/* Summary */}
+        <div className="grid grid-cols-5 gap-4">
+          <Card className="p-4 border-l-4 border-l-blue-500">
+            <p className="text-sm text-slate-500">Total Lots</p>
+            <p className="text-2xl font-bold">{lotsSummary.total}</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-purple-500">
+            <p className="text-sm text-slate-500">Total Sqft</p>
+            <p className="text-2xl font-bold">{lotsSummary.totalSqft.toLocaleString()}</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-green-500">
+            <p className="text-sm text-slate-500">Available Lots</p>
+            <p className="text-2xl font-bold text-green-600">{lotsSummary.available}</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-amber-500">
+            <p className="text-sm text-slate-500">Unique Shades</p>
+            <p className="text-2xl font-bold text-amber-600">{lotsSummary.uniqueShades}</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-slate-500">
+            <p className="text-sm text-slate-500">Avg Cost/Sqft</p>
+            <p className="text-2xl font-bold">₹{lotsSummary.avgCost.toFixed(2)}</p>
+          </Card>
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Input placeholder="Search by lot, shade, grade..." className="w-64" />
+            <Select defaultValue="all">
+              <SelectTrigger className="w-32"><SelectValue placeholder="Grade" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Grades</SelectItem>
+                <SelectItem value="A+">A+</SelectItem>
+                <SelectItem value="A">A</SelectItem>
+                <SelectItem value="B">B</SelectItem>
+                <SelectItem value="C">C</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button onClick={() => setDialogOpen({ type: 'create_lot', data: null })}>
+            <Plus className="h-4 w-4 mr-2" /> Add Lot
+          </Button>
+        </div>
+
+        {/* Lots List */}
+        {lots.length > 0 ? (
+          <Card>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Lot No</TableHead>
+                  <TableHead>Product</TableHead>
+                  <TableHead>Shade</TableHead>
+                  <TableHead>Grade</TableHead>
+                  <TableHead>Qty (Boxes)</TableHead>
+                  <TableHead>Sqft</TableHead>
+                  <TableHead>Available</TableHead>
+                  <TableHead>Cost/Sqft</TableHead>
+                  <TableHead>Location</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {lots.slice(0, 50).map(lot => (
+                  <TableRow key={lot.id}>
+                    <TableCell className="font-mono text-sm">{lot.lotNo}</TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium truncate max-w-32">{lot.productName}</p>
+                        <p className="text-xs text-slate-500">{lot.sku}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {lot.shade ? (
+                        <Badge variant="outline">{lot.shade}</Badge>
+                      ) : '-'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={
+                        lot.grade === 'A+' ? 'bg-green-100 text-green-700' :
+                        lot.grade === 'A' ? 'bg-blue-100 text-blue-700' :
+                        lot.grade === 'B' ? 'bg-amber-100 text-amber-700' :
+                        'bg-slate-100 text-slate-700'
+                      }>{lot.grade || 'A'}</Badge>
+                    </TableCell>
+                    <TableCell>{lot.quantity}</TableCell>
+                    <TableCell>{(lot.sqft || 0).toLocaleString()}</TableCell>
+                    <TableCell className="text-green-600 font-medium">
+                      {((lot.sqft || 0) - (lot.reservedQty || 0) - (lot.issuedQty || 0)).toLocaleString()}
+                    </TableCell>
+                    <TableCell>₹{(lot.landedCostPerSqft || 0).toFixed(2)}</TableCell>
+                    <TableCell>
+                      {lot.binLocation || lot.warehouseName || '-'}
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={
+                        lot.status === 'available' ? 'bg-green-100 text-green-700' :
+                        lot.status === 'reserved' ? 'bg-amber-100 text-amber-700' :
+                        lot.status === 'depleted' ? 'bg-slate-100 text-slate-700' :
+                        'bg-red-100 text-red-700'
+                      }>{lot.status}</Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        ) : (
+          <EmptyState
+            icon={Layers}
+            title="No lots/batches"
+            description="Lots are created automatically when shipments are received, or you can add them manually."
+            action={() => setDialogOpen({ type: 'create_lot', data: null })}
+            actionLabel="Add Lot Manually"
+          />
+        )}
+      </div>
+    )
+  }
+
+  // Pricing Sub-Tab Component
+  const PricingTab = ({ priceTiers, onRefresh, headers, setDialogOpen }) => {
+    return (
+      <div className="space-y-4">
+        {/* Summary */}
+        <div className="grid grid-cols-4 gap-4">
+          <Card className="p-4 border-l-4 border-l-blue-500">
+            <p className="text-sm text-slate-500">Price Tiers</p>
+            <p className="text-2xl font-bold">{priceTiers.length}</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-green-500">
+            <p className="text-sm text-slate-500">Active Tiers</p>
+            <p className="text-2xl font-bold text-green-600">{priceTiers.filter(t => t.status === 'active').length}</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-purple-500">
+            <p className="text-sm text-slate-500">Max Discount</p>
+            <p className="text-2xl font-bold text-purple-600">
+              {Math.max(...priceTiers.map(t => t.discountValue || 0), 0)}%
+            </p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-amber-500">
+            <p className="text-sm text-slate-500">Max Credit Days</p>
+            <p className="text-2xl font-bold text-amber-600">
+              {Math.max(...priceTiers.map(t => t.creditDays || 0), 0)}
+            </p>
+          </Card>
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <h3 className="font-semibold">Dealer / Distributor Price Tiers</h3>
+          <Button onClick={() => setDialogOpen({ type: 'create_price_tier', data: null })}>
+            <Plus className="h-4 w-4 mr-2" /> Add Price Tier
+          </Button>
+        </div>
+
+        {/* Tiers List */}
+        {priceTiers.length > 0 ? (
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {priceTiers.map(tier => (
+              <Card key={tier.id} className="p-4">
+                <div className="flex items-start justify-between mb-3">
+                  <div>
+                    <h4 className="font-semibold">{tier.name}</h4>
+                    <p className="text-sm text-slate-500">{tier.code}</p>
+                  </div>
+                  <Badge className={tier.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-700'}>
+                    {tier.status}
+                  </Badge>
+                </div>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Discount</span>
+                    <span className="font-medium">{tier.discountValue}% {tier.discountType}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Min Order</span>
+                    <span className="font-medium">₹{(tier.minimumOrderValue || 0).toLocaleString()}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Credit Days</span>
+                    <span className="font-medium">{tier.creditDays || 0}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-slate-500">Credit Limit</span>
+                    <span className="font-medium">₹{(tier.creditLimit || 0).toLocaleString()}</span>
+                  </div>
+                </div>
+                <div className="mt-4 pt-3 border-t flex justify-end gap-2">
+                  <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'edit_price_tier', data: tier })}>
+                    <Edit className="h-4 w-4" />
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <EmptyState
+            icon={IndianRupee}
+            title="No price tiers"
+            description="Create price tiers for different customer segments like Retail, Dealer, Distributor, Project."
+            action={() => setDialogOpen({ type: 'create_price_tier', data: null })}
+            actionLabel="Create Price Tier"
+          />
+        )}
+
+        {/* Default Tiers Info */}
+        <Card className="p-4 bg-blue-50 border-blue-200">
+          <h4 className="font-medium text-blue-900 mb-2">Suggested Price Tiers</h4>
+          <div className="grid grid-cols-4 gap-4 text-sm">
+            <div className="p-3 bg-white rounded-lg">
+              <p className="font-medium">Retail</p>
+              <p className="text-slate-500">0% discount, 0 credit days</p>
+            </div>
+            <div className="p-3 bg-white rounded-lg">
+              <p className="font-medium">Dealer</p>
+              <p className="text-slate-500">15-20% discount, 15-30 credit days</p>
+            </div>
+            <div className="p-3 bg-white rounded-lg">
+              <p className="font-medium">Distributor</p>
+              <p className="text-slate-500">25-30% discount, 30-45 credit days</p>
+            </div>
+            <div className="p-3 bg-white rounded-lg">
+              <p className="font-medium">Project</p>
+              <p className="text-slate-500">Volume-based, milestone payments</p>
+            </div>
+          </div>
+        </Card>
+      </div>
+    )
+  }
+
+  // Costing Sub-Tab Component
+  const CostingTab = ({ landedCosts, onRefresh, headers }) => {
+    const analysis = landedCosts?.analysis || {}
+    const records = landedCosts?.records || []
+
+    return (
+      <div className="space-y-4">
+        {/* Summary */}
+        <div className="grid grid-cols-4 gap-4">
+          <Card className="p-4 border-l-4 border-l-blue-500">
+            <p className="text-sm text-slate-500">Total Shipments Costed</p>
+            <p className="text-2xl font-bold">{analysis.summary?.totalShipments || 0}</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-purple-500">
+            <p className="text-sm text-slate-500">Total Area</p>
+            <p className="text-2xl font-bold">{(analysis.summary?.totalSqft || 0).toLocaleString()} sqft</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-green-500">
+            <p className="text-sm text-slate-500">Total Landed Cost</p>
+            <p className="text-2xl font-bold">₹{((analysis.summary?.totalLandedCost || 0) / 100000).toFixed(1)}L</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-amber-500">
+            <p className="text-sm text-slate-500">Avg Cost/Sqft</p>
+            <p className="text-2xl font-bold text-amber-600">₹{analysis.summary?.avgCostPerSqft || 0}</p>
+          </Card>
+        </div>
+
+        {/* Cost Breakdown */}
+        {analysis.breakdown && (
+          <div className="grid grid-cols-2 gap-4">
+            <Card className="p-4">
+              <h4 className="font-semibold mb-4">Cost Breakdown (Total)</h4>
+              <div className="space-y-3">
+                {[
+                  { label: 'FOB Value', value: analysis.breakdown.fobValue, percent: analysis.breakdownPercent?.fobValue, color: 'bg-blue-500' },
+                  { label: 'Freight', value: analysis.breakdown.freight, percent: analysis.breakdownPercent?.freight, color: 'bg-purple-500' },
+                  { label: 'Insurance', value: analysis.breakdown.insurance, percent: analysis.breakdownPercent?.insurance, color: 'bg-indigo-500' },
+                  { label: 'Customs Duty', value: analysis.breakdown.customsDuty, percent: analysis.breakdownPercent?.customsDuty, color: 'bg-red-500' },
+                  { label: 'Clearing', value: analysis.breakdown.clearing, percent: analysis.breakdownPercent?.clearing, color: 'bg-orange-500' },
+                  { label: 'Transportation', value: analysis.breakdown.transportation, percent: analysis.breakdownPercent?.transportation, color: 'bg-amber-500' },
+                  { label: 'Other', value: analysis.breakdown.other, percent: analysis.breakdownPercent?.other, color: 'bg-slate-500' }
+                ].map((item, idx) => (
+                  <div key={idx} className="flex items-center gap-3">
+                    <div className={`w-3 h-3 rounded ${item.color}`}></div>
+                    <span className="flex-1 text-sm">{item.label}</span>
+                    <span className="text-sm text-slate-500">{item.percent || 0}%</span>
+                    <span className="text-sm font-medium w-24 text-right">₹{((item.value || 0) / 1000).toFixed(0)}K</span>
+                  </div>
+                ))}
+              </div>
+            </Card>
+
+            <Card className="p-4">
+              <h4 className="font-semibold mb-4">Cost Per Sqft Trend</h4>
+              {(analysis.monthlyTrend || []).length > 0 ? (
+                <div className="h-48 flex items-end justify-between gap-2">
+                  {analysis.monthlyTrend.map((month, idx) => (
+                    <div key={idx} className="flex-1 flex flex-col items-center">
+                      <div 
+                        className="w-full bg-blue-500 rounded-t"
+                        style={{ height: `${(month.avgCostPerSqft / Math.max(...analysis.monthlyTrend.map(m => m.avgCostPerSqft || 1))) * 150}px` }}
+                      ></div>
+                      <p className="text-xs text-slate-500 mt-2">{month.month}</p>
+                      <p className="text-xs font-medium">₹{month.avgCostPerSqft}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-slate-500 py-12">No data yet</p>
+              )}
+            </Card>
+          </div>
+        )}
+
+        {/* Recent Records */}
+        <Card className="p-4">
+          <h4 className="font-semibold mb-4">Recent Landed Cost Records</h4>
+          {records.length > 0 ? (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Shipment</TableHead>
+                  <TableHead>Total Sqft</TableHead>
+                  <TableHead>FOB (INR)</TableHead>
+                  <TableHead>Duty</TableHead>
+                  <TableHead>Total Cost</TableHead>
+                  <TableHead>Cost/Sqft</TableHead>
+                  <TableHead>Date</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {records.slice(0, 10).map(record => (
+                  <TableRow key={record.id}>
+                    <TableCell className="font-mono">{record.shipmentNo}</TableCell>
+                    <TableCell>{(record.totalSqft || 0).toLocaleString()}</TableCell>
+                    <TableCell>₹{((record.breakdown?.fobValueInr || 0) / 1000).toFixed(0)}K</TableCell>
+                    <TableCell>₹{((record.breakdown?.customsDuty || 0) / 1000).toFixed(0)}K</TableCell>
+                    <TableCell className="font-medium">₹{((record.totalLandedCost || 0) / 1000).toFixed(0)}K</TableCell>
+                    <TableCell className="text-amber-600 font-medium">₹{record.costPerSqft}</TableCell>
+                    <TableCell>{new Date(record.createdAt).toLocaleDateString()}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          ) : (
+            <p className="text-center text-slate-500 py-8">No landed cost records yet. Complete shipment receiving to generate.</p>
+          )}
+        </Card>
       </div>
     )
   }
