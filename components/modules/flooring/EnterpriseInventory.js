@@ -442,6 +442,35 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
     }
   }, [token])
 
+  // Fetch QC Records (Phase 2)
+  const fetchQcRecords = useCallback(async () => {
+    try {
+      const res = await fetch('/api/flooring/enhanced/qc', { headers })
+      const data = await res.json()
+      if (data.records) {
+        setQcRecords(data.records)
+        setQcSummary(data.summary || {})
+        setQcChecklist(data.checklist || [])
+      }
+    } catch (error) {
+      console.error('QC records fetch error:', error)
+    }
+  }, [token])
+
+  // Fetch Bin Locations (Phase 2)
+  const fetchBinLocations = useCallback(async () => {
+    try {
+      const res = await fetch('/api/flooring/enhanced/bin-locations', { headers })
+      const data = await res.json()
+      if (data.bins) {
+        setBinLocations(data.bins)
+        setBinSummary(data.summary || {})
+      }
+    } catch (error) {
+      console.error('Bin locations fetch error:', error)
+    }
+  }, [token])
+
   const handleQuickLookup = async (searchValue) => {
     if (!searchValue || searchValue.length < 2) return
     try {
