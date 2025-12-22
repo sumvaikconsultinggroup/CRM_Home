@@ -1623,6 +1623,10 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       const sgst = subtotal * 0.09
       const grandTotal = subtotal + cgst + sgst
 
+      // Determine dispatch status based on DC status
+      const dispatchStatus = dc.status === 'DELIVERED' ? 'delivered' : 
+                            dc.status === 'ISSUED' ? 'dispatched' : 'pending'
+
       const res = await fetch('/api/flooring/enhanced/invoices', {
         method: 'POST',
         headers,
@@ -1642,6 +1646,8 @@ export function EnterpriseFlooringModule({ client, user, token }) {
           grandTotal,
           status: 'draft',
           dcId: dc.id, // Link to the DC
+          dispatchId: dc.id, // Use DC as dispatch reference
+          dispatchStatus: dispatchStatus, // Set dispatch status based on DC
           notes: `Invoice generated from Delivery Challan ${dc.dcNo}`
         })
       })
