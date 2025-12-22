@@ -6483,6 +6483,524 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     )
   }
 
+  // Installation Reports Tab Component
+  const InstallationReportsTab = ({ headers, installers }) => {
+    const [reportsData, setReportsData] = useState({})
+    const [reportType, setReportType] = useState('overview')
+    const [loadingReports, setLoadingReports] = useState(false)
+
+    const fetchReportsData = async (type) => {
+      try {
+        setLoadingReports(true)
+        const res = await fetch(`/api/flooring/enhanced/reports/installations?type=${type}`, { headers })
+        const data = await res.json()
+        if (data) {
+          setReportsData(prev => ({ ...prev, [type]: data }))
+        }
+      } catch (error) {
+        console.error('Reports fetch error:', error)
+      } finally {
+        setLoadingReports(false)
+      }
+    }
+
+    useEffect(() => {
+      fetchReportsData(reportType)
+    }, [reportType])
+
+    const overview = reportsData.overview || {}
+    const installersReport = reportsData.installers || {}
+    const costs = reportsData.costs || {}
+    const satisfaction = reportsData.satisfaction || {}
+
+    return (
+      <div className="space-y-4">
+        {/* Report Type Selector */}
+        <div className="flex items-center gap-2">
+          {[
+            { id: 'overview', label: 'Overview', icon: BarChart3 },
+            { id: 'installers', label: 'Team Performance', icon: Users },
+            { id: 'costs', label: 'Cost Analysis', icon: IndianRupee },
+            { id: 'satisfaction', label: 'Customer Satisfaction', icon: Star }
+          ].map(rt => (
+            <Button
+              key={rt.id}
+              variant={reportType === rt.id ? 'default' : 'outline'}
+              size="sm"
+              onClick={() => setReportType(rt.id)}
+            >
+              <rt.icon className="h-4 w-4 mr-2" />
+              {rt.label}
+            </Button>
+          ))}
+          <Button variant="ghost" size="sm" className="ml-auto" onClick={() => fetchReportsData(reportType)}>
+            <RefreshCw className={`h-4 w-4 ${loadingReports ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
+
+        {loadingReports && (
+          <div className="text-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-slate-400 mx-auto" />
+            <p className="text-slate-500 mt-2">Loading reports...</p>
+          </div>
+        )}
+
+        {/* Overview Report */}
+        {reportType === 'overview' && !loadingReports && overview.overview && (
+          <div className="space-y-4">
+            {/* Key Metrics */}
+            <div className="grid grid-cols-4 gap-4">
+              <Card className="p-4 border-l-4 border-l-blue-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500">Total Installations</p>
+                    <p className="text-2xl font-bold">{overview.overview.totalInstallations}</p>
+                  </div>
+                  <Wrench className="h-8 w-8 text-blue-200" />
+                </div>
+                <p className="text-xs text-slate-400 mt-1">
+                  {overview.overview.activeInstallations} active
+                </p>
+              </Card>
+              <Card className="p-4 border-l-4 border-l-green-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500">Completed</p>
+                    <p className="text-2xl font-bold">{overview.overview.completedInstallations}</p>
+                  </div>
+                  <CheckCircle2 className="h-8 w-8 text-green-200" />
+                </div>
+                <p className="text-xs text-slate-400 mt-1">
+                  {overview.overview.totalAreaInstalled?.toLocaleString()} sqft installed
+                </p>
+              </Card>
+              <Card className="p-4 border-l-4 border-l-amber-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500">Avg Completion</p>
+                    <p className="text-2xl font-bold">{overview.overview.avgCompletionDays}</p>
+                  </div>
+                  <Clock className="h-8 w-8 text-amber-200" />
+                </div>
+                <p className="text-xs text-slate-400 mt-1">days per job</p>
+              </Card>
+              <Card className="p-4 border-l-4 border-l-red-500">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-sm text-slate-500">Open Issues</p>
+                    <p className="text-2xl font-bold">{overview.overview.openIssues}</p>
+                  </div>
+                  <AlertTriangle className="h-8 w-8 text-red-200" />
+                </div>
+                <p className="text-xs text-slate-400 mt-1">
+                  {overview.overview.totalIssues} total issues
+                </p>
+              </Card>
+            </div>
+
+            {/* Month Comparison */}
+            <div className="grid grid-cols-2 gap-4">
+              <Card className="p-4">
+                <h4 className="font-medium mb-3">This Month vs Last Month</h4>
+                <div className="space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Installations</span>
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold">{overview.comparison?.installationsThisMonth}</span>
+                      <Badge variant="outline" className={overview.comparison?.growthPercent >= 0 ? 'text-green-600' : 'text-red-600'}>
+                        {overview.comparison?.growthPercent >= 0 ? '+' : ''}{overview.comparison?.growthPercent}%
+                      </Badge>
+                    </div>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Completed</span>
+                    <span className="font-bold">{overview.comparison?.completedThisMonth} vs {overview.comparison?.completedLastMonth}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-slate-500">Area Installed</span>
+                    <span className="font-bold">{overview.comparison?.areaThisMonth?.toLocaleString()} sqft</span>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4">
+                <h4 className="font-medium mb-3">Status Breakdown</h4>
+                <div className="space-y-2">
+                  {Object.entries(overview.statusBreakdown || {}).map(([status, count]) => (
+                    <div key={status} className="flex items-center gap-2">
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between text-sm mb-1">
+                          <span className="capitalize">{status.replace('_', ' ')}</span>
+                          <span>{count}</span>
+                        </div>
+                        <Progress 
+                          value={(count / (overview.overview.totalInstallations || 1)) * 100} 
+                          className="h-2"
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+
+            {/* Monthly Trend Chart */}
+            <Card className="p-4">
+              <h4 className="font-medium mb-4">6-Month Trend</h4>
+              <div className="h-48 flex items-end justify-between gap-2">
+                {(overview.monthlyTrend || []).map((month, idx) => (
+                  <div key={idx} className="flex-1 flex flex-col items-center">
+                    <div className="w-full flex flex-col gap-1">
+                      <div 
+                        className="w-full bg-blue-500 rounded-t"
+                        style={{ height: `${(month.total / Math.max(...(overview.monthlyTrend || []).map(m => m.total || 1))) * 120}px` }}
+                        title={`Total: ${month.total}`}
+                      ></div>
+                      <div 
+                        className="w-full bg-green-500 rounded-b"
+                        style={{ height: `${(month.completed / Math.max(...(overview.monthlyTrend || []).map(m => m.total || 1))) * 120}px` }}
+                        title={`Completed: ${month.completed}`}
+                      ></div>
+                    </div>
+                    <p className="text-xs text-slate-500 mt-2">{month.month}</p>
+                    <p className="text-xs font-medium">{month.total}</p>
+                  </div>
+                ))}
+              </div>
+              <div className="flex items-center justify-center gap-4 mt-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                  <span className="text-sm text-slate-500">Total</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="w-3 h-3 bg-green-500 rounded"></div>
+                  <span className="text-sm text-slate-500">Completed</span>
+                </div>
+              </div>
+            </Card>
+          </div>
+        )}
+
+        {/* Installers Performance Report */}
+        {reportType === 'installers' && !loadingReports && installersReport.installers && (
+          <div className="space-y-4">
+            {/* Summary */}
+            <div className="grid grid-cols-4 gap-4">
+              <Card className="p-4 text-center">
+                <p className="text-2xl font-bold text-blue-600">{installersReport.summary?.totalInstallers}</p>
+                <p className="text-sm text-slate-500">Total Team</p>
+              </Card>
+              <Card className="p-4 text-center">
+                <p className="text-2xl font-bold text-green-600">{installersReport.summary?.available}</p>
+                <p className="text-sm text-slate-500">Available Now</p>
+              </Card>
+              <Card className="p-4 text-center">
+                <p className="text-2xl font-bold text-purple-600">{installersReport.summary?.thirdParty}</p>
+                <p className="text-sm text-slate-500">Third Party</p>
+              </Card>
+              <Card className="p-4 text-center">
+                <div className="flex items-center justify-center gap-1">
+                  <Star className="h-5 w-5 text-amber-500 fill-amber-500" />
+                  <p className="text-2xl font-bold">{installersReport.summary?.avgRating || '-'}</p>
+                </div>
+                <p className="text-sm text-slate-500">Avg Rating</p>
+              </Card>
+            </div>
+
+            {/* Top Performers */}
+            <div className="grid grid-cols-3 gap-4">
+              <Card className="p-4">
+                <h4 className="font-medium mb-3 flex items-center gap-2">
+                  <Award className="h-4 w-4 text-amber-500" /> Top by Jobs
+                </h4>
+                <div className="space-y-2">
+                  {(installersReport.topPerformers?.byJobs || []).slice(0, 3).map((inst, idx) => (
+                    <div key={inst.id} className="flex items-center gap-2">
+                      <Badge className={idx === 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'}>
+                        #{idx + 1}
+                      </Badge>
+                      <span className="flex-1 truncate">{inst.name}</span>
+                      <span className="font-bold">{inst.completedJobs}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+              <Card className="p-4">
+                <h4 className="font-medium mb-3 flex items-center gap-2">
+                  <Square className="h-4 w-4 text-blue-500" /> Top by Area
+                </h4>
+                <div className="space-y-2">
+                  {(installersReport.topPerformers?.byArea || []).slice(0, 3).map((inst, idx) => (
+                    <div key={inst.id} className="flex items-center gap-2">
+                      <Badge className={idx === 0 ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'}>
+                        #{idx + 1}
+                      </Badge>
+                      <span className="flex-1 truncate">{inst.name}</span>
+                      <span className="font-bold">{inst.totalAreaInstalled?.toLocaleString()}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+              <Card className="p-4">
+                <h4 className="font-medium mb-3 flex items-center gap-2">
+                  <Star className="h-4 w-4 text-amber-500" /> Top Rated
+                </h4>
+                <div className="space-y-2">
+                  {(installersReport.topPerformers?.byRating || []).slice(0, 3).map((inst, idx) => (
+                    <div key={inst.id} className="flex items-center gap-2">
+                      <Badge className={idx === 0 ? 'bg-amber-100 text-amber-700' : 'bg-slate-100 text-slate-700'}>
+                        #{idx + 1}
+                      </Badge>
+                      <span className="flex-1 truncate">{inst.name}</span>
+                      <div className="flex items-center gap-1">
+                        <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
+                        <span className="font-bold">{inst.avgRating}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+
+            {/* All Installers Table */}
+            <Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Installer</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead className="text-center">Jobs</TableHead>
+                    <TableHead className="text-center">Area (sqft)</TableHead>
+                    <TableHead className="text-center">Rating</TableHead>
+                    <TableHead className="text-center">On-Time %</TableHead>
+                    <TableHead className="text-center">Avg Days</TableHead>
+                    <TableHead className="text-center">Issues</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(installersReport.installers || []).map(inst => (
+                    <TableRow key={inst.id}>
+                      <TableCell className="font-medium">{inst.name}</TableCell>
+                      <TableCell>
+                        <Badge variant="outline" className={inst.type === 'in_house' ? 'bg-blue-50' : 'bg-purple-50'}>
+                          {inst.type === 'in_house' ? 'In-House' : 'Vendor'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">{inst.completedJobs}</TableCell>
+                      <TableCell className="text-center">{inst.totalAreaInstalled?.toLocaleString()}</TableCell>
+                      <TableCell className="text-center">
+                        {inst.avgRating > 0 ? (
+                          <div className="flex items-center justify-center gap-1">
+                            <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
+                            {inst.avgRating}
+                          </div>
+                        ) : '-'}
+                      </TableCell>
+                      <TableCell className="text-center">
+                        <Badge className={inst.onTimeRate >= 80 ? 'bg-green-100 text-green-700' : inst.onTimeRate >= 60 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}>
+                          {inst.onTimeRate}%
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-center">{inst.avgDuration || '-'}</TableCell>
+                      <TableCell className="text-center">{inst.issuesCount}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          </div>
+        )}
+
+        {/* Cost Analysis Report */}
+        {reportType === 'costs' && !loadingReports && costs.totals && (
+          <div className="space-y-4">
+            {/* Cost Summary */}
+            <div className="grid grid-cols-4 gap-4">
+              <Card className="p-4 border-l-4 border-l-blue-500">
+                <p className="text-sm text-slate-500">Total Cost</p>
+                <p className="text-2xl font-bold">₹{costs.totals.totalCost?.toLocaleString()}</p>
+              </Card>
+              <Card className="p-4 border-l-4 border-l-green-500">
+                <p className="text-sm text-slate-500">Labor Cost</p>
+                <p className="text-2xl font-bold">₹{costs.totals.laborCost?.toLocaleString()}</p>
+                <p className="text-xs text-slate-400">{costs.breakdown?.laborPercent}% of total</p>
+              </Card>
+              <Card className="p-4 border-l-4 border-l-purple-500">
+                <p className="text-sm text-slate-500">Material Cost</p>
+                <p className="text-2xl font-bold">₹{costs.totals.materialCost?.toLocaleString()}</p>
+                <p className="text-xs text-slate-400">{costs.breakdown?.materialPercent}% of total</p>
+              </Card>
+              <Card className="p-4 border-l-4 border-l-amber-500">
+                <p className="text-sm text-slate-500">Avg Cost/sqft</p>
+                <p className="text-2xl font-bold">₹{costs.totals.avgCostPerSqft}</p>
+                <p className="text-xs text-slate-400">{costs.totals.totalAreaCompleted?.toLocaleString()} sqft total</p>
+              </Card>
+            </div>
+
+            {/* Cost Breakdown Chart */}
+            <div className="grid grid-cols-2 gap-4">
+              <Card className="p-4">
+                <h4 className="font-medium mb-4">Cost Breakdown</h4>
+                <div className="flex items-center justify-center">
+                  <div className="relative w-48 h-48">
+                    <svg viewBox="0 0 100 100" className="transform -rotate-90">
+                      <circle cx="50" cy="50" r="40" fill="none" stroke="#e2e8f0" strokeWidth="20" />
+                      <circle 
+                        cx="50" cy="50" r="40" fill="none" stroke="#3b82f6" strokeWidth="20"
+                        strokeDasharray={`${(costs.breakdown?.laborPercent || 0) * 2.51} 251`}
+                      />
+                    </svg>
+                    <div className="absolute inset-0 flex flex-col items-center justify-center">
+                      <p className="text-2xl font-bold">₹{((costs.totals.totalCost || 0) / 1000).toFixed(0)}K</p>
+                      <p className="text-xs text-slate-500">Total</p>
+                    </div>
+                  </div>
+                </div>
+                <div className="flex justify-center gap-6 mt-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-blue-500 rounded"></div>
+                    <span className="text-sm">Labor ({costs.breakdown?.laborPercent}%)</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 bg-slate-200 rounded"></div>
+                    <span className="text-sm">Material ({costs.breakdown?.materialPercent}%)</span>
+                  </div>
+                </div>
+              </Card>
+
+              <Card className="p-4">
+                <h4 className="font-medium mb-4">Monthly Cost Trend</h4>
+                <div className="space-y-3">
+                  {(costs.monthlyCosts || []).map((month, idx) => (
+                    <div key={idx} className="flex items-center gap-3">
+                      <span className="w-10 text-sm text-slate-500">{month.month}</span>
+                      <div className="flex-1 h-6 bg-slate-100 rounded overflow-hidden flex">
+                        <div 
+                          className="bg-blue-500 h-full"
+                          style={{ width: `${(month.labor / (Math.max(...(costs.monthlyCosts || []).map(m => m.total || 1)))) * 100}%` }}
+                        ></div>
+                        <div 
+                          className="bg-purple-500 h-full"
+                          style={{ width: `${(month.material / (Math.max(...(costs.monthlyCosts || []).map(m => m.total || 1)))) * 100}%` }}
+                        ></div>
+                      </div>
+                      <span className="text-sm font-medium w-20 text-right">₹{(month.total / 1000).toFixed(1)}K</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+          </div>
+        )}
+
+        {/* Customer Satisfaction Report */}
+        {reportType === 'satisfaction' && !loadingReports && satisfaction.ratings && (
+          <div className="space-y-4">
+            {/* Satisfaction Summary */}
+            <div className="grid grid-cols-4 gap-4">
+              <Card className="p-4 text-center">
+                <div className="flex items-center justify-center gap-2">
+                  <Star className="h-6 w-6 text-amber-500 fill-amber-500" />
+                  <p className="text-3xl font-bold">{satisfaction.ratings.average}</p>
+                </div>
+                <p className="text-sm text-slate-500">Average Rating</p>
+                <p className="text-xs text-slate-400">{satisfaction.ratings.total} reviews</p>
+              </Card>
+              <Card className="p-4 text-center">
+                <p className="text-3xl font-bold text-green-600">{satisfaction.nps?.score}</p>
+                <p className="text-sm text-slate-500">NPS Score</p>
+                <p className="text-xs text-slate-400">
+                  {satisfaction.nps?.promoters} promoters, {satisfaction.nps?.detractors} detractors
+                </p>
+              </Card>
+              <Card className="p-4 text-center">
+                <p className="text-3xl font-bold text-blue-600">{satisfaction.issues?.resolved}</p>
+                <p className="text-sm text-slate-500">Issues Resolved</p>
+                <p className="text-xs text-slate-400">{satisfaction.issues?.open} still open</p>
+              </Card>
+              <Card className="p-4 text-center">
+                <p className="text-3xl font-bold text-amber-600">{satisfaction.issues?.avgResolutionDays}</p>
+                <p className="text-sm text-slate-500">Avg Resolution</p>
+                <p className="text-xs text-slate-400">days to resolve</p>
+              </Card>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              {/* Rating Distribution */}
+              <Card className="p-4">
+                <h4 className="font-medium mb-4">Rating Distribution</h4>
+                <div className="space-y-2">
+                  {[5, 4, 3, 2, 1].map(rating => (
+                    <div key={rating} className="flex items-center gap-2">
+                      <div className="flex items-center gap-1 w-12">
+                        <span>{rating}</span>
+                        <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
+                      </div>
+                      <Progress 
+                        value={(satisfaction.ratings.distribution?.[rating] || 0) / (satisfaction.ratings.total || 1) * 100} 
+                        className="flex-1 h-3"
+                      />
+                      <span className="w-8 text-sm text-slate-500">{satisfaction.ratings.distribution?.[rating] || 0}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+
+              {/* Issues by Severity */}
+              <Card className="p-4">
+                <h4 className="font-medium mb-4">Issues by Severity</h4>
+                <div className="space-y-3">
+                  {[
+                    { level: 'critical', color: 'bg-red-500', label: 'Critical' },
+                    { level: 'high', color: 'bg-orange-500', label: 'High' },
+                    { level: 'medium', color: 'bg-amber-500', label: 'Medium' },
+                    { level: 'low', color: 'bg-slate-400', label: 'Low' }
+                  ].map(sev => (
+                    <div key={sev.level} className="flex items-center gap-3">
+                      <div className={`w-3 h-3 rounded ${sev.color}`}></div>
+                      <span className="flex-1">{sev.label}</span>
+                      <span className="font-bold">{satisfaction.issues?.bySeverity?.[sev.level] || 0}</span>
+                    </div>
+                  ))}
+                </div>
+              </Card>
+            </div>
+
+            {/* Recent Reviews */}
+            <Card className="p-4">
+              <h4 className="font-medium mb-4">Recent Reviews</h4>
+              {(satisfaction.recentReviews || []).length > 0 ? (
+                <div className="space-y-3">
+                  {satisfaction.recentReviews.slice(0, 5).map((review, idx) => (
+                    <div key={idx} className="p-3 bg-slate-50 rounded-lg">
+                      <div className="flex items-center justify-between mb-2">
+                        <div className="flex items-center gap-2">
+                          <div className="flex">
+                            {[1, 2, 3, 4, 5].map(star => (
+                              <Star 
+                                key={star} 
+                                className={`h-4 w-4 ${star <= review.rating ? 'text-amber-500 fill-amber-500' : 'text-slate-300'}`}
+                              />
+                            ))}
+                          </div>
+                          <span className="text-sm font-medium">{review.installerName}</span>
+                        </div>
+                        <span className="text-xs text-slate-500">{new Date(review.date).toLocaleDateString()}</span>
+                      </div>
+                      <p className="text-sm text-slate-600">{review.review}</p>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-center text-slate-500 py-4">No reviews yet</p>
+              )}
+            </Card>
+          </div>
+        )}
+      </div>
+    )
+  }
+
   // Installations Tab - Enhanced with Team Management & Progress Tracking
   const renderInstallations = () => {
     const installationSummary = installations.reduce((acc, inst) => {
