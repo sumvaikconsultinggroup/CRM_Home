@@ -2852,6 +2852,402 @@ Please confirm receipt of goods and update status after delivery.`
   )
 
   // =============================================
+  // RENDER: QC VIEW (Phase 2)
+  // =============================================
+
+  const renderQCView = () => {
+    const getQcStatusColor = (status) => {
+      const colors = {
+        pending: 'bg-amber-100 text-amber-700',
+        in_progress: 'bg-blue-100 text-blue-700',
+        passed: 'bg-green-100 text-green-700',
+        failed: 'bg-red-100 text-red-700',
+        conditional: 'bg-purple-100 text-purple-700'
+      }
+      return colors[status] || 'bg-slate-100 text-slate-700'
+    }
+
+    const handleCreateQc = async (batchId) => {
+      try {
+        setLoading(true)
+        const batch = batches.find(b => b.id === batchId)
+        const res = await fetch('/api/flooring/enhanced/qc', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            lotId: batchId,
+            lotNo: batch?.batchNumber,
+            productId: batch?.productId,
+            productName: batch?.productName,
+            qcType: 'incoming'
+          })
+        })
+        if (res.ok) {
+          toast.success('QC record created')
+          fetchQcRecords()
+        } else {
+          const error = await res.json()
+          toast.error(error.error || 'Failed to create QC')
+        }
+      } catch (error) {
+        toast.error('Error creating QC')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    const handleQcAction = async (qcId, action, data = {}) => {
+      try {
+        setLoading(true)
+        const res = await fetch('/api/flooring/enhanced/qc', {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({ id: qcId, action, ...data })
+        })
+        if (res.ok) {
+          toast.success('QC updated')
+          fetchQcRecords()
+        }
+      } catch (error) {
+        toast.error('Error updating QC')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    return (
+      <div className="space-y-4">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-6 gap-4">
+          <StatCard title="Total QC Records" value={qcSummary.total || 0} icon={ClipboardList} color="bg-blue-500" />
+          <StatCard title="Pending" value={qcSummary.pending || 0} icon={Clock} color="bg-amber-500" />
+          <StatCard title="Passed" value={qcSummary.passed || 0} icon={CheckCircle2} color="bg-green-500" />
+          <StatCard title="Failed" value={qcSummary.failed || 0} icon={X} color="bg-red-500" />
+          <StatCard title="Conditional" value={qcSummary.conditional || 0} icon={AlertTriangle} color="bg-purple-500" />
+          <StatCard title="Defect Rate" value={`${qcSummary.defectRate || 0}%`} icon={AlertCircle} color="bg-slate-500" />
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <ClipboardList className="h-5 w-5" /> Quality Control
+            </h3>
+            <p className="text-sm text-slate-500">Manage incoming and outgoing quality inspections</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={fetchQcRecords}>
+              <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" /> New QC
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 max-h-72 overflow-auto">
+                <p className="text-xs text-slate-500 px-2 py-1">Select batch for QC</p>
+                <DropdownMenuSeparator />
+                {batches.filter(b => !b.qcRecordId).slice(0, 15).map(batch => (
+                  <DropdownMenuItem key={batch.id} onClick={() => handleCreateQc(batch.id)}>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{batch.batchNumber}</span>
+                      <span className="text-xs text-slate-500">{batch.productName}</span>
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+                {batches.filter(b => !b.qcRecordId).length === 0 && (
+                  <p className="text-sm text-slate-500 p-2">No batches pending QC</p>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        {/* QC Records Table */}
+        {qcRecords.length > 0 ? (
+          <Card>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50 border-b">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">QC #</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Batch/Lot</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Product</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Type</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Status</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Score</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Inspector</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Date</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {qcRecords.map(qc => (
+                    <tr key={qc.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-3 font-mono text-sm">{qc.qcNumber}</td>
+                      <td className="px-4 py-3">
+                        <Badge variant="outline">{qc.lotNo}</Badge>
+                      </td>
+                      <td className="px-4 py-3">{qc.productName}</td>
+                      <td className="px-4 py-3 capitalize">{qc.qcType?.replace('_', ' ')}</td>
+                      <td className="px-4 py-3 text-center">
+                        <Badge className={getQcStatusColor(qc.status)}>{qc.status}</Badge>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {qc.overallScore !== null ? (
+                          <div className="flex items-center justify-center gap-2">
+                            <Progress value={qc.overallScore} className="w-12 h-2" />
+                            <span className="text-sm">{qc.overallScore}%</span>
+                          </div>
+                        ) : '-'}
+                      </td>
+                      <td className="px-4 py-3">{qc.inspectorName}</td>
+                      <td className="px-4 py-3">{new Date(qc.createdAt).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setDialogOpen({ type: 'qc_detail', data: qc })}>
+                              <Eye className="h-4 w-4 mr-2" /> View Details
+                            </DropdownMenuItem>
+                            {qc.status === 'pending' && (
+                              <DropdownMenuItem onClick={() => handleQcAction(qc.id, 'complete')}>
+                                <CheckCircle2 className="h-4 w-4 mr-2" /> Complete QC
+                              </DropdownMenuItem>
+                            )}
+                            {(qc.status === 'passed' || qc.status === 'failed' || qc.status === 'conditional') && !qc.decision && (
+                              <>
+                                <DropdownMenuItem onClick={() => handleQcAction(qc.id, 'make_decision', { decision: 'accept' })}>
+                                  <CheckCircle2 className="h-4 w-4 mr-2 text-green-600" /> Accept
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleQcAction(qc.id, 'make_decision', { decision: 'reject' })}>
+                                  <X className="h-4 w-4 mr-2 text-red-600" /> Reject
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        ) : (
+          <EmptyState
+            icon={ClipboardList}
+            title="No QC Records"
+            description="Create a QC record for incoming batches to track quality inspections."
+          />
+        )}
+      </div>
+    )
+  }
+
+  // =============================================
+  // RENDER: BIN LOCATIONS VIEW (Phase 2)
+  // =============================================
+
+  const renderBinLocationsView = () => {
+    const getOccupancyColor = (percent) => {
+      if (percent >= 90) return 'bg-red-500'
+      if (percent >= 70) return 'bg-amber-500'
+      return 'bg-green-500'
+    }
+
+    const handleBulkCreate = async () => {
+      try {
+        setLoading(true)
+        const res = await fetch('/api/flooring/enhanced/bin-locations', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            bulkCreate: true,
+            warehouseId: warehouses[0]?.id || 'main',
+            warehouseName: warehouses[0]?.name || 'Main Warehouse',
+            zones: ['A', 'B', 'C'],
+            racksPerZone: 5,
+            shelvesPerRack: 4,
+            binsPerShelf: 3,
+            capacityPerBin: 500
+          })
+        })
+        if (res.ok) {
+          const data = await res.json()
+          toast.success(`${data.count} bin locations created`)
+          fetchBinLocations()
+        } else {
+          const error = await res.json()
+          toast.error(error.error || 'Failed to create locations')
+        }
+      } catch (error) {
+        toast.error('Error creating locations')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    // Group bins by zone
+    const binsByZone = binLocations.reduce((acc, bin) => {
+      const zone = bin.zone || 'Unknown'
+      if (!acc[zone]) acc[zone] = []
+      acc[zone].push(bin)
+      return acc
+    }, {})
+
+    return (
+      <div className="space-y-4">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-6 gap-4">
+          <StatCard title="Total Bins" value={binSummary.total || 0} icon={MapPin} color="bg-blue-500" />
+          <StatCard title="Available" value={binSummary.available || 0} icon={CheckCircle2} color="bg-green-500" />
+          <StatCard title="Occupied" value={binSummary.occupied || 0} icon={Package} color="bg-amber-500" />
+          <StatCard title="Empty" value={binSummary.empty || 0} icon={Box} color="bg-slate-500" />
+          <StatCard title="Total Capacity" value={`${((binSummary.totalCapacity || 0) / 1000).toFixed(0)}K sqft`} icon={Warehouse} color="bg-purple-500" />
+          <StatCard title="Avg Occupancy" value={`${binSummary.avgOccupancy || 0}%`} icon={BarChart3} color="bg-indigo-500" />
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <MapPin className="h-5 w-5" /> Bin/Rack Locations
+            </h3>
+            <p className="text-sm text-slate-500">Manage warehouse bin and rack locations</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center border rounded-lg">
+              <Button 
+                variant={binViewMode === 'grid' ? 'default' : 'ghost'} 
+                size="sm"
+                onClick={() => setBinViewMode('grid')}
+                className="rounded-r-none"
+              >
+                <Layers className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant={binViewMode === 'list' ? 'default' : 'ghost'} 
+                size="sm"
+                onClick={() => setBinViewMode('list')}
+                className="rounded-l-none"
+              >
+                <ClipboardList className="h-4 w-4" />
+              </Button>
+            </div>
+            <Button variant="outline" onClick={fetchBinLocations}>
+              <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+            </Button>
+            {binLocations.length === 0 && (
+              <Button onClick={handleBulkCreate} disabled={loading}>
+                <Plus className="h-4 w-4 mr-2" /> Setup Warehouse Bins
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Bins Display */}
+        {binLocations.length > 0 ? (
+          binViewMode === 'grid' ? (
+            <div className="space-y-6">
+              {Object.entries(binsByZone).map(([zone, zoneBins]) => (
+                <Card key={zone} className="p-4">
+                  <h4 className="font-semibold mb-4 flex items-center gap-2">
+                    <MapPin className="h-4 w-4" /> Zone {zone}
+                    <Badge variant="outline">{zoneBins.length} bins</Badge>
+                  </h4>
+                  <div className="grid grid-cols-12 gap-2">
+                    {zoneBins.slice(0, 60).map(bin => (
+                      <div 
+                        key={bin.id}
+                        className={`
+                          p-2 rounded border cursor-pointer transition-all hover:shadow-md
+                          ${bin.lotCount > 0 ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'}
+                          ${bin.occupancyPercent >= 90 ? 'border-red-400' : ''}
+                        `}
+                        onClick={() => setDialogOpen({ type: 'bin_detail', data: bin })}
+                        title={`${bin.code} - ${bin.currentOccupancy}/${bin.capacity} sqft`}
+                      >
+                        <p className="text-xs font-mono truncate">{bin.code}</p>
+                        <div className="mt-1 h-1 bg-slate-200 rounded">
+                          <div 
+                            className={`h-full rounded ${getOccupancyColor(bin.occupancyPercent)}`}
+                            style={{ width: `${bin.occupancyPercent}%` }}
+                          />
+                        </div>
+                        <p className="text-[10px] text-slate-500 mt-1">{bin.lotCount || 0} lots</p>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <div className="overflow-x-auto">
+                <table className="w-full">
+                  <thead className="bg-slate-50 border-b">
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Bin Code</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Zone</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Rack</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Shelf</th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Type</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Capacity</th>
+                      <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Occupied</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">% Full</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Lots</th>
+                      <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Status</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y">
+                    {binLocations.slice(0, 50).map(bin => (
+                      <tr key={bin.id} className="hover:bg-slate-50 cursor-pointer" onClick={() => setDialogOpen({ type: 'bin_detail', data: bin })}>
+                        <td className="px-4 py-3 font-mono font-medium">{bin.code}</td>
+                        <td className="px-4 py-3"><Badge variant="outline">{bin.zone}</Badge></td>
+                        <td className="px-4 py-3">{bin.rack}</td>
+                        <td className="px-4 py-3">{bin.shelf}</td>
+                        <td className="px-4 py-3 capitalize">{bin.type}</td>
+                        <td className="px-4 py-3 text-right">{bin.capacity} sqft</td>
+                        <td className="px-4 py-3 text-right">{bin.currentOccupancy || 0} sqft</td>
+                        <td className="px-4 py-3">
+                          <div className="flex items-center justify-center gap-2">
+                            <Progress value={bin.occupancyPercent} className="w-12 h-2" />
+                            <span className="text-sm">{bin.occupancyPercent}%</span>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 text-center">{bin.lotCount || 0}</td>
+                        <td className="px-4 py-3 text-center">
+                          <Badge className={bin.status === 'available' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
+                            {bin.status}
+                          </Badge>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </Card>
+          )
+        ) : (
+          <EmptyState
+            icon={MapPin}
+            title="No Bin Locations"
+            description="Setup warehouse bin locations for efficient inventory management and picking."
+            action={handleBulkCreate}
+            actionLabel="Setup Warehouse Bins"
+          />
+        )}
+      </div>
+    )
+  }
+
+  // =============================================
   // RENDER: DIALOGS
   // =============================================
 
