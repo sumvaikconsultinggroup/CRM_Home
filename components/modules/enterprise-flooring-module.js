@@ -11815,6 +11815,593 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         </DialogContent>
       </Dialog>
 
+      {/* ===== VIEW/MANAGE INSTALLATION DIALOG ===== */}
+      <Dialog open={dialogOpen.type === 'view_installation'} onOpenChange={(open) => !open && setDialogOpen({ type: null, data: null })}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Wrench className="h-5 w-5 text-teal-600" />
+              Installation Details
+            </DialogTitle>
+            <DialogDescription>
+              {dialogOpen.data?.customer?.name} - {dialogOpen.data?.site?.address}
+            </DialogDescription>
+          </DialogHeader>
+
+          {dialogOpen.data && (
+            <Tabs defaultValue="overview" className="mt-4">
+              <TabsList className="grid grid-cols-5 w-full">
+                <TabsTrigger value="overview">Overview</TabsTrigger>
+                <TabsTrigger value="progress">Progress</TabsTrigger>
+                <TabsTrigger value="photos">Photos</TabsTrigger>
+                <TabsTrigger value="issues">Issues</TabsTrigger>
+                <TabsTrigger value="completion">Completion</TabsTrigger>
+              </TabsList>
+
+              {/* Overview Tab */}
+              <TabsContent value="overview" className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Card>
+                    <CardContent className="p-4">
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <User className="h-4 w-4" /> Customer Details
+                      </h4>
+                      <div className="space-y-2 text-sm">
+                        <p><span className="text-slate-500">Name:</span> {dialogOpen.data.customer?.name}</p>
+                        <p><span className="text-slate-500">Phone:</span> {dialogOpen.data.customer?.phone}</p>
+                        <p><span className="text-slate-500">Address:</span> {dialogOpen.data.site?.address}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardContent className="p-4">
+                      <h4 className="font-medium mb-3 flex items-center gap-2">
+                        <Calendar className="h-4 w-4" /> Schedule
+                      </h4>
+                      <div className="space-y-2 text-sm">
+                        <p><span className="text-slate-500">Scheduled:</span> {dialogOpen.data.scheduledDate ? new Date(dialogOpen.data.scheduledDate).toLocaleDateString() : '-'}</p>
+                        <p><span className="text-slate-500">Started:</span> {dialogOpen.data.actualStartDate ? new Date(dialogOpen.data.actualStartDate).toLocaleDateString() : '-'}</p>
+                        <p><span className="text-slate-500">Completed:</span> {dialogOpen.data.actualEndDate ? new Date(dialogOpen.data.actualEndDate).toLocaleDateString() : '-'}</p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Assigned Installer */}
+                <Card>
+                  <CardContent className="p-4">
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <Users className="h-4 w-4" /> Assigned Team
+                    </h4>
+                    {dialogOpen.data.assignedTo ? (
+                      <div className="flex items-center gap-3 p-3 bg-slate-50 rounded-lg">
+                        <div className="h-12 w-12 rounded-full bg-blue-100 flex items-center justify-center">
+                          <User className="h-6 w-6 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{installers.find(i => i.id === dialogOpen.data.assignedTo)?.name || 'Installer'}</p>
+                          <p className="text-sm text-slate-500">{installers.find(i => i.id === dialogOpen.data.assignedTo)?.phone}</p>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          className="ml-auto"
+                          onClick={() => handleInstallationAction(dialogOpen.data.id, 'unassign_installer')}
+                        >
+                          <X className="h-4 w-4 mr-1" /> Unassign
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="text-center py-4">
+                        <p className="text-slate-500 mb-2">No installer assigned</p>
+                        <Select onValueChange={(v) => {
+                          const installer = installers.find(i => i.id === v)
+                          handleInstallationAction(dialogOpen.data.id, 'assign_installer', { 
+                            installerId: v, 
+                            installerName: installer?.name 
+                          })
+                        }}>
+                          <SelectTrigger className="w-64 mx-auto">
+                            <SelectValue placeholder="Select installer" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {installers.filter(i => i.isAvailable && i.status === 'active').map(inst => (
+                              <SelectItem key={inst.id} value={inst.id}>
+                                {inst.name} ({inst.type === 'third_party' ? 'Vendor' : 'In-House'})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Checklist */}
+                <Card>
+                  <CardContent className="p-4">
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <ClipboardList className="h-4 w-4" /> Installation Checklist
+                    </h4>
+                    <div className="space-y-2">
+                      {(dialogOpen.data.checklist || []).map((item, idx) => (
+                        <div key={idx} className="flex items-center gap-3 p-2 hover:bg-slate-50 rounded">
+                          <Checkbox 
+                            checked={item.completed}
+                            onCheckedChange={(checked) => {
+                              handleInstallationAction(dialogOpen.data.id, 'update_checklist', {
+                                checklistItemId: item.id,
+                                completed: checked
+                              })
+                            }}
+                          />
+                          <span className={item.completed ? 'text-slate-400 line-through' : ''}>{item.task}</span>
+                          {item.completedAt && (
+                            <span className="text-xs text-slate-400 ml-auto">
+                              {new Date(item.completedAt).toLocaleDateString()}
+                            </span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Progress Tab */}
+              <TabsContent value="progress" className="space-y-4">
+                <Card>
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="font-medium">Overall Progress</h4>
+                      <span className="text-2xl font-bold text-teal-600">{dialogOpen.data.progress || 0}%</span>
+                    </div>
+                    <Progress value={dialogOpen.data.progress || 0} className="h-3 mb-2" />
+                    <p className="text-sm text-slate-500">
+                      {dialogOpen.data.areaInstalled || 0} / {dialogOpen.data.totalArea || 0} sqft installed
+                    </p>
+                  </CardContent>
+                </Card>
+
+                {/* Room-wise Progress */}
+                <Card>
+                  <CardContent className="p-4">
+                    <h4 className="font-medium mb-3">Room-wise Progress</h4>
+                    {(dialogOpen.data.rooms || []).length > 0 ? (
+                      <div className="space-y-3">
+                        {dialogOpen.data.rooms.map((room, idx) => (
+                          <div key={idx} className="p-3 border rounded-lg">
+                            <div className="flex items-center justify-between mb-2">
+                              <span className="font-medium">{room.name}</span>
+                              <Badge variant="outline" className={
+                                room.status === 'completed' ? 'bg-green-50 text-green-700' :
+                                room.status === 'in_progress' ? 'bg-blue-50 text-blue-700' :
+                                'bg-slate-50 text-slate-600'
+                              }>
+                                {room.status || 'Pending'}
+                              </Badge>
+                            </div>
+                            <div className="text-sm text-slate-500 mb-2">
+                              {room.areaCompleted || 0} / {room.area || 0} sqft
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Progress value={(room.areaCompleted || 0) / (room.area || 1) * 100} className="h-2 flex-1" />
+                              <Button 
+                                size="sm" 
+                                variant="outline"
+                                onClick={() => {
+                                  const newStatus = room.status === 'completed' ? 'pending' : 
+                                                   room.status === 'in_progress' ? 'completed' : 'in_progress'
+                                  const newArea = newStatus === 'completed' ? room.area : room.areaCompleted
+                                  handleInstallationAction(dialogOpen.data.id, 'update_room', {
+                                    roomId: room.id,
+                                    roomStatus: newStatus,
+                                    areaCompleted: newArea
+                                  })
+                                }}
+                              >
+                                {room.status === 'completed' ? 'Reopen' : room.status === 'in_progress' ? 'Complete' : 'Start'}
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-slate-500 text-center py-4">No rooms defined</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              {/* Photos Tab */}
+              <TabsContent value="photos" className="space-y-4">
+                {['before', 'during', 'after'].map(category => (
+                  <Card key={category}>
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <h4 className="font-medium capitalize">{category} Photos</h4>
+                        <Button size="sm" variant="outline" onClick={() => setDialogOpen({ type: 'add_photos', data: { ...dialogOpen.data, photoCategory: category } })}>
+                          <Camera className="h-4 w-4 mr-1" /> Add Photos
+                        </Button>
+                      </div>
+                      {(dialogOpen.data.photos?.[category] || []).length > 0 ? (
+                        <div className="grid grid-cols-4 gap-2">
+                          {dialogOpen.data.photos[category].map((photo, idx) => (
+                            <div key={idx} className="aspect-square rounded-lg overflow-hidden bg-slate-100">
+                              <img src={photo.url} alt={`${category} ${idx + 1}`} className="w-full h-full object-cover" />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-center py-6 bg-slate-50 rounded-lg">
+                          <Camera className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                          <p className="text-sm text-slate-500">No {category} photos yet</p>
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                ))}
+              </TabsContent>
+
+              {/* Issues Tab */}
+              <TabsContent value="issues" className="space-y-4">
+                <div className="flex justify-end">
+                  <Button onClick={() => setDialogOpen({ type: 'report_issue', data: dialogOpen.data })}>
+                    <AlertTriangle className="h-4 w-4 mr-2" /> Report Issue
+                  </Button>
+                </div>
+                {(dialogOpen.data.issues || []).length > 0 ? (
+                  <div className="space-y-3">
+                    {dialogOpen.data.issues.map((issue, idx) => (
+                      <Card key={idx} className={issue.status === 'resolved' ? 'opacity-60' : ''}>
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between">
+                            <div className="flex items-start gap-3">
+                              <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                                issue.severity === 'critical' ? 'bg-red-100' :
+                                issue.severity === 'high' ? 'bg-orange-100' :
+                                issue.severity === 'medium' ? 'bg-amber-100' : 'bg-slate-100'
+                              }`}>
+                                <AlertTriangle className={`h-4 w-4 ${
+                                  issue.severity === 'critical' ? 'text-red-600' :
+                                  issue.severity === 'high' ? 'text-orange-600' :
+                                  issue.severity === 'medium' ? 'text-amber-600' : 'text-slate-600'
+                                }`} />
+                              </div>
+                              <div>
+                                <p className="font-medium">{issue.description}</p>
+                                <p className="text-xs text-slate-500">
+                                  Reported {new Date(issue.reportedAt).toLocaleDateString()}
+                                </p>
+                                {issue.resolution && (
+                                  <p className="text-sm text-green-600 mt-1">Resolution: {issue.resolution}</p>
+                                )}
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <Badge className={issue.status === 'resolved' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
+                                {issue.status}
+                              </Badge>
+                              {issue.status !== 'resolved' && (
+                                <Button 
+                                  size="sm" 
+                                  variant="outline"
+                                  onClick={() => {
+                                    const resolution = prompt('Enter resolution details:')
+                                    if (resolution) {
+                                      handleInstallationAction(dialogOpen.data.id, 'resolve_issue', {
+                                        issueId: issue.id,
+                                        resolution
+                                      })
+                                    }
+                                  }}
+                                >
+                                  Resolve
+                                </Button>
+                              )}
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <Card>
+                    <CardContent className="p-8 text-center">
+                      <CheckCircle2 className="h-12 w-12 text-green-300 mx-auto mb-3" />
+                      <p className="text-slate-500">No issues reported</p>
+                    </CardContent>
+                  </Card>
+                )}
+              </TabsContent>
+
+              {/* Completion Tab */}
+              <TabsContent value="completion" className="space-y-4">
+                {/* Customer Signature */}
+                <Card>
+                  <CardContent className="p-4">
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <Edit className="h-4 w-4" /> Customer Sign-off
+                    </h4>
+                    {dialogOpen.data.customerSignature ? (
+                      <div className="border rounded-lg p-4 bg-slate-50">
+                        <img src={dialogOpen.data.customerSignature.signature} alt="Signature" className="h-24 mx-auto" />
+                        <p className="text-center text-sm text-slate-500 mt-2">
+                          Signed by {dialogOpen.data.customerSignature.signedBy} on {new Date(dialogOpen.data.customerSignature.signedAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 bg-slate-50 rounded-lg">
+                        <Edit className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                        <p className="text-sm text-slate-500 mb-3">No signature captured yet</p>
+                        <Button variant="outline" onClick={() => toast.info('Signature capture coming soon')}>
+                          Capture Signature
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Warranty Info */}
+                <Card>
+                  <CardContent className="p-4">
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <ShieldCheck className="h-4 w-4" /> Warranty Details
+                    </h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="p-3 bg-slate-50 rounded-lg">
+                        <p className="text-sm text-slate-500">Material Warranty</p>
+                        <p className="font-medium">{dialogOpen.data.warranty?.materialWarranty || '10 years'}</p>
+                      </div>
+                      <div className="p-3 bg-slate-50 rounded-lg">
+                        <p className="text-sm text-slate-500">Installation Warranty</p>
+                        <p className="font-medium">{dialogOpen.data.warranty?.installationWarranty || '1 year'}</p>
+                      </div>
+                    </div>
+                    {dialogOpen.data.warranty?.warrantyStartDate && (
+                      <p className="text-sm text-slate-500 mt-3">
+                        Warranty started: {new Date(dialogOpen.data.warranty.warrantyStartDate).toLocaleDateString()}
+                      </p>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Completion Certificate */}
+                <Card>
+                  <CardContent className="p-4">
+                    <h4 className="font-medium mb-3 flex items-center gap-2">
+                      <Award className="h-4 w-4" /> Completion Certificate
+                    </h4>
+                    {dialogOpen.data.completionCertificate ? (
+                      <div className="border rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <p className="font-mono font-bold">{dialogOpen.data.completionCertificate.certificateNumber}</p>
+                            <p className="text-sm text-slate-500">
+                              Generated on {new Date(dialogOpen.data.completionCertificate.generatedAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <Button variant="outline">
+                            <Download className="h-4 w-4 mr-2" /> Download PDF
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 bg-slate-50 rounded-lg">
+                        <Award className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                        <p className="text-sm text-slate-500 mb-3">Certificate not generated</p>
+                        {dialogOpen.data.status === 'completed' && (
+                          <Button onClick={() => {
+                            const installerName = installers.find(i => i.id === dialogOpen.data.assignedTo)?.name
+                            handleInstallationAction(dialogOpen.data.id, 'generate_certificate', { installerName })
+                          }}>
+                            <Award className="h-4 w-4 mr-2" /> Generate Certificate
+                          </Button>
+                        )}
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              </TabsContent>
+            </Tabs>
+          )}
+
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => setDialogOpen({ type: null, data: null })}>
+              Close
+            </Button>
+            {dialogOpen.data?.status === 'scheduled' && (
+              <Button className="bg-amber-600 hover:bg-amber-700" onClick={() => {
+                handleInstallationAction(dialogOpen.data.id, 'start')
+                setDialogOpen({ type: null, data: null })
+              }}>
+                <Zap className="h-4 w-4 mr-2" /> Start Installation
+              </Button>
+            )}
+            {dialogOpen.data?.status === 'in_progress' && (
+              <Button className="bg-green-600 hover:bg-green-700" onClick={() => {
+                handleInstallationAction(dialogOpen.data.id, 'complete')
+                setDialogOpen({ type: null, data: null })
+              }}>
+                <CheckCircle2 className="h-4 w-4 mr-2" /> Complete Installation
+              </Button>
+            )}
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== REPORT ISSUE DIALOG ===== */}
+      <Dialog open={dialogOpen.type === 'report_issue'} onOpenChange={(open) => !open && setDialogOpen({ type: null, data: null })}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <AlertTriangle className="h-5 w-5 text-red-600" />
+              Report Issue
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Issue Description *</Label>
+              <Textarea 
+                placeholder="Describe the issue..."
+                value={dialogOpen.data?.issueDescription || ''}
+                onChange={(e) => setDialogOpen({ ...dialogOpen, data: { ...dialogOpen.data, issueDescription: e.target.value } })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>Severity</Label>
+              <Select 
+                value={dialogOpen.data?.severity || 'medium'}
+                onValueChange={(v) => setDialogOpen({ ...dialogOpen, data: { ...dialogOpen.data, severity: v } })}
+              >
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="low">Low</SelectItem>
+                  <SelectItem value="medium">Medium</SelectItem>
+                  <SelectItem value="high">High</SelectItem>
+                  <SelectItem value="critical">Critical</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen({ type: null, data: null })}>Cancel</Button>
+            <Button 
+              className="bg-red-600 hover:bg-red-700"
+              onClick={() => {
+                if (!dialogOpen.data?.issueDescription) {
+                  toast.error('Please describe the issue')
+                  return
+                }
+                handleInstallationAction(dialogOpen.data.id, 'add_issue', {
+                  issueDescription: dialogOpen.data.issueDescription,
+                  severity: dialogOpen.data.severity || 'medium'
+                })
+                setDialogOpen({ type: null, data: null })
+                toast.success('Issue reported')
+              }}
+            >
+              Report Issue
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== ADD PHOTOS DIALOG ===== */}
+      <Dialog open={dialogOpen.type === 'add_photos'} onOpenChange={(open) => !open && setDialogOpen({ type: null, data: null })}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Camera className="h-5 w-5 text-blue-600" />
+              Add {dialogOpen.data?.photoCategory || ''} Photos
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="border-2 border-dashed rounded-lg p-8 text-center">
+              <Camera className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+              <p className="text-slate-500 mb-3">Drop photos here or click to upload</p>
+              <Input 
+                type="file" 
+                accept="image/*" 
+                multiple 
+                className="mx-auto w-fit"
+                onChange={async (e) => {
+                  const files = Array.from(e.target.files || [])
+                  if (files.length === 0) return
+                  
+                  // Convert to base64 for demo (in production, upload to storage)
+                  const photos = await Promise.all(files.map(async (file) => {
+                    return new Promise((resolve) => {
+                      const reader = new FileReader()
+                      reader.onload = () => resolve({
+                        url: reader.result,
+                        name: file.name,
+                        size: file.size
+                      })
+                      reader.readAsDataURL(file)
+                    })
+                  }))
+                  
+                  handleInstallationAction(dialogOpen.data.id, 'add_photos', {
+                    category: dialogOpen.data.photoCategory,
+                    photos
+                  })
+                  setDialogOpen({ type: null, data: null })
+                  toast.success(`${photos.length} photos added`)
+                }}
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen({ type: null, data: null })}>Cancel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ===== ASSIGN INSTALLER DIALOG ===== */}
+      <Dialog open={dialogOpen.type === 'assign_installer'} onOpenChange={(open) => !open && setDialogOpen({ type: null, data: null })}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-blue-600" />
+              Assign Installer
+            </DialogTitle>
+            <DialogDescription>
+              Select an installer for this installation job
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-3 max-h-96 overflow-y-auto">
+            {installers.filter(i => i.isAvailable && i.status === 'active').length > 0 ? (
+              installers.filter(i => i.isAvailable && i.status === 'active').map(installer => (
+                <Card 
+                  key={installer.id} 
+                  className="cursor-pointer hover:border-blue-300 transition-colors"
+                  onClick={() => {
+                    handleInstallationAction(dialogOpen.data.id, 'assign_installer', {
+                      installerId: installer.id,
+                      installerName: installer.name
+                    })
+                    setDialogOpen({ type: null, data: null })
+                  }}
+                >
+                  <CardContent className="p-4 flex items-center gap-3">
+                    <div className="h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center">
+                      <User className="h-6 w-6 text-slate-500" />
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium">{installer.name}</p>
+                      <p className="text-sm text-slate-500">
+                        {installer.type === 'third_party' ? installer.companyName || 'Third Party' : 'In-House'}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      {installer.metrics?.averageRating > 0 && (
+                        <div className="flex items-center gap-1">
+                          <Star className="h-4 w-4 text-amber-500 fill-amber-500" />
+                          <span className="font-medium">{installer.metrics.averageRating}</span>
+                        </div>
+                      )}
+                      <p className="text-xs text-slate-500">{installer.metrics?.completedJobs || 0} jobs</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <Users className="h-12 w-12 text-slate-300 mx-auto mb-3" />
+                <p className="text-slate-500">No installers available</p>
+                <Button variant="link" onClick={() => setDialogOpen({ type: 'add_installer', data: null })}>
+                  Add an installer
+                </Button>
+              </div>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen({ type: null, data: null })}>Cancel</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* ===== DISPATCH DIALOG - Comprehensive Dispatch Workflow ===== */}
       <Dialog open={showDispatchDialog} onOpenChange={(open) => {
         if (!open) {
