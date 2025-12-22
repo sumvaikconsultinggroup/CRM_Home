@@ -7016,6 +7016,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             </div>
           </Card>
         )}
+
+        {installersTab === 'reports' && (
+          <InstallationReportsTab 
+            headers={headers}
+            installers={installers}
+          />
+        )}
       </div>
     )
   }
