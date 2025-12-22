@@ -207,6 +207,7 @@ export async function PUT(request) {
     const installations = db.collection('flooring_installations')
     const projects = db.collection('flooring_projects')
     const leads = db.collection('leads')
+    const invoices = db.collection('flooring_invoices')
 
     const installation = await installations.findOne({ id })
     if (!installation) return errorResponse('Installation not found', 404)
