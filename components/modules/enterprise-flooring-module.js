@@ -250,6 +250,14 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   const [installers, setInstallers] = useState([]) // Installers & Third-Party Vendors
   const [installersTab, setInstallersTab] = useState('installations') // 'installations', 'installers', 'calendar'
   const [inventory, setInventory] = useState({ inventory: [], summary: {} })
+  
+  // Enterprise Inventory Management
+  const [inventoryTab, setInventoryTab] = useState('stock') // stock, shipments, lots, pricing, costing
+  const [shipments, setShipments] = useState([])
+  const [lots, setLots] = useState([])
+  const [priceTiers, setPriceTiers] = useState([])
+  const [landedCosts, setLandedCosts] = useState([])
+  
   const [crmProjects, setCrmProjects] = useState([]) // CRM Projects for sync
   const [crmContacts, setCrmContacts] = useState([]) // CRM Contacts for customer selection
   const [moduleSettings, setModuleSettings] = useState(null) // Module settings
