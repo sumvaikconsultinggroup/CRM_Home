@@ -6344,8 +6344,15 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                             
                             {/* Show installation status for B2C */}
                             {invoice.installationCreated && !isB2B && (
-                              <Badge className="bg-teal-100 text-teal-700">
-                                <Wrench className="h-3 w-3 mr-1" /> Installation Created
+                              <Badge className={
+                                invoice.installationStatus === 'completed' ? "bg-green-100 text-green-700" :
+                                invoice.installationStatus === 'in_progress' ? "bg-blue-100 text-blue-700" :
+                                "bg-teal-100 text-teal-700"
+                              }>
+                                <Wrench className="h-3 w-3 mr-1" /> 
+                                {invoice.installationStatus === 'completed' ? 'Installation Complete' :
+                                 invoice.installationStatus === 'in_progress' ? 'Installation In Progress' :
+                                 'Installation Scheduled'}
                               </Badge>
                             )}
                             
