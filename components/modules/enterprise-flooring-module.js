@@ -6483,128 +6483,497 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     )
   }
 
-  // Installations Tab
+  // Installations Tab - Enhanced with Team Management & Progress Tracking
   const renderInstallations = () => {
-    const summary = installations.reduce((acc, inst) => {
+    const installationSummary = installations.reduce((acc, inst) => {
       acc[inst.status] = (acc[inst.status] || 0) + 1
       if (inst.status === 'completed') acc.completedArea += inst.totalArea || 0
       return acc
     }, { completedArea: 0 })
 
+    const installersSummary = {
+      total: installers.length,
+      inHouse: installers.filter(i => i.type === 'in_house').length,
+      thirdParty: installers.filter(i => i.type === 'third_party').length,
+      available: installers.filter(i => i.isAvailable && i.status === 'active').length
+    }
+
+    // Filter installations based on search
+    const filteredInstallations = installations.filter(inst => {
+      if (!searchTerm) return true
+      const search = searchTerm.toLowerCase()
+      return inst.customer?.name?.toLowerCase().includes(search) ||
+             inst.site?.address?.toLowerCase().includes(search) ||
+             inst.id?.toLowerCase().includes(search)
+    })
+
     return (
       <div className="space-y-4">
-        {/* Summary */}
-        <div className="grid grid-cols-5 gap-4">
-          <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-blue-600">{summary.scheduled || 0}</p>
-            <p className="text-xs text-slate-500">Scheduled</p>
-          </Card>
-          <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-amber-600">{summary.in_progress || 0}</p>
-            <p className="text-xs text-slate-500">In Progress</p>
-          </Card>
-          <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-orange-600">{summary.on_hold || 0}</p>
-            <p className="text-xs text-slate-500">On Hold</p>
-          </Card>
-          <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-emerald-600">{summary.completed || 0}</p>
-            <p className="text-xs text-slate-500">Completed</p>
-          </Card>
-          <Card className="p-4 text-center">
-            <p className="text-2xl font-bold text-purple-600">{summary.completedArea?.toLocaleString()}</p>
-            <p className="text-xs text-slate-500">Sqft Installed</p>
-          </Card>
-        </div>
-
-        {/* Header */}
+        {/* Sub-tabs for Installations vs Team Management */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
-              <Input
-                placeholder="Search installations..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10 w-[280px]"
-              />
-            </div>
+          <div className="flex items-center gap-2 bg-slate-100 rounded-lg p-1">
+            <Button 
+              variant={installersTab === 'installations' ? 'default' : 'ghost'} 
+              size="sm"
+              onClick={() => setInstallersTab('installations')}
+            >
+              <Wrench className="h-4 w-4 mr-2" /> Installations
+            </Button>
+            <Button 
+              variant={installersTab === 'installers' ? 'default' : 'ghost'} 
+              size="sm"
+              onClick={() => setInstallersTab('installers')}
+            >
+              <Users className="h-4 w-4 mr-2" /> Team / Vendors
+            </Button>
+            <Button 
+              variant={installersTab === 'calendar' ? 'default' : 'ghost'} 
+              size="sm"
+              onClick={() => setInstallersTab('calendar')}
+            >
+              <Calendar className="h-4 w-4 mr-2" /> Calendar
+            </Button>
           </div>
-          <Button onClick={() => setDialogOpen({ type: 'installation', data: null })}>
-            <Plus className="h-4 w-4 mr-2" /> Schedule Installation
+          <Button onClick={() => fetchInstallations()}>
+            <RefreshCw className="h-4 w-4 mr-2" /> Refresh
           </Button>
         </div>
 
-        {/* Installations Grid */}
-        {installations.length > 0 ? (
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {installations.map(inst => (
-              <Card key={inst.id} className="overflow-hidden">
-                <CardContent className="p-5">
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="font-semibold text-slate-900">{inst.customer?.name || 'Customer'}</p>
-                      <p className="text-sm text-slate-500 line-clamp-1">{inst.site?.address || 'Site'}</p>
-                    </div>
-                    <Badge className={InstallationStatus[inst.status]?.color}>
-                      {InstallationStatus[inst.status]?.label}
-                    </Badge>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-2 mb-3 text-sm">
-                    <div className="flex items-center gap-2 text-slate-500">
-                      <Calendar className="h-4 w-4" />
-                      {new Date(inst.scheduledDate).toLocaleDateString()}
-                    </div>
-                    <div className="flex items-center gap-2 text-slate-500">
-                      <Square className="h-4 w-4" />
-                      {inst.totalArea || 0} sqft
-                    </div>
-                  </div>
-
-                  {inst.status === 'in_progress' && (
-                    <div className="mb-3">
-                      <div className="flex items-center justify-between text-sm mb-1">
-                        <span>Progress</span>
-                        <span className="font-medium">{inst.progress || 0}%</span>
-                      </div>
-                      <Progress value={inst.progress || 0} className="h-2" />
-                    </div>
-                  )}
-
-                  <div className="flex items-center justify-between pt-3 border-t">
-                    <p className="text-xs text-slate-500">
-                      {inst.team?.length || 0} team members
-                    </p>
-                    <div className="flex items-center gap-1">
-                      <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'view_installation', data: inst })}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      {inst.status === 'scheduled' && (
-                        <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white" onClick={() => handleInstallationAction(inst.id, 'start')}>
-                          <Zap className="h-4 w-4 mr-1" /> Start
-                        </Button>
-                      )}
-                      {inst.status === 'in_progress' && (
-                        <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleInstallationComplete(inst)}>
-                          <CheckCircle2 className="h-4 w-4 mr-1" /> Complete
-                        </Button>
-                      )}
-                    </div>
-                  </div>
-                </CardContent>
+        {installersTab === 'installations' && (
+          <>
+            {/* Summary Cards */}
+            <div className="grid grid-cols-5 gap-4">
+              <Card className="p-4 text-center border-l-4 border-l-blue-500">
+                <p className="text-2xl font-bold text-blue-600">{installationSummary.scheduled || 0}</p>
+                <p className="text-xs text-slate-500">Scheduled</p>
               </Card>
-            ))}
-          </div>
-        ) : (
-          <EmptyState
-            icon={Wrench}
-            title="No installations scheduled"
-            description="Installations are created when B2C invoices are paid."
-          />
+              <Card className="p-4 text-center border-l-4 border-l-amber-500">
+                <p className="text-2xl font-bold text-amber-600">{installationSummary.in_progress || 0}</p>
+                <p className="text-xs text-slate-500">In Progress</p>
+              </Card>
+              <Card className="p-4 text-center border-l-4 border-l-orange-500">
+                <p className="text-2xl font-bold text-orange-600">{installationSummary.on_hold || 0}</p>
+                <p className="text-xs text-slate-500">On Hold</p>
+              </Card>
+              <Card className="p-4 text-center border-l-4 border-l-emerald-500">
+                <p className="text-2xl font-bold text-emerald-600">{installationSummary.completed || 0}</p>
+                <p className="text-xs text-slate-500">Completed</p>
+              </Card>
+              <Card className="p-4 text-center border-l-4 border-l-purple-500">
+                <p className="text-2xl font-bold text-purple-600">{installationSummary.completedArea?.toLocaleString()}</p>
+                <p className="text-xs text-slate-500">Sqft Installed</p>
+              </Card>
+            </div>
+
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Input
+                    placeholder="Search installations..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 w-[280px]"
+                  />
+                </div>
+              </div>
+              <Button onClick={() => setDialogOpen({ type: 'installation', data: null })}>
+                <Plus className="h-4 w-4 mr-2" /> Schedule Installation
+              </Button>
+            </div>
+
+            {/* Installations Grid */}
+            {filteredInstallations.length > 0 ? (
+              <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {filteredInstallations.map(inst => {
+                  const assignedInstaller = installers.find(i => i.id === inst.assignedTo)
+                  return (
+                    <Card key={inst.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                      <CardContent className="p-5">
+                        <div className="flex items-start justify-between mb-3">
+                          <div>
+                            <p className="font-semibold text-slate-900">{inst.customer?.name || 'Customer'}</p>
+                            <p className="text-sm text-slate-500 line-clamp-1">{inst.site?.address || 'Site'}</p>
+                          </div>
+                          <Badge className={InstallationStatus[inst.status]?.color || 'bg-slate-100 text-slate-700'}>
+                            {InstallationStatus[inst.status]?.label || inst.status}
+                          </Badge>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 mb-3 text-sm">
+                          <div className="flex items-center gap-2 text-slate-500">
+                            <Calendar className="h-4 w-4" />
+                            {inst.scheduledDate ? new Date(inst.scheduledDate).toLocaleDateString() : 'Not set'}
+                          </div>
+                          <div className="flex items-center gap-2 text-slate-500">
+                            <Square className="h-4 w-4" />
+                            {inst.totalArea || 0} sqft
+                          </div>
+                        </div>
+
+                        {/* Assigned Installer */}
+                        {assignedInstaller ? (
+                          <div className="flex items-center gap-2 p-2 bg-slate-50 rounded-lg mb-3">
+                            <div className="h-8 w-8 rounded-full bg-blue-100 flex items-center justify-center">
+                              <User className="h-4 w-4 text-blue-600" />
+                            </div>
+                            <div className="flex-1 min-w-0">
+                              <p className="text-sm font-medium truncate">{assignedInstaller.name}</p>
+                              <p className="text-xs text-slate-500">
+                                {assignedInstaller.type === 'third_party' ? 'Third Party' : 'In-House'}
+                              </p>
+                            </div>
+                            {assignedInstaller.metrics?.averageRating > 0 && (
+                              <div className="flex items-center gap-1">
+                                <Star className="h-3 w-3 text-amber-500 fill-amber-500" />
+                                <span className="text-xs font-medium">{assignedInstaller.metrics.averageRating}</span>
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            className="w-full mb-3 border-dashed"
+                            onClick={() => setDialogOpen({ type: 'assign_installer', data: inst })}
+                          >
+                            <Users className="h-4 w-4 mr-2" /> Assign Installer
+                          </Button>
+                        )}
+
+                        {/* Progress for in-progress installations */}
+                        {inst.status === 'in_progress' && (
+                          <div className="mb-3">
+                            <div className="flex items-center justify-between text-sm mb-1">
+                              <span>Progress</span>
+                              <span className="font-medium">{inst.progress || 0}%</span>
+                            </div>
+                            <Progress value={inst.progress || 0} className="h-2" />
+                            {inst.areaInstalled > 0 && (
+                              <p className="text-xs text-slate-500 mt-1">
+                                {inst.areaInstalled} / {inst.totalArea} sqft installed
+                              </p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Room-wise progress */}
+                        {inst.rooms && inst.rooms.length > 0 && inst.status === 'in_progress' && (
+                          <div className="mb-3 space-y-1">
+                            <p className="text-xs font-medium text-slate-600">Room Progress:</p>
+                            {inst.rooms.slice(0, 3).map((room, idx) => (
+                              <div key={idx} className="flex items-center justify-between text-xs">
+                                <span className="text-slate-500">{room.name}</span>
+                                <Badge variant="outline" className={
+                                  room.status === 'completed' ? 'bg-green-50 text-green-700' :
+                                  room.status === 'in_progress' ? 'bg-blue-50 text-blue-700' :
+                                  'bg-slate-50 text-slate-600'
+                                }>
+                                  {room.status || 'Pending'}
+                                </Badge>
+                              </div>
+                            ))}
+                            {inst.rooms.length > 3 && (
+                              <p className="text-xs text-slate-400">+{inst.rooms.length - 3} more rooms</p>
+                            )}
+                          </div>
+                        )}
+
+                        {/* Photo counts */}
+                        {(inst.photos?.before?.length > 0 || inst.photos?.during?.length > 0 || inst.photos?.after?.length > 0) && (
+                          <div className="flex items-center gap-3 text-xs text-slate-500 mb-3">
+                            <Camera className="h-3 w-3" />
+                            <span>Before: {inst.photos?.before?.length || 0}</span>
+                            <span>During: {inst.photos?.during?.length || 0}</span>
+                            <span>After: {inst.photos?.after?.length || 0}</span>
+                          </div>
+                        )}
+
+                        {/* Issues indicator */}
+                        {inst.issues && inst.issues.length > 0 && (
+                          <div className="flex items-center gap-2 p-2 bg-red-50 rounded-lg mb-3">
+                            <AlertTriangle className="h-4 w-4 text-red-500" />
+                            <span className="text-sm text-red-700">
+                              {inst.issues.filter(i => i.status === 'open').length} open issues
+                            </span>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between pt-3 border-t">
+                          <p className="text-xs text-slate-500">
+                            {inst.team?.length || 0} team members
+                          </p>
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="sm" onClick={() => setDialogOpen({ type: 'view_installation', data: inst })}>
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="sm">
+                                  <MoreVertical className="h-4 w-4" />
+                                </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                <DropdownMenuItem onClick={() => setDialogOpen({ type: 'update_progress', data: inst })}>
+                                  <Target className="h-4 w-4 mr-2" /> Update Progress
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setDialogOpen({ type: 'add_photos', data: inst })}>
+                                  <Camera className="h-4 w-4 mr-2" /> Add Photos
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => setDialogOpen({ type: 'report_issue', data: inst })}>
+                                  <AlertTriangle className="h-4 w-4 mr-2" /> Report Issue
+                                </DropdownMenuItem>
+                                <DropdownMenuSeparator />
+                                {inst.status === 'in_progress' && (
+                                  <DropdownMenuItem onClick={() => handleInstallationAction(inst.id, 'hold', { reason: 'Paused' })}>
+                                    <Clock className="h-4 w-4 mr-2" /> Put On Hold
+                                  </DropdownMenuItem>
+                                )}
+                                {inst.status === 'on_hold' && (
+                                  <DropdownMenuItem onClick={() => handleInstallationAction(inst.id, 'start')}>
+                                    <Zap className="h-4 w-4 mr-2" /> Resume
+                                  </DropdownMenuItem>
+                                )}
+                              </DropdownMenuContent>
+                            </DropdownMenu>
+                            {inst.status === 'scheduled' && (
+                              <Button size="sm" className="bg-amber-600 hover:bg-amber-700 text-white" onClick={() => handleInstallationAction(inst.id, 'start')}>
+                                <Zap className="h-4 w-4 mr-1" /> Start
+                              </Button>
+                            )}
+                            {inst.status === 'in_progress' && (
+                              <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700 text-white" onClick={() => handleInstallationComplete(inst)}>
+                                <CheckCircle2 className="h-4 w-4 mr-1" /> Complete
+                              </Button>
+                            )}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  )
+                })}
+              </div>
+            ) : (
+              <EmptyState
+                icon={Wrench}
+                title="No installations scheduled"
+                description="Installations are created when B2C invoices are paid and marked as delivered."
+              />
+            )}
+          </>
+        )}
+
+        {installersTab === 'installers' && (
+          <>
+            {/* Installers Summary */}
+            <div className="grid grid-cols-4 gap-4">
+              <Card className="p-4 text-center border-l-4 border-l-blue-500">
+                <p className="text-2xl font-bold text-blue-600">{installersSummary.total}</p>
+                <p className="text-xs text-slate-500">Total Team</p>
+              </Card>
+              <Card className="p-4 text-center border-l-4 border-l-emerald-500">
+                <p className="text-2xl font-bold text-emerald-600">{installersSummary.inHouse}</p>
+                <p className="text-xs text-slate-500">In-House</p>
+              </Card>
+              <Card className="p-4 text-center border-l-4 border-l-purple-500">
+                <p className="text-2xl font-bold text-purple-600">{installersSummary.thirdParty}</p>
+                <p className="text-xs text-slate-500">Third Party</p>
+              </Card>
+              <Card className="p-4 text-center border-l-4 border-l-green-500">
+                <p className="text-2xl font-bold text-green-600">{installersSummary.available}</p>
+                <p className="text-xs text-slate-500">Available Now</p>
+              </Card>
+            </div>
+
+            {/* Header */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-slate-400" />
+                  <Input
+                    placeholder="Search installers..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10 w-[280px]"
+                  />
+                </div>
+              </div>
+              <Button onClick={() => setDialogOpen({ type: 'add_installer', data: null })}>
+                <Plus className="h-4 w-4 mr-2" /> Add Installer / Vendor
+              </Button>
+            </div>
+
+            {/* Installers Table */}
+            {installers.length > 0 ? (
+              <Card>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Contact</TableHead>
+                      <TableHead>Skills</TableHead>
+                      <TableHead>Rating</TableHead>
+                      <TableHead>Jobs</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="text-right">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {installers.map(installer => (
+                      <TableRow key={installer.id}>
+                        <TableCell>
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-slate-100 flex items-center justify-center">
+                              {installer.profilePhoto ? (
+                                <img src={installer.profilePhoto} className="h-10 w-10 rounded-full object-cover" />
+                              ) : (
+                                <User className="h-5 w-5 text-slate-500" />
+                              )}
+                            </div>
+                            <div>
+                              <p className="font-medium">{installer.name}</p>
+                              {installer.companyName && (
+                                <p className="text-xs text-slate-500">{installer.companyName}</p>
+                              )}
+                            </div>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className={
+                            installer.type === 'in_house' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'
+                          }>
+                            {installer.type === 'in_house' ? 'In-House' : 'Third Party'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <p>{installer.phone}</p>
+                            <p className="text-xs text-slate-500">{installer.email}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex flex-wrap gap-1">
+                            {(installer.skills || []).slice(0, 2).map((skill, idx) => (
+                              <Badge key={idx} variant="outline" className="text-xs">
+                                {skill.replace('_', ' ')}
+                              </Badge>
+                            ))}
+                            {(installer.skills || []).length > 2 && (
+                              <Badge variant="outline" className="text-xs">
+                                +{installer.skills.length - 2}
+                              </Badge>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Star className={`h-4 w-4 ${installer.metrics?.averageRating > 0 ? 'text-amber-500 fill-amber-500' : 'text-slate-300'}`} />
+                            <span className="font-medium">{installer.metrics?.averageRating || '-'}</span>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <div className="text-sm">
+                            <p className="font-medium">{installer.metrics?.completedJobs || 0}</p>
+                            <p className="text-xs text-slate-500">{(installer.metrics?.totalAreaInstalled || 0).toLocaleString()} sqft</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          {installer.isAvailable ? (
+                            <Badge className="bg-green-100 text-green-700">Available</Badge>
+                          ) : installer.currentAssignment ? (
+                            <Badge className="bg-amber-100 text-amber-700">On Job</Badge>
+                          ) : (
+                            <Badge className="bg-slate-100 text-slate-700">Unavailable</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="sm">
+                                <MoreVertical className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => setDialogOpen({ type: 'view_installer', data: installer })}>
+                                <Eye className="h-4 w-4 mr-2" /> View Profile
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setDialogOpen({ type: 'edit_installer', data: installer })}>
+                                <Edit className="h-4 w-4 mr-2" /> Edit
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              {installer.status === 'active' ? (
+                                <DropdownMenuItem 
+                                  onClick={() => handleInstallerAction(installer.id, 'deactivate')}
+                                  className="text-red-600"
+                                >
+                                  <X className="h-4 w-4 mr-2" /> Deactivate
+                                </DropdownMenuItem>
+                              ) : (
+                                <DropdownMenuItem 
+                                  onClick={() => handleInstallerAction(installer.id, 'activate')}
+                                  className="text-green-600"
+                                >
+                                  <CheckCircle2 className="h-4 w-4 mr-2" /> Activate
+                                </DropdownMenuItem>
+                              )}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Card>
+            ) : (
+              <EmptyState
+                icon={Users}
+                title="No installers added"
+                description="Add your installation team members or third-party vendors."
+                action={() => setDialogOpen({ type: 'add_installer', data: null })}
+                actionLabel="Add Installer"
+              />
+            )}
+          </>
+        )}
+
+        {installersTab === 'calendar' && (
+          <Card className="p-6">
+            <div className="text-center py-12">
+              <Calendar className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-slate-700">Calendar View</h3>
+              <p className="text-slate-500 mt-2">Coming in Phase 2</p>
+              <p className="text-sm text-slate-400 mt-1">Visual calendar with drag-drop scheduling</p>
+            </div>
+          </Card>
         )}
       </div>
     )
+  }
+
+  // Handle installer actions
+  const handleInstallerAction = async (installerId, action, data = {}) => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/flooring/enhanced/installers', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ id: installerId, action, ...data })
+      })
+      
+      if (res.ok) {
+        toast.success(`Installer ${action} successful`)
+        fetchInstallers()
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Action failed')
+      }
+    } catch (error) {
+      toast.error('Error performing action')
+    } finally {
+      setLoading(false)
+    }
   }
 
   // Inventory Tab
