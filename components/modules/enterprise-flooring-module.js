@@ -6280,7 +6280,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                             {/* When invoice is linked to a DC (from delivery_challan or has dcId) */}
                             {(invoice.source === 'delivery_challan' || invoice.dcId) && (
                               <>
-                                {/* DC ISSUED = In Transit */}
+                                {/* DC ISSUED = In Transit - NO installation button */}
                                 {invoice.dispatchStatus === 'dispatched' && (
                                   <Badge className="bg-blue-100 text-blue-700">
                                     <Truck className="h-3 w-3 mr-1" /> In Transit
@@ -6288,7 +6288,15 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                   </Badge>
                                 )}
                                 
-                                {/* DC DELIVERED - B2C: Show Start Installation */}
+                                {/* DC DELIVERED - Show Delivered badge for BOTH B2B and B2C */}
+                                {invoice.dispatchStatus === 'delivered' && (
+                                  <Badge className="bg-emerald-100 text-emerald-700">
+                                    <CheckCircle2 className="h-3 w-3 mr-1" /> Delivered
+                                    {invoice.dcNumber && <span className="ml-1 text-xs">({invoice.dcNumber})</span>}
+                                  </Badge>
+                                )}
+                                
+                                {/* DC DELIVERED - B2C ONLY: Show Start Installation button */}
                                 {invoice.dispatchStatus === 'delivered' && !isB2B && !invoice.installationCreated && (
                                   <Button 
                                     size="sm" 
@@ -6297,14 +6305,6 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                   >
                                     <Wrench className="h-4 w-4 mr-1" /> Start Installation
                                   </Button>
-                                )}
-                                
-                                {/* DC DELIVERED - B2B: Show Delivered badge */}
-                                {invoice.dispatchStatus === 'delivered' && isB2B && (
-                                  <Badge className="bg-emerald-100 text-emerald-700">
-                                    <CheckCircle2 className="h-3 w-3 mr-1" /> Delivered
-                                    {invoice.dcNumber && <span className="ml-1 text-xs">({invoice.dcNumber})</span>}
-                                  </Badge>
                                 )}
                               </>
                             )}
