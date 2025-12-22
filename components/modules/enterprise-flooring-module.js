@@ -11438,6 +11438,298 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         </DialogContent>
       </Dialog>
 
+      {/* ===== ADD/EDIT INSTALLER DIALOG ===== */}
+      <Dialog open={dialogOpen.type === 'add_installer' || dialogOpen.type === 'edit_installer'} onOpenChange={(open) => !open && setDialogOpen({ type: null, data: null })}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5 text-blue-600" />
+              {dialogOpen.type === 'edit_installer' ? 'Edit Installer' : 'Add Installer / Vendor'}
+            </DialogTitle>
+            <DialogDescription>
+              {dialogOpen.type === 'edit_installer' ? 'Update installer details' : 'Add a new in-house installer or third-party vendor'}
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="grid gap-4 py-4">
+            {/* Type Selection */}
+            <div className="grid grid-cols-2 gap-4">
+              <Card 
+                className={`cursor-pointer transition-all ${(dialogOpen.data?.installerType || 'in_house') === 'in_house' ? 'border-blue-500 bg-blue-50' : 'hover:border-slate-300'}`}
+                onClick={() => setDialogOpen({ ...dialogOpen, data: { ...dialogOpen.data, installerType: 'in_house' } })}
+              >
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                    <User className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium">In-House Installer</p>
+                    <p className="text-xs text-slate-500">Employee or staff member</p>
+                  </div>
+                </CardContent>
+              </Card>
+              <Card 
+                className={`cursor-pointer transition-all ${(dialogOpen.data?.installerType || 'in_house') === 'third_party' ? 'border-purple-500 bg-purple-50' : 'hover:border-slate-300'}`}
+                onClick={() => setDialogOpen({ ...dialogOpen, data: { ...dialogOpen.data, installerType: 'third_party' } })}
+              >
+                <CardContent className="p-4 flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-full bg-purple-100 flex items-center justify-center">
+                    <Building2 className="h-5 w-5 text-purple-600" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Third-Party Vendor</p>
+                    <p className="text-xs text-slate-500">External contractor or company</p>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Basic Info */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Name *</Label>
+                <Input 
+                  placeholder="Full name"
+                  value={dialogOpen.data?.name || ''}
+                  onChange={(e) => setDialogOpen({ ...dialogOpen, data: { ...dialogOpen.data, name: e.target.value } })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Phone *</Label>
+                <Input 
+                  placeholder="Phone number"
+                  value={dialogOpen.data?.phone || ''}
+                  onChange={(e) => setDialogOpen({ ...dialogOpen, data: { ...dialogOpen.data, phone: e.target.value } })}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Email</Label>
+                <Input 
+                  type="email"
+                  placeholder="Email address"
+                  value={dialogOpen.data?.email || ''}
+                  onChange={(e) => setDialogOpen({ ...dialogOpen, data: { ...dialogOpen.data, email: e.target.value } })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Experience (Years)</Label>
+                <Input 
+                  type="number"
+                  placeholder="0"
+                  value={dialogOpen.data?.experience || ''}
+                  onChange={(e) => setDialogOpen({ ...dialogOpen, data: { ...dialogOpen.data, experience: parseInt(e.target.value) || 0 } })}
+                />
+              </div>
+            </div>
+
+            {/* Third Party Company Details */}
+            {(dialogOpen.data?.installerType || 'in_house') === 'third_party' && (
+              <Card className="border-purple-200 bg-purple-50/50">
+                <CardContent className="p-4 space-y-4">
+                  <p className="font-medium text-purple-800 flex items-center gap-2">
+                    <Building2 className="h-4 w-4" /> Company Details
+                  </p>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Company Name</Label>
+                      <Input 
+                        placeholder="Company name"
+                        value={dialogOpen.data?.companyName || ''}
+                        onChange={(e) => setDialogOpen({ ...dialogOpen, data: { ...dialogOpen.data, companyName: e.target.value } })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>GST Number</Label>
+                      <Input 
+                        placeholder="GSTIN"
+                        value={dialogOpen.data?.gstNumber || ''}
+                        onChange={(e) => setDialogOpen({ ...dialogOpen, data: { ...dialogOpen.data, gstNumber: e.target.value } })}
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>PAN Number</Label>
+                      <Input 
+                        placeholder="PAN"
+                        value={dialogOpen.data?.panNumber || ''}
+                        onChange={(e) => setDialogOpen({ ...dialogOpen, data: { ...dialogOpen.data, panNumber: e.target.value } })}
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Payment Terms</Label>
+                      <Select 
+                        value={dialogOpen.data?.paymentTerms || 'per_job'}
+                        onValueChange={(v) => setDialogOpen({ ...dialogOpen, data: { ...dialogOpen.data, paymentTerms: v } })}
+                      >
+                        <SelectTrigger><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="per_job">Per Job</SelectItem>
+                          <SelectItem value="weekly">Weekly</SelectItem>
+                          <SelectItem value="monthly">Monthly</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Address */}
+            <div className="space-y-2">
+              <Label>Address</Label>
+              <Input 
+                placeholder="Street address"
+                value={dialogOpen.data?.address || ''}
+                onChange={(e) => setDialogOpen({ ...dialogOpen, data: { ...dialogOpen.data, address: e.target.value } })}
+              />
+            </div>
+            <div className="grid grid-cols-3 gap-4">
+              <div className="space-y-2">
+                <Label>City</Label>
+                <Input 
+                  placeholder="City"
+                  value={dialogOpen.data?.city || ''}
+                  onChange={(e) => setDialogOpen({ ...dialogOpen, data: { ...dialogOpen.data, city: e.target.value } })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>State</Label>
+                <Input 
+                  placeholder="State"
+                  value={dialogOpen.data?.state || ''}
+                  onChange={(e) => setDialogOpen({ ...dialogOpen, data: { ...dialogOpen.data, state: e.target.value } })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Pincode</Label>
+                <Input 
+                  placeholder="Pincode"
+                  value={dialogOpen.data?.pincode || ''}
+                  onChange={(e) => setDialogOpen({ ...dialogOpen, data: { ...dialogOpen.data, pincode: e.target.value } })}
+                />
+              </div>
+            </div>
+
+            {/* Skills */}
+            <div className="space-y-2">
+              <Label>Skills / Expertise</Label>
+              <div className="flex flex-wrap gap-2">
+                {['wooden_flooring', 'laminate', 'vinyl', 'spc', 'hardwood', 'bamboo', 'tile', 'carpet'].map(skill => (
+                  <Badge 
+                    key={skill}
+                    variant="outline"
+                    className={`cursor-pointer ${(dialogOpen.data?.skills || []).includes(skill) ? 'bg-blue-100 text-blue-700 border-blue-300' : ''}`}
+                    onClick={() => {
+                      const currentSkills = dialogOpen.data?.skills || []
+                      const newSkills = currentSkills.includes(skill) 
+                        ? currentSkills.filter(s => s !== skill)
+                        : [...currentSkills, skill]
+                      setDialogOpen({ ...dialogOpen, data: { ...dialogOpen.data, skills: newSkills } })
+                    }}
+                  >
+                    {skill.replace('_', ' ')}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+
+            {/* Rates */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label>Daily Rate (₹)</Label>
+                <Input 
+                  type="number"
+                  placeholder="0"
+                  value={dialogOpen.data?.dailyRate || ''}
+                  onChange={(e) => setDialogOpen({ ...dialogOpen, data: { ...dialogOpen.data, dailyRate: parseFloat(e.target.value) || 0 } })}
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Rate per Sqft (₹)</Label>
+                <Input 
+                  type="number"
+                  placeholder="0"
+                  value={dialogOpen.data?.sqftRate || ''}
+                  onChange={(e) => setDialogOpen({ ...dialogOpen, data: { ...dialogOpen.data, sqftRate: parseFloat(e.target.value) || 0 } })}
+                />
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div className="space-y-2">
+              <Label>Notes</Label>
+              <Textarea 
+                placeholder="Any additional notes..."
+                value={dialogOpen.data?.notes || ''}
+                onChange={(e) => setDialogOpen({ ...dialogOpen, data: { ...dialogOpen.data, notes: e.target.value } })}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDialogOpen({ type: null, data: null })}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={async () => {
+                try {
+                  if (!dialogOpen.data?.name || !dialogOpen.data?.phone) {
+                    toast.error('Name and phone are required')
+                    return
+                  }
+                  setLoading(true)
+                  const res = await fetch('/api/flooring/enhanced/installers', {
+                    method: dialogOpen.type === 'edit_installer' ? 'PUT' : 'POST',
+                    headers,
+                    body: JSON.stringify({
+                      id: dialogOpen.data?.id,
+                      name: dialogOpen.data?.name,
+                      type: dialogOpen.data?.installerType || 'in_house',
+                      phone: dialogOpen.data?.phone,
+                      email: dialogOpen.data?.email,
+                      address: dialogOpen.data?.address,
+                      city: dialogOpen.data?.city,
+                      state: dialogOpen.data?.state,
+                      pincode: dialogOpen.data?.pincode,
+                      companyName: dialogOpen.data?.companyName,
+                      gstNumber: dialogOpen.data?.gstNumber,
+                      panNumber: dialogOpen.data?.panNumber,
+                      paymentTerms: dialogOpen.data?.paymentTerms,
+                      skills: dialogOpen.data?.skills || [],
+                      experience: dialogOpen.data?.experience || 0,
+                      dailyRate: dialogOpen.data?.dailyRate || 0,
+                      sqftRate: dialogOpen.data?.sqftRate || 0,
+                      notes: dialogOpen.data?.notes
+                    })
+                  })
+                  
+                  if (res.ok) {
+                    toast.success(dialogOpen.type === 'edit_installer' ? 'Installer updated' : 'Installer added successfully')
+                    setDialogOpen({ type: null, data: null })
+                    fetchInstallers()
+                  } else {
+                    const error = await res.json()
+                    toast.error(error.error || 'Failed to save installer')
+                  }
+                } catch (error) {
+                  toast.error('Error saving installer')
+                } finally {
+                  setLoading(false)
+                }
+              }}
+              disabled={loading}
+            >
+              {loading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+              {dialogOpen.type === 'edit_installer' ? 'Update' : 'Add Installer'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* ===== DISPATCH DIALOG - Comprehensive Dispatch Workflow ===== */}
       <Dialog open={showDispatchDialog} onOpenChange={(open) => {
         if (!open) {
