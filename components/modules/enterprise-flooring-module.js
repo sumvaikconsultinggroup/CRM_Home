@@ -7628,7 +7628,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }
 
-  // Inventory Tab
+  // Inventory Tab - Enterprise Grade with Sub-tabs
   const renderInventory = () => {
     const { inventory: items, summary = {}, byCategory = {} } = inventory
 
@@ -7637,33 +7637,80 @@ export function EnterpriseFlooringModule({ client, user, token }) {
 
     return (
       <div className="space-y-4">
-        {/* Summary */}
-        <div className="grid grid-cols-6 gap-4">
-          <Card className="p-4">
-            <p className="text-sm text-slate-500">Total Products</p>
-            <p className="text-2xl font-bold">{summary.totalProducts || 0}</p>
-          </Card>
-          <Card className="p-4">
-            <p className="text-sm text-slate-500">Total Quantity</p>
-            <p className="text-2xl font-bold">{(summary.totalQuantity || 0).toLocaleString()} sqft</p>
-          </Card>
-          <Card className="p-4 bg-amber-50 border-amber-200">
-            <p className="text-sm text-amber-700 flex items-center gap-1"><Lock className="h-3 w-3" /> Reserved/Blocked</p>
-            <p className="text-2xl font-bold text-amber-600">{(summary.reservedQuantity || 0).toLocaleString()} sqft</p>
-          </Card>
-          <Card className="p-4 bg-emerald-50 border-emerald-200">
-            <p className="text-sm text-emerald-700">Available</p>
-            <p className="text-2xl font-bold text-emerald-600">{(summary.availableQuantity || 0).toLocaleString()} sqft</p>
-          </Card>
-          <Card className="p-4">
-            <p className="text-sm text-slate-500">Low Stock</p>
-            <p className="text-2xl font-bold text-amber-600">{summary.lowStockCount || 0}</p>
-          </Card>
-          <Card className="p-4">
-            <p className="text-sm text-slate-500">Out of Stock</p>
-            <p className="text-2xl font-bold text-red-600">{summary.outOfStockCount || 0}</p>
-          </Card>
+        {/* Sub-tabs for Inventory Modules */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+            <Button 
+              variant={inventoryTab === 'stock' ? 'default' : 'ghost'} 
+              size="sm"
+              onClick={() => setInventoryTab('stock')}
+            >
+              <Package className="h-4 w-4 mr-2" /> Stock
+            </Button>
+            <Button 
+              variant={inventoryTab === 'shipments' ? 'default' : 'ghost'} 
+              size="sm"
+              onClick={() => { setInventoryTab('shipments'); fetchShipments(); }}
+            >
+              <Ship className="h-4 w-4 mr-2" /> Shipments
+            </Button>
+            <Button 
+              variant={inventoryTab === 'lots' ? 'default' : 'ghost'} 
+              size="sm"
+              onClick={() => { setInventoryTab('lots'); fetchLots(); }}
+            >
+              <Layers className="h-4 w-4 mr-2" /> Lots/Batches
+            </Button>
+            <Button 
+              variant={inventoryTab === 'pricing' ? 'default' : 'ghost'} 
+              size="sm"
+              onClick={() => { setInventoryTab('pricing'); fetchPriceTiers(); }}
+            >
+              <IndianRupee className="h-4 w-4 mr-2" /> Pricing
+            </Button>
+            <Button 
+              variant={inventoryTab === 'costing' ? 'default' : 'ghost'} 
+              size="sm"
+              onClick={() => { setInventoryTab('costing'); fetchLandedCosts(); }}
+            >
+              <Calculator className="h-4 w-4 mr-2" /> Costing
+            </Button>
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => fetchInventory()}>
+            <RefreshCw className="h-4 w-4" />
+          </Button>
         </div>
+
+        {/* Stock Tab - Original Inventory View */}
+        {inventoryTab === 'stock' && (
+          <>
+            {/* Summary */}
+            <div className="grid grid-cols-6 gap-4">
+              <Card className="p-4">
+                <p className="text-sm text-slate-500">Total Products</p>
+                <p className="text-2xl font-bold">{summary.totalProducts || 0}</p>
+              </Card>
+              <Card className="p-4">
+                <p className="text-sm text-slate-500">Total Quantity</p>
+                <p className="text-2xl font-bold">{(summary.totalQuantity || 0).toLocaleString()} sqft</p>
+              </Card>
+              <Card className="p-4 bg-amber-50 border-amber-200">
+                <p className="text-sm text-amber-700 flex items-center gap-1"><Lock className="h-3 w-3" /> Reserved/Blocked</p>
+                <p className="text-2xl font-bold text-amber-600">{(summary.reservedQuantity || 0).toLocaleString()} sqft</p>
+              </Card>
+              <Card className="p-4 bg-emerald-50 border-emerald-200">
+                <p className="text-sm text-emerald-700">Available</p>
+                <p className="text-2xl font-bold text-emerald-600">{(summary.availableQuantity || 0).toLocaleString()} sqft</p>
+              </Card>
+              <Card className="p-4">
+                <p className="text-sm text-slate-500">Low Stock</p>
+                <p className="text-2xl font-bold text-amber-600">{summary.lowStockCount || 0}</p>
+              </Card>
+              <Card className="p-4">
+                <p className="text-sm text-slate-500">Out of Stock</p>
+                <p className="text-2xl font-bold text-red-600">{summary.outOfStockCount || 0}</p>
+              </Card>
+            </div>
 
         {/* Blocked Inventory by Project */}
         {projectsWithBlockedInventory.length > 0 && (
