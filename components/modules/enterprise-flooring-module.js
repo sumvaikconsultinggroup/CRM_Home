@@ -5398,7 +5398,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                 
                                 {/* Status Badges */}
                                 <div className="hidden xl:flex items-center gap-1 ml-2">
-                                  {quote.pickListId && (
+                                  {quote.pickListId && !quote.dcId && (
                                     <Badge 
                                       variant="outline" 
                                       className={`text-xs ${
@@ -5411,17 +5411,19 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                       {quote.pickListStatus === 'MATERIAL_READY' ? 'Ready' : quote.pickListStatus}
                                     </Badge>
                                   )}
-                                  {quote.dispatchStatus && quote.dispatchStatus !== 'PENDING' && (
+                                  {quote.dcId && quote.dcStatus && (
                                     <Badge 
                                       variant="outline" 
                                       className={`text-xs ${
-                                        quote.dispatchStatus === 'DELIVERED' ? 'bg-green-50 text-green-700 border-green-200' :
-                                        quote.dispatchStatus === 'DISPATCHED' ? 'bg-blue-50 text-blue-700 border-blue-200' :
+                                        quote.dcStatus === 'DELIVERED' ? 'bg-green-50 text-green-700 border-green-200' :
+                                        quote.dcStatus === 'ISSUED' ? 'bg-blue-50 text-blue-700 border-blue-200' :
                                         'bg-slate-50 text-slate-600'
                                       }`}
                                     >
                                       <Truck className="h-3 w-3 mr-1" />
-                                      {quote.dispatchStatus}
+                                      {quote.dcStatus === 'ISSUED' ? 'Dispatched' : 
+                                       quote.dcStatus === 'DELIVERED' ? 'Delivered' : 
+                                       quote.dcStatus}
                                     </Badge>
                                   )}
                                 </div>
