@@ -628,6 +628,21 @@ export async function PUT(request) {
           notes: `Delivered. Receiver: ${data?.receiverName || challan.receiverName}`
         }
 
+        // Update quote dcStatus to DELIVERED
+        if (challan.quoteId) {
+          await quotes.updateOne(
+            { id: challan.quoteId },
+            { 
+              $set: { 
+                dcStatus: 'DELIVERED',
+                dispatchStatus: 'DELIVERED',
+                deliveredAt: now,
+                updatedAt: now 
+              } 
+            }
+          )
+        }
+
         // Update project status
         if (challan.projectId) {
           await projects.updateOne(
