@@ -6939,17 +6939,102 @@ export function EnterpriseFlooringModule({ client, user, token }) {
         )}
 
         {installersTab === 'calendar' && (
-          <Card className="p-6">
-            <div className="text-center py-12">
-              <Calendar className="h-16 w-16 text-slate-300 mx-auto mb-4" />
-              <h3 className="text-lg font-semibold text-slate-700">Calendar View</h3>
-              <p className="text-slate-500 mt-2">Coming in Phase 2</p>
-              <p className="text-sm text-slate-400 mt-1">Visual calendar with drag-drop scheduling</p>
+          <Card className="p-4">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-semibold">Installation Calendar</h3>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="bg-blue-50 text-blue-700"><div className="w-2 h-2 bg-blue-500 rounded-full mr-2"></div>Scheduled</Badge>
+                <Badge variant="outline" className="bg-amber-50 text-amber-700"><div className="w-2 h-2 bg-amber-500 rounded-full mr-2"></div>In Progress</Badge>
+                <Badge variant="outline" className="bg-green-50 text-green-700"><div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>Completed</Badge>
+              </div>
+            </div>
+            {/* Simple Calendar Grid */}
+            <div className="border rounded-lg overflow-hidden">
+              {/* Calendar Header */}
+              <div className="grid grid-cols-7 bg-slate-50">
+                {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
+                  <div key={day} className="p-2 text-center text-sm font-medium text-slate-600 border-b">{day}</div>
+                ))}
+              </div>
+              {/* Calendar Grid - Current Month */}
+              <div className="grid grid-cols-7">
+                {(() => {
+                  const today = new Date()
+                  const year = today.getFullYear()
+                  const month = today.getMonth()
+                  const firstDay = new Date(year, month, 1).getDay()
+                  const daysInMonth = new Date(year, month + 1, 0).getDate()
+                  const days = []
+                  
+                  // Empty cells before first day
+                  for (let i = 0; i < firstDay; i++) {
+                    days.push(<div key={`empty-${i}`} className="h-24 border-b border-r bg-slate-50/50"></div>)
+                  }
+                  
+                  // Days of the month
+                  for (let day = 1; day <= daysInMonth; day++) {
+                    const date = new Date(year, month, day)
+                    const dateStr = date.toISOString().split('T')[0]
+                    const dayInstallations = installations.filter(inst => {
+                      const instDate = new Date(inst.scheduledDate).toISOString().split('T')[0]
+                      return instDate === dateStr
+                    })
+                    const isToday = day === today.getDate()
+                    
+                    days.push(
+                      <div key={day} className={`h-24 border-b border-r p-1 ${isToday ? 'bg-blue-50' : ''}`}>
+                        <div className={`text-sm mb-1 ${isToday ? 'font-bold text-blue-600' : 'text-slate-600'}`}>{day}</div>
+                        <div className="space-y-1 overflow-y-auto max-h-16">
+                          {dayInstallations.map(inst => (
+                            <div 
+                              key={inst.id} 
+                              className={`text-xs p-1 rounded truncate cursor-pointer ${
+                                inst.status === 'completed' ? 'bg-green-100 text-green-700' :
+                                inst.status === 'in_progress' ? 'bg-amber-100 text-amber-700' :
+                                'bg-blue-100 text-blue-700'
+                              }`}
+                              onClick={() => setDialogOpen({ type: 'view_installation', data: inst })}
+                            >
+                              {inst.customer?.name || 'Installation'}
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )
+                  }
+                  
+                  return days
+                })()}
+              </div>
             </div>
           </Card>
         )}
       </div>
     )
+  }
+
+  // Handle installation action
+  const handleInstallationAction = async (installationId, action, data = {}) => {
+    try {
+      setLoading(true)
+      const res = await fetch('/api/flooring/enhanced/installations', {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ id: installationId, action, ...data })
+      })
+      
+      if (res.ok) {
+        toast.success(`Installation ${action.replace('_', ' ')} successful`)
+        fetchInstallations()
+      } else {
+        const error = await res.json()
+        toast.error(error.error || 'Action failed')
+      }
+    } catch (error) {
+      toast.error('Error performing action')
+    } finally {
+      setLoading(false)
+    }
   }
 
   // Handle installer actions
