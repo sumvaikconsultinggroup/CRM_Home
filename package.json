@@ -68,6 +68,7 @@
         "openai": "^6.10.0",
         "qrcode.react": "^4.2.0",
         "react": "^18",
+        "react-big-calendar": "^1.19.4",
         "react-day-picker": "^9.7.0",
         "react-dom": "^18",
         "react-hook-form": "^7.58.1",
