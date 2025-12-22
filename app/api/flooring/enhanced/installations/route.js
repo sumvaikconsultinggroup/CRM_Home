@@ -257,6 +257,13 @@ export async function PUT(request) {
             await leads.updateOne({ id: project.crmLeadId }, { $set: { flooringStatus: 'installation_complete' } })
           }
         }
+        // Sync installation status to invoice
+        if (installation.invoiceId) {
+          await invoices.updateOne(
+            { id: installation.invoiceId },
+            { $set: { installationStatus: 'completed', updatedAt: now } }
+          )
+        }
         return successResponse({ message: 'Installation completed' })
 
       case 'hold':
