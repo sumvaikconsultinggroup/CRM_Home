@@ -575,6 +575,7 @@ export async function PUT(request) {
             { id: challan.quoteId },
             { 
               $set: { 
+                dcStatus: 'ISSUED',
                 dispatchStatus: 'DISPATCHED',
                 lastDispatchAt: now,
                 updatedAt: now 
