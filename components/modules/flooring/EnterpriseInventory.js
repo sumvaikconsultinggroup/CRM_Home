@@ -4488,6 +4488,12 @@ Please confirm receipt of goods and update status after delivery.`
           <TabsTrigger value="warehouses" className="flex items-center gap-2">
             <Warehouse className="h-4 w-4" /> Warehouses
           </TabsTrigger>
+          <TabsTrigger value="qc" className="flex items-center gap-2">
+            <ClipboardList className="h-4 w-4" /> QC
+          </TabsTrigger>
+          <TabsTrigger value="locations" className="flex items-center gap-2">
+            <MapPin className="h-4 w-4" /> Bin Locations
+          </TabsTrigger>
           <TabsTrigger value="access" className="flex items-center gap-2">
             <UserCheck className="h-4 w-4" /> Access
           </TabsTrigger>
@@ -4505,6 +4511,8 @@ Please confirm receipt of goods and update status after delivery.`
           <TabsContent value="cycle_count">{renderCycleCountView()}</TabsContent>
           <TabsContent value="reservations">{renderReservationsView()}</TabsContent>
           <TabsContent value="warehouses">{renderWarehouseManagement()}</TabsContent>
+          <TabsContent value="qc">{renderQCView()}</TabsContent>
+          <TabsContent value="locations">{renderBinLocationsView()}</TabsContent>
           <TabsContent value="access">{renderAccessView()}</TabsContent>
         </div>
       </Tabs>
