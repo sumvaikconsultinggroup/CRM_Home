@@ -306,6 +306,135 @@ export async function PUT(request) {
         await installations.updateOne({ id }, { $set: { checklist, updatedAt: now } })
         return successResponse({ message: 'Checklist updated' })
 
+      case 'add_photos':
+        // Add photos to before/during/after categories
+        const photoCategory = body.category || 'during' // before, during, after
+        const newPhotos = body.photos || []
+        const photoField = `photos.${photoCategory}`
+        await installations.updateOne({ id }, {
+          $push: { [photoField]: { $each: newPhotos.map(p => ({ ...p, uploadedAt: now, uploadedBy: user.id })) } },
+          $set: { updatedAt: now }
+        })
+        return successResponse({ message: `${newPhotos.length} photos added to ${photoCategory}` })
+
+      case 'update_room':
+        // Update room-wise progress
+        const roomId = body.roomId
+        const rooms = (installation.rooms || []).map(room => {
+          if (room.id === roomId) {
+            return { 
+              ...room, 
+              status: body.roomStatus || room.status,
+              progress: body.roomProgress !== undefined ? body.roomProgress : room.progress,
+              areaCompleted: body.areaCompleted !== undefined ? body.areaCompleted : room.areaCompleted,
+              notes: body.roomNotes || room.notes,
+              updatedAt: now
+            }
+          }
+          return room
+        })
+        // Calculate overall progress from rooms
+        const totalRoomArea = rooms.reduce((sum, r) => sum + (r.area || 0), 0)
+        const completedArea = rooms.reduce((sum, r) => sum + (r.areaCompleted || 0), 0)
+        const overallProgress = totalRoomArea > 0 ? Math.round((completedArea / totalRoomArea) * 100) : 0
+        
+        await installations.updateOne({ id }, { 
+          $set: { rooms, areaInstalled: completedArea, progress: overallProgress, updatedAt: now } 
+        })
+        return successResponse({ message: 'Room updated', progress: overallProgress })
+
+      case 'resolve_issue':
+        const issues = (installation.issues || []).map(issue => {
+          if (issue.id === body.issueId) {
+            return { 
+              ...issue, 
+              status: 'resolved', 
+              resolvedAt: now, 
+              resolvedBy: user.id,
+              resolution: body.resolution || 'Resolved'
+            }
+          }
+          return issue
+        })
+        await installations.updateOne({ id }, { $set: { issues, updatedAt: now } })
+        return successResponse({ message: 'Issue resolved' })
+
+      case 'assign_installer':
+        const installers = db.collection('flooring_installers')
+        // Update installation
+        await installations.updateOne({ id }, { 
+          $set: { 
+            assignedTo: body.installerId,
+            team: body.team || [body.installerId],
+            updatedAt: now 
+          },
+          $push: { statusHistory: { status: 'installer_assigned', timestamp: now, by: user.id, notes: `Assigned to ${body.installerName}` } }
+        })
+        // Update installer availability
+        if (body.installerId) {
+          await installers.updateOne({ id: body.installerId }, {
+            $set: { 
+              isAvailable: false, 
+              currentAssignment: {
+                installationId: id,
+                projectName: installation.customer?.name || 'Installation',
+                startDate: installation.scheduledDate,
+                expectedEnd: installation.estimatedEndDate
+              },
+              updatedAt: now
+            },
+            $inc: { 'metrics.totalJobs': 1 }
+          })
+        }
+        return successResponse({ message: 'Installer assigned' })
+
+      case 'unassign_installer':
+        const installersCol = db.collection('flooring_installers')
+        const prevInstallerId = installation.assignedTo
+        await installations.updateOne({ id }, { 
+          $set: { assignedTo: null, team: [], updatedAt: now },
+          $push: { statusHistory: { status: 'installer_unassigned', timestamp: now, by: user.id } }
+        })
+        if (prevInstallerId) {
+          await installersCol.updateOne({ id: prevInstallerId }, {
+            $set: { isAvailable: true, currentAssignment: null, updatedAt: now }
+          })
+        }
+        return successResponse({ message: 'Installer unassigned' })
+
+      case 'save_signature':
+        await installations.updateOne({ id }, { 
+          $set: { 
+            customerSignature: {
+              signature: body.signature, // base64 image
+              signedBy: body.signedBy,
+              signedAt: now
+            },
+            updatedAt: now 
+          }
+        })
+        return successResponse({ message: 'Signature saved' })
+
+      case 'generate_certificate':
+        const certId = uuidv4()
+        const certificate = {
+          id: certId,
+          certificateNumber: `CERT-${Date.now().toString(36).toUpperCase()}`,
+          generatedAt: now,
+          generatedBy: user.id,
+          customer: installation.customer,
+          site: installation.site,
+          totalArea: installation.totalArea,
+          completedDate: installation.actualEndDate,
+          warranty: installation.warranty,
+          installerName: body.installerName,
+          signature: installation.customerSignature
+        }
+        await installations.updateOne({ id }, { 
+          $set: { completionCertificate: certificate, updatedAt: now }
+        })
+        return successResponse({ message: 'Certificate generated', certificate })
+
       default:
         updateData.updatedAt = now
         updateData.updatedBy = user.id
