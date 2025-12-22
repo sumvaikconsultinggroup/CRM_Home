@@ -7890,8 +7890,6 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             actionLabel="Add Goods Receipt"
           />
         )}
-          </>
-        )}
 
         {/* Shipments Tab */}
         {inventoryTab === 'shipments' && (
