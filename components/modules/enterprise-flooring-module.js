@@ -7691,7 +7691,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       <div className="space-y-4">
         {/* Sub-tabs for Inventory Modules */}
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1">
+          <div className="flex items-center gap-1 bg-slate-100 rounded-lg p-1 flex-wrap">
             <Button 
               variant={inventoryTab === 'stock' ? 'default' : 'ghost'} 
               size="sm"
@@ -7726,6 +7726,29 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               onClick={() => { setInventoryTab('costing'); fetchLandedCosts(); }}
             >
               <Calculator className="h-4 w-4 mr-2" /> Costing
+            </Button>
+            {/* Phase 2 Sub-tabs */}
+            <div className="w-px h-6 bg-slate-300 mx-1" />
+            <Button 
+              variant={inventoryTab === 'qc' ? 'default' : 'ghost'} 
+              size="sm"
+              onClick={() => { setInventoryTab('qc'); fetchQcRecords(); }}
+            >
+              <ClipboardCheck className="h-4 w-4 mr-2" /> QC
+            </Button>
+            <Button 
+              variant={inventoryTab === 'locations' ? 'default' : 'ghost'} 
+              size="sm"
+              onClick={() => { setInventoryTab('locations'); fetchBinLocations(); }}
+            >
+              <MapPin className="h-4 w-4 mr-2" /> Locations
+            </Button>
+            <Button 
+              variant={inventoryTab === 'analytics' ? 'default' : 'ghost'} 
+              size="sm"
+              onClick={() => { setInventoryTab('analytics'); fetchStockAging(); }}
+            >
+              <BarChart3 className="h-4 w-4 mr-2" /> Analytics
             </Button>
           </div>
           <Button variant="ghost" size="sm" onClick={() => fetchInventory()}>
