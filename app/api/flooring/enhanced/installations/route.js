@@ -71,6 +71,7 @@ export async function POST(request) {
     const installations = db.collection('flooring_installations')
     const projects = db.collection('flooring_projects')
     const leads = db.collection('leads')
+    const invoices = db.collection('flooring_invoices')
 
     const installationId = uuidv4()
     const now = new Date().toISOString()
