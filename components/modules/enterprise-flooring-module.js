@@ -492,6 +492,17 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }, [token])
 
+  // Fetch installers/vendors
+  const fetchInstallers = useCallback(async () => {
+    try {
+      const res = await fetch('/api/flooring/enhanced/installers', { headers })
+      const data = await res.json()
+      if (data.installers) setInstallers(data.installers)
+    } catch (error) {
+      console.error('Installers fetch error:', error)
+    }
+  }, [token])
+
   // Fetch dispatches
   const fetchDispatches = useCallback(async () => {
     try {
