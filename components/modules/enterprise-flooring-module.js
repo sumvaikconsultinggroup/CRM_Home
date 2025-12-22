@@ -6533,6 +6533,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             >
               <Calendar className="h-4 w-4 mr-2" /> Calendar
             </Button>
+            <Button 
+              variant={installersTab === 'reports' ? 'default' : 'ghost'} 
+              size="sm"
+              onClick={() => setInstallersTab('reports')}
+            >
+              <BarChart3 className="h-4 w-4 mr-2" /> Reports
+            </Button>
           </div>
           <Button onClick={() => fetchInstallations()}>
             <RefreshCw className="h-4 w-4 mr-2" /> Refresh
