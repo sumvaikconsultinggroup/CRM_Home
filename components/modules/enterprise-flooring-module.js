@@ -8007,6 +8007,37 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             headers={headers}
           />
         )}
+
+        {/* QC Tab - Phase 2 */}
+        {inventoryTab === 'qc' && (
+          <QCTab 
+            qcRecords={qcRecords}
+            lots={lots}
+            onRefresh={fetchQcRecords}
+            headers={headers}
+            setDialogOpen={setDialogOpen}
+          />
+        )}
+
+        {/* Locations Tab - Phase 2 */}
+        {inventoryTab === 'locations' && (
+          <LocationsTab 
+            binLocations={binLocations}
+            lots={lots}
+            onRefresh={fetchBinLocations}
+            headers={headers}
+            setDialogOpen={setDialogOpen}
+          />
+        )}
+
+        {/* Analytics Tab - Phase 3 */}
+        {inventoryTab === 'analytics' && (
+          <AnalyticsTab 
+            stockAgingReport={stockAgingReport}
+            onRefresh={fetchStockAging}
+            headers={headers}
+          />
+        )}
       </div>
     )
   }
