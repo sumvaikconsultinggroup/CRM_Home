@@ -8513,6 +8513,940 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     )
   }
 
+  // QC Tab Component - Phase 2
+  const QCTab = ({ qcRecords, lots, onRefresh, headers, setDialogOpen }) => {
+    const { records = [], summary = {}, checklist = [] } = qcRecords || {}
+    const [selectedQc, setSelectedQc] = useState(null)
+    const [qcActionLoading, setQcActionLoading] = useState(false)
+
+    const getStatusColor = (status) => {
+      const colors = {
+        pending: 'bg-amber-100 text-amber-700',
+        in_progress: 'bg-blue-100 text-blue-700',
+        passed: 'bg-green-100 text-green-700',
+        failed: 'bg-red-100 text-red-700',
+        conditional: 'bg-purple-100 text-purple-700'
+      }
+      return colors[status] || 'bg-slate-100 text-slate-700'
+    }
+
+    const handleCreateQc = async (lotId) => {
+      try {
+        setQcActionLoading(true)
+        const res = await fetch('/api/flooring/enhanced/qc', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ lotId, qcType: 'incoming' })
+        })
+        if (res.ok) {
+          toast.success('QC record created')
+          onRefresh()
+        } else {
+          const error = await res.json()
+          toast.error(error.error || 'Failed to create QC record')
+        }
+      } catch (error) {
+        toast.error('Error creating QC record')
+      } finally {
+        setQcActionLoading(false)
+      }
+    }
+
+    const handleQcAction = async (qcId, action, data = {}) => {
+      try {
+        setQcActionLoading(true)
+        const res = await fetch('/api/flooring/enhanced/qc', {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({ id: qcId, action, ...data })
+        })
+        if (res.ok) {
+          toast.success('QC updated')
+          onRefresh()
+          setSelectedQc(null)
+        } else {
+          const error = await res.json()
+          toast.error(error.error || 'Action failed')
+        }
+      } catch (error) {
+        toast.error('Error updating QC')
+      } finally {
+        setQcActionLoading(false)
+      }
+    }
+
+    return (
+      <div className="space-y-4">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-6 gap-4">
+          <Card className="p-4 border-l-4 border-l-blue-500">
+            <p className="text-sm text-slate-500">Total QC Records</p>
+            <p className="text-2xl font-bold">{summary.total || 0}</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-amber-500">
+            <p className="text-sm text-slate-500">Pending</p>
+            <p className="text-2xl font-bold text-amber-600">{summary.pending || 0}</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-green-500">
+            <p className="text-sm text-slate-500">Passed</p>
+            <p className="text-2xl font-bold text-green-600">{summary.passed || 0}</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-red-500">
+            <p className="text-sm text-slate-500">Failed</p>
+            <p className="text-2xl font-bold text-red-600">{summary.failed || 0}</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-purple-500">
+            <p className="text-sm text-slate-500">Conditional</p>
+            <p className="text-2xl font-bold text-purple-600">{summary.conditional || 0}</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-slate-500">
+            <p className="text-sm text-slate-500">Defect Rate</p>
+            <p className="text-2xl font-bold">{summary.defectRate || 0}%</p>
+          </Card>
+        </div>
+
+        {/* Actions Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Input placeholder="Search QC records..." className="w-64" />
+            <Select defaultValue="all">
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Status</SelectItem>
+                <SelectItem value="pending">Pending</SelectItem>
+                <SelectItem value="passed">Passed</SelectItem>
+                <SelectItem value="failed">Failed</SelectItem>
+                <SelectItem value="conditional">Conditional</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={onRefresh}>
+              <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" /> New QC
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64">
+                <DropdownMenuLabel>Select Lot for QC</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {(lots || []).filter(l => !l.qcRecordId).slice(0, 10).map(lot => (
+                  <DropdownMenuItem 
+                    key={lot.id} 
+                    onClick={() => handleCreateQc(lot.id)}
+                    disabled={qcActionLoading}
+                  >
+                    <div className="flex flex-col">
+                      <span className="font-medium">{lot.lotNo}</span>
+                      <span className="text-xs text-slate-500">{lot.productName} - {lot.shade}</span>
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+                {(lots || []).filter(l => !l.qcRecordId).length === 0 && (
+                  <p className="text-sm text-slate-500 p-2">No lots pending QC</p>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        {/* QC Records Table */}
+        {records.length > 0 ? (
+          <Card>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>QC #</TableHead>
+                  <TableHead>Lot</TableHead>
+                  <TableHead>Product</TableHead>
+                  <TableHead>Shade/Grade</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Score</TableHead>
+                  <TableHead>Moisture</TableHead>
+                  <TableHead>Inspector</TableHead>
+                  <TableHead>Date</TableHead>
+                  <TableHead></TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {records.map(qc => (
+                  <TableRow key={qc.id} className="hover:bg-slate-50">
+                    <TableCell className="font-mono">{qc.qcNumber}</TableCell>
+                    <TableCell>
+                      <Badge variant="outline">{qc.lotNo}</Badge>
+                    </TableCell>
+                    <TableCell>{qc.productName}</TableCell>
+                    <TableCell>
+                      <div className="flex items-center gap-1">
+                        {qc.shade && <Badge className="bg-slate-100 text-slate-700">{qc.shade}</Badge>}
+                        {qc.gradeAssigned && <Badge className="bg-blue-100 text-blue-700">{qc.gradeAssigned}</Badge>}
+                      </div>
+                    </TableCell>
+                    <TableCell className="capitalize">{qc.qcType?.replace('_', ' ')}</TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(qc.status)}>{qc.status}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      {qc.overallScore !== null ? (
+                        <div className="flex items-center gap-2">
+                          <Progress value={qc.overallScore} className="w-12 h-2" />
+                          <span className="text-sm">{qc.overallScore}%</span>
+                        </div>
+                      ) : '-'}
+                    </TableCell>
+                    <TableCell>
+                      {qc.measurements?.moistureContent ? (
+                        <span className={qc.measurements.moistureContent > 9 || qc.measurements.moistureContent < 6 ? 'text-red-600' : 'text-green-600'}>
+                          <ThermometerSun className="h-3 w-3 inline mr-1" />
+                          {qc.measurements.moistureContent}%
+                        </span>
+                      ) : '-'}
+                    </TableCell>
+                    <TableCell>{qc.inspectorName}</TableCell>
+                    <TableCell>{new Date(qc.createdAt).toLocaleDateString()}</TableCell>
+                    <TableCell>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="sm">
+                            <MoreVertical className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => setSelectedQc(qc)}>
+                            <Eye className="h-4 w-4 mr-2" /> View Details
+                          </DropdownMenuItem>
+                          {qc.status === 'pending' && (
+                            <DropdownMenuItem onClick={() => handleQcAction(qc.id, 'complete')}>
+                              <CheckCircle2 className="h-4 w-4 mr-2" /> Complete QC
+                            </DropdownMenuItem>
+                          )}
+                          {(qc.status === 'passed' || qc.status === 'failed' || qc.status === 'conditional') && !qc.decision && (
+                            <>
+                              <DropdownMenuItem onClick={() => handleQcAction(qc.id, 'make_decision', { decision: 'accept' })}>
+                                <Check className="h-4 w-4 mr-2 text-green-600" /> Accept
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleQcAction(qc.id, 'make_decision', { decision: 'reject' })}>
+                                <X className="h-4 w-4 mr-2 text-red-600" /> Reject
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => handleQcAction(qc.id, 'make_decision', { decision: 'conditional_accept' })}>
+                                <AlertTriangle className="h-4 w-4 mr-2 text-amber-600" /> Conditional Accept
+                              </DropdownMenuItem>
+                            </>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        ) : (
+          <Card className="p-12 text-center">
+            <ClipboardCheck className="h-12 w-12 mx-auto text-slate-300 mb-4" />
+            <h3 className="font-semibold text-lg mb-2">No QC Records</h3>
+            <p className="text-slate-500 mb-4">Create a QC record for incoming lots to track quality.</p>
+          </Card>
+        )}
+
+        {/* QC Detail Dialog */}
+        {selectedQc && (
+          <Dialog open={!!selectedQc} onOpenChange={() => setSelectedQc(null)}>
+            <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <ClipboardCheck className="h-5 w-5" /> QC Record: {selectedQc.qcNumber}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-6">
+                {/* Basic Info */}
+                <div className="grid grid-cols-3 gap-4">
+                  <div>
+                    <Label className="text-slate-500">Lot Number</Label>
+                    <p className="font-medium">{selectedQc.lotNo}</p>
+                  </div>
+                  <div>
+                    <Label className="text-slate-500">Product</Label>
+                    <p className="font-medium">{selectedQc.productName}</p>
+                  </div>
+                  <div>
+                    <Label className="text-slate-500">Status</Label>
+                    <Badge className={getStatusColor(selectedQc.status)}>{selectedQc.status}</Badge>
+                  </div>
+                </div>
+
+                {/* Measurements */}
+                <div>
+                  <h4 className="font-semibold mb-3">Measurements</h4>
+                  <div className="grid grid-cols-4 gap-4">
+                    <Card className="p-3">
+                      <p className="text-xs text-slate-500">Moisture Content</p>
+                      <p className="text-lg font-bold">{selectedQc.measurements?.moistureContent || '-'}%</p>
+                      <p className="text-xs text-slate-400">Target: {selectedQc.measurements?.moistureTarget?.min}-{selectedQc.measurements?.moistureTarget?.max}%</p>
+                    </Card>
+                    <Card className="p-3">
+                      <p className="text-xs text-slate-500">Thickness</p>
+                      <p className="text-lg font-bold">{selectedQc.measurements?.thickness || '-'} mm</p>
+                    </Card>
+                    <Card className="p-3">
+                      <p className="text-xs text-slate-500">Overall Score</p>
+                      <p className="text-lg font-bold">{selectedQc.overallScore || '-'}%</p>
+                    </Card>
+                    <Card className="p-3">
+                      <p className="text-xs text-slate-500">Grade Assigned</p>
+                      <p className="text-lg font-bold">{selectedQc.gradeAssigned || '-'}</p>
+                    </Card>
+                  </div>
+                </div>
+
+                {/* Checklist */}
+                <div>
+                  <h4 className="font-semibold mb-3">Inspection Checklist</h4>
+                  <div className="space-y-2">
+                    {(selectedQc.checklist || []).map((item, idx) => (
+                      <div key={idx} className="flex items-center justify-between p-2 bg-slate-50 rounded">
+                        <div className="flex items-center gap-2">
+                          <Badge variant="outline" className="text-xs">{item.category}</Badge>
+                          <span className="text-sm">{item.item}</span>
+                          {item.required && <span className="text-red-500 text-xs">*</span>}
+                        </div>
+                        <Badge className={
+                          item.result === 'pass' ? 'bg-green-100 text-green-700' :
+                          item.result === 'fail' ? 'bg-red-100 text-red-700' :
+                          'bg-slate-100 text-slate-700'
+                        }>
+                          {item.result || 'Not checked'}
+                        </Badge>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Defects */}
+                {(selectedQc.defects || []).length > 0 && (
+                  <div>
+                    <h4 className="font-semibold mb-3 text-red-600">Defects Found ({selectedQc.totalDefects})</h4>
+                    <div className="space-y-2">
+                      {selectedQc.defects.map((defect, idx) => (
+                        <div key={idx} className="flex items-center justify-between p-2 bg-red-50 rounded border border-red-200">
+                          <div>
+                            <span className="font-medium capitalize">{defect.type?.replace('_', ' ')}</span>
+                            <span className="text-slate-500 ml-2">x{defect.count}</span>
+                          </div>
+                          <Badge className={
+                            defect.severity === 'critical' ? 'bg-red-600 text-white' :
+                            defect.severity === 'major' ? 'bg-orange-100 text-orange-700' :
+                            'bg-yellow-100 text-yellow-700'
+                          }>
+                            {defect.severity}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Decision */}
+                {selectedQc.decision && (
+                  <div className="p-4 bg-slate-50 rounded-lg">
+                    <h4 className="font-semibold mb-2">Decision: <span className="capitalize">{selectedQc.decision?.replace('_', ' ')}</span></h4>
+                    {selectedQc.decisionNotes && <p className="text-sm text-slate-600">{selectedQc.decisionNotes}</p>}
+                    <p className="text-xs text-slate-500 mt-2">Decided on {new Date(selectedQc.decisionDate).toLocaleDateString()}</p>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+    )
+  }
+
+  // Locations Tab Component - Phase 2
+  const LocationsTab = ({ binLocations, lots, onRefresh, headers, setDialogOpen }) => {
+    const { bins = [], summary = {} } = binLocations || {}
+    const [viewMode, setViewMode] = useState('grid') // grid, list
+    const [selectedBin, setSelectedBin] = useState(null)
+    const [locationActionLoading, setLocationActionLoading] = useState(false)
+
+    const getOccupancyColor = (percent) => {
+      if (percent >= 90) return 'bg-red-500'
+      if (percent >= 70) return 'bg-amber-500'
+      return 'bg-green-500'
+    }
+
+    const handleBulkCreate = async () => {
+      try {
+        setLocationActionLoading(true)
+        const res = await fetch('/api/flooring/enhanced/bin-locations', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            bulkCreate: true,
+            warehouseId: 'main',
+            warehouseName: 'Main Warehouse',
+            zones: ['A', 'B', 'C'],
+            racksPerZone: 5,
+            shelvesPerRack: 4,
+            binsPerShelf: 3,
+            capacityPerBin: 500
+          })
+        })
+        if (res.ok) {
+          const data = await res.json()
+          toast.success(`${data.count} bin locations created`)
+          onRefresh()
+        } else {
+          const error = await res.json()
+          toast.error(error.error || 'Failed to create locations')
+        }
+      } catch (error) {
+        toast.error('Error creating locations')
+      } finally {
+        setLocationActionLoading(false)
+      }
+    }
+
+    const handleAssignLot = async (lotId, binCode) => {
+      try {
+        setLocationActionLoading(true)
+        const res = await fetch('/api/flooring/enhanced/bin-locations', {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({ action: 'assign_lot', lotId, binCode })
+        })
+        if (res.ok) {
+          toast.success('Lot assigned to bin')
+          onRefresh()
+        } else {
+          const error = await res.json()
+          toast.error(error.error || 'Failed to assign lot')
+        }
+      } catch (error) {
+        toast.error('Error assigning lot')
+      } finally {
+        setLocationActionLoading(false)
+      }
+    }
+
+    // Group bins by zone
+    const binsByZone = bins.reduce((acc, bin) => {
+      const zone = bin.zone || 'Unknown'
+      if (!acc[zone]) acc[zone] = []
+      acc[zone].push(bin)
+      return acc
+    }, {})
+
+    return (
+      <div className="space-y-4">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-6 gap-4">
+          <Card className="p-4 border-l-4 border-l-blue-500">
+            <p className="text-sm text-slate-500">Total Bins</p>
+            <p className="text-2xl font-bold">{summary.total || 0}</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-green-500">
+            <p className="text-sm text-slate-500">Available</p>
+            <p className="text-2xl font-bold text-green-600">{summary.available || 0}</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-amber-500">
+            <p className="text-sm text-slate-500">Occupied</p>
+            <p className="text-2xl font-bold text-amber-600">{summary.occupied || 0}</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-slate-500">
+            <p className="text-sm text-slate-500">Empty</p>
+            <p className="text-2xl font-bold">{summary.empty || 0}</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-purple-500">
+            <p className="text-sm text-slate-500">Total Capacity</p>
+            <p className="text-2xl font-bold">{(summary.totalCapacity || 0).toLocaleString()} sqft</p>
+          </Card>
+          <Card className="p-4 border-l-4 border-l-indigo-500">
+            <p className="text-sm text-slate-500">Avg Occupancy</p>
+            <p className="text-2xl font-bold">{summary.avgOccupancy || 0}%</p>
+          </Card>
+        </div>
+
+        {/* Actions Header */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <Input placeholder="Search locations (e.g., A-01-2-1)..." className="w-64" />
+            <Select defaultValue="all">
+              <SelectTrigger className="w-32">
+                <SelectValue placeholder="Zone" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Zones</SelectItem>
+                {Object.keys(binsByZone).map(zone => (
+                  <SelectItem key={zone} value={zone}>Zone {zone}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="flex items-center gap-2">
+            <div className="flex items-center border rounded-lg">
+              <Button 
+                variant={viewMode === 'grid' ? 'default' : 'ghost'} 
+                size="sm"
+                onClick={() => setViewMode('grid')}
+                className="rounded-r-none"
+              >
+                <Grid3X3 className="h-4 w-4" />
+              </Button>
+              <Button 
+                variant={viewMode === 'list' ? 'default' : 'ghost'} 
+                size="sm"
+                onClick={() => setViewMode('list')}
+                className="rounded-l-none"
+              >
+                <ClipboardList className="h-4 w-4" />
+              </Button>
+            </div>
+            <Button variant="outline" onClick={onRefresh}>
+              <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+            </Button>
+            {bins.length === 0 && (
+              <Button onClick={handleBulkCreate} disabled={locationActionLoading}>
+                {locationActionLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
+                Setup Warehouse Bins
+              </Button>
+            )}
+          </div>
+        </div>
+
+        {/* Bins Display */}
+        {bins.length > 0 ? (
+          viewMode === 'grid' ? (
+            <div className="space-y-6">
+              {Object.entries(binsByZone).map(([zone, zoneBins]) => (
+                <Card key={zone} className="p-4">
+                  <h4 className="font-semibold mb-4 flex items-center gap-2">
+                    <MapPin className="h-4 w-4" /> Zone {zone}
+                    <Badge variant="outline">{zoneBins.length} bins</Badge>
+                  </h4>
+                  <div className="grid grid-cols-12 gap-2">
+                    {zoneBins.slice(0, 60).map(bin => (
+                      <div 
+                        key={bin.id}
+                        className={`
+                          p-2 rounded border cursor-pointer transition-all hover:shadow-md
+                          ${bin.lotCount > 0 ? 'bg-blue-50 border-blue-200' : 'bg-slate-50 border-slate-200'}
+                          ${bin.occupancyPercent >= 90 ? 'border-red-400' : ''}
+                        `}
+                        onClick={() => setSelectedBin(bin)}
+                        title={`${bin.code} - ${bin.currentOccupancy}/${bin.capacity} sqft`}
+                      >
+                        <p className="text-xs font-mono truncate">{bin.code}</p>
+                        <div className="mt-1 h-1 bg-slate-200 rounded">
+                          <div 
+                            className={`h-full rounded ${getOccupancyColor(bin.occupancyPercent)}`}
+                            style={{ width: `${bin.occupancyPercent}%` }}
+                          />
+                        </div>
+                        <p className="text-[10px] text-slate-500 mt-1">{bin.lotCount || 0} lots</p>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <Card>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Bin Code</TableHead>
+                    <TableHead>Zone</TableHead>
+                    <TableHead>Rack</TableHead>
+                    <TableHead>Shelf</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Capacity</TableHead>
+                    <TableHead>Occupied</TableHead>
+                    <TableHead>% Full</TableHead>
+                    <TableHead>Lots</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {bins.slice(0, 50).map(bin => (
+                    <TableRow key={bin.id} className="hover:bg-slate-50">
+                      <TableCell className="font-mono font-medium">{bin.code}</TableCell>
+                      <TableCell><Badge variant="outline">{bin.zone}</Badge></TableCell>
+                      <TableCell>{bin.rack}</TableCell>
+                      <TableCell>{bin.shelf}</TableCell>
+                      <TableCell className="capitalize">{bin.type}</TableCell>
+                      <TableCell>{bin.capacity} sqft</TableCell>
+                      <TableCell>{bin.currentOccupancy || 0} sqft</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Progress value={bin.occupancyPercent} className="w-12 h-2" />
+                          <span className="text-sm">{bin.occupancyPercent}%</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>{bin.lotCount || 0}</TableCell>
+                      <TableCell>
+                        <Badge className={bin.status === 'available' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'}>
+                          {bin.status}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="ghost" size="sm" onClick={() => setSelectedBin(bin)}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </Card>
+          )
+        ) : (
+          <Card className="p-12 text-center">
+            <MapPin className="h-12 w-12 mx-auto text-slate-300 mb-4" />
+            <h3 className="font-semibold text-lg mb-2">No Bin Locations</h3>
+            <p className="text-slate-500 mb-4">Setup warehouse bin locations for efficient inventory management.</p>
+            <Button onClick={handleBulkCreate} disabled={locationActionLoading}>
+              {locationActionLoading ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Plus className="h-4 w-4 mr-2" />}
+              Setup Warehouse Bins
+            </Button>
+          </Card>
+        )}
+
+        {/* Bin Detail Dialog */}
+        {selectedBin && (
+          <Dialog open={!!selectedBin} onOpenChange={() => setSelectedBin(null)}>
+            <DialogContent className="max-w-lg">
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                  <MapPin className="h-5 w-5" /> Bin: {selectedBin.code}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-slate-500">Zone</Label>
+                    <p className="font-medium">{selectedBin.zone}</p>
+                  </div>
+                  <div>
+                    <Label className="text-slate-500">Rack / Shelf</Label>
+                    <p className="font-medium">{selectedBin.rack} / {selectedBin.shelf}</p>
+                  </div>
+                  <div>
+                    <Label className="text-slate-500">Capacity</Label>
+                    <p className="font-medium">{selectedBin.capacity} sqft</p>
+                  </div>
+                  <div>
+                    <Label className="text-slate-500">Occupied</Label>
+                    <p className="font-medium">{selectedBin.currentOccupancy || 0} sqft ({selectedBin.occupancyPercent}%)</p>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-slate-500 mb-2 block">Occupancy</Label>
+                  <Progress value={selectedBin.occupancyPercent} className="h-3" />
+                </div>
+
+                {selectedBin.lotCount > 0 && (
+                  <div>
+                    <Label className="text-slate-500 mb-2 block">Lots in this Bin ({selectedBin.lotCount})</Label>
+                    <p className="text-sm text-slate-500">View lots assigned to this location.</p>
+                  </div>
+                )}
+
+                {/* Assign Lot */}
+                {selectedBin.occupancyPercent < 100 && (lots || []).filter(l => !l.binLocation).length > 0 && (
+                  <div>
+                    <Label className="text-slate-500 mb-2 block">Assign Lot</Label>
+                    <Select onValueChange={(lotId) => handleAssignLot(lotId, selectedBin.code)}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select lot to assign" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(lots || []).filter(l => !l.binLocation).slice(0, 10).map(lot => (
+                          <SelectItem key={lot.id} value={lot.id}>
+                            {lot.lotNo} - {lot.productName} ({lot.sqft} sqft)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+              </div>
+            </DialogContent>
+          </Dialog>
+        )}
+      </div>
+    )
+  }
+
+  // Analytics Tab Component - Phase 3
+  const AnalyticsTab = ({ stockAgingReport, onRefresh, headers }) => {
+    const [reportType, setReportType] = useState('aging')
+    const [analyticsLoading, setAnalyticsLoading] = useState(false)
+
+    const handleReportChange = async (type) => {
+      setReportType(type)
+      setAnalyticsLoading(true)
+      try {
+        const res = await fetch(`/api/flooring/enhanced/stock-aging?type=${type}`, { headers })
+        const data = await res.json()
+        // This would update the parent state - for now we rely on onRefresh
+      } catch (error) {
+        console.error('Error fetching report:', error)
+      } finally {
+        setAnalyticsLoading(false)
+      }
+      onRefresh(type)
+    }
+
+    const report = stockAgingReport || {}
+    const buckets = report.buckets || []
+    const summary = report.summary || {}
+
+    return (
+      <div className="space-y-4">
+        {/* Report Type Selector */}
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            {[
+              { id: 'aging', label: 'Stock Aging', icon: Clock },
+              { id: 'abc', label: 'ABC Analysis', icon: BarChart3 },
+              { id: 'slow_moving', label: 'Slow Moving', icon: AlertCircle },
+              { id: 'dead_stock', label: 'Dead Stock', icon: AlertTriangle }
+            ].map(rt => (
+              <Button 
+                key={rt.id}
+                variant={reportType === rt.id ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleReportChange(rt.id)}
+              >
+                <rt.icon className="h-4 w-4 mr-2" /> {rt.label}
+              </Button>
+            ))}
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => onRefresh(reportType)}>
+            <RefreshCw className="h-4 w-4" />
+          </Button>
+        </div>
+
+        {/* Stock Aging Report */}
+        {reportType === 'aging' && (
+          <>
+            {/* Summary */}
+            <div className="grid grid-cols-5 gap-4">
+              <Card className="p-4 border-l-4 border-l-blue-500">
+                <p className="text-sm text-slate-500">Total Lots</p>
+                <p className="text-2xl font-bold">{summary.totalLots || 0}</p>
+              </Card>
+              <Card className="p-4 border-l-4 border-l-purple-500">
+                <p className="text-sm text-slate-500">Total Sqft</p>
+                <p className="text-2xl font-bold">{(summary.totalSqft || 0).toLocaleString()}</p>
+              </Card>
+              <Card className="p-4 border-l-4 border-l-green-500">
+                <p className="text-sm text-slate-500">Total Value</p>
+                <p className="text-2xl font-bold">₹{((summary.totalValue || 0) / 100000).toFixed(1)}L</p>
+              </Card>
+              <Card className="p-4 border-l-4 border-l-amber-500">
+                <p className="text-sm text-slate-500">Stock 90+ Days</p>
+                <p className="text-2xl font-bold text-amber-600">{summary.oldStock90Plus || 0}</p>
+              </Card>
+              <Card className="p-4 border-l-4 border-l-red-500">
+                <p className="text-sm text-slate-500">Old Stock Value</p>
+                <p className="text-2xl font-bold text-red-600">{summary.percentOld90Plus || 0}%</p>
+              </Card>
+            </div>
+
+            {/* Aging Buckets */}
+            <div className="grid grid-cols-6 gap-4">
+              {buckets.map((bucket, idx) => (
+                <Card key={idx} className={`p-4 ${idx >= 3 ? 'border-amber-200 bg-amber-50' : ''} ${idx >= 5 ? 'border-red-200 bg-red-50' : ''}`}>
+                  <p className="text-sm font-medium">{bucket.days}</p>
+                  <p className="text-2xl font-bold">{bucket.count}</p>
+                  <p className="text-xs text-slate-500">{bucket.sqft?.toLocaleString()} sqft</p>
+                  <p className="text-xs text-slate-500">₹{(bucket.value / 1000).toFixed(0)}K</p>
+                </Card>
+              ))}
+            </div>
+
+            {/* Oldest Lots */}
+            {buckets.length > 0 && buckets[buckets.length - 1].lots?.length > 0 && (
+              <Card className="p-4 border-red-200">
+                <h4 className="font-semibold text-red-600 mb-4 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" /> Oldest Stock (365+ days) - Action Required
+                </h4>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Lot #</TableHead>
+                      <TableHead>Product</TableHead>
+                      <TableHead>Shade</TableHead>
+                      <TableHead>Age (Days)</TableHead>
+                      <TableHead>Sqft</TableHead>
+                      <TableHead>Value</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {buckets[buckets.length - 1].lots.slice(0, 10).map(lot => (
+                      <TableRow key={lot.id}>
+                        <TableCell className="font-mono">{lot.lotNo}</TableCell>
+                        <TableCell>{lot.productName}</TableCell>
+                        <TableCell>{lot.shade}</TableCell>
+                        <TableCell className="text-red-600 font-medium">{lot.ageDays}</TableCell>
+                        <TableCell>{lot.availableSqft?.toLocaleString()}</TableCell>
+                        <TableCell>₹{(lot.value / 1000).toFixed(0)}K</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Card>
+            )}
+          </>
+        )}
+
+        {/* ABC Analysis */}
+        {reportType === 'abc' && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              {['A', 'B', 'C'].map(category => {
+                const cat = report.categories?.[category] || {}
+                return (
+                  <Card key={category} className={`p-4 border-l-4 ${
+                    category === 'A' ? 'border-l-green-500' :
+                    category === 'B' ? 'border-l-amber-500' :
+                    'border-l-red-500'
+                  }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold text-lg">Category {category}</h4>
+                      <Badge className={
+                        category === 'A' ? 'bg-green-100 text-green-700' :
+                        category === 'B' ? 'bg-amber-100 text-amber-700' :
+                        'bg-red-100 text-red-700'
+                      }>
+                        {cat.count || 0} items
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-slate-500">{cat.description}</p>
+                    <p className="text-xl font-bold mt-2">₹{((cat.totalValue || 0) / 100000).toFixed(1)}L</p>
+                  </Card>
+                )
+              })}
+            </div>
+            
+            {/* Top A items */}
+            {report.categories?.A?.items?.length > 0 && (
+              <Card className="p-4">
+                <h4 className="font-semibold mb-4 text-green-600">Top Category A Items (Fast Moving)</h4>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product</TableHead>
+                      <TableHead>SKU</TableHead>
+                      <TableHead>Movement Count</TableHead>
+                      <TableHead>Qty Moved</TableHead>
+                      <TableHead>Value</TableHead>
+                      <TableHead>% of Total</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {report.categories.A.items.slice(0, 10).map(item => (
+                      <TableRow key={item.productId}>
+                        <TableCell>{item.productName}</TableCell>
+                        <TableCell><Badge variant="outline">{item.sku}</Badge></TableCell>
+                        <TableCell>{item.movementCount}</TableCell>
+                        <TableCell>{item.totalQtyMoved?.toLocaleString()}</TableCell>
+                        <TableCell>₹{(item.totalValue / 1000).toFixed(0)}K</TableCell>
+                        <TableCell>{item.valuePercent?.toFixed(1)}%</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {/* Slow Moving / Dead Stock */}
+        {(reportType === 'slow_moving' || reportType === 'dead_stock') && (
+          <div className="space-y-4">
+            <Card className="p-4 border-amber-200 bg-amber-50">
+              <div className="flex items-center gap-2 mb-4">
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+                <h4 className="font-semibold text-amber-800">
+                  {reportType === 'slow_moving' ? 'Slow Moving Stock (90+ days without movement)' : 'Dead Stock (180+ days without movement)'}
+                </h4>
+              </div>
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div>
+                  <p className="text-sm text-amber-700">Total Items</p>
+                  <p className="text-2xl font-bold text-amber-800">{report.summary?.totalSlowItems || report.summary?.totalDeadItems || 0}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-amber-700">Stock Value</p>
+                  <p className="text-2xl font-bold text-amber-800">₹{((report.summary?.totalStockValue || report.summary?.deadStockValue || 0) / 100000).toFixed(1)}L</p>
+                </div>
+                <div>
+                  <p className="text-sm text-amber-700">% of Inventory</p>
+                  <p className="text-2xl font-bold text-amber-800">{report.summary?.percentOfInventory || report.summary?.percentOfValue || 0}%</p>
+                </div>
+              </div>
+
+              {(report.items || []).length > 0 && (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Product</TableHead>
+                      <TableHead>SKU</TableHead>
+                      <TableHead>Current Stock</TableHead>
+                      <TableHead>Stock Value</TableHead>
+                      <TableHead>Warehouse</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {report.items.slice(0, 20).map(item => (
+                      <TableRow key={item.productId}>
+                        <TableCell>{item.productName}</TableCell>
+                        <TableCell><Badge variant="outline">{item.sku}</Badge></TableCell>
+                        <TableCell>{item.currentStock?.toLocaleString()} sqft</TableCell>
+                        <TableCell>₹{(item.stockValue / 1000).toFixed(0)}K</TableCell>
+                        <TableCell>{item.warehouseName || '-'}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              )}
+
+              {report.summary?.recommendations && (
+                <div className="mt-4 p-3 bg-white rounded border border-amber-200">
+                  <h5 className="font-medium text-amber-800 mb-2">Recommendations</h5>
+                  <ul className="list-disc list-inside text-sm text-amber-700 space-y-1">
+                    {report.summary.recommendations.map((rec, idx) => (
+                      <li key={idx}>{rec}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </Card>
+          </div>
+        )}
+
+        {!stockAgingReport && (
+          <Card className="p-12 text-center">
+            <BarChart3 className="h-12 w-12 mx-auto text-slate-300 mb-4" />
+            <h3 className="font-semibold text-lg mb-2">Loading Analytics</h3>
+            <p className="text-slate-500">Generating inventory analytics report...</p>
+          </Card>
+        )}
+      </div>
+    )
+  }
+
   // Finance Tab - Enterprise Level Self-contained module finance with 200+ features
   const renderFinance = () => {
     return (
