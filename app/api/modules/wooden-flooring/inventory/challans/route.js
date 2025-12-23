@@ -202,6 +202,7 @@ export async function PUT(request) {
     const challanCollection = db.collection('wf_inventory_challans')
     const movementCollection = db.collection('wf_inventory_movements')
     const stockCollection = db.collection('wf_inventory_stock')
+    const stockLedger = db.collection('wf_stock_ledger') // Stock Ledger for double-entry
 
     const challan = await challanCollection.findOne({ id })
     if (!challan) return errorResponse('Challan not found', 404)
@@ -215,7 +216,7 @@ export async function PUT(request) {
           return errorResponse('Only draft challans can be dispatched', 400)
         }
 
-        // Create goods issue movements and update stock
+        // Create goods issue movements, ledger entries, and update stock
         for (const item of challan.items) {
           const stock = await stockCollection.findOne({ 
             productId: item.productId, 
@@ -223,7 +224,7 @@ export async function PUT(request) {
           })
 
           if (!stock || stock.quantity < item.quantity) {
-            return errorResponse(`Insufficient stock for ${item.productName}`, 400)
+            return errorResponse(`Insufficient stock for ${item.productName}. Available: ${stock?.quantity || 0}, Required: ${item.quantity}`, 400)
           }
 
           // Create goods issue movement
@@ -240,8 +241,8 @@ export async function PUT(request) {
             warehouseName: challan.warehouseName,
             quantity: item.quantity,
             quantityChange: -item.quantity,
-            unitCost: stock.avgCostPrice,
-            totalCost: item.quantity * stock.avgCostPrice,
+            unitCost: stock.avgCostPrice || stock.avgCost || 0,
+            totalCost: item.quantity * (stock.avgCostPrice || stock.avgCost || 0),
             referenceType: 'delivery_challan',
             referenceId: challan.id,
             referenceNumber: challan.challanNumber,
@@ -255,6 +256,55 @@ export async function PUT(request) {
 
           await movementCollection.insertOne(movement)
 
+          // ========================================
+          // CREATE STOCK LEDGER ENTRY (DOUBLE-ENTRY)
+          // ========================================
+          const ledgerSequence = await stockLedger
+            .find({ productId: item.productId, warehouseId: challan.warehouseId })
+            .sort({ sequence: -1 })
+            .limit(1)
+            .toArray()
+          const nextSequence = (ledgerSequence[0]?.sequence || 0) + 1
+
+          const avgCost = stock.avgCostPrice || stock.avgCost || 0
+          const ledgerEntry = {
+            id: uuidv4(),
+            sequence: nextSequence,
+            productId: item.productId,
+            productName: item.productName,
+            sku: item.sku,
+            warehouseId: challan.warehouseId,
+            warehouseName: challan.warehouseName,
+            movementType: 'challan_dispatch',
+            movementLabel: 'Challan Dispatch',
+            direction: 'OUT',
+            quantity: item.quantity,
+            unit: 'sqft',
+            quantityChange: -item.quantity,
+            balanceBefore: stock.quantity,
+            balanceAfter: stock.quantity - item.quantity,
+            unitCost: avgCost,
+            totalValue: item.quantity * avgCost,
+            avgCostBefore: avgCost,
+            avgCostAfter: avgCost, // Cost stays same on OUT
+            refDocType: 'challan',
+            refDocId: challan.id,
+            refDocNumber: challan.challanNumber,
+            customerId: challan.customerId,
+            customerName: challan.customerName,
+            projectId: challan.projectId,
+            projectName: challan.projectName,
+            notes: `Challan Dispatch - ${challan.challanNumber} to ${challan.customerName || challan.projectName || 'Customer'}`,
+            createdBy: user.id,
+            createdByName: user.name || user.email,
+            createdAt: new Date().toISOString(),
+            status: 'posted',
+            posted: true,
+            postedAt: new Date().toISOString()
+          }
+          await stockLedger.insertOne(ledgerEntry)
+          // ========================================
+
           // Update stock
           await stockCollection.updateOne(
             { productId: item.productId, warehouseId: challan.warehouseId },
@@ -263,6 +313,7 @@ export async function PUT(request) {
               $set: {
                 availableQty: (stock.quantity - item.quantity) - (stock.reservedQty || 0),
                 lastMovementDate: new Date(),
+                lastLedgerEntryId: ledgerEntry.id,
                 updatedAt: new Date()
               }
             }
@@ -273,6 +324,7 @@ export async function PUT(request) {
         updateData.dispatchedAt = new Date()
         updateData.dispatchedBy = user.id
         updateData.dispatchedByName = user.name || user.email
+        updateData.ledgerEntriesCreated = true
         break
 
       case 'deliver':
@@ -291,9 +343,16 @@ export async function PUT(request) {
           return errorResponse('Cannot cancel a delivered challan', 400)
         }
         
-        // If already dispatched, reverse the stock movements
+        // If already dispatched, reverse the stock movements and create reversal ledger entries
         if (challan.status === 'dispatched') {
           for (const item of challan.items) {
+            const stock = await stockCollection.findOne({ 
+              productId: item.productId, 
+              warehouseId: challan.warehouseId 
+            })
+            const currentQty = stock?.quantity || 0
+            const avgCost = stock?.avgCostPrice || stock?.avgCost || 0
+
             await stockCollection.updateOne(
               { productId: item.productId, warehouseId: challan.warehouseId },
               {
@@ -325,6 +384,47 @@ export async function PUT(request) {
               createdAt: new Date()
             }
             await movementCollection.insertOne(movement)
+
+            // Create reversal ledger entry
+            const ledgerSequence = await stockLedger
+              .find({ productId: item.productId, warehouseId: challan.warehouseId })
+              .sort({ sequence: -1 })
+              .limit(1)
+              .toArray()
+            const nextSequence = (ledgerSequence[0]?.sequence || 0) + 1
+
+            const reversalLedgerEntry = {
+              id: uuidv4(),
+              sequence: nextSequence,
+              productId: item.productId,
+              productName: item.productName,
+              sku: item.sku,
+              warehouseId: challan.warehouseId,
+              warehouseName: challan.warehouseName,
+              movementType: 'challan_dispatch_reversal',
+              movementLabel: 'Challan Dispatch (Reversal)',
+              direction: 'IN',
+              quantity: item.quantity,
+              unit: 'sqft',
+              quantityChange: item.quantity,
+              balanceBefore: currentQty,
+              balanceAfter: currentQty + item.quantity,
+              unitCost: avgCost,
+              totalValue: item.quantity * avgCost,
+              avgCostBefore: avgCost,
+              avgCostAfter: avgCost,
+              refDocType: 'challan_reversal',
+              refDocId: challan.id,
+              refDocNumber: `REV-${challan.challanNumber}`,
+              notes: `Reversal - Challan ${challan.challanNumber} cancelled`,
+              createdBy: user.id,
+              createdByName: user.name || user.email,
+              createdAt: new Date().toISOString(),
+              status: 'posted',
+              posted: true,
+              postedAt: new Date().toISOString()
+            }
+            await stockLedger.insertOne(reversalLedgerEntry)
           }
         }
 
