@@ -10765,8 +10765,9 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                           <TableRow>
                             <TableHead>User</TableHead>
                             <TableHead>Email</TableHead>
-                            <TableHead>Current Role</TableHead>
-                            <TableHead>Role Level</TableHead>
+                            <TableHead>CRM Role</TableHead>
+                            <TableHead>Flooring Role</TableHead>
+                            <TableHead>Level</TableHead>
                             <TableHead>Assigned</TableHead>
                             <TableHead>Actions</TableHead>
                           </TableRow>
@@ -10777,20 +10778,25 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                               <TableCell className="font-medium">{u.name || 'N/A'}</TableCell>
                               <TableCell>{u.email}</TableCell>
                               <TableCell>
-                                {u.roleName ? (
+                                <Badge variant="outline" className="text-slate-600 capitalize">
+                                  {u.role || 'user'}
+                                </Badge>
+                              </TableCell>
+                              <TableCell>
+                                {u.flooringRoleName ? (
                                   <Badge className={
-                                    u.roleLevel >= 90 ? 'bg-red-100 text-red-700' :
-                                    u.roleLevel >= 70 ? 'bg-purple-100 text-purple-700' :
-                                    u.roleLevel >= 50 ? 'bg-blue-100 text-blue-700' :
+                                    u.flooringRoleLevel >= 90 ? 'bg-red-100 text-red-700' :
+                                    u.flooringRoleLevel >= 70 ? 'bg-purple-100 text-purple-700' :
+                                    u.flooringRoleLevel >= 50 ? 'bg-blue-100 text-blue-700' :
                                     'bg-slate-100 text-slate-700'
                                   }>
-                                    {u.roleName}
+                                    {u.flooringRoleName}
                                   </Badge>
                                 ) : (
                                   <Badge variant="outline" className="text-amber-600">No Role</Badge>
                                 )}
                               </TableCell>
-                              <TableCell>{u.roleLevel || '-'}</TableCell>
+                              <TableCell>{u.flooringRoleLevel || '-'}</TableCell>
                               <TableCell>{u.assignedAt ? new Date(u.assignedAt).toLocaleDateString() : '-'}</TableCell>
                               <TableCell>
                                 <DropdownMenu>
@@ -10800,7 +10806,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                     </Button>
                                   </DropdownMenuTrigger>
                                   <DropdownMenuContent align="end">
-                                    <DropdownMenuLabel>Assign Role</DropdownMenuLabel>
+                                    <DropdownMenuLabel>Assign Flooring Role</DropdownMenuLabel>
                                     <DropdownMenuSeparator />
                                     {Object.values(accessRoles.defaultRoles || {}).map(role => (
                                       <DropdownMenuItem key={role.id} onClick={async () => {
@@ -10829,7 +10835,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                         {role.name}
                                       </DropdownMenuItem>
                                     ))}
-                                    {u.roleId && (
+                                    {u.flooringRoleId && (
                                       <>
                                         <DropdownMenuSeparator />
                                         <DropdownMenuItem className="text-red-600" onClick={async () => {
