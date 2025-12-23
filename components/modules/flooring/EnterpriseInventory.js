@@ -3289,6 +3289,481 @@ Please confirm receipt of goods and update status after delivery.`
   }
 
   // =============================================
+  // RENDER: BARCODES VIEW (Phase 3)
+  // =============================================
+
+  const renderBarcodesView = () => {
+    const handleCreateBarcode = async (entityType, entityId, entityName, entitySku) => {
+      try {
+        setLoading(true)
+        const res = await fetch('/api/flooring/enhanced/barcodes', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            entityType,
+            entityId,
+            entityName,
+            entitySku
+          })
+        })
+        if (res.ok) {
+          toast.success('Barcode created')
+          fetchBarcodes()
+        } else {
+          const error = await res.json()
+          toast.error(error.error || 'Failed to create barcode')
+        }
+      } catch (error) {
+        toast.error('Error creating barcode')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    const handleBulkCreateBarcodes = async () => {
+      // Create barcodes for all batches without one
+      const batchesWithoutBarcode = batches.filter(b => !barcodes.find(bc => bc.entityId === b.id))
+      if (batchesWithoutBarcode.length === 0) {
+        toast.info('All batches already have barcodes')
+        return
+      }
+
+      try {
+        setLoading(true)
+        const res = await fetch('/api/flooring/enhanced/barcodes', {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            bulkCreate: true,
+            entityType: 'lot',
+            entityIds: batchesWithoutBarcode.slice(0, 50).map(b => b.id),
+            entityNames: batchesWithoutBarcode.slice(0, 50).reduce((acc, b) => ({ ...acc, [b.id]: b.productName }), {}),
+            entitySkus: batchesWithoutBarcode.slice(0, 50).reduce((acc, b) => ({ ...acc, [b.id]: b.sku }), {})
+          })
+        })
+        if (res.ok) {
+          const data = await res.json()
+          toast.success(`${data.barcodes?.length || 0} barcodes created`)
+          fetchBarcodes()
+        } else {
+          const error = await res.json()
+          toast.error(error.error || 'Failed to create barcodes')
+        }
+      } catch (error) {
+        toast.error('Error creating barcodes')
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    const handlePrintBarcode = async (barcodeId) => {
+      try {
+        const res = await fetch('/api/flooring/enhanced/barcodes', {
+          method: 'PUT',
+          headers,
+          body: JSON.stringify({ id: barcodeId, action: 'record_print' })
+        })
+        if (res.ok) {
+          toast.success('Print recorded')
+          fetchBarcodes()
+        }
+      } catch (error) {
+        console.error('Print record error:', error)
+      }
+    }
+
+    return (
+      <div className="space-y-4">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-6 gap-4">
+          <StatCard title="Total Barcodes" value={barcodeSummary.total || 0} icon={Scan} color="bg-blue-500" />
+          <StatCard title="Products" value={barcodeSummary.byType?.product || 0} icon={Package} color="bg-green-500" />
+          <StatCard title="Lots/Batches" value={barcodeSummary.byType?.lot || 0} icon={Layers} color="bg-purple-500" />
+          <StatCard title="Boxes" value={barcodeSummary.byType?.box || 0} icon={Box} color="bg-amber-500" />
+          <StatCard title="Locations" value={barcodeSummary.byType?.location || 0} icon={MapPin} color="bg-teal-500" />
+          <StatCard title="Printed" value={barcodeSummary.printed || 0} icon={FileText} color="bg-slate-500" />
+        </div>
+
+        {/* Header */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h3 className="text-lg font-semibold flex items-center gap-2">
+              <Scan className="h-5 w-5" /> Barcode Management
+            </h3>
+            <p className="text-sm text-slate-500">Generate and manage barcodes for inventory tracking</p>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={fetchBarcodes}>
+              <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+            </Button>
+            <Button variant="outline" onClick={handleBulkCreateBarcodes} disabled={loading}>
+              <Layers className="h-4 w-4 mr-2" /> Generate for Batches
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button>
+                  <Plus className="h-4 w-4 mr-2" /> New Barcode
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-64 max-h-72 overflow-auto">
+                <p className="text-xs text-slate-500 px-2 py-1">Select batch for barcode</p>
+                <DropdownMenuSeparator />
+                {batches.filter(b => !barcodes.find(bc => bc.entityId === b.id)).slice(0, 15).map(batch => (
+                  <DropdownMenuItem key={batch.id} onClick={() => handleCreateBarcode('lot', batch.id, batch.productName, batch.sku)}>
+                    <div className="flex flex-col">
+                      <span className="font-medium">{batch.batchNumber}</span>
+                      <span className="text-xs text-slate-500">{batch.productName}</span>
+                    </div>
+                  </DropdownMenuItem>
+                ))}
+                {batches.filter(b => !barcodes.find(bc => bc.entityId === b.id)).length === 0 && (
+                  <p className="text-sm text-slate-500 p-2">All batches have barcodes</p>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </div>
+
+        {/* Barcodes Table */}
+        {barcodes.length > 0 ? (
+          <Card>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50 border-b">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Barcode</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Type</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Entity</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">SKU</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Status</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Print Count</th>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Created</th>
+                    <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Actions</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {barcodes.map(bc => (
+                    <tr key={bc.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          <div className="font-mono text-sm bg-slate-100 px-2 py-1 rounded">{bc.barcode}</div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <Badge className={
+                          bc.entityType === 'product' ? 'bg-green-100 text-green-700' :
+                          bc.entityType === 'lot' ? 'bg-purple-100 text-purple-700' :
+                          bc.entityType === 'box' ? 'bg-amber-100 text-amber-700' :
+                          bc.entityType === 'location' ? 'bg-teal-100 text-teal-700' :
+                          'bg-slate-100 text-slate-700'
+                        }>
+                          {barcodeTypes[bc.entityType]?.label || bc.entityType}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3">{bc.entityName}</td>
+                      <td className="px-4 py-3">
+                        {bc.entitySku && <Badge variant="outline">{bc.entitySku}</Badge>}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <Badge className={bc.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-700'}>
+                          {bc.status}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {bc.printCount || 0}
+                      </td>
+                      <td className="px-4 py-3">{new Date(bc.createdAt).toLocaleDateString()}</td>
+                      <td className="px-4 py-3 text-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handlePrintBarcode(bc.id)}>
+                              <FileText className="h-4 w-4 mr-2" /> Print Label
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => {
+                              navigator.clipboard.writeText(bc.barcode)
+                              toast.success('Barcode copied')
+                            }}>
+                              <Scan className="h-4 w-4 mr-2" /> Copy Barcode
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </Card>
+        ) : (
+          <EmptyState
+            icon={Scan}
+            title="No Barcodes"
+            description="Generate barcodes for your inventory batches for efficient tracking and picking."
+            action={handleBulkCreateBarcodes}
+            actionLabel="Generate Barcodes"
+          />
+        )}
+      </div>
+    )
+  }
+
+  // =============================================
+  // RENDER: ANALYTICS VIEW (Phase 3)
+  // =============================================
+
+  const renderAnalyticsView = () => {
+    const handleReportChange = (type) => {
+      setAnalyticsReportType(type)
+      fetchStockAging(type)
+    }
+
+    const report = stockAgingReport || {}
+    const buckets = report.buckets || []
+    const summary = report.summary || {}
+
+    return (
+      <div className="space-y-4">
+        {/* Report Type Selector */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-2">
+            {[
+              { id: 'aging', label: 'Stock Aging', icon: Clock },
+              { id: 'abc', label: 'ABC Analysis', icon: BarChart3 },
+              { id: 'slow_moving', label: 'Slow Moving', icon: AlertCircle },
+              { id: 'dead_stock', label: 'Dead Stock', icon: AlertTriangle }
+            ].map(rt => (
+              <Button 
+                key={rt.id}
+                variant={analyticsReportType === rt.id ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleReportChange(rt.id)}
+                disabled={analyticsLoading}
+              >
+                <rt.icon className="h-4 w-4 mr-2" /> {rt.label}
+              </Button>
+            ))}
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => fetchStockAging(analyticsReportType)} disabled={analyticsLoading}>
+            <RefreshCw className={`h-4 w-4 ${analyticsLoading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
+
+        {/* Stock Aging Report */}
+        {analyticsReportType === 'aging' && (
+          <>
+            {/* Summary */}
+            <div className="grid grid-cols-5 gap-4">
+              <StatCard title="Total Lots" value={summary.totalLots || 0} icon={Layers} color="bg-blue-500" />
+              <StatCard title="Total Sqft" value={(summary.totalSqft || 0).toLocaleString()} icon={Package} color="bg-purple-500" />
+              <StatCard title="Total Value" value={`₹${((summary.totalValue || 0) / 100000).toFixed(1)}L`} icon={DollarSign} color="bg-green-500" />
+              <StatCard title="Stock 90+ Days" value={summary.oldStock90Plus || 0} icon={Clock} color="bg-amber-500" />
+              <StatCard title="Old Stock Value %" value={`${summary.percentOld90Plus || 0}%`} icon={AlertTriangle} color="bg-red-500" />
+            </div>
+
+            {/* Aging Buckets */}
+            <div className="grid grid-cols-6 gap-4">
+              {buckets.map((bucket, idx) => (
+                <Card key={idx} className={`p-4 ${idx >= 3 ? 'border-amber-200 bg-amber-50' : ''} ${idx >= 5 ? 'border-red-200 bg-red-50' : ''}`}>
+                  <p className="text-sm font-medium">{bucket.days}</p>
+                  <p className="text-2xl font-bold">{bucket.count}</p>
+                  <p className="text-xs text-slate-500">{(bucket.sqft || 0).toLocaleString()} sqft</p>
+                  <p className="text-xs text-slate-500">₹{((bucket.value || 0) / 1000).toFixed(0)}K</p>
+                </Card>
+              ))}
+            </div>
+
+            {/* Oldest Lots */}
+            {buckets.length > 0 && buckets[buckets.length - 1]?.lots?.length > 0 && (
+              <Card className="p-4 border-red-200">
+                <h4 className="font-semibold text-red-600 mb-4 flex items-center gap-2">
+                  <AlertTriangle className="h-4 w-4" /> Oldest Stock (365+ days) - Action Required
+                </h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-slate-50 border-b">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">Lot #</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">Product</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">Shade</th>
+                        <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Age (Days)</th>
+                        <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Sqft</th>
+                        <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Value</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {buckets[buckets.length - 1].lots.slice(0, 10).map(lot => (
+                        <tr key={lot.id}>
+                          <td className="px-4 py-2 font-mono text-sm">{lot.lotNo}</td>
+                          <td className="px-4 py-2">{lot.productName}</td>
+                          <td className="px-4 py-2">{lot.shade}</td>
+                          <td className="px-4 py-2 text-right text-red-600 font-medium">{lot.ageDays}</td>
+                          <td className="px-4 py-2 text-right">{(lot.availableSqft || 0).toLocaleString()}</td>
+                          <td className="px-4 py-2 text-right">₹{((lot.value || 0) / 1000).toFixed(0)}K</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )}
+          </>
+        )}
+
+        {/* ABC Analysis */}
+        {analyticsReportType === 'abc' && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-3 gap-4">
+              {['A', 'B', 'C'].map(category => {
+                const cat = report.categories?.[category] || {}
+                return (
+                  <Card key={category} className={`p-4 border-l-4 ${
+                    category === 'A' ? 'border-l-green-500' :
+                    category === 'B' ? 'border-l-amber-500' :
+                    'border-l-red-500'
+                  }`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-semibold text-lg">Category {category}</h4>
+                      <Badge className={
+                        category === 'A' ? 'bg-green-100 text-green-700' :
+                        category === 'B' ? 'bg-amber-100 text-amber-700' :
+                        'bg-red-100 text-red-700'
+                      }>
+                        {cat.count || 0} items
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-slate-500">{cat.description}</p>
+                    <p className="text-xl font-bold mt-2">₹{((cat.totalValue || 0) / 100000).toFixed(1)}L</p>
+                  </Card>
+                )
+              })}
+            </div>
+            
+            {/* Top A items */}
+            {report.categories?.A?.items?.length > 0 && (
+              <Card className="p-4">
+                <h4 className="font-semibold mb-4 text-green-600">Top Category A Items (Fast Moving)</h4>
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-slate-50 border-b">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">Product</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">SKU</th>
+                        <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Movements</th>
+                        <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Qty Moved</th>
+                        <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Value</th>
+                        <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">% of Total</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {report.categories.A.items.slice(0, 10).map(item => (
+                        <tr key={item.productId}>
+                          <td className="px-4 py-2">{item.productName}</td>
+                          <td className="px-4 py-2"><Badge variant="outline">{item.sku}</Badge></td>
+                          <td className="px-4 py-2 text-right">{item.movementCount}</td>
+                          <td className="px-4 py-2 text-right">{(item.totalQtyMoved || 0).toLocaleString()}</td>
+                          <td className="px-4 py-2 text-right">₹{((item.totalValue || 0) / 1000).toFixed(0)}K</td>
+                          <td className="px-4 py-2 text-right">{(item.valuePercent || 0).toFixed(1)}%</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </Card>
+            )}
+          </div>
+        )}
+
+        {/* Slow Moving / Dead Stock */}
+        {(analyticsReportType === 'slow_moving' || analyticsReportType === 'dead_stock') && (
+          <div className="space-y-4">
+            <Card className="p-4 border-amber-200 bg-amber-50">
+              <div className="flex items-center gap-2 mb-4">
+                <AlertTriangle className="h-5 w-5 text-amber-600" />
+                <h4 className="font-semibold text-amber-800">
+                  {analyticsReportType === 'slow_moving' ? 'Slow Moving Stock (90+ days without movement)' : 'Dead Stock (180+ days without movement)'}
+                </h4>
+              </div>
+              <div className="grid grid-cols-3 gap-4 mb-4">
+                <div>
+                  <p className="text-sm text-amber-700">Total Items</p>
+                  <p className="text-2xl font-bold text-amber-800">{report.summary?.totalSlowItems || report.summary?.totalDeadItems || 0}</p>
+                </div>
+                <div>
+                  <p className="text-sm text-amber-700">Stock Value</p>
+                  <p className="text-2xl font-bold text-amber-800">₹{((report.summary?.totalStockValue || report.summary?.deadStockValue || 0) / 100000).toFixed(1)}L</p>
+                </div>
+                <div>
+                  <p className="text-sm text-amber-700">% of Inventory</p>
+                  <p className="text-2xl font-bold text-amber-800">{report.summary?.percentOfInventory || report.summary?.percentOfValue || 0}%</p>
+                </div>
+              </div>
+
+              {(report.items || []).length > 0 && (
+                <div className="overflow-x-auto">
+                  <table className="w-full">
+                    <thead className="bg-white border-b">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">Product</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">SKU</th>
+                        <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Current Stock</th>
+                        <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Stock Value</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">Warehouse</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y bg-white">
+                      {report.items.slice(0, 20).map(item => (
+                        <tr key={item.productId}>
+                          <td className="px-4 py-2">{item.productName}</td>
+                          <td className="px-4 py-2"><Badge variant="outline">{item.sku}</Badge></td>
+                          <td className="px-4 py-2 text-right">{(item.currentStock || 0).toLocaleString()} sqft</td>
+                          <td className="px-4 py-2 text-right">₹{((item.stockValue || 0) / 1000).toFixed(0)}K</td>
+                          <td className="px-4 py-2">{item.warehouseName || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {report.summary?.recommendations && (
+                <div className="mt-4 p-3 bg-white rounded border border-amber-200">
+                  <h5 className="font-medium text-amber-800 mb-2">Recommendations</h5>
+                  <ul className="list-disc list-inside text-sm text-amber-700 space-y-1">
+                    {report.summary.recommendations.map((rec, idx) => (
+                      <li key={idx}>{rec}</li>
+                    ))}
+                  </ul>
+                </div>
+              )}
+            </Card>
+          </div>
+        )}
+
+        {!stockAgingReport && !analyticsLoading && (
+          <Card className="p-12 text-center">
+            <BarChart3 className="h-12 w-12 mx-auto text-slate-300 mb-4" />
+            <h3 className="font-semibold text-lg mb-2">Select a Report</h3>
+            <p className="text-slate-500">Choose a report type above to view inventory analytics.</p>
+          </Card>
+        )}
+
+        {analyticsLoading && (
+          <Card className="p-12 text-center">
+            <RefreshCw className="h-12 w-12 mx-auto text-slate-300 mb-4 animate-spin" />
+            <h3 className="font-semibold text-lg mb-2">Loading Analytics</h3>
+            <p className="text-slate-500">Generating inventory analytics report...</p>
+          </Card>
+        )}
+      </div>
+    )
+  }
+
+  // =============================================
   // RENDER: DIALOGS
   // =============================================
 
