@@ -233,6 +233,16 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
   const [binSummary, setBinSummary] = useState({})
   const [binViewMode, setBinViewMode] = useState('grid')
 
+  // Barcodes State (Phase 3)
+  const [barcodes, setBarcodes] = useState([])
+  const [barcodeSummary, setBarcodeSummary] = useState({})
+  const [barcodeTypes, setBarcodeTypes] = useState({})
+
+  // Analytics State (Phase 3)
+  const [stockAgingReport, setStockAgingReport] = useState(null)
+  const [analyticsReportType, setAnalyticsReportType] = useState('aging')
+  const [analyticsLoading, setAnalyticsLoading] = useState(false)
+
   // API Headers
   const headers = {
     'Content-Type': 'application/json',
