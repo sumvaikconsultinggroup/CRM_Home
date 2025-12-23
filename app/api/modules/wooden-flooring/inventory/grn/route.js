@@ -2,6 +2,8 @@ import { v4 as uuidv4 } from 'uuid'
 import { getClientDb } from '@/lib/db/multitenancy'
 import { getAuthUser, requireAuth, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
+import { checkPermission, logAccess } from '@/lib/middleware/rbac'
+import { COLLECTIONS } from '@/lib/db/flooring-collections'
 
 export async function OPTIONS() {
   return optionsResponse()
@@ -10,8 +12,10 @@ export async function OPTIONS() {
 // GET - Fetch GRNs (Goods Receipt Notes)
 export async function GET(request) {
   try {
-    const user = getAuthUser(request)
-    requireAuth(user)
+    // RBAC Check - grn.view permission
+    const authCheck = await checkPermission(request, 'grn.view')
+    if (!authCheck.authorized) return authCheck.error
+    const user = authCheck.user
 
     const { searchParams } = new URL(request.url)
     const grnId = searchParams.get('id')
@@ -23,7 +27,7 @@ export async function GET(request) {
 
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
-    const grnCollection = db.collection('wf_inventory_grn')
+    const grnCollection = db.collection(COLLECTIONS.INVENTORY_GRN)
 
     if (grnId) {
       const grn = await grnCollection.findOne({ id: grnId })
