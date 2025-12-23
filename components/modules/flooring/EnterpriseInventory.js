@@ -248,6 +248,11 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
   const [ledgerFilter, setLedgerFilter] = useState({ productId: '', warehouseId: '', fromDate: '', toDate: '' })
   const [ledgerLoading, setLedgerLoading] = useState(false)
 
+  // Valuation State (Phase 2 - Enterprise)
+  const [valuation, setValuation] = useState({ items: [], summary: {}, topByValue: [] })
+  const [valuationLoading, setValuationLoading] = useState(false)
+  const [valuationReportType, setValuationReportType] = useState('current')
+
   // API Headers
   const headers = {
     'Content-Type': 'application/json',
