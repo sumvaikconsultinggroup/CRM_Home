@@ -213,8 +213,10 @@ export async function GET(request) {
 // POST - Create challan (from pick list, quote, or invoice)
 export async function POST(request) {
   try {
-    const user = getAuthUser(request)
-    requireClientAccess(user)
+    // RBAC Check - challans.create permission
+    const authCheck = await checkPermission(request, 'challans.create')
+    if (!authCheck.authorized) return authCheck.error
+    const user = authCheck.user
 
     const body = await request.json()
     const { 
@@ -247,13 +249,13 @@ export async function POST(request) {
 
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
-    const challans = db.collection('flooring_challans')
-    const challanItems = db.collection('flooring_challan_items')
-    const pickLists = db.collection('flooring_pick_lists')
-    const pickListItems = db.collection('flooring_pick_list_items')
-    const quotes = db.collection('flooring_quotes_v2')
-    const invoices = db.collection('flooring_invoices')
-    const products = db.collection('flooring_products')
+    const challans = db.collection(COLLECTIONS.CHALLANS)
+    const challanItems = db.collection(COLLECTIONS.CHALLAN_ITEMS)
+    const pickLists = db.collection(COLLECTIONS.PICK_LISTS)
+    const pickListItems = db.collection(COLLECTIONS.PICK_LIST_ITEMS)
+    const quotes = db.collection(COLLECTIONS.QUOTES)
+    const invoices = db.collection(COLLECTIONS.INVOICES)
+    const products = db.collection(COLLECTIONS.PRODUCTS)
 
     const settings = await getFulfillmentSettings(db)
     const now = new Date().toISOString()
