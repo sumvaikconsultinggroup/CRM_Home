@@ -243,6 +243,11 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
   const [analyticsReportType, setAnalyticsReportType] = useState('aging')
   const [analyticsLoading, setAnalyticsLoading] = useState(false)
 
+  // Stock Ledger State (Phase 1 - Enterprise)
+  const [stockLedger, setStockLedger] = useState({ entries: [], summary: {}, pagination: {} })
+  const [ledgerFilter, setLedgerFilter] = useState({ productId: '', warehouseId: '', fromDate: '', toDate: '' })
+  const [ledgerLoading, setLedgerLoading] = useState(false)
+
   // API Headers
   const headers = {
     'Content-Type': 'application/json',
