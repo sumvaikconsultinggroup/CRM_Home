@@ -517,6 +517,30 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
     }
   }, [token])
 
+  // Fetch Stock Ledger (Phase 1 - Enterprise)
+  const fetchStockLedger = useCallback(async (filters = {}) => {
+    try {
+      setLedgerLoading(true)
+      const params = new URLSearchParams()
+      if (filters.productId) params.set('productId', filters.productId)
+      if (filters.warehouseId && filters.warehouseId !== 'all') params.set('warehouseId', filters.warehouseId)
+      if (filters.fromDate) params.set('fromDate', filters.fromDate)
+      if (filters.toDate) params.set('toDate', filters.toDate)
+      if (filters.movementType) params.set('movementType', filters.movementType)
+      params.set('limit', '100')
+
+      const res = await fetch(`/api/modules/wooden-flooring/inventory/stock-ledger?${params}`, { headers })
+      const data = await res.json()
+      if (data) {
+        setStockLedger(data)
+      }
+    } catch (error) {
+      console.error('Stock ledger fetch error:', error)
+    } finally {
+      setLedgerLoading(false)
+    }
+  }, [token])
+
   const handleQuickLookup = async (searchValue) => {
     if (!searchValue || searchValue.length < 2) return
     try {
