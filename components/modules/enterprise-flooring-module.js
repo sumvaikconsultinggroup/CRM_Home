@@ -772,6 +772,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     if (activeTab === 'reports') fetchReports('summary')
   }, [activeTab, inventoryTab, fetchQuotes, fetchInvoices, fetchPayments, fetchInstallations, fetchInstallers, fetchInventory, fetchShipments, fetchLots, fetchPriceTiers, fetchLandedCosts, fetchQcRecords, fetchBinLocations, fetchStockAging, fetchModuleSettings, fetchReports, fetchAccessRoles, fetchAccessUsers])
 
+  // Fetch access audit log when access tab is selected in settings
+  useEffect(() => {
+    if (activeTab === 'settings' && settingsTab === 'access') {
+      fetchAccessAuditLog()
+    }
+  }, [activeTab, settingsTab, fetchAccessAuditLog])
+
   // Initialize measurement state when project changes (for B2C workflow)
   useEffect(() => {
     if (selectedProject && selectedProject.segment !== 'b2b') {
