@@ -194,7 +194,7 @@ export async function POST(request) {
   }
 }
 
-// PUT - Update Challan status
+// PUT - Update Challan status (dispatch, deliver)
 export async function PUT(request) {
   try {
     const user = getAuthUser(request)
@@ -207,10 +207,11 @@ export async function PUT(request) {
 
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
-    const challanCollection = db.collection('wf_inventory_challans')
-    const movementCollection = db.collection('wf_inventory_movements')
-    const stockCollection = db.collection('wf_inventory_stock')
-    const stockLedger = db.collection('wf_stock_ledger') // Stock Ledger for double-entry
+    // Use consolidated collections
+    const challanCollection = db.collection(COLLECTIONS.CHALLANS)
+    const movementCollection = db.collection(COLLECTIONS.INVENTORY_MOVEMENTS)
+    const stockCollection = db.collection(COLLECTIONS.INVENTORY_STOCK)
+    const stockLedger = db.collection(COLLECTIONS.STOCK_LEDGER)
 
     const challan = await challanCollection.findOne({ id })
     if (!challan) return errorResponse('Challan not found', 404)
@@ -253,8 +254,8 @@ export async function PUT(request) {
             totalCost: item.quantity * (stock.avgCostPrice || stock.avgCost || 0),
             referenceType: 'delivery_challan',
             referenceId: challan.id,
-            referenceNumber: challan.challanNumber,
-            notes: `Delivery to ${challan.customerName || challan.projectName || 'Customer'}`,
+            referenceNumber: challan.challanNumber || challan.dcNo,
+            notes: `Delivery to ${challan.customerName || challan.projectName || challan.shipToName || 'Customer'}`,
             stockBefore: stock.quantity,
             stockAfter: stock.quantity - item.quantity,
             createdBy: user.id,
