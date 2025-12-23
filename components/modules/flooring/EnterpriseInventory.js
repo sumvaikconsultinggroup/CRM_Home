@@ -2663,7 +2663,7 @@ Please confirm receipt of goods and update status after delivery.`
                             </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => {
                               setLedgerFilter({ ...ledgerFilter, refDocId: challan.id })
-                              setActiveTab('ledger')
+                              setActiveSubTab('ledger')
                               fetchStockLedger({ refDocId: challan.id })
                             }}>
                               <FileText className="h-4 w-4 mr-2" /> View Ledger Entries
