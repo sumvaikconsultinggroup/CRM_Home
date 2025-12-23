@@ -225,7 +225,10 @@ export async function GET(request) {
     const db = await getClientDb(dbName)
     const rolesCollection = db.collection('flooring_roles')
     const userRolesCollection = db.collection('flooring_user_roles')
-    const usersCollection = db.collection('users')
+    
+    // Get main CRM database for users (single source of truth)
+    const mainDb = await getMainDb()
+    const crmUsersCollection = mainDb.collection('users')
 
     switch (action) {
       case 'roles':
@@ -238,20 +241,30 @@ export async function GET(request) {
         return successResponse({ roles: sanitizeDocuments(allRoles), defaultRoles: DEFAULT_ROLES })
 
       case 'users':
-        // Get all users with their role assignments
-        const users = await usersCollection.find({}).toArray()
+        // Get users from CRM (main database) filtered by clientId
+        // This ensures CRM is the single source of truth for users
+        const crmQuery = user.clientId ? { clientId: user.clientId } : {}
+        const crmUsers = await crmUsersCollection.find(crmQuery).toArray()
         const userRoles = await userRolesCollection.find({}).toArray()
+        const customRolesForUsers = await rolesCollection.find({}).toArray()
         
-        const usersWithRoles = users.map(u => {
+        const usersWithRoles = crmUsers.map(u => {
           const roleAssignment = userRoles.find(ur => ur.userId === u.id)
           const role = roleAssignment ? 
-            (DEFAULT_ROLES[roleAssignment.roleId] || customRoles.find(r => r.id === roleAssignment.roleId)) : 
+            (DEFAULT_ROLES[roleAssignment.roleId] || customRolesForUsers.find(r => r.id === roleAssignment.roleId)) : 
             null
           return {
-            ...u,
-            roleId: roleAssignment?.roleId,
-            roleName: role?.name,
-            roleLevel: role?.level,
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            phone: u.phone,
+            role: u.role, // CRM role
+            status: u.status,
+            createdAt: u.createdAt,
+            // Flooring module role assignment
+            flooringRoleId: roleAssignment?.roleId,
+            flooringRoleName: role?.name,
+            flooringRoleLevel: role?.level,
             assignedAt: roleAssignment?.assignedAt,
             assignedBy: roleAssignment?.assignedBy
           }
@@ -260,9 +273,9 @@ export async function GET(request) {
         return successResponse({ 
           users: sanitizeDocuments(usersWithRoles),
           summary: {
-            total: users.length,
+            total: crmUsers.length,
             withRoles: userRoles.length,
-            withoutRoles: users.length - userRoles.length,
+            withoutRoles: crmUsers.length - userRoles.filter(ur => crmUsers.some(u => u.id === ur.userId)).length,
             byRole: Object.keys(DEFAULT_ROLES).reduce((acc, roleId) => {
               acc[roleId] = userRoles.filter(ur => ur.roleId === roleId).length
               return acc
