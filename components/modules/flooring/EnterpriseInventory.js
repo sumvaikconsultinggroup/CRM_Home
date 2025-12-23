@@ -5685,6 +5685,9 @@ Please confirm receipt of goods and update status after delivery.`
           <TabsTrigger value="ledger" className="flex items-center gap-2">
             <FileText className="h-4 w-4" /> Stock Ledger
           </TabsTrigger>
+          <TabsTrigger value="valuation" className="flex items-center gap-2">
+            <DollarSign className="h-4 w-4" /> Valuation
+          </TabsTrigger>
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" /> Analytics
           </TabsTrigger>
@@ -5709,6 +5712,7 @@ Please confirm receipt of goods and update status after delivery.`
           <TabsContent value="locations">{renderBinLocationsView()}</TabsContent>
           <TabsContent value="barcodes">{renderBarcodesView()}</TabsContent>
           <TabsContent value="ledger">{renderStockLedgerView()}</TabsContent>
+          <TabsContent value="valuation">{renderValuationView()}</TabsContent>
           <TabsContent value="analytics">{renderAnalyticsView()}</TabsContent>
           <TabsContent value="access">{renderAccessView()}</TabsContent>
         </div>
