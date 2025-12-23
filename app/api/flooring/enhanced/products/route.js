@@ -113,16 +113,18 @@ export async function GET(request) {
 // POST - Create product with CRM sync
 export async function POST(request) {
   try {
-    const user = getAuthUser(request)
-    requireClientAccess(user)
+    // RBAC Check - products.create permission
+    const authCheck = await checkPermission(request, 'products.create')
+    if (!authCheck.authorized) return authCheck.error
+    const user = authCheck.user
 
     const body = await request.json()
     const { action } = body
 
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
-    const products = db.collection('flooring_products')
-    const inventory = db.collection('flooring_inventory_v2')
+    const products = db.collection(COLLECTIONS.PRODUCTS)
+    const inventory = db.collection(COLLECTIONS.INVENTORY)
 
     // Handle bulk import
     if (action === 'import') {
