@@ -546,6 +546,29 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
     }
   }, [token])
 
+  // Fetch Valuation Report (Phase 2 - Enterprise)
+  const fetchValuation = useCallback(async (reportType = 'current', filters = {}) => {
+    try {
+      setValuationLoading(true)
+      const params = new URLSearchParams()
+      params.set('type', reportType)
+      if (filters.warehouseId && filters.warehouseId !== 'all') params.set('warehouseId', filters.warehouseId)
+      if (filters.fromDate) params.set('fromDate', filters.fromDate)
+      if (filters.toDate) params.set('toDate', filters.toDate)
+      if (filters.productId) params.set('productId', filters.productId)
+
+      const res = await fetch(`/api/modules/wooden-flooring/inventory/valuation?${params}`, { headers })
+      const data = await res.json()
+      if (data) {
+        setValuation(data)
+      }
+    } catch (error) {
+      console.error('Valuation fetch error:', error)
+    } finally {
+      setValuationLoading(false)
+    }
+  }, [token])
+
   const handleQuickLookup = async (searchValue) => {
     if (!searchValue || searchValue.length < 2) return
     try {
