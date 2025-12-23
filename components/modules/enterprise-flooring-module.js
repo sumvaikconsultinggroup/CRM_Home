@@ -697,6 +697,43 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }, [token])
 
+  // Fetch Access Management Data (Enterprise RBAC)
+  const fetchAccessRoles = useCallback(async () => {
+    try {
+      setAccessLoading(true)
+      const res = await fetch('/api/flooring/enhanced/access-management?action=roles', { headers })
+      const data = await res.json()
+      if (data) setAccessRoles(data)
+    } catch (error) {
+      console.error('Access roles fetch error:', error)
+    } finally {
+      setAccessLoading(false)
+    }
+  }, [token])
+
+  const fetchAccessUsers = useCallback(async () => {
+    try {
+      setAccessLoading(true)
+      const res = await fetch('/api/flooring/enhanced/access-management?action=users', { headers })
+      const data = await res.json()
+      if (data) setAccessUsers(data)
+    } catch (error) {
+      console.error('Access users fetch error:', error)
+    } finally {
+      setAccessLoading(false)
+    }
+  }, [token])
+
+  const fetchAccessAuditLog = useCallback(async () => {
+    try {
+      const res = await fetch('/api/flooring/enhanced/access-management?action=audit_log', { headers })
+      const data = await res.json()
+      if (data.logs) setAccessAuditLog(data.logs)
+    } catch (error) {
+      console.error('Access audit log fetch error:', error)
+    }
+  }, [token])
+
   // Load data on mount and when tab changes
   useEffect(() => {
     fetchDashboard()
