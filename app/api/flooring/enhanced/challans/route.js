@@ -3,6 +3,8 @@ import { v4 as uuidv4 } from 'uuid'
 import { getClientDb } from '@/lib/db/multitenancy'
 import { getAuthUser, requireClientAccess, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
+import { checkPermission, logAccess } from '@/lib/middleware/rbac'
+import { COLLECTIONS } from '@/lib/db/flooring-collections'
 
 export async function OPTIONS() {
   return optionsResponse()
@@ -10,7 +12,7 @@ export async function OPTIONS() {
 
 // Generate DC number
 const generateDCNumber = async (db) => {
-  const challans = db.collection('flooring_challans')
+  const challans = db.collection(COLLECTIONS.CHALLANS)
   const count = await challans.countDocuments()
   const year = new Date().getFullYear()
   const month = String(new Date().getMonth() + 1).padStart(2, '0')
@@ -19,7 +21,7 @@ const generateDCNumber = async (db) => {
 
 // Get fulfillment settings
 const getFulfillmentSettings = async (db) => {
-  const settings = db.collection('flooring_settings')
+  const settings = db.collection(COLLECTIONS.SETTINGS)
   const config = await settings.findOne({ type: 'fulfillment' })
   return {
     requirePickListForDC: config?.requirePickListForDC !== false, // default true
@@ -33,7 +35,7 @@ const getFulfillmentSettings = async (db) => {
 
 // Check if stock OUT already exists for this DC (idempotency)
 const checkExistingStockOut = async (db, dcId) => {
-  const movements = db.collection('wf_inventory_movements')
+  const movements = db.collection(COLLECTIONS.INVENTORY_MOVEMENTS)
   const existing = await movements.findOne({
     referenceType: 'DC',
     referenceId: dcId,
@@ -44,10 +46,10 @@ const checkExistingStockOut = async (db, dcId) => {
 
 // Perform idempotent stock OUT on DC issue
 const performStockOut = async (db, challan, user) => {
-  const movements = db.collection('wf_inventory_movements')
-  const stockCollection = db.collection('wf_inventory_stock')
-  const productsCollection = db.collection('flooring_products')
-  const reservationsCollection = db.collection('inventory_reservations')
+  const movements = db.collection(COLLECTIONS.INVENTORY_MOVEMENTS)
+  const stockCollection = db.collection(COLLECTIONS.INVENTORY_STOCK)
+  const productsCollection = db.collection(COLLECTIONS.PRODUCTS)
+  const reservationsCollection = db.collection(COLLECTIONS.INVENTORY_RESERVATIONS)
   const now = new Date().toISOString()
 
   // Check idempotency - prevent double deduction
