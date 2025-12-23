@@ -3542,6 +3542,211 @@ Please confirm receipt of goods and update status after delivery.`
   }
 
   // =============================================
+  // RENDER: STOCK LEDGER VIEW (Phase 1 - Enterprise)
+  // =============================================
+
+  const renderStockLedgerView = () => {
+    const { entries = [], summary = {}, pagination = {}, movementTypes = {} } = stockLedger
+
+    const getDirectionColor = (direction) => {
+      return direction === 'IN' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+    }
+
+    const getMovementTypeColor = (type) => {
+      if (type?.includes('grn') || type?.includes('receipt')) return 'bg-green-100 text-green-700'
+      if (type?.includes('challan') || type?.includes('dispatch') || type?.includes('issue')) return 'bg-red-100 text-red-700'
+      if (type?.includes('transfer')) return 'bg-blue-100 text-blue-700'
+      if (type?.includes('adjustment')) return 'bg-amber-100 text-amber-700'
+      if (type?.includes('reversal')) return 'bg-purple-100 text-purple-700'
+      return 'bg-slate-100 text-slate-700'
+    }
+
+    return (
+      <div className="space-y-4">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-6 gap-4">
+          <StatCard title="Total Entries" value={pagination.total || 0} icon={FileText} color="bg-blue-500" />
+          <StatCard title="Total IN" value={`${(summary.totalIn || 0).toLocaleString()} sqft`} icon={ArrowDownRight} color="bg-green-500" />
+          <StatCard title="Total OUT" value={`${(summary.totalOut || 0).toLocaleString()} sqft`} icon={ArrowUpRight} color="bg-red-500" />
+          <StatCard title="Net Movement" value={`${(summary.netMovement || 0).toLocaleString()} sqft`} icon={ArrowLeftRight} color="bg-purple-500" />
+          <StatCard title="IN Value" value={`₹${((summary.totalInValue || 0) / 1000).toFixed(1)}K`} icon={DollarSign} color="bg-emerald-500" />
+          <StatCard title="OUT Value" value={`₹${((summary.totalOutValue || 0) / 1000).toFixed(1)}K`} icon={DollarSign} color="bg-orange-500" />
+        </div>
+
+        {/* Header with Info Banner */}
+        <Card className="p-4 bg-blue-50 border-blue-200">
+          <div className="flex items-start gap-3">
+            <Info className="h-5 w-5 text-blue-600 mt-0.5" />
+            <div>
+              <h4 className="font-semibold text-blue-800">Enterprise Stock Ledger</h4>
+              <p className="text-sm text-blue-700">
+                Double-entry stock tracking system. Every stock movement (GRN, Challan, Transfer, Adjustment) creates an immutable ledger entry 
+                with running balance, cost tracking, and full audit trail.
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Filters */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-3">
+            <Select 
+              value={ledgerFilter.warehouseId || 'all'} 
+              onValueChange={(v) => {
+                setLedgerFilter({ ...ledgerFilter, warehouseId: v })
+                fetchStockLedger({ ...ledgerFilter, warehouseId: v })
+              }}
+            >
+              <SelectTrigger className="w-40">
+                <SelectValue placeholder="Warehouse" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Warehouses</SelectItem>
+                {warehouses.map(w => (
+                  <SelectItem key={w.id} value={w.id}>{w.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select 
+              value={ledgerFilter.movementType || 'all'} 
+              onValueChange={(v) => {
+                const newFilter = { ...ledgerFilter, movementType: v === 'all' ? '' : v }
+                setLedgerFilter(newFilter)
+                fetchStockLedger(newFilter)
+              }}
+            >
+              <SelectTrigger className="w-44">
+                <SelectValue placeholder="Movement Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="grn_receipt">GRN Receipt</SelectItem>
+                <SelectItem value="challan_dispatch">Challan Dispatch</SelectItem>
+                <SelectItem value="transfer_in">Transfer In</SelectItem>
+                <SelectItem value="transfer_out">Transfer Out</SelectItem>
+                <SelectItem value="adjustment_plus">Adjustment (+)</SelectItem>
+                <SelectItem value="adjustment_minus">Adjustment (-)</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input 
+              type="date" 
+              className="w-40"
+              value={ledgerFilter.fromDate}
+              onChange={(e) => {
+                const newFilter = { ...ledgerFilter, fromDate: e.target.value }
+                setLedgerFilter(newFilter)
+              }}
+              placeholder="From Date"
+            />
+            <Input 
+              type="date" 
+              className="w-40"
+              value={ledgerFilter.toDate}
+              onChange={(e) => {
+                const newFilter = { ...ledgerFilter, toDate: e.target.value }
+                setLedgerFilter(newFilter)
+              }}
+              placeholder="To Date"
+            />
+            <Button variant="outline" onClick={() => fetchStockLedger(ledgerFilter)}>
+              <Search className="h-4 w-4 mr-2" /> Apply
+            </Button>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="outline" onClick={() => fetchStockLedger(ledgerFilter)} disabled={ledgerLoading}>
+              <RefreshCw className={`h-4 w-4 mr-2 ${ledgerLoading ? 'animate-spin' : ''}`} /> Refresh
+            </Button>
+            <Button variant="outline">
+              <Download className="h-4 w-4 mr-2" /> Export
+            </Button>
+          </div>
+        </div>
+
+        {/* Ledger Table */}
+        {entries.length > 0 ? (
+          <Card>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50 border-b">
+                  <tr>
+                    <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Seq #</th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Date/Time</th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Type</th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Product</th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Warehouse</th>
+                    <th className="px-3 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Direction</th>
+                    <th className="px-3 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Qty</th>
+                    <th className="px-3 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Before</th>
+                    <th className="px-3 py-3 text-right text-xs font-semibold text-slate-600 uppercase">After</th>
+                    <th className="px-3 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Unit Cost</th>
+                    <th className="px-3 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Total Value</th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Reference</th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase">User</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {entries.map(entry => (
+                    <tr key={entry.id} className={`hover:bg-slate-50 ${entry.reversed ? 'bg-red-50 line-through' : ''}`}>
+                      <td className="px-3 py-2 text-sm font-mono">{entry.sequence}</td>
+                      <td className="px-3 py-2 text-sm">
+                        {new Date(entry.createdAt).toLocaleDateString()}
+                        <span className="text-slate-400 ml-1">{new Date(entry.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                      </td>
+                      <td className="px-3 py-2">
+                        <Badge className={getMovementTypeColor(entry.movementType)}>
+                          {entry.movementLabel || entry.movementType}
+                        </Badge>
+                      </td>
+                      <td className="px-3 py-2">
+                        <div>
+                          <p className="text-sm font-medium">{entry.productName}</p>
+                          <p className="text-xs text-slate-500">{entry.sku}</p>
+                        </div>
+                      </td>
+                      <td className="px-3 py-2 text-sm">{entry.warehouseName}</td>
+                      <td className="px-3 py-2 text-center">
+                        <Badge className={getDirectionColor(entry.direction)}>
+                          {entry.direction === 'IN' ? '↓ IN' : '↑ OUT'}
+                        </Badge>
+                      </td>
+                      <td className="px-3 py-2 text-right font-medium">
+                        <span className={entry.direction === 'IN' ? 'text-green-600' : 'text-red-600'}>
+                          {entry.direction === 'IN' ? '+' : '-'}{entry.quantity?.toLocaleString()} {entry.unit}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 text-right text-sm text-slate-500">{entry.balanceBefore?.toLocaleString()}</td>
+                      <td className="px-3 py-2 text-right text-sm font-medium">{entry.balanceAfter?.toLocaleString()}</td>
+                      <td className="px-3 py-2 text-right text-sm">₹{(entry.unitCost || 0).toFixed(2)}</td>
+                      <td className="px-3 py-2 text-right text-sm font-medium">₹{(entry.totalValue || 0).toLocaleString()}</td>
+                      <td className="px-3 py-2">
+                        {entry.refDocNumber && (
+                          <Badge variant="outline" className="font-mono text-xs">{entry.refDocNumber}</Badge>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-sm text-slate-500">{entry.createdByName?.split('@')[0]}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            {pagination.hasMore && (
+              <div className="p-4 border-t text-center">
+                <Button variant="outline" size="sm">Load More ({pagination.total - entries.length} remaining)</Button>
+              </div>
+            )}
+          </Card>
+        ) : (
+          <EmptyState
+            icon={FileText}
+            title="No Ledger Entries"
+            description="Stock ledger entries will appear here when GRNs are received or Challans are dispatched. Each entry creates an immutable audit trail."
+          />
+        )}
+      </div>
+    )
+  }
+
+  // =============================================
   // RENDER: ANALYTICS VIEW (Phase 3)
   // =============================================
 
