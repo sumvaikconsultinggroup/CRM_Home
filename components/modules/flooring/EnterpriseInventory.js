@@ -2543,31 +2543,31 @@ Please confirm receipt of goods and update status after delivery.`
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold">Delivery Challans</h3>
-          <p className="text-sm text-slate-500">Synced from Dispatch Management</p>
+          <h3 className="text-lg font-semibold flex items-center gap-2">
+            <Truck className="h-5 w-5" /> Delivery Challans (Stock Impact View)
+          </h3>
+          <p className="text-sm text-slate-500">View challans and their stock ledger entries from the main Challans module</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" onClick={syncChallansFromDispatch}>
-            <RefreshCw className="h-4 w-4 mr-2" /> Sync from Dispatch
+          <Button variant="outline" onClick={fetchChallans}>
+            <RefreshCw className="h-4 w-4 mr-2" /> Refresh
           </Button>
           <Button variant="outline" onClick={() => handleExport('challans')}>
             <Download className="h-4 w-4 mr-2" /> Export
-          </Button>
-          <Button variant="outline" onClick={fetchChallans}>
-            <RefreshCw className="h-4 w-4 mr-2" /> Refresh
           </Button>
         </div>
       </div>
 
       {/* Info Banner */}
-      <Card className="border-blue-200 bg-blue-50">
+      <Card className="border-green-200 bg-green-50">
         <CardContent className="p-4">
           <div className="flex items-center gap-3">
-            <Info className="h-5 w-5 text-blue-600" />
+            <CheckCircle2 className="h-5 w-5 text-green-600" />
             <div>
-              <p className="font-medium text-blue-800">Challans Sync from Dispatch Management</p>
-              <p className="text-sm text-blue-600">
-                Delivery challans are automatically created when goods are dispatched. Click &quot;Sync from Dispatch&quot; to pull latest challans.
+              <p className="font-medium text-green-800">Unified Challan System</p>
+              <p className="text-sm text-green-600">
+                This view shows challans from the main Flooring Module. When a challan is dispatched, stock is automatically 
+                deducted and a ledger entry is created. <span className="font-medium">Use the main &quot;Challans&quot; tab for creating and managing challans.</span>
               </p>
             </div>
           </div>
@@ -2575,11 +2575,12 @@ Please confirm receipt of goods and update status after delivery.`
       </Card>
 
       {/* Summary */}
-      <div className="grid grid-cols-4 gap-3">
+      <div className="grid grid-cols-5 gap-3">
         <StatCard title="Total Challans" value={challanSummary.total || 0} icon={Truck} color="bg-slate-500" />
         <StatCard title="Draft" value={challanSummary.draft || 0} icon={FileText} color="bg-slate-400" />
         <StatCard title="Dispatched" value={challanSummary.dispatched || 0} icon={Send} color="bg-blue-500" />
         <StatCard title="Delivered" value={challanSummary.delivered || 0} icon={CheckCircle2} color="bg-green-500" />
+        <StatCard title="Stock Deducted" value={challanSummary.dispatched || 0} icon={ArrowDownRight} color="bg-red-500" />
       </div>
 
       {/* Challan List */}
@@ -2593,9 +2594,10 @@ Please confirm receipt of goods and update status after delivery.`
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Customer/Project</th>
                   <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Warehouse</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Items</th>
-                  <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Value</th>
-                  <th className="px-4 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Driver</th>
+                  <th className="px-4 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Qty (sqft)</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Status</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Stock Impact</th>
+                  <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Ledger Entry</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Date</th>
                   <th className="px-4 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Actions</th>
                 </tr>
@@ -2603,13 +2605,12 @@ Please confirm receipt of goods and update status after delivery.`
               <tbody className="divide-y">
                 {challans.map(challan => {
                   const statusConfig = CHALLAN_STATUS[challan.status] || {}
+                  const isDispatched = challan.status === 'dispatched' || challan.status === 'delivered' || challan.status === 'ISSUED' || challan.status === 'DELIVERED'
+                  const totalQty = (challan.items || []).reduce((sum, i) => sum + (i.quantity || i.qtyArea || 0), 0)
                   return (
                     <tr key={challan.id} className="hover:bg-slate-50">
                       <td className="px-4 py-3">
-                        <Badge variant="outline">{challan.challanNumber}</Badge>
-                        {challan.syncedFromDispatch && (
-                          <Badge variant="secondary" className="ml-1 text-xs">Synced</Badge>
-                        )}
+                        <Badge variant="outline" className="font-mono">{challan.challanNumber || challan.dcNo}</Badge>
                       </td>
                       <td className="px-4 py-3">
                         <p className="text-sm font-medium">{challan.customerName || challan.projectName || '-'}</p>
@@ -2619,6 +2620,73 @@ Please confirm receipt of goods and update status after delivery.`
                           </p>
                         )}
                       </td>
+                      <td className="px-4 py-3 text-sm">{challan.warehouseName || 'Default'}</td>
+                      <td className="px-4 py-3 text-center">{(challan.items || []).length}</td>
+                      <td className="px-4 py-3 text-right font-medium">{totalQty.toLocaleString()}</td>
+                      <td className="px-4 py-3 text-center">
+                        <Badge className={statusConfig.color || 'bg-slate-100 text-slate-700'}>
+                          {challan.status}
+                        </Badge>
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {isDispatched ? (
+                          <Badge className="bg-red-100 text-red-700">
+                            <ArrowDownRight className="h-3 w-3 mr-1" />
+                            -{totalQty.toLocaleString()} sqft
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-slate-400">Pending</Badge>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {isDispatched ? (
+                          <Badge className="bg-green-100 text-green-700">
+                            <CheckCircle2 className="h-3 w-3 mr-1" /> Created
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-slate-400">-</Badge>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-center text-sm">
+                        {new Date(challan.createdAt).toLocaleDateString()}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm">
+                              <MoreVertical className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => setDialogOpen({ type: 'challan_detail', data: challan })}>
+                              <Eye className="h-4 w-4 mr-2" /> View Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => {
+                              setLedgerFilter({ ...ledgerFilter, refDocId: challan.id })
+                              setActiveTab('ledger')
+                              fetchStockLedger({ refDocId: challan.id })
+                            }}>
+                              <FileText className="h-4 w-4 mr-2" /> View Ledger Entries
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+        </Card>
+      ) : (
+        <EmptyState
+          icon={Truck}
+          title="No Challans"
+          description="Delivery challans from the main Challans module will appear here. Create challans from the Challans tab in the main navigation."
+        />
+      )}
+    </div>
+  )
                       <td className="px-4 py-3 text-sm">{challan.warehouseName}</td>
                       <td className="px-4 py-3 text-center">{challan.items?.length || 0}</td>
                       <td className="px-4 py-3 text-right font-medium">₹{(challan.totalValue || 0).toLocaleString()}</td>
