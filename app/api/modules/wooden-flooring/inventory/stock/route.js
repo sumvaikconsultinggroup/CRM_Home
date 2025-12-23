@@ -2,6 +2,8 @@ import { v4 as uuidv4 } from 'uuid'
 import { getClientDb } from '@/lib/db/multitenancy'
 import { getAuthUser, requireAuth, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
+import { checkPermission, logAccess } from '@/lib/middleware/rbac'
+import { COLLECTIONS } from '@/lib/db/flooring-collections'
 
 export async function OPTIONS() {
   return optionsResponse()
@@ -10,8 +12,10 @@ export async function OPTIONS() {
 // GET - Fetch stock with warehouse filter
 export async function GET(request) {
   try {
-    const user = getAuthUser(request)
-    requireAuth(user)
+    // RBAC Check - stock.view permission
+    const authCheck = await checkPermission(request, 'stock.view')
+    if (!authCheck.authorized) return authCheck.error
+    const user = authCheck.user
 
     const { searchParams } = new URL(request.url)
     const warehouseId = searchParams.get('warehouseId')
@@ -24,10 +28,10 @@ export async function GET(request) {
 
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
-    const stockCollection = db.collection('wf_inventory_stock')
-    const batchCollection = db.collection('wf_inventory_batches')
-    const warehouseCollection = db.collection('wf_warehouses')
-    const productCollection = db.collection('wf_inventory') // Original product catalog
+    const stockCollection = db.collection(COLLECTIONS.INVENTORY_STOCK)
+    const batchCollection = db.collection(COLLECTIONS.INVENTORY_BATCHES)
+    const warehouseCollection = db.collection(COLLECTIONS.WAREHOUSES)
+    const productCollection = db.collection(COLLECTIONS.PRODUCTS)
 
     // Build query
     let query = {}
@@ -41,7 +45,7 @@ export async function GET(request) {
     let stocks = await stockCollection.find(query).sort({ productName: 1 }).toArray()
     
     // Also get from flooring_inventory_v2 for completeness
-    const v2Stocks = await db.collection('flooring_inventory_v2').find({}).toArray()
+    const v2Stocks = await db.collection(COLLECTIONS.INVENTORY).find({}).toArray()
     
     // Combine all stock sources
     const allStocks = [...stocks]
