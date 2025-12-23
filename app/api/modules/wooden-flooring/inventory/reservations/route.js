@@ -1,3 +1,4 @@
+import { NextResponse } from 'next/server'
 import { v4 as uuidv4 } from 'uuid'
 import { getClientDb } from '@/lib/db/multitenancy'
 import { getAuthUser, requireAuth, getUserDatabaseName } from '@/lib/utils/auth'
@@ -7,53 +8,121 @@ export async function OPTIONS() {
   return optionsResponse()
 }
 
-// GET - Reserve stock for project/order
+// =============================================
+// ENTERPRISE STOCK RESERVATIONS
+// =============================================
+// Links reserved stock to Quotes, Projects, Sales Orders
+// Prevents overselling by blocking reserved stock
+// Auto-releases on quote rejection/expiry
+// Supports partial reservations
+
+const RESERVATION_STATUS = {
+  active: { label: 'Active', color: 'bg-blue-100 text-blue-700' },
+  fulfilled: { label: 'Fulfilled', color: 'bg-green-100 text-green-700' },
+  released: { label: 'Released', color: 'bg-slate-100 text-slate-700' },
+  expired: { label: 'Expired', color: 'bg-amber-100 text-amber-700' },
+  cancelled: { label: 'Cancelled', color: 'bg-red-100 text-red-700' }
+}
+
+const RESERVATION_TYPES = {
+  quote: { label: 'Quote Reservation', prefix: 'QR' },
+  sales_order: { label: 'Sales Order', prefix: 'SO' },
+  project: { label: 'Project Allocation', prefix: 'PA' },
+  manual: { label: 'Manual Hold', prefix: 'MH' }
+}
+
+// GET - Fetch reservations
 export async function GET(request) {
   try {
     const user = getAuthUser(request)
     requireAuth(user)
 
     const { searchParams } = new URL(request.url)
-    const reservationId = searchParams.get('id')
-    const projectId = searchParams.get('projectId')
+    const id = searchParams.get('id')
+    const productId = searchParams.get('productId')
     const warehouseId = searchParams.get('warehouseId')
+    const refType = searchParams.get('refType') // quote, sales_order, project
+    const refId = searchParams.get('refId')
     const status = searchParams.get('status')
+    const includeExpired = searchParams.get('includeExpired') === 'true'
 
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
-    const reservationCollection = db.collection('wf_inventory_reservations')
+    const reservations = db.collection('wf_stock_reservations')
+    const stockCollection = db.collection('wf_inventory_stock')
 
-    if (reservationId) {
-      const reservation = await reservationCollection.findOne({ id: reservationId })
+    if (id) {
+      const reservation = await reservations.findOne({ id })
       if (!reservation) return errorResponse('Reservation not found', 404)
       return successResponse(sanitizeDocument(reservation))
     }
 
     // Build query
-    let query = { status: { $ne: 'released' } } // Don't show released by default
-    if (projectId) query.projectId = projectId
+    const query = {}
+    if (productId) query.productId = productId
     if (warehouseId && warehouseId !== 'all') query.warehouseId = warehouseId
-    if (status) query.status = status
-
-    const reservations = await reservationCollection.find(query).sort({ createdAt: -1 }).toArray()
-
-    // Summary
-    const summary = {
-      total: reservations.length,
-      active: reservations.filter(r => r.status === 'active').length,
-      pending: reservations.filter(r => r.status === 'pending').length,
-      totalQuantity: reservations.reduce((sum, r) => sum + (r.quantity || 0), 0)
+    if (refType) query.refType = refType
+    if (refId) query.refId = refId
+    if (status) {
+      query.status = status
+    } else if (!includeExpired) {
+      query.status = { $in: ['active', 'fulfilled'] }
     }
 
-    return successResponse({ reservations: sanitizeDocuments(reservations), summary })
+    const result = await reservations.find(query).sort({ createdAt: -1 }).toArray()
+
+    // Check for expired reservations and update them
+    const now = new Date()
+    const expiredIds = result
+      .filter(r => r.status === 'active' && r.expiresAt && new Date(r.expiresAt) < now)
+      .map(r => r.id)
+
+    if (expiredIds.length > 0) {
+      await reservations.updateMany(
+        { id: { $in: expiredIds } },
+        { $set: { status: 'expired', expiredAt: now.toISOString() } }
+      )
+
+      // Release reserved quantities
+      for (const res of result.filter(r => expiredIds.includes(r.id))) {
+        await stockCollection.updateOne(
+          { productId: res.productId, warehouseId: res.warehouseId },
+          { $inc: { reservedQty: -res.reservedQty } }
+        )
+      }
+    }
+
+    // Summary
+    const activeReservations = result.filter(r => r.status === 'active')
+    const summary = {
+      total: result.length,
+      active: activeReservations.length,
+      fulfilled: result.filter(r => r.status === 'fulfilled').length,
+      released: result.filter(r => r.status === 'released').length,
+      expired: result.filter(r => r.status === 'expired').length + expiredIds.length,
+      totalReservedQty: activeReservations.reduce((sum, r) => sum + (r.reservedQty || 0), 0),
+      totalReservedValue: activeReservations.reduce((sum, r) => sum + (r.reservedValue || 0), 0),
+      byType: {
+        quote: activeReservations.filter(r => r.refType === 'quote').length,
+        sales_order: activeReservations.filter(r => r.refType === 'sales_order').length,
+        project: activeReservations.filter(r => r.refType === 'project').length,
+        manual: activeReservations.filter(r => r.refType === 'manual').length
+      }
+    }
+
+    return successResponse({
+      reservations: sanitizeDocuments(result),
+      summary,
+      statuses: RESERVATION_STATUS,
+      types: RESERVATION_TYPES
+    })
   } catch (error) {
-    console.error('Reservation GET Error:', error)
-    if (error.message === 'Unauthorized') return errorResponse('Unauthorized', 401)
+    console.error('Reservations GET Error:', error)
     return errorResponse('Failed to fetch reservations', 500, error.message)
   }
 }
 
-// POST - Create stock reservation
+// POST - Create reservation
 export async function POST(request) {
   try {
     const user = getAuthUser(request)
@@ -62,226 +131,320 @@ export async function POST(request) {
     const body = await request.json()
     const {
       productId,
+      productName,
+      sku,
       warehouseId,
+      warehouseName,
       quantity,
-      projectId,
-      projectName,
-      orderId,
-      orderNumber,
+      unitPrice,
+      refType = 'manual',
+      refId,
+      refNumber,
+      refName,
       customerId,
       customerName,
+      projectId,
+      projectName,
       notes,
-      expiryDate
+      expiresAt,
+      // Bulk create from quote items
+      items
     } = body
-
-    if (!productId || !warehouseId || !quantity || quantity <= 0) {
-      return errorResponse('Product, warehouse, and positive quantity required', 400)
-    }
 
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
-    const reservationCollection = db.collection('wf_inventory_reservations')
+    const reservations = db.collection('wf_stock_reservations')
     const stockCollection = db.collection('wf_inventory_stock')
-    const movementCollection = db.collection('wf_inventory_movements')
-    const productCollection = db.collection('wf_inventory')
-    const warehouseCollection = db.collection('wf_warehouses')
 
-    // Verify product and warehouse
-    const product = await productCollection.findOne({ id: productId })
-    if (!product) return errorResponse('Product not found', 404)
+    const now = new Date()
+    const createdReservations = []
 
-    const warehouse = await warehouseCollection.findOne({ id: warehouseId })
-    if (!warehouse) return errorResponse('Warehouse not found', 404)
-
-    // Check available stock
-    const stock = await stockCollection.findOne({ productId, warehouseId })
-    const availableQty = stock ? (stock.quantity - (stock.reservedQty || 0)) : 0
-
-    if (availableQty < quantity) {
-      return errorResponse(`Insufficient available stock. Available: ${availableQty}`, 400)
-    }
-
-    // Generate reservation number
-    const reservationCount = await reservationCollection.countDocuments({}) + 1
-    const reservationNumber = `RES-${new Date().getFullYear()}${String(reservationCount).padStart(5, '0')}`
-
-    const reservation = {
-      id: uuidv4(),
-      clientId: user.clientId,
-      reservationNumber,
+    // Handle bulk creation (from quote)
+    const itemsToProcess = items || [{
       productId,
-      productName: product.name,
-      sku: product.sku,
+      productName,
+      sku,
       warehouseId,
-      warehouseName: warehouse.name,
-      quantity: parseFloat(quantity),
-      projectId: projectId || null,
-      projectName: projectName || null,
-      orderId: orderId || null,
-      orderNumber: orderNumber || null,
-      customerId: customerId || null,
-      customerName: customerName || null,
-      status: 'active',
-      notes: notes || '',
-      expiryDate: expiryDate ? new Date(expiryDate) : null,
-      createdBy: user.id,
-      createdByName: user.name || user.email,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    }
-
-    await reservationCollection.insertOne(reservation)
-
-    // Update stock reserved quantity
-    await stockCollection.updateOne(
-      { productId, warehouseId },
-      {
-        $inc: { reservedQty: quantity },
-        $set: {
-          availableQty: (stock.quantity || 0) - (stock.reservedQty || 0) - quantity,
-          updatedAt: new Date()
-        }
-      }
-    )
-
-    // Create reservation movement
-    const movementCount = await movementCollection.countDocuments({}) + 1
-    const movement = {
-      id: uuidv4(),
-      clientId: user.clientId,
-      movementNumber: `MV-${new Date().getFullYear()}${String(movementCount).padStart(6, '0')}`,
-      movementType: 'reservation',
-      productId,
-      productName: product.name,
-      sku: product.sku,
-      warehouseId,
-      warehouseName: warehouse.name,
+      warehouseName,
       quantity,
-      quantityChange: 0, // Reservation doesn't change actual quantity
-      referenceType: 'reservation',
-      referenceId: reservation.id,
-      referenceNumber: reservationNumber,
-      notes: `Reserved for ${projectName || customerName || 'Order'}`,
-      reservedBefore: stock.reservedQty || 0,
-      reservedAfter: (stock.reservedQty || 0) + quantity,
-      createdBy: user.id,
-      createdByName: user.name || user.email,
-      createdAt: new Date()
-    }
-    await movementCollection.insertOne(movement)
+      unitPrice
+    }]
 
-    return successResponse(sanitizeDocument(reservation), 201)
+    for (const item of itemsToProcess) {
+      if (!item.productId || !item.quantity) continue
+
+      // Check available stock
+      const stock = await stockCollection.findOne({
+        productId: item.productId,
+        warehouseId: item.warehouseId || warehouseId || 'default'
+      })
+
+      const currentQty = stock?.quantity || 0
+      const currentReserved = stock?.reservedQty || 0
+      const available = currentQty - currentReserved
+
+      if (item.quantity > available) {
+        return errorResponse(
+          `Insufficient available stock for ${item.productName || item.productId}. Available: ${available}, Requested: ${item.quantity}`,
+          400
+        )
+      }
+
+      // Generate reservation number
+      const typeConfig = RESERVATION_TYPES[refType] || RESERVATION_TYPES.manual
+      const count = await reservations.countDocuments({}) + 1
+      const reservationNumber = `${typeConfig.prefix}-${now.getFullYear()}${String(count).padStart(5, '0')}`
+
+      const reservation = {
+        id: uuidv4(),
+        reservationNumber,
+        
+        // Product
+        productId: item.productId,
+        productName: item.productName,
+        sku: item.sku,
+        
+        // Location
+        warehouseId: item.warehouseId || warehouseId || 'default',
+        warehouseName: item.warehouseName || warehouseName || 'Default',
+        
+        // Quantities
+        requestedQty: item.quantity,
+        reservedQty: item.quantity,
+        fulfilledQty: 0,
+        unit: 'sqft',
+        
+        // Pricing
+        unitPrice: item.unitPrice || 0,
+        reservedValue: item.quantity * (item.unitPrice || 0),
+        
+        // Reference Document
+        refType,
+        refId,
+        refNumber,
+        refName,
+        
+        // Customer/Project
+        customerId,
+        customerName,
+        projectId,
+        projectName,
+        
+        // Status
+        status: 'active',
+        
+        // Expiry
+        expiresAt: expiresAt || new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000).toISOString(), // Default 7 days
+        
+        // Stock snapshot at time of reservation
+        stockAtReservation: currentQty,
+        availableAtReservation: available,
+        
+        // Audit
+        notes,
+        createdBy: user.id,
+        createdByName: user.name || user.email,
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString(),
+        
+        // History
+        history: [{
+          action: 'created',
+          quantity: item.quantity,
+          by: user.id,
+          byName: user.name || user.email,
+          at: now.toISOString(),
+          notes: `Reservation created for ${refType}: ${refNumber || refId || 'N/A'}`
+        }]
+      }
+
+      await reservations.insertOne(reservation)
+      createdReservations.push(reservation)
+
+      // Update stock reserved quantity
+      await stockCollection.updateOne(
+        { productId: item.productId, warehouseId: item.warehouseId || warehouseId || 'default' },
+        {
+          $inc: { reservedQty: item.quantity },
+          $set: { updatedAt: now.toISOString() }
+        }
+      )
+    }
+
+    return successResponse({
+      message: `${createdReservations.length} reservation(s) created`,
+      reservations: sanitizeDocuments(createdReservations)
+    }, 201)
   } catch (error) {
-    console.error('Reservation POST Error:', error)
-    if (error.message === 'Unauthorized') return errorResponse('Unauthorized', 401)
+    console.error('Reservations POST Error:', error)
     return errorResponse('Failed to create reservation', 500, error.message)
   }
 }
 
-// PUT - Update or release reservation
+// PUT - Update reservation (fulfill, release, extend, cancel)
 export async function PUT(request) {
   try {
     const user = getAuthUser(request)
     requireAuth(user)
 
     const body = await request.json()
-    const { id, action, notes } = body
+    const { id, action, quantity, notes, newExpiryDate } = body
 
-    if (!id) return errorResponse('Reservation ID is required', 400)
+    if (!id) return errorResponse('Reservation ID required', 400)
 
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
-    const reservationCollection = db.collection('wf_inventory_reservations')
+    const reservations = db.collection('wf_stock_reservations')
     const stockCollection = db.collection('wf_inventory_stock')
-    const movementCollection = db.collection('wf_inventory_movements')
+    const stockLedger = db.collection('wf_stock_ledger')
 
-    const reservation = await reservationCollection.findOne({ id })
+    const reservation = await reservations.findOne({ id })
     if (!reservation) return errorResponse('Reservation not found', 404)
 
-    let updateData = { updatedAt: new Date() }
+    const now = new Date()
 
     switch (action) {
-      case 'release':
-        if (reservation.status === 'released') {
-          return errorResponse('Reservation already released', 400)
-        }
-
-        // Update stock to release reserved quantity
-        const stock = await stockCollection.findOne({ 
-          productId: reservation.productId, 
-          warehouseId: reservation.warehouseId 
-        })
-
-        await stockCollection.updateOne(
-          { productId: reservation.productId, warehouseId: reservation.warehouseId },
-          {
-            $inc: { reservedQty: -reservation.quantity },
-            $set: {
-              availableQty: (stock?.quantity || 0) - (stock?.reservedQty || 0) + reservation.quantity,
-              updatedAt: new Date()
-            }
-          }
-        )
-
-        // Create release movement
-        const movementCount = await movementCollection.countDocuments({}) + 1
-        const movement = {
-          id: uuidv4(),
-          clientId: user.clientId,
-          movementNumber: `MV-${new Date().getFullYear()}${String(movementCount).padStart(6, '0')}`,
-          movementType: 'release',
-          productId: reservation.productId,
-          productName: reservation.productName,
-          sku: reservation.sku,
-          warehouseId: reservation.warehouseId,
-          warehouseName: reservation.warehouseName,
-          quantity: reservation.quantity,
-          quantityChange: 0,
-          referenceType: 'reservation_release',
-          referenceId: reservation.id,
-          referenceNumber: reservation.reservationNumber,
-          notes: `Released reservation ${reservation.reservationNumber}`,
-          createdBy: user.id,
-          createdByName: user.name || user.email,
-          createdAt: new Date()
-        }
-        await movementCollection.insertOne(movement)
-
-        updateData.status = 'released'
-        updateData.releasedAt = new Date()
-        updateData.releasedBy = user.id
-        updateData.releaseReason = notes || ''
-        break
-
       case 'fulfill':
-        // Mark as fulfilled (used when order is dispatched)
+        // Mark reservation as fulfilled (used for dispatch)
         if (reservation.status !== 'active') {
           return errorResponse('Only active reservations can be fulfilled', 400)
         }
-        updateData.status = 'fulfilled'
-        updateData.fulfilledAt = new Date()
-        updateData.fulfilledBy = user.id
-        break
+
+        const fulfillQty = quantity || reservation.reservedQty
+        const remainingReserved = reservation.reservedQty - fulfillQty
+
+        await reservations.updateOne({ id }, {
+          $set: {
+            status: remainingReserved <= 0 ? 'fulfilled' : 'active',
+            fulfilledQty: (reservation.fulfilledQty || 0) + fulfillQty,
+            reservedQty: remainingReserved > 0 ? remainingReserved : 0,
+            fulfilledAt: remainingReserved <= 0 ? now.toISOString() : null,
+            updatedAt: now.toISOString()
+          },
+          $push: {
+            history: {
+              action: 'fulfilled',
+              quantity: fulfillQty,
+              by: user.id,
+              byName: user.name || user.email,
+              at: now.toISOString(),
+              notes: notes || 'Reservation fulfilled'
+            }
+          }
+        })
+
+        // Update stock reserved qty
+        await stockCollection.updateOne(
+          { productId: reservation.productId, warehouseId: reservation.warehouseId },
+          { $inc: { reservedQty: -fulfillQty } }
+        )
+
+        return successResponse({ message: 'Reservation fulfilled', fulfilledQty: fulfillQty })
+
+      case 'release':
+        // Release reservation back to available stock
+        if (reservation.status !== 'active') {
+          return errorResponse('Only active reservations can be released', 400)
+        }
+
+        const releaseQty = quantity || reservation.reservedQty
+
+        await reservations.updateOne({ id }, {
+          $set: {
+            status: releaseQty >= reservation.reservedQty ? 'released' : 'active',
+            reservedQty: reservation.reservedQty - releaseQty,
+            releasedAt: now.toISOString(),
+            releasedBy: user.id,
+            updatedAt: now.toISOString()
+          },
+          $push: {
+            history: {
+              action: 'released',
+              quantity: releaseQty,
+              by: user.id,
+              byName: user.name || user.email,
+              at: now.toISOString(),
+              notes: notes || 'Stock released back to available'
+            }
+          }
+        })
+
+        // Update stock reserved qty
+        await stockCollection.updateOne(
+          { productId: reservation.productId, warehouseId: reservation.warehouseId },
+          { $inc: { reservedQty: -releaseQty } }
+        )
+
+        return successResponse({ message: 'Stock released', releasedQty: releaseQty })
+
+      case 'extend':
+        // Extend expiry date
+        if (!newExpiryDate) return errorResponse('New expiry date required', 400)
+
+        await reservations.updateOne({ id }, {
+          $set: {
+            expiresAt: newExpiryDate,
+            updatedAt: now.toISOString()
+          },
+          $push: {
+            history: {
+              action: 'extended',
+              by: user.id,
+              byName: user.name || user.email,
+              at: now.toISOString(),
+              notes: `Expiry extended to ${newExpiryDate}`
+            }
+          }
+        })
+
+        return successResponse({ message: 'Reservation extended' })
+
+      case 'cancel':
+        if (reservation.status === 'fulfilled') {
+          return errorResponse('Cannot cancel a fulfilled reservation', 400)
+        }
+
+        // Release any remaining reserved quantity
+        if (reservation.reservedQty > 0) {
+          await stockCollection.updateOne(
+            { productId: reservation.productId, warehouseId: reservation.warehouseId },
+            { $inc: { reservedQty: -reservation.reservedQty } }
+          )
+        }
+
+        await reservations.updateOne({ id }, {
+          $set: {
+            status: 'cancelled',
+            reservedQty: 0,
+            cancelledAt: now.toISOString(),
+            cancelledBy: user.id,
+            cancellationReason: notes,
+            updatedAt: now.toISOString()
+          },
+          $push: {
+            history: {
+              action: 'cancelled',
+              quantity: reservation.reservedQty,
+              by: user.id,
+              byName: user.name || user.email,
+              at: now.toISOString(),
+              notes: notes || 'Reservation cancelled'
+            }
+          }
+        })
+
+        return successResponse({ message: 'Reservation cancelled' })
 
       default:
-        return errorResponse('Invalid action. Use release or fulfill', 400)
+        return errorResponse('Invalid action', 400)
     }
-
-    const result = await reservationCollection.findOneAndUpdate(
-      { id },
-      { $set: updateData },
-      { returnDocument: 'after' }
-    )
-
-    return successResponse(sanitizeDocument(result))
   } catch (error) {
-    console.error('Reservation PUT Error:', error)
-    if (error.message === 'Unauthorized') return errorResponse('Unauthorized', 401)
+    console.error('Reservations PUT Error:', error)
     return errorResponse('Failed to update reservation', 500, error.message)
   }
 }
 
-// DELETE - Cancel/delete pending reservation
+// DELETE - Delete reservation (admin only)
 export async function DELETE(request) {
   try {
     const user = getAuthUser(request)
@@ -290,36 +453,29 @@ export async function DELETE(request) {
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
 
-    if (!id) return errorResponse('Reservation ID is required', 400)
+    if (!id) return errorResponse('Reservation ID required', 400)
 
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
-    const reservationCollection = db.collection('wf_inventory_reservations')
+    const reservations = db.collection('wf_stock_reservations')
     const stockCollection = db.collection('wf_inventory_stock')
 
-    const reservation = await reservationCollection.findOne({ id })
+    const reservation = await reservations.findOne({ id })
     if (!reservation) return errorResponse('Reservation not found', 404)
 
-    if (reservation.status === 'fulfilled') {
-      return errorResponse('Cannot delete fulfilled reservation', 400)
-    }
-
-    // Release the reserved quantity if still active
-    if (reservation.status === 'active') {
+    // Release reserved qty if active
+    if (reservation.status === 'active' && reservation.reservedQty > 0) {
       await stockCollection.updateOne(
         { productId: reservation.productId, warehouseId: reservation.warehouseId },
-        {
-          $inc: { reservedQty: -reservation.quantity },
-          $set: { updatedAt: new Date() }
-        }
+        { $inc: { reservedQty: -reservation.reservedQty } }
       )
     }
 
-    await reservationCollection.deleteOne({ id })
-    return successResponse({ message: 'Reservation deleted successfully' })
+    await reservations.deleteOne({ id })
+
+    return successResponse({ message: 'Reservation deleted' })
   } catch (error) {
-    console.error('Reservation DELETE Error:', error)
-    if (error.message === 'Unauthorized') return errorResponse('Unauthorized', 401)
+    console.error('Reservations DELETE Error:', error)
     return errorResponse('Failed to delete reservation', 500, error.message)
   }
 }
