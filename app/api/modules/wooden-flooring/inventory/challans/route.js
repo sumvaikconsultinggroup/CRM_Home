@@ -2,12 +2,20 @@ import { v4 as uuidv4 } from 'uuid'
 import { getClientDb } from '@/lib/db/multitenancy'
 import { getAuthUser, requireAuth, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
+import { COLLECTIONS } from '@/lib/db/flooring-collections'
 
 export async function OPTIONS() {
   return optionsResponse()
 }
 
-// GET - Fetch Delivery Challans
+// =============================================
+// INVENTORY CHALLANS - READ-ONLY STOCK IMPACT VIEW
+// =============================================
+// This API provides a stock-focused view of challans
+// The primary challan management is in /api/flooring/enhanced/challans
+// Both use the same collection: flooring_challans (SINGLE SOURCE OF TRUTH)
+
+// GET - Fetch Delivery Challans (Stock Impact View)
 export async function GET(request) {
   try {
     const user = getAuthUser(request)
@@ -22,7 +30,8 @@ export async function GET(request) {
 
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
-    const challanCollection = db.collection('wf_inventory_challans')
+    // Use flooring_challans as single source of truth
+    const challanCollection = db.collection(COLLECTIONS.CHALLANS)
 
     if (challanId) {
       const challan = await challanCollection.findOne({ id: challanId })
