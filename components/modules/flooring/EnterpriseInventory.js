@@ -3775,6 +3775,174 @@ Please confirm receipt of goods and update status after delivery.`
   }
 
   // =============================================
+  // RENDER: VALUATION VIEW (Phase 2 - Enterprise)
+  // =============================================
+
+  const renderValuationView = () => {
+    const { items = [], summary = {}, topByValue = [] } = valuation
+
+    const handleReportTypeChange = (type) => {
+      setValuationReportType(type)
+      fetchValuation(type, { warehouseId: selectedWarehouse })
+    }
+
+    return (
+      <div className="space-y-4">
+        {/* Report Type Selector */}
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div className="flex items-center gap-2">
+            {[
+              { id: 'current', label: 'Current Valuation', icon: DollarSign },
+              { id: 'period', label: 'Period Report', icon: Calendar },
+              { id: 'cogs', label: 'COGS Report', icon: TrendingDown }
+            ].map(rt => (
+              <Button 
+                key={rt.id}
+                variant={valuationReportType === rt.id ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => handleReportTypeChange(rt.id)}
+                disabled={valuationLoading}
+              >
+                <rt.icon className="h-4 w-4 mr-2" /> {rt.label}
+              </Button>
+            ))}
+          </div>
+          <Button variant="ghost" size="sm" onClick={() => fetchValuation(valuationReportType, { warehouseId: selectedWarehouse })} disabled={valuationLoading}>
+            <RefreshCw className={`h-4 w-4 ${valuationLoading ? 'animate-spin' : ''}`} />
+          </Button>
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-6 gap-4">
+          <StatCard title="Total Products" value={summary.totalProducts || 0} icon={Package} color="bg-blue-500" />
+          <StatCard title="Total Quantity" value={`${(summary.totalQuantity || 0).toLocaleString()} sqft`} icon={Layers} color="bg-green-500" />
+          <StatCard title="Total Value" value={`₹${((summary.totalValue || 0) / 100000).toFixed(2)}L`} icon={DollarSign} color="bg-purple-500" />
+          <StatCard title="Reserved Qty" value={`${(summary.reservedQuantity || 0).toLocaleString()} sqft`} icon={Lock} color="bg-amber-500" />
+          <StatCard title="Available Value" value={`₹${((summary.availableValue || 0) / 100000).toFixed(2)}L`} icon={Wallet} color="bg-teal-500" />
+          <StatCard title="Avg Margin" value={`${summary.avgMargin || 0}%`} icon={TrendingUp} color="bg-indigo-500" />
+        </div>
+
+        {/* Info Banner */}
+        <Card className="p-4 bg-green-50 border-green-200">
+          <div className="flex items-start gap-3">
+            <DollarSign className="h-5 w-5 text-green-600 mt-0.5" />
+            <div>
+              <h4 className="font-semibold text-green-800">Enterprise Stock Valuation</h4>
+              <p className="text-sm text-green-700">
+                Comprehensive inventory valuation using Weighted Average Cost method. Shows total value, reserved stock value, 
+                available stock, and gross margins. Supports period comparisons and COGS reporting.
+              </p>
+            </div>
+          </div>
+        </Card>
+
+        {/* Top Products by Value */}
+        {topByValue.length > 0 && (
+          <Card className="p-4">
+            <h4 className="font-semibold mb-4 flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-green-600" /> Top 10 Products by Value
+            </h4>
+            <div className="grid grid-cols-5 gap-3">
+              {topByValue.slice(0, 5).map((item, idx) => (
+                <div key={item.productId} className="p-3 bg-slate-50 rounded-lg">
+                  <div className="flex items-center gap-2 mb-2">
+                    <Badge className="bg-blue-100 text-blue-700">{idx + 1}</Badge>
+                    <span className="text-xs font-mono text-slate-500">{item.sku}</span>
+                  </div>
+                  <p className="font-medium text-sm truncate">{item.productName}</p>
+                  <p className="text-lg font-bold mt-1">₹{((item.totalValue || 0) / 1000).toFixed(1)}K</p>
+                  <p className="text-xs text-slate-500">{(item.totalQty || 0).toLocaleString()} sqft</p>
+                </div>
+              ))}
+            </div>
+          </Card>
+        )}
+
+        {/* Valuation Table */}
+        {items.length > 0 ? (
+          <Card>
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead className="bg-slate-50 border-b">
+                  <tr>
+                    <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Product</th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase">SKU</th>
+                    <th className="px-3 py-3 text-left text-xs font-semibold text-slate-600 uppercase">Warehouse</th>
+                    <th className="px-3 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Total Qty</th>
+                    <th className="px-3 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Reserved</th>
+                    <th className="px-3 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Available</th>
+                    <th className="px-3 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Avg Cost</th>
+                    <th className="px-3 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Sell Price</th>
+                    <th className="px-3 py-3 text-right text-xs font-semibold text-slate-600 uppercase">Total Value</th>
+                    <th className="px-3 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Margin</th>
+                    <th className="px-3 py-3 text-center text-xs font-semibold text-slate-600 uppercase">Status</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y">
+                  {items.map(item => (
+                    <tr key={`${item.productId}_${item.warehouseId}`} className="hover:bg-slate-50">
+                      <td className="px-3 py-2">
+                        <p className="font-medium text-sm">{item.productName}</p>
+                      </td>
+                      <td className="px-3 py-2">
+                        <Badge variant="outline" className="font-mono text-xs">{item.sku}</Badge>
+                      </td>
+                      <td className="px-3 py-2 text-sm">{item.warehouseName}</td>
+                      <td className="px-3 py-2 text-right font-medium">{(item.totalQty || 0).toLocaleString()}</td>
+                      <td className="px-3 py-2 text-right">
+                        {item.reservedQty > 0 ? (
+                          <span className="text-amber-600 font-medium">{(item.reservedQty || 0).toLocaleString()}</span>
+                        ) : '-'}
+                      </td>
+                      <td className="px-3 py-2 text-right text-green-600 font-medium">{(item.availableQty || 0).toLocaleString()}</td>
+                      <td className="px-3 py-2 text-right text-sm">₹{(item.avgCost || 0).toFixed(2)}</td>
+                      <td className="px-3 py-2 text-right text-sm">₹{(item.sellingPrice || 0).toFixed(2)}</td>
+                      <td className="px-3 py-2 text-right font-bold">₹{((item.totalValue || 0) / 1000).toFixed(1)}K</td>
+                      <td className="px-3 py-2 text-center">
+                        <Badge className={parseFloat(item.grossMargin) > 20 ? 'bg-green-100 text-green-700' : parseFloat(item.grossMargin) > 10 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}>
+                          {item.grossMargin}%
+                        </Badge>
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <Badge className={
+                          item.status === 'in_stock' ? 'bg-green-100 text-green-700' :
+                          item.status === 'low_stock' ? 'bg-amber-100 text-amber-700' :
+                          'bg-red-100 text-red-700'
+                        }>
+                          {item.status?.replace('_', ' ')}
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+                <tfoot className="bg-slate-100 font-semibold">
+                  <tr>
+                    <td colSpan="3" className="px-3 py-3">Totals</td>
+                    <td className="px-3 py-3 text-right">{(summary.totalQuantity || 0).toLocaleString()}</td>
+                    <td className="px-3 py-3 text-right text-amber-600">{(summary.reservedQuantity || 0).toLocaleString()}</td>
+                    <td className="px-3 py-3 text-right text-green-600">{(summary.availableQuantity || 0).toLocaleString()}</td>
+                    <td colSpan="2"></td>
+                    <td className="px-3 py-3 text-right">₹{((summary.totalValue || 0) / 100000).toFixed(2)}L</td>
+                    <td colSpan="2"></td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </Card>
+        ) : (
+          <EmptyState
+            icon={DollarSign}
+            title="No Valuation Data"
+            description="Stock valuation will appear here once you have inventory in the system."
+            action={() => fetchValuation(valuationReportType, { warehouseId: selectedWarehouse })}
+            actionLabel="Load Valuation"
+          />
+        )}
+      </div>
+    )
+  }
+
+  // =============================================
   // RENDER: ANALYTICS VIEW (Phase 3)
   // =============================================
 
