@@ -66,6 +66,8 @@ export async function GET(request) {
 }
 
 // POST - Create new Delivery Challan
+// NOTE: For full challan workflow, use /api/flooring/enhanced/challans
+// This endpoint creates inventory-focused challans
 export async function POST(request) {
   try {
     const user = getAuthUser(request)
@@ -96,12 +98,12 @@ export async function POST(request) {
 
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
-    const challanCollection = db.collection('wf_inventory_challans')
-    const warehouseCollection = db.collection('wf_warehouses')
-    const stockCollection = db.collection('wf_inventory_stock')
+    // Use flooring_challans as single source of truth
+    const challanCollection = db.collection(COLLECTIONS.CHALLANS)
+    const warehouseCollection = db.collection(COLLECTIONS.WAREHOUSES)
+    const stockCollection = db.collection(COLLECTIONS.INVENTORY_STOCK)
     // Check both product collections - flooring_products is the primary catalog
-    const flooringProductsCollection = db.collection('flooring_products')
-    const wfInventoryCollection = db.collection('wf_inventory')
+    const flooringProductsCollection = db.collection(COLLECTIONS.PRODUCTS)
 
     // Verify warehouse
     const warehouse = await warehouseCollection.findOne({ id: warehouseId })
