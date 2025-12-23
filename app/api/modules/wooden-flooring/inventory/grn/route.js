@@ -207,7 +207,7 @@ export async function PUT(request) {
           return errorResponse('Only draft GRNs can be received', 400)
         }
 
-        // Create stock movements for each item
+        // Create stock movements and ledger entries for each item
         for (const item of grn.items) {
           // Create goods receipt movement
           const movementCount = await movementCollection.countDocuments({}) + 1
@@ -273,9 +273,57 @@ export async function PUT(request) {
           movement.stockAfter = stock.quantity + item.quantity
 
           // Calculate new weighted average cost
-          const totalValue = (stock.quantity * stock.avgCostPrice) + (item.quantity * item.unitCost)
+          const totalValue = (stock.quantity * (stock.avgCostPrice || 0)) + (item.quantity * item.unitCost)
           const newTotalQty = stock.quantity + item.quantity
           const newAvgCost = newTotalQty > 0 ? totalValue / newTotalQty : item.unitCost
+
+          // ========================================
+          // CREATE STOCK LEDGER ENTRY (DOUBLE-ENTRY)
+          // ========================================
+          const ledgerSequence = await stockLedger
+            .find({ productId: item.productId, warehouseId: grn.warehouseId })
+            .sort({ sequence: -1 })
+            .limit(1)
+            .toArray()
+          const nextSequence = (ledgerSequence[0]?.sequence || 0) + 1
+
+          const ledgerEntry = {
+            id: uuidv4(),
+            sequence: nextSequence,
+            productId: item.productId,
+            productName: item.productName,
+            sku: item.sku,
+            warehouseId: grn.warehouseId,
+            warehouseName: grn.warehouseName,
+            movementType: 'grn_receipt',
+            movementLabel: 'GRN Receipt',
+            direction: 'IN',
+            quantity: item.quantity,
+            unit: product?.unit || 'sqft',
+            quantityChange: item.quantity,
+            balanceBefore: stock.quantity,
+            balanceAfter: stock.quantity + item.quantity,
+            unitCost: item.unitCost,
+            totalValue: item.quantity * item.unitCost,
+            avgCostBefore: stock.avgCostPrice || 0,
+            avgCostAfter: newAvgCost,
+            refDocType: 'grn',
+            refDocId: grn.id,
+            refDocNumber: grn.grnNumber,
+            batchNumber: item.batchNumber,
+            lotNumber: item.lotNumber,
+            vendorId: grn.vendorId,
+            vendorName: grn.vendorName,
+            notes: `GRN Receipt - ${grn.grnNumber}${grn.invoiceNumber ? ` | Invoice: ${grn.invoiceNumber}` : ''}`,
+            createdBy: user.id,
+            createdByName: user.name || user.email,
+            createdAt: new Date().toISOString(),
+            status: 'posted',
+            posted: true,
+            postedAt: new Date().toISOString()
+          }
+          await stockLedger.insertOne(ledgerEntry)
+          // ========================================
 
           // Update stock
           await stockCollection.updateOne(
@@ -285,8 +333,10 @@ export async function PUT(request) {
               $set: {
                 availableQty: (stock.quantity + item.quantity) - (stock.reservedQty || 0),
                 avgCostPrice: newAvgCost,
+                avgCost: newAvgCost,
                 lastCostPrice: item.unitCost,
                 lastMovementDate: new Date(),
+                lastLedgerEntryId: ledgerEntry.id,
                 updatedAt: new Date()
               }
             }
@@ -315,6 +365,7 @@ export async function PUT(request) {
               grnNumber: grn.grnNumber,
               vendorId: grn.vendorId,
               vendorName: grn.vendorName,
+              ledgerEntryId: ledgerEntry.id,
               status: 'active',
               createdAt: new Date(),
               updatedAt: new Date()
@@ -327,6 +378,7 @@ export async function PUT(request) {
         updateData.receivedDate = updateData.receivedDate || new Date()
         updateData.receivedBy = user.id
         updateData.receivedByName = user.name || user.email
+        updateData.ledgerEntriesCreated = true
         break
 
       case 'cancel':
