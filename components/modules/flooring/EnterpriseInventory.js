@@ -23,7 +23,7 @@ import {
   Truck, Settings, BarChart3, X, Lock, Unlock, History, Calendar, FileSpreadsheet, Bell,
   ChevronRight, ChevronDown, Send, RotateCcw, Minus, ShoppingCart, PackageCheck, PackageX,
   ArrowUp, ArrowDown, Layers, Archive, Timer, AlertCircle, Info, FileText, Scan, ClipboardList,
-  UserCheck, Bookmark, Receipt
+  UserCheck, Bookmark, Receipt, Wallet
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { PhoneInput } from '@/components/ui/phone-input'
