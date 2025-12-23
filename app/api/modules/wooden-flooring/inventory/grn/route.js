@@ -193,6 +193,7 @@ export async function PUT(request) {
     const stockCollection = db.collection('wf_inventory_stock')
     const batchCollection = db.collection('wf_inventory_batches')
     const productCollection = db.collection('wf_inventory')
+    const stockLedger = db.collection('wf_stock_ledger') // Stock Ledger for double-entry
 
     const grn = await grnCollection.findOne({ id })
     if (!grn) return errorResponse('GRN not found', 404)
