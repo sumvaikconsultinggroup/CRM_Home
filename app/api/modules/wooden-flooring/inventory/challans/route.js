@@ -116,11 +116,8 @@ export async function POST(request) {
         return errorResponse('Each item must have productId and positive quantity', 400)
       }
 
-      // Try to find product in flooring_products first, then wf_inventory
-      let product = await flooringProductsCollection.findOne({ id: item.productId })
-      if (!product) {
-        product = await wfInventoryCollection.findOne({ id: item.productId })
-      }
+      // Find product in flooring_products (primary catalog)
+      const product = await flooringProductsCollection.findOne({ id: item.productId })
       if (!product) return errorResponse(`Product not found: ${item.productId}`, 404)
 
       const stock = await stockCollection.findOne({ productId: item.productId, warehouseId })
