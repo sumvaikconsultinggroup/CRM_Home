@@ -3,6 +3,8 @@ import { v4 as uuidv4 } from 'uuid'
 import { getClientDb } from '@/lib/db/multitenancy'
 import { getAuthUser, requireClientAccess, getUserDatabaseName } from '@/lib/utils/auth'
 import { successResponse, errorResponse, optionsResponse, sanitizeDocuments, sanitizeDocument } from '@/lib/utils/response'
+import { checkPermission, logAccess } from '@/lib/middleware/rbac'
+import { COLLECTIONS } from '@/lib/db/flooring-collections'
 
 export async function OPTIONS() {
   return optionsResponse()
@@ -11,8 +13,10 @@ export async function OPTIONS() {
 // GET - Fetch products with advanced filtering
 export async function GET(request) {
   try {
-    const user = getAuthUser(request)
-    requireClientAccess(user)
+    // RBAC Check - products.view permission
+    const authCheck = await checkPermission(request, 'products.view')
+    if (!authCheck.authorized) return authCheck.error
+    const user = authCheck.user
 
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
@@ -28,7 +32,7 @@ export async function GET(request) {
 
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
-    const products = db.collection('flooring_products')
+    const products = db.collection(COLLECTIONS.PRODUCTS)
 
     // Single product
     if (id) {
