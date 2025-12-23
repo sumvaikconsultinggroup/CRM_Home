@@ -150,8 +150,10 @@ const performStockOut = async (db, challan, user) => {
 // GET - Fetch challans
 export async function GET(request) {
   try {
-    const user = getAuthUser(request)
-    requireClientAccess(user)
+    // RBAC Check - challans.view permission
+    const authCheck = await checkPermission(request, 'challans.view')
+    if (!authCheck.authorized) return authCheck.error
+    const user = authCheck.user
 
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
@@ -164,7 +166,7 @@ export async function GET(request) {
 
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
-    const challans = db.collection('flooring_challans')
+    const challans = db.collection(COLLECTIONS.CHALLANS)
 
     // Get single challan by ID
     if (id) {
@@ -172,7 +174,7 @@ export async function GET(request) {
       if (!challan) return errorResponse('Challan not found', 404)
       
       // Get items
-      const challanItems = db.collection('flooring_challan_items')
+      const challanItems = db.collection(COLLECTIONS.CHALLAN_ITEMS)
       const items = await challanItems.find({ challanId: id }).toArray()
       
       return successResponse(sanitizeDocument({ ...challan, items: sanitizeDocuments(items) }))
