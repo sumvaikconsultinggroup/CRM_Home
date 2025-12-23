@@ -10614,6 +10614,292 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               </div>
             </TabsContent>
 
+            {/* Access Management (Enterprise RBAC) */}
+            <TabsContent value="access">
+              <div className="space-y-6">
+                {/* Header */}
+                <Card className="border-blue-200 bg-blue-50">
+                  <CardContent className="p-4">
+                    <div className="flex items-start gap-3">
+                      <Users className="h-5 w-5 text-blue-600 mt-0.5" />
+                      <div>
+                        <h4 className="font-semibold text-blue-800">Enterprise Role-Based Access Control</h4>
+                        <p className="text-sm text-blue-700">
+                          Manage user permissions for the Flooring Module. Users are synced from CRM (single source of truth). 
+                          Assign roles to control access to tabs and features.
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Summary Cards */}
+                <div className="grid grid-cols-5 gap-4">
+                  <Card className="p-4 border-l-4 border-l-blue-500">
+                    <p className="text-sm text-slate-500">Total Users</p>
+                    <p className="text-2xl font-bold">{accessUsers.summary?.total || 0}</p>
+                  </Card>
+                  <Card className="p-4 border-l-4 border-l-green-500">
+                    <p className="text-sm text-slate-500">With Roles</p>
+                    <p className="text-2xl font-bold text-green-600">{accessUsers.summary?.withRoles || 0}</p>
+                  </Card>
+                  <Card className="p-4 border-l-4 border-l-amber-500">
+                    <p className="text-sm text-slate-500">Without Roles</p>
+                    <p className="text-2xl font-bold text-amber-600">{accessUsers.summary?.withoutRoles || 0}</p>
+                  </Card>
+                  <Card className="p-4 border-l-4 border-l-purple-500">
+                    <p className="text-sm text-slate-500">Admins</p>
+                    <p className="text-2xl font-bold">{(accessUsers.summary?.byRole?.super_admin || 0) + (accessUsers.summary?.byRole?.client_admin || 0)}</p>
+                  </Card>
+                  <Card className="p-4 border-l-4 border-l-slate-500">
+                    <p className="text-sm text-slate-500">Available Roles</p>
+                    <p className="text-2xl font-bold">{accessRoles.roles?.length || 7}</p>
+                  </Card>
+                </div>
+
+                {/* Roles Section */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <ShieldCheck className="h-5 w-5" /> Role Definitions
+                        </CardTitle>
+                        <CardDescription>System and custom roles with permission sets</CardDescription>
+                      </div>
+                      <Button variant="outline" onClick={fetchAccessRoles} disabled={accessLoading}>
+                        <RefreshCw className={`h-4 w-4 mr-2 ${accessLoading ? 'animate-spin' : ''}`} /> Refresh
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-2 gap-4">
+                      {(accessRoles.roles || Object.values(accessRoles.defaultRoles || {})).map(role => (
+                        <Card key={role.id} className={`p-4 ${role.isSystem ? 'bg-slate-50' : 'bg-blue-50 border-blue-200'}`}>
+                          <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center gap-2">
+                              <Badge className={
+                                role.level >= 90 ? 'bg-red-100 text-red-700' :
+                                role.level >= 70 ? 'bg-purple-100 text-purple-700' :
+                                role.level >= 50 ? 'bg-blue-100 text-blue-700' :
+                                'bg-slate-100 text-slate-700'
+                              }>
+                                Level {role.level}
+                              </Badge>
+                              <span className="font-semibold">{role.name}</span>
+                            </div>
+                            {role.isSystem && <Badge variant="outline" className="text-xs">System</Badge>}
+                            {role.isCustom && <Badge className="bg-green-100 text-green-700 text-xs">Custom</Badge>}
+                          </div>
+                          <p className="text-sm text-slate-600 mb-3">{role.description}</p>
+                          <div className="flex flex-wrap gap-1">
+                            {role.permissions?.flooring?.tabs && Object.entries(role.permissions.flooring.tabs).slice(0, 5).map(([tab, perms]) => (
+                              perms.view && (
+                                <Badge key={tab} variant="outline" className="text-xs capitalize">
+                                  {tab}
+                                </Badge>
+                              )
+                            ))}
+                            {role.permissions?.flooring?.tabs && Object.keys(role.permissions.flooring.tabs).length > 5 && (
+                              <Badge variant="outline" className="text-xs">+{Object.keys(role.permissions.flooring.tabs).length - 5} more</Badge>
+                            )}
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Users Section */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Users className="h-5 w-5" /> User Role Assignments
+                        </CardTitle>
+                        <CardDescription>Users synced from CRM with their assigned roles</CardDescription>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" onClick={async () => {
+                          try {
+                            setAccessLoading(true)
+                            const res = await fetch('/api/flooring/enhanced/access-management', {
+                              method: 'POST',
+                              headers,
+                              body: JSON.stringify({ action: 'sync_from_crm', autoAssignRole: false })
+                            })
+                            const data = await res.json()
+                            toast.success(`Synced ${data.totalUsers} users from CRM`)
+                            fetchAccessUsers()
+                          } catch (error) {
+                            toast.error('Sync failed')
+                          } finally {
+                            setAccessLoading(false)
+                          }
+                        }}>
+                          <RefreshCw className="h-4 w-4 mr-2" /> Sync from CRM
+                        </Button>
+                        <Button variant="outline" onClick={fetchAccessUsers}>
+                          <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+                        </Button>
+                      </div>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {(accessUsers.users || []).length > 0 ? (
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>User</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Current Role</TableHead>
+                            <TableHead>Role Level</TableHead>
+                            <TableHead>Assigned</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {(accessUsers.users || []).map(u => (
+                            <TableRow key={u.id}>
+                              <TableCell className="font-medium">{u.name || 'N/A'}</TableCell>
+                              <TableCell>{u.email}</TableCell>
+                              <TableCell>
+                                {u.roleName ? (
+                                  <Badge className={
+                                    u.roleLevel >= 90 ? 'bg-red-100 text-red-700' :
+                                    u.roleLevel >= 70 ? 'bg-purple-100 text-purple-700' :
+                                    u.roleLevel >= 50 ? 'bg-blue-100 text-blue-700' :
+                                    'bg-slate-100 text-slate-700'
+                                  }>
+                                    {u.roleName}
+                                  </Badge>
+                                ) : (
+                                  <Badge variant="outline" className="text-amber-600">No Role</Badge>
+                                )}
+                              </TableCell>
+                              <TableCell>{u.roleLevel || '-'}</TableCell>
+                              <TableCell>{u.assignedAt ? new Date(u.assignedAt).toLocaleDateString() : '-'}</TableCell>
+                              <TableCell>
+                                <DropdownMenu>
+                                  <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="sm">
+                                      <MoreVertical className="h-4 w-4" />
+                                    </Button>
+                                  </DropdownMenuTrigger>
+                                  <DropdownMenuContent align="end">
+                                    <DropdownMenuLabel>Assign Role</DropdownMenuLabel>
+                                    <DropdownMenuSeparator />
+                                    {Object.values(accessRoles.defaultRoles || {}).map(role => (
+                                      <DropdownMenuItem key={role.id} onClick={async () => {
+                                        try {
+                                          const res = await fetch('/api/flooring/enhanced/access-management', {
+                                            method: 'POST',
+                                            headers,
+                                            body: JSON.stringify({ action: 'assign_role', userId: u.id, roleId: role.id })
+                                          })
+                                          if (res.ok) {
+                                            toast.success(`Assigned ${role.name} to ${u.name || u.email}`)
+                                            fetchAccessUsers()
+                                          } else {
+                                            toast.error('Failed to assign role')
+                                          }
+                                        } catch (error) {
+                                          toast.error('Error assigning role')
+                                        }
+                                      }}>
+                                        <Badge className={
+                                          role.level >= 90 ? 'bg-red-100 text-red-700' :
+                                          role.level >= 70 ? 'bg-purple-100 text-purple-700' :
+                                          role.level >= 50 ? 'bg-blue-100 text-blue-700' :
+                                          'bg-slate-100 text-slate-700'
+                                        } variant="outline" className="mr-2">{role.level}</Badge>
+                                        {role.name}
+                                      </DropdownMenuItem>
+                                    ))}
+                                    {u.roleId && (
+                                      <>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem className="text-red-600" onClick={async () => {
+                                          try {
+                                            const res = await fetch('/api/flooring/enhanced/access-management', {
+                                              method: 'PUT',
+                                              headers,
+                                              body: JSON.stringify({ action: 'revoke_role', userId: u.id })
+                                            })
+                                            if (res.ok) {
+                                              toast.success('Role revoked')
+                                              fetchAccessUsers()
+                                            }
+                                          } catch (error) {
+                                            toast.error('Error revoking role')
+                                          }
+                                        }}>
+                                          <X className="h-4 w-4 mr-2" /> Revoke Role
+                                        </DropdownMenuItem>
+                                      </>
+                                    )}
+                                  </DropdownMenuContent>
+                                </DropdownMenu>
+                              </TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    ) : (
+                      <div className="text-center py-8">
+                        <Users className="h-12 w-12 mx-auto text-slate-300 mb-4" />
+                        <h3 className="font-semibold text-lg mb-2">No Users Found</h3>
+                        <p className="text-slate-500 mb-4">Click &quot;Sync from CRM&quot; to load users</p>
+                        <Button variant="outline" onClick={() => {
+                          fetchAccessRoles()
+                          fetchAccessUsers()
+                        }}>
+                          <RefreshCw className="h-4 w-4 mr-2" /> Load Data
+                        </Button>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Audit Log */}
+                <Card>
+                  <CardHeader>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <History className="h-5 w-5" /> Access Audit Log
+                        </CardTitle>
+                        <CardDescription>History of role changes and access modifications</CardDescription>
+                      </div>
+                      <Button variant="ghost" size="sm" onClick={fetchAccessAuditLog}>
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    {accessAuditLog.length > 0 ? (
+                      <div className="space-y-2 max-h-64 overflow-y-auto">
+                        {accessAuditLog.slice(0, 20).map(log => (
+                          <div key={log.id} className="flex items-center justify-between p-2 bg-slate-50 rounded text-sm">
+                            <div className="flex items-center gap-3">
+                              <Badge variant="outline" className="capitalize">{log.action?.replace('_', ' ')}</Badge>
+                              <span>{log.performedByName}</span>
+                              {log.targetUserId && <span className="text-slate-500">→ User: {log.targetUserId?.slice(0, 8)}</span>}
+                              {log.newRoleId && <Badge className="bg-green-100 text-green-700">{log.newRoleId}</Badge>}
+                            </div>
+                            <span className="text-slate-400">{new Date(log.createdAt).toLocaleString()}</span>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-center text-slate-500 py-4">No audit log entries yet</p>
+                    )}
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
+
             {/* CRM Sync */}
             <TabsContent value="sync">
               <Card>
