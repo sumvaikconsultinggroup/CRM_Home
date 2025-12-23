@@ -330,6 +330,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   const [showEditReasonDialog, setShowEditReasonDialog] = useState(false)
   const [pendingEditData, setPendingEditData] = useState(null)
   
+  // Access Management States (Enterprise RBAC)
+  const [accessRoles, setAccessRoles] = useState({ roles: [], defaultRoles: {} })
+  const [accessUsers, setAccessUsers] = useState({ users: [], summary: {} })
+  const [accessAuditLog, setAccessAuditLog] = useState([])
+  const [accessLoading, setAccessLoading] = useState(false)
+  const [assignRoleDialog, setAssignRoleDialog] = useState({ open: false, user: null })
+  
   // Settings States (moved to component level to fix hook issues)
   const [settingsTab, setSettingsTab] = useState('general')
   const [whatsappConfig, setWhatsappConfig] = useState({
