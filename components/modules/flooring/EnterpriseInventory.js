@@ -481,6 +481,37 @@ export function EnterpriseInventory({ token, products = [], onRefreshProducts })
     }
   }, [token])
 
+  // Fetch Barcodes (Phase 3)
+  const fetchBarcodes = useCallback(async () => {
+    try {
+      const res = await fetch('/api/flooring/enhanced/barcodes', { headers })
+      const data = await res.json()
+      if (data.barcodes) {
+        setBarcodes(data.barcodes)
+        setBarcodeSummary(data.summary || {})
+        setBarcodeTypes(data.types || {})
+      }
+    } catch (error) {
+      console.error('Barcodes fetch error:', error)
+    }
+  }, [token])
+
+  // Fetch Stock Aging Analytics (Phase 3)
+  const fetchStockAging = useCallback(async (reportType = 'aging') => {
+    try {
+      setAnalyticsLoading(true)
+      const res = await fetch(`/api/flooring/enhanced/stock-aging?type=${reportType}`, { headers })
+      const data = await res.json()
+      if (data) {
+        setStockAgingReport(data)
+      }
+    } catch (error) {
+      console.error('Stock aging fetch error:', error)
+    } finally {
+      setAnalyticsLoading(false)
+    }
+  }, [token])
+
   const handleQuickLookup = async (searchValue) => {
     if (!searchValue || searchValue.length < 2) return
     try {
