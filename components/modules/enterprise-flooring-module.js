@@ -10820,12 +10820,12 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                                           toast.error('Error assigning role')
                                         }
                                       }}>
-                                        <Badge className={
+                                        <Badge variant="outline" className={`mr-2 ${
                                           role.level >= 90 ? 'bg-red-100 text-red-700' :
                                           role.level >= 70 ? 'bg-purple-100 text-purple-700' :
                                           role.level >= 50 ? 'bg-blue-100 text-blue-700' :
                                           'bg-slate-100 text-slate-700'
-                                        } variant="outline" className="mr-2">{role.level}</Badge>
+                                        }`}>{role.level}</Badge>
                                         {role.name}
                                       </DropdownMenuItem>
                                     ))}
