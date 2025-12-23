@@ -5872,9 +5872,6 @@ Please confirm receipt of goods and update status after delivery.`
           <TabsTrigger value="analytics" className="flex items-center gap-2">
             <BarChart3 className="h-4 w-4" /> Analytics
           </TabsTrigger>
-          <TabsTrigger value="access" className="flex items-center gap-2">
-            <UserCheck className="h-4 w-4" /> Access
-          </TabsTrigger>
         </TabsList>
 
         <div className="mt-4">
@@ -5895,7 +5892,6 @@ Please confirm receipt of goods and update status after delivery.`
           <TabsContent value="ledger">{renderStockLedgerView()}</TabsContent>
           <TabsContent value="valuation">{renderValuationView()}</TabsContent>
           <TabsContent value="analytics">{renderAnalyticsView()}</TabsContent>
-          <TabsContent value="access">{renderAccessView()}</TabsContent>
         </div>
       </Tabs>
 
