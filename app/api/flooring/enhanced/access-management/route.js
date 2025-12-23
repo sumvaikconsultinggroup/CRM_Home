@@ -456,9 +456,13 @@ export async function POST(request) {
         return successResponse({ message: 'Role created', role: sanitizeDocument(newRole) }, 201)
 
       case 'sync_from_crm':
-        // Sync users from CRM (users collection is the source)
-        const usersCollection = db.collection('users')
-        const crmUsers = await usersCollection.find({}).toArray()
+        // Sync users from CRM (main database is the source of truth)
+        const mainDbSync = await getMainDb()
+        const crmUsersCollectionSync = mainDbSync.collection('users')
+        
+        // Get users filtered by clientId
+        const crmQuerySync = user.clientId ? { clientId: user.clientId } : {}
+        const crmUsers = await crmUsersCollectionSync.find(crmQuerySync).toArray()
         
         // Get existing role assignments
         const existingAssignments = await userRolesCollection.find({}).toArray()
@@ -468,17 +472,34 @@ export async function POST(request) {
         const unassignedUsers = crmUsers.filter(u => !assignedUserIds.includes(u.id))
         
         // Optionally auto-assign default role to unassigned users
+        let newlyAssignedCount = 0
         if (body.autoAssignRole) {
           const defaultRoleId = body.defaultRoleId || 'viewer'
           for (const u of unassignedUsers) {
             await userRolesCollection.insertOne({
               id: uuidv4(),
               userId: u.id,
+              userName: u.name,
+              userEmail: u.email,
               roleId: defaultRoleId,
               assignedAt: now,
               assignedBy: user.id,
               assignedByName: user.name || user.email,
               autoAssigned: true
+            })
+            newlyAssignedCount++
+          }
+          
+          // Create audit log for bulk assignment
+          if (newlyAssignedCount > 0) {
+            await auditLog.insertOne({
+              id: uuidv4(),
+              action: 'bulk_role_assigned',
+              roleId: defaultRoleId,
+              usersAffected: newlyAssignedCount,
+              performedBy: user.id,
+              performedByName: user.name || user.email,
+              createdAt: now
             })
           }
         }
@@ -486,9 +507,15 @@ export async function POST(request) {
         return successResponse({
           message: 'Sync complete',
           totalUsers: crmUsers.length,
-          assignedUsers: assignedUserIds.length,
+          alreadyAssigned: assignedUserIds.length,
           unassignedUsers: unassignedUsers.length,
-          newlyAssigned: body.autoAssignRole ? unassignedUsers.length : 0
+          newlyAssigned: newlyAssignedCount,
+          users: sanitizeDocuments(crmUsers.map(u => ({
+            id: u.id,
+            name: u.name,
+            email: u.email,
+            hasRole: assignedUserIds.includes(u.id) || (body.autoAssignRole && unassignedUsers.some(uu => uu.id === u.id))
+          })))
         })
 
       default:
