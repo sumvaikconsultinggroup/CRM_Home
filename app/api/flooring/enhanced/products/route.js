@@ -266,8 +266,10 @@ export async function POST(request) {
 // PUT - Update product
 export async function PUT(request) {
   try {
-    const user = getAuthUser(request)
-    requireClientAccess(user)
+    // RBAC Check - products.edit permission
+    const authCheck = await checkPermission(request, 'products.edit')
+    if (!authCheck.authorized) return authCheck.error
+    const user = authCheck.user
 
     const body = await request.json()
     const { id, ...updateData } = body
@@ -276,7 +278,7 @@ export async function PUT(request) {
 
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
-    const products = db.collection('flooring_products')
+    const products = db.collection(COLLECTIONS.PRODUCTS)
 
     updateData.updatedAt = new Date().toISOString()
     updateData.updatedBy = user.id
@@ -293,6 +295,9 @@ export async function PUT(request) {
     // No sync to Build Inventory. Products are managed within flooring_products only.
     // === END SYNC DISABLED ===
     
+    // Log access for audit
+    await logAccess(user, 'products.edit', `product:${id}`, 'success')
+    
     return successResponse(sanitizeDocument(result))
   } catch (error) {
     console.error('Products PUT Error:', error)
@@ -303,8 +308,10 @@ export async function PUT(request) {
 // DELETE - Delete product
 export async function DELETE(request) {
   try {
-    const user = getAuthUser(request)
-    requireClientAccess(user)
+    // RBAC Check - products.delete permission
+    const authCheck = await checkPermission(request, 'products.delete')
+    if (!authCheck.authorized) return authCheck.error
+    const user = authCheck.user
 
     const { searchParams } = new URL(request.url)
     const id = searchParams.get('id')
@@ -313,13 +320,16 @@ export async function DELETE(request) {
 
     const dbName = getUserDatabaseName(user)
     const db = await getClientDb(dbName)
-    const products = db.collection('flooring_products')
+    const products = db.collection(COLLECTIONS.PRODUCTS)
 
     // Soft delete
     await products.updateOne(
       { id },
       { $set: { status: 'deleted', deletedAt: new Date().toISOString(), deletedBy: user.id } }
     )
+
+    // Log access for audit
+    await logAccess(user, 'products.delete', `product:${id}`, 'success')
 
     return successResponse({ message: 'Product deleted' })
   } catch (error) {
