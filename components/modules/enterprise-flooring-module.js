@@ -10022,6 +10022,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             <TabsTrigger value="whatsapp">WhatsApp Integration</TabsTrigger>
             <TabsTrigger value="bank">Bank Details</TabsTrigger>
             <TabsTrigger value="templates">Templates</TabsTrigger>
+            <TabsTrigger value="access">Access Management</TabsTrigger>
             <TabsTrigger value="sync">CRM Sync</TabsTrigger>
             <TabsTrigger value="danger" className="text-red-600">Danger Zone</TabsTrigger>
           </TabsList>
