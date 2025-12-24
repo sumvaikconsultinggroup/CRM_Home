@@ -785,6 +785,9 @@ export function EnterpriseFinanceFlooring({ invoices = [], payments = [], quotes
           <TabsTrigger value="payments" className="text-xs"><CreditCard className="h-3 w-3 mr-1" />Payments</TabsTrigger>
           <TabsTrigger value="receivables" className="text-xs"><Clock className="h-3 w-3 mr-1" />Receivables</TabsTrigger>
           <TabsTrigger value="expenses" className="text-xs"><ArrowDownRight className="h-3 w-3 mr-1" />Expenses</TabsTrigger>
+          <TabsTrigger value="vendors" className="text-xs bg-blue-50"><Building2 className="h-3 w-3 mr-1" />Vendors</TabsTrigger>
+          <TabsTrigger value="purchase-orders" className="text-xs bg-blue-50"><FileText className="h-3 w-3 mr-1" />Purchase Orders</TabsTrigger>
+          <TabsTrigger value="payables" className="text-xs bg-blue-50"><Wallet className="h-3 w-3 mr-1" />Payables</TabsTrigger>
           <TabsTrigger value="ledger" className="text-xs"><BookOpen className="h-3 w-3 mr-1" />Ledger</TabsTrigger>
           <TabsTrigger value="aging" className="text-xs"><History className="h-3 w-3 mr-1" />Aging</TabsTrigger>
           <TabsTrigger value="gst" className="text-xs"><Percent className="h-3 w-3 mr-1" />GST</TabsTrigger>
