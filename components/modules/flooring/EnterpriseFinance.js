@@ -235,12 +235,16 @@ export function EnterpriseFinanceFlooring({ invoices = [], payments = [], quotes
   const fetchFinanceData = async () => {
     setLoading(true)
     try {
-      const [expRes, cnRes, dnRes, schedRes, remRes] = await Promise.all([
+      const [expRes, cnRes, dnRes, schedRes, remRes, vendorRes, poRes, billRes, vpayRes] = await Promise.all([
         fetch(`${API_BASE}/expenses`).catch(() => ({ ok: false })),
         fetch(`${API_BASE}/credit-notes`).catch(() => ({ ok: false })),
         fetch(`${API_BASE}/debit-notes`).catch(() => ({ ok: false })),
         fetch(`${API_BASE}/payment-schedules`).catch(() => ({ ok: false })),
-        fetch(`${API_BASE}/reminders`).catch(() => ({ ok: false }))
+        fetch(`${API_BASE}/reminders`).catch(() => ({ ok: false })),
+        fetch(`${API_BASE}/vendors`).catch(() => ({ ok: false })),
+        fetch(`${API_BASE}/purchase-orders`).catch(() => ({ ok: false })),
+        fetch(`${API_BASE}/vendor-bills`).catch(() => ({ ok: false })),
+        fetch(`${API_BASE}/vendor-payments`).catch(() => ({ ok: false }))
       ])
 
       if (expRes.ok) {
@@ -262,6 +266,24 @@ export function EnterpriseFinanceFlooring({ invoices = [], payments = [], quotes
       if (remRes.ok) {
         const data = await remRes.json()
         setReminders(data.data?.reminders || data.reminders || [])
+      }
+      // Vendor data (NEW)
+      if (vendorRes.ok) {
+        const data = await vendorRes.json()
+        setVendors(data.data?.vendors || data.vendors || [])
+      }
+      if (poRes.ok) {
+        const data = await poRes.json()
+        setPurchaseOrders(data.data?.purchaseOrders || data.purchaseOrders || [])
+      }
+      if (billRes.ok) {
+        const data = await billRes.json()
+        setVendorBills(data.data?.bills || data.bills || [])
+        setPayablesSummary(data.summary || { totalPayable: 0, overdueAmount: 0 })
+      }
+      if (vpayRes.ok) {
+        const data = await vpayRes.json()
+        setVendorPayments(data.data?.payments || data.payments || [])
       }
     } catch (error) {
       console.error('Error fetching finance data:', error)
