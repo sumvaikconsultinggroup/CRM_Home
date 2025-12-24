@@ -183,6 +183,12 @@ export function EnterpriseFinanceFlooring({ invoices = [], payments = [], quotes
   const [showExport, setShowExport] = useState(false)
   const [showSettings, setShowSettings] = useState(false)
   
+  // Vendor dialogs (NEW)
+  const [showCreateVendor, setShowCreateVendor] = useState(false)
+  const [showCreatePO, setShowCreatePO] = useState(false)
+  const [showCreateVendorBill, setShowCreateVendorBill] = useState(false)
+  const [showVendorPayment, setShowVendorPayment] = useState(false)
+  
   // Selection states
   const [selectedInvoice, setSelectedInvoice] = useState(null)
   const [selectedCustomer, setSelectedCustomer] = useState(null)
