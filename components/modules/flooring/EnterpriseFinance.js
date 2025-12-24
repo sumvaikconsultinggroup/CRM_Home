@@ -660,6 +660,159 @@ export function EnterpriseFinanceFlooring({ invoices = [], payments = [], quotes
   }
 
   // =============================================
+  // VENDOR HANDLERS (NEW)
+  // =============================================
+
+  const handleCreateVendor = async () => {
+    if (!vendorForm.name) {
+      toast.error('Vendor name is required')
+      return
+    }
+    setLoading(true)
+    try {
+      const res = await fetch(`${API_BASE}/vendors`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(vendorForm)
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success(`Vendor ${data.code} created successfully`)
+        setVendors(prev => [...prev, data])
+        setShowCreateVendor(false)
+        setVendorForm({
+          name: '', category: 'manufacturer', email: '', phone: '',
+          gstNumber: '', panNumber: '', paymentTerms: 'net30',
+          address: { line1: '', city: '', state: '', pincode: '' },
+          contactPerson: { name: '', phone: '', email: '' }, notes: ''
+        })
+      } else {
+        toast.error(data.error || 'Failed to create vendor')
+      }
+    } catch (error) {
+      toast.error('Failed to create vendor')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCreatePO = async () => {
+    if (!poForm.vendorId || !poForm.items.length) {
+      toast.error('Vendor and at least one item are required')
+      return
+    }
+    setLoading(true)
+    try {
+      const res = await fetch(`${API_BASE}/purchase-orders`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(poForm)
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success(`PO ${data.poNumber} created successfully`)
+        setPurchaseOrders(prev => [...prev, data])
+        setShowCreatePO(false)
+        setPoForm({
+          vendorId: '',
+          items: [{ productName: '', quantity: 0, unit: 'sqft', rate: 0, gstRate: 18 }],
+          notes: '', expectedDeliveryDate: ''
+        })
+      } else {
+        toast.error(data.error || 'Failed to create PO')
+      }
+    } catch (error) {
+      toast.error('Failed to create purchase order')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleCreateVendorBill = async () => {
+    if (!vendorBillForm.vendorId || !vendorBillForm.vendorBillNumber) {
+      toast.error('Vendor and bill number are required')
+      return
+    }
+    setLoading(true)
+    try {
+      const res = await fetch(`${API_BASE}/vendor-bills`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(vendorBillForm)
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success(`Bill ${data.billNumber} recorded successfully`)
+        setVendorBills(prev => [...prev, data])
+        setShowCreateVendorBill(false)
+        // Refresh payables summary
+        fetchFinanceData()
+      } else {
+        toast.error(data.error || 'Failed to record bill')
+      }
+    } catch (error) {
+      toast.error('Failed to record vendor bill')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleVendorPayment = async () => {
+    if (!vendorPaymentForm.vendorId || !vendorPaymentForm.amount) {
+      toast.error('Vendor and amount are required')
+      return
+    }
+    setLoading(true)
+    try {
+      const res = await fetch(`${API_BASE}/vendor-payments`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...vendorPaymentForm,
+          tdsAmount: (vendorPaymentForm.amount * vendorPaymentForm.tdsRate / 100)
+        })
+      })
+      const data = await res.json()
+      if (res.ok) {
+        toast.success(`Payment ${data.payment?.paymentNumber} recorded`)
+        setVendorPayments(prev => [data.payment, ...prev])
+        setShowVendorPayment(false)
+        // Refresh to get updated bills and vendor balances
+        fetchFinanceData()
+      } else {
+        toast.error(data.error || 'Failed to record payment')
+      }
+    } catch (error) {
+      toast.error('Failed to record vendor payment')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const addPOItem = () => {
+    setPoForm(prev => ({
+      ...prev,
+      items: [...prev.items, { productName: '', quantity: 0, unit: 'sqft', rate: 0, gstRate: 18 }]
+    }))
+  }
+
+  const updatePOItem = (index, field, value) => {
+    setPoForm(prev => ({
+      ...prev,
+      items: prev.items.map((item, i) => i === index ? { ...item, [field]: value } : item)
+    }))
+  }
+
+  const removePOItem = (index) => {
+    if (poForm.items.length > 1) {
+      setPoForm(prev => ({
+        ...prev,
+        items: prev.items.filter((_, i) => i !== index)
+      }))
+    }
+  }
+
+  // =============================================
   // RENDER HELPERS
   // =============================================
 
