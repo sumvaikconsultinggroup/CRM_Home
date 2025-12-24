@@ -163,6 +163,13 @@ export function EnterpriseFinanceFlooring({ invoices = [], payments = [], quotes
   const [paymentSchedules, setPaymentSchedules] = useState([])
   const [reminders, setReminders] = useState([])
   
+  // Vendor & Procurement state (NEW)
+  const [vendors, setVendors] = useState([])
+  const [purchaseOrders, setPurchaseOrders] = useState([])
+  const [vendorBills, setVendorBills] = useState([])
+  const [vendorPayments, setVendorPayments] = useState([])
+  const [payablesSummary, setPayablesSummary] = useState({ totalPayable: 0, overdueAmount: 0, aging: {} })
+  
   // Dialog states
   const [showCreateInvoice, setShowCreateInvoice] = useState(false)
   const [showRecordPayment, setShowRecordPayment] = useState(false)
