@@ -106,6 +106,7 @@ const TAB_GROUPS_MANUFACTURER = {
   module: [
     { id: 'inventory', label: 'Inventory', icon: Box, highlight: true },
     { id: 'finance', label: 'Finance', icon: IndianRupee, highlight: true },
+    { id: 'collections', label: 'Collections', icon: Wallet, highlight: true },
   ],
   support: [
     { id: 'warranty', label: 'Warranty', icon: Shield },
