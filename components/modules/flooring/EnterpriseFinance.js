@@ -2617,6 +2617,554 @@ export function EnterpriseFinanceFlooring({ invoices = [], payments = [], quotes
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* ============================================= */}
+      {/* CREATE VENDOR DIALOG (NEW) */}
+      {/* ============================================= */}
+      <Dialog open={showCreateVendor} onOpenChange={setShowCreateVendor}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Building2 className="h-5 w-5 text-blue-600" />
+              Add New Vendor
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+            {/* Basic Info */}
+            <div className="grid grid-cols-2 gap-4">
+              <div className="col-span-2">
+                <Label>Vendor Name *</Label>
+                <Input 
+                  value={vendorForm.name}
+                  onChange={(e) => setVendorForm({...vendorForm, name: e.target.value})}
+                  placeholder="Enter vendor/supplier name"
+                />
+              </div>
+              <div>
+                <Label>Category</Label>
+                <Select value={vendorForm.category} onValueChange={(v) => setVendorForm({...vendorForm, category: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="manufacturer">Manufacturer</SelectItem>
+                    <SelectItem value="distributor">Distributor</SelectItem>
+                    <SelectItem value="importer">Importer</SelectItem>
+                    <SelectItem value="wholesaler">Wholesaler</SelectItem>
+                    <SelectItem value="transporter">Transporter</SelectItem>
+                    <SelectItem value="contractor">Contractor</SelectItem>
+                    <SelectItem value="installer">Installer</SelectItem>
+                    <SelectItem value="service_provider">Service Provider</SelectItem>
+                    <SelectItem value="other">Other</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Payment Terms</Label>
+                <Select value={vendorForm.paymentTerms} onValueChange={(v) => setVendorForm({...vendorForm, paymentTerms: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="advance">Advance Payment</SelectItem>
+                    <SelectItem value="cod">Cash on Delivery</SelectItem>
+                    <SelectItem value="net7">Net 7 Days</SelectItem>
+                    <SelectItem value="net15">Net 15 Days</SelectItem>
+                    <SelectItem value="net30">Net 30 Days</SelectItem>
+                    <SelectItem value="net45">Net 45 Days</SelectItem>
+                    <SelectItem value="net60">Net 60 Days</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+
+            {/* Contact Info */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Email</Label>
+                <Input 
+                  type="email"
+                  value={vendorForm.email}
+                  onChange={(e) => setVendorForm({...vendorForm, email: e.target.value})}
+                  placeholder="vendor@example.com"
+                />
+              </div>
+              <div>
+                <Label>Phone</Label>
+                <Input 
+                  value={vendorForm.phone}
+                  onChange={(e) => setVendorForm({...vendorForm, phone: e.target.value})}
+                  placeholder="+91 9876543210"
+                />
+              </div>
+            </div>
+
+            {/* Tax Info */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>GST Number</Label>
+                <Input 
+                  value={vendorForm.gstNumber}
+                  onChange={(e) => setVendorForm({...vendorForm, gstNumber: e.target.value.toUpperCase()})}
+                  placeholder="29AABCU9603R1ZM"
+                />
+              </div>
+              <div>
+                <Label>PAN Number</Label>
+                <Input 
+                  value={vendorForm.panNumber}
+                  onChange={(e) => setVendorForm({...vendorForm, panNumber: e.target.value.toUpperCase()})}
+                  placeholder="AABCU9603R"
+                />
+              </div>
+            </div>
+
+            {/* Address */}
+            <div>
+              <Label>Address</Label>
+              <div className="grid grid-cols-2 gap-2 mt-1">
+                <Input 
+                  className="col-span-2"
+                  placeholder="Street Address"
+                  value={vendorForm.address.line1}
+                  onChange={(e) => setVendorForm({...vendorForm, address: {...vendorForm.address, line1: e.target.value}})}
+                />
+                <Input 
+                  placeholder="City"
+                  value={vendorForm.address.city}
+                  onChange={(e) => setVendorForm({...vendorForm, address: {...vendorForm.address, city: e.target.value}})}
+                />
+                <Input 
+                  placeholder="State"
+                  value={vendorForm.address.state}
+                  onChange={(e) => setVendorForm({...vendorForm, address: {...vendorForm.address, state: e.target.value}})}
+                />
+                <Input 
+                  placeholder="PIN Code"
+                  value={vendorForm.address.pincode}
+                  onChange={(e) => setVendorForm({...vendorForm, address: {...vendorForm.address, pincode: e.target.value}})}
+                />
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div>
+              <Label>Notes</Label>
+              <Textarea 
+                value={vendorForm.notes}
+                onChange={(e) => setVendorForm({...vendorForm, notes: e.target.value})}
+                placeholder="Additional notes about this vendor..."
+                rows={2}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateVendor(false)}>Cancel</Button>
+            <Button onClick={handleCreateVendor} disabled={loading} className="bg-blue-600 hover:bg-blue-700">
+              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+              Create Vendor
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ============================================= */}
+      {/* CREATE PURCHASE ORDER DIALOG (NEW) */}
+      {/* ============================================= */}
+      <Dialog open={showCreatePO} onOpenChange={setShowCreatePO}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <FileText className="h-5 w-5 text-blue-600" />
+              Create Purchase Order
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2">
+            {/* Vendor Selection */}
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Select Vendor *</Label>
+                <Select value={poForm.vendorId} onValueChange={(v) => setPoForm({...poForm, vendorId: v})}>
+                  <SelectTrigger><SelectValue placeholder="Select vendor" /></SelectTrigger>
+                  <SelectContent>
+                    {vendors.map(vendor => (
+                      <SelectItem key={vendor.id} value={vendor.id}>
+                        {vendor.code} - {vendor.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {vendors.length === 0 && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    No vendors found. <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => { setShowCreatePO(false); setShowCreateVendor(true); }}>Add vendor first</Button>
+                  </p>
+                )}
+              </div>
+              <div>
+                <Label>Expected Delivery Date</Label>
+                <Input 
+                  type="date"
+                  value={poForm.expectedDeliveryDate}
+                  onChange={(e) => setPoForm({...poForm, expectedDeliveryDate: e.target.value})}
+                />
+              </div>
+            </div>
+
+            {/* Items */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <Label>Items *</Label>
+                <Button variant="outline" size="sm" onClick={addPOItem}>
+                  <Plus className="h-4 w-4 mr-1" /> Add Item
+                </Button>
+              </div>
+              <div className="space-y-2">
+                {poForm.items.map((item, idx) => (
+                  <div key={idx} className="grid grid-cols-12 gap-2 items-center p-2 bg-slate-50 rounded">
+                    <Input 
+                      className="col-span-4"
+                      placeholder="Product Name"
+                      value={item.productName}
+                      onChange={(e) => updatePOItem(idx, 'productName', e.target.value)}
+                    />
+                    <Input 
+                      className="col-span-2"
+                      type="number"
+                      placeholder="Qty"
+                      value={item.quantity || ''}
+                      onChange={(e) => updatePOItem(idx, 'quantity', parseFloat(e.target.value) || 0)}
+                    />
+                    <Select value={item.unit} onValueChange={(v) => updatePOItem(idx, 'unit', v)}>
+                      <SelectTrigger className="col-span-2"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="sqft">Sq.Ft</SelectItem>
+                        <SelectItem value="box">Box</SelectItem>
+                        <SelectItem value="pcs">Pieces</SelectItem>
+                        <SelectItem value="kg">KG</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input 
+                      className="col-span-2"
+                      type="number"
+                      placeholder="Rate"
+                      value={item.rate || ''}
+                      onChange={(e) => updatePOItem(idx, 'rate', parseFloat(e.target.value) || 0)}
+                    />
+                    <div className="col-span-1 text-right text-sm font-medium">
+                      ₹{((item.quantity || 0) * (item.rate || 0)).toLocaleString()}
+                    </div>
+                    <Button variant="ghost" size="sm" className="col-span-1" onClick={() => removePOItem(idx)}>
+                      <Trash2 className="h-4 w-4 text-red-500" />
+                    </Button>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-2 text-right">
+                <span className="text-sm text-slate-600">Subtotal: </span>
+                <span className="font-bold">
+                  ₹{poForm.items.reduce((sum, item) => sum + (item.quantity || 0) * (item.rate || 0), 0).toLocaleString()}
+                </span>
+              </div>
+            </div>
+
+            {/* Notes */}
+            <div>
+              <Label>Notes</Label>
+              <Textarea 
+                value={poForm.notes}
+                onChange={(e) => setPoForm({...poForm, notes: e.target.value})}
+                placeholder="Special instructions for this order..."
+                rows={2}
+              />
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreatePO(false)}>Cancel</Button>
+            <Button onClick={handleCreatePO} disabled={loading} className="bg-blue-600 hover:bg-blue-700">
+              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+              Create PO
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ============================================= */}
+      {/* RECORD VENDOR BILL DIALOG (NEW) */}
+      {/* ============================================= */}
+      <Dialog open={showCreateVendorBill} onOpenChange={setShowCreateVendorBill}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Receipt className="h-5 w-5 text-red-600" />
+              Record Vendor Bill
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Select Vendor *</Label>
+                <Select value={vendorBillForm.vendorId} onValueChange={(v) => setVendorBillForm({...vendorBillForm, vendorId: v})}>
+                  <SelectTrigger><SelectValue placeholder="Select vendor" /></SelectTrigger>
+                  <SelectContent>
+                    {vendors.map(vendor => (
+                      <SelectItem key={vendor.id} value={vendor.id}>
+                        {vendor.code} - {vendor.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Vendor Bill/Invoice Number *</Label>
+                <Input 
+                  value={vendorBillForm.vendorBillNumber}
+                  onChange={(e) => setVendorBillForm({...vendorBillForm, vendorBillNumber: e.target.value})}
+                  placeholder="INV-2024-001"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Bill Date</Label>
+                <Input 
+                  type="date"
+                  value={vendorBillForm.billDate}
+                  onChange={(e) => setVendorBillForm({...vendorBillForm, billDate: e.target.value})}
+                />
+              </div>
+              <div>
+                <Label>Due Date</Label>
+                <Input 
+                  type="date"
+                  value={vendorBillForm.dueDate}
+                  onChange={(e) => setVendorBillForm({...vendorBillForm, dueDate: e.target.value})}
+                />
+              </div>
+            </div>
+
+            {/* Items */}
+            <div>
+              <Label>Bill Items</Label>
+              <div className="space-y-2 mt-1">
+                {vendorBillForm.items.map((item, idx) => (
+                  <div key={idx} className="grid grid-cols-12 gap-2 items-center">
+                    <Input 
+                      className="col-span-5"
+                      placeholder="Description"
+                      value={item.productName}
+                      onChange={(e) => {
+                        const newItems = [...vendorBillForm.items]
+                        newItems[idx] = {...newItems[idx], productName: e.target.value}
+                        setVendorBillForm({...vendorBillForm, items: newItems})
+                      }}
+                    />
+                    <Input 
+                      className="col-span-2"
+                      type="number"
+                      placeholder="Qty"
+                      value={item.quantity || ''}
+                      onChange={(e) => {
+                        const newItems = [...vendorBillForm.items]
+                        newItems[idx] = {...newItems[idx], quantity: parseFloat(e.target.value) || 0}
+                        setVendorBillForm({...vendorBillForm, items: newItems})
+                      }}
+                    />
+                    <Input 
+                      className="col-span-2"
+                      type="number"
+                      placeholder="Rate"
+                      value={item.rate || ''}
+                      onChange={(e) => {
+                        const newItems = [...vendorBillForm.items]
+                        newItems[idx] = {...newItems[idx], rate: parseFloat(e.target.value) || 0}
+                        setVendorBillForm({...vendorBillForm, items: newItems})
+                      }}
+                    />
+                    <div className="col-span-2 text-right text-sm font-medium">
+                      ₹{((item.quantity || 0) * (item.rate || 0)).toLocaleString()}
+                    </div>
+                    <Button variant="ghost" size="sm" className="col-span-1" onClick={() => {
+                      if (vendorBillForm.items.length > 1) {
+                        setVendorBillForm({...vendorBillForm, items: vendorBillForm.items.filter((_, i) => i !== idx)})
+                      }
+                    }}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                ))}
+                <Button variant="outline" size="sm" onClick={() => {
+                  setVendorBillForm({...vendorBillForm, items: [...vendorBillForm.items, { productName: '', quantity: 0, unit: 'sqft', rate: 0, gstRate: 18 }]})
+                }}>
+                  <Plus className="h-4 w-4 mr-1" /> Add Item
+                </Button>
+              </div>
+              <div className="mt-2 text-right">
+                <span className="text-sm text-slate-600">Total: </span>
+                <span className="font-bold text-lg">
+                  ₹{vendorBillForm.items.reduce((sum, item) => sum + (item.quantity || 0) * (item.rate || 0) * 1.18, 0).toLocaleString()}
+                </span>
+                <span className="text-xs text-slate-500 ml-1">(incl. 18% GST)</span>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowCreateVendorBill(false)}>Cancel</Button>
+            <Button onClick={handleCreateVendorBill} disabled={loading} className="bg-red-600 hover:bg-red-700">
+              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Plus className="h-4 w-4 mr-2" />}
+              Record Bill
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ============================================= */}
+      {/* VENDOR PAYMENT DIALOG (NEW) */}
+      {/* ============================================= */}
+      <Dialog open={showVendorPayment} onOpenChange={setShowVendorPayment}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <CreditCard className="h-5 w-5 text-green-600" />
+              Make Vendor Payment
+            </DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <div>
+              <Label>Select Vendor *</Label>
+              <Select value={vendorPaymentForm.vendorId} onValueChange={(v) => {
+                const vendor = vendors.find(vnd => vnd.id === v)
+                setVendorPaymentForm({...vendorPaymentForm, vendorId: v, amount: vendor?.currentBalance || 0})
+              }}>
+                <SelectTrigger><SelectValue placeholder="Select vendor" /></SelectTrigger>
+                <SelectContent>
+                  {vendors.filter(v => v.currentBalance > 0).map(vendor => (
+                    <SelectItem key={vendor.id} value={vendor.id}>
+                      {vendor.name} (Balance: ₹{vendor.currentBalance?.toLocaleString()})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label>Select Bill (Optional)</Label>
+              <Select value={vendorPaymentForm.billId} onValueChange={(v) => {
+                const bill = vendorBills.find(b => b.id === v)
+                setVendorPaymentForm({...vendorPaymentForm, billId: v, amount: bill?.balanceAmount || bill?.totalAmount || 0})
+              }}>
+                <SelectTrigger><SelectValue placeholder="Select bill to pay" /></SelectTrigger>
+                <SelectContent>
+                  {vendorBills.filter(b => b.vendorId === vendorPaymentForm.vendorId && b.status !== 'paid').map(bill => (
+                    <SelectItem key={bill.id} value={bill.id}>
+                      {bill.billNumber} - ₹{(bill.balanceAmount || bill.totalAmount)?.toLocaleString()} due
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Payment Amount (₹) *</Label>
+                <Input 
+                  type="number"
+                  value={vendorPaymentForm.amount || ''}
+                  onChange={(e) => setVendorPaymentForm({...vendorPaymentForm, amount: parseFloat(e.target.value) || 0})}
+                />
+              </div>
+              <div>
+                <Label>Payment Date</Label>
+                <Input 
+                  type="date"
+                  value={vendorPaymentForm.date}
+                  onChange={(e) => setVendorPaymentForm({...vendorPaymentForm, date: e.target.value})}
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>Payment Method *</Label>
+                <Select value={vendorPaymentForm.method} onValueChange={(v) => setVendorPaymentForm({...vendorPaymentForm, method: v})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="cash">Cash</SelectItem>
+                    <SelectItem value="cheque">Cheque</SelectItem>
+                    <SelectItem value="neft">NEFT</SelectItem>
+                    <SelectItem value="rtgs">RTGS</SelectItem>
+                    <SelectItem value="imps">IMPS</SelectItem>
+                    <SelectItem value="upi">UPI</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Reference / UTR</Label>
+                <Input 
+                  value={vendorPaymentForm.reference}
+                  onChange={(e) => setVendorPaymentForm({...vendorPaymentForm, reference: e.target.value})}
+                  placeholder="Transaction ID"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label>TDS Rate (%)</Label>
+                <Select value={String(vendorPaymentForm.tdsRate)} onValueChange={(v) => setVendorPaymentForm({...vendorPaymentForm, tdsRate: parseFloat(v)})}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">No TDS</SelectItem>
+                    <SelectItem value="1">1% TDS</SelectItem>
+                    <SelectItem value="2">2% TDS</SelectItem>
+                    <SelectItem value="5">5% TDS</SelectItem>
+                    <SelectItem value="10">10% TDS</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>TDS Amount</Label>
+                <Input 
+                  type="number"
+                  disabled
+                  value={(vendorPaymentForm.amount * vendorPaymentForm.tdsRate / 100).toFixed(2)}
+                />
+              </div>
+            </div>
+
+            <Card className="bg-slate-50">
+              <CardContent className="p-3">
+                <div className="flex justify-between text-sm">
+                  <span>Payment Amount:</span>
+                  <span>₹{vendorPaymentForm.amount?.toLocaleString()}</span>
+                </div>
+                <div className="flex justify-between text-sm text-amber-600">
+                  <span>Less: TDS ({vendorPaymentForm.tdsRate}%):</span>
+                  <span>-₹{(vendorPaymentForm.amount * vendorPaymentForm.tdsRate / 100).toLocaleString()}</span>
+                </div>
+                <Separator className="my-2" />
+                <div className="flex justify-between font-bold">
+                  <span>Net Payable:</span>
+                  <span className="text-green-600">
+                    ₹{(vendorPaymentForm.amount - vendorPaymentForm.amount * vendorPaymentForm.tdsRate / 100).toLocaleString()}
+                  </span>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setShowVendorPayment(false)}>Cancel</Button>
+            <Button onClick={handleVendorPayment} disabled={loading} className="bg-green-600 hover:bg-green-700">
+              {loading ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Check className="h-4 w-4 mr-2" />}
+              Make Payment
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
