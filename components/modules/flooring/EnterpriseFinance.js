@@ -221,6 +221,50 @@ export function EnterpriseFinanceFlooring({ invoices = [], payments = [], quotes
     attachments: []
   })
 
+  // Vendor Form State (NEW)
+  const [vendorForm, setVendorForm] = useState({
+    name: '',
+    category: 'manufacturer',
+    email: '',
+    phone: '',
+    gstNumber: '',
+    panNumber: '',
+    paymentTerms: 'net30',
+    address: { line1: '', city: '', state: '', pincode: '' },
+    contactPerson: { name: '', phone: '', email: '' },
+    notes: ''
+  })
+
+  // Purchase Order Form State (NEW)
+  const [poForm, setPoForm] = useState({
+    vendorId: '',
+    items: [{ productName: '', quantity: 0, unit: 'sqft', rate: 0, gstRate: 18 }],
+    notes: '',
+    expectedDeliveryDate: ''
+  })
+
+  // Vendor Bill Form State (NEW)
+  const [vendorBillForm, setVendorBillForm] = useState({
+    vendorId: '',
+    vendorBillNumber: '',
+    billDate: new Date().toISOString().split('T')[0],
+    dueDate: '',
+    items: [{ productName: '', quantity: 0, unit: 'sqft', rate: 0, gstRate: 18 }],
+    notes: ''
+  })
+
+  // Vendor Payment Form State (NEW)
+  const [vendorPaymentForm, setVendorPaymentForm] = useState({
+    vendorId: '',
+    billId: '',
+    amount: 0,
+    method: 'neft',
+    reference: '',
+    date: new Date().toISOString().split('T')[0],
+    tdsRate: 0,
+    notes: ''
+  })
+
   // Sync with props
   useEffect(() => {
     setLocalInvoices(invoices)
