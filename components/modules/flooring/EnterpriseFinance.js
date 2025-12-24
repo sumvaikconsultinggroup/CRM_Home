@@ -1402,6 +1402,413 @@ export function EnterpriseFinanceFlooring({ invoices = [], payments = [], quotes
           </Card>
         </TabsContent>
 
+        {/* ============================================= */}
+        {/* VENDORS TAB (NEW) */}
+        {/* ============================================= */}
+        <TabsContent value="vendors" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Building2 className="h-5 w-5 text-blue-600" /> Vendor Management
+              </CardTitle>
+              <Button onClick={() => setShowCreateVendor(true)}>
+                <Plus className="h-4 w-4 mr-2" /> Add Vendor
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {/* Vendor Stats */}
+              <div className="grid grid-cols-4 gap-4 mb-6">
+                <Card className="bg-blue-50 border-blue-100">
+                  <CardContent className="p-4">
+                    <p className="text-sm text-blue-600">Total Vendors</p>
+                    <p className="text-2xl font-bold text-blue-700">{vendors.length}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-green-50 border-green-100">
+                  <CardContent className="p-4">
+                    <p className="text-sm text-green-600">Active Vendors</p>
+                    <p className="text-2xl font-bold text-green-700">{vendors.filter(v => v.active !== false).length}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-amber-50 border-amber-100">
+                  <CardContent className="p-4">
+                    <p className="text-sm text-amber-600">Total Purchases</p>
+                    <p className="text-2xl font-bold text-amber-700">{formatCurrency(vendors.reduce((sum, v) => sum + (v.totalPurchases || 0), 0))}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-red-50 border-red-100">
+                  <CardContent className="p-4">
+                    <p className="text-sm text-red-600">Outstanding Balance</p>
+                    <p className="text-2xl font-bold text-red-700">{formatCurrency(vendors.reduce((sum, v) => sum + (v.currentBalance || 0), 0))}</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Vendors Table */}
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Code</TableHead>
+                    <TableHead>Vendor Name</TableHead>
+                    <TableHead>Category</TableHead>
+                    <TableHead>Contact</TableHead>
+                    <TableHead>GST Number</TableHead>
+                    <TableHead className="text-right">Total Purchases</TableHead>
+                    <TableHead className="text-right">Balance</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {vendors.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={9} className="text-center py-8">
+                        <Building2 className="h-12 w-12 mx-auto text-slate-300 mb-2" />
+                        <p className="text-slate-500">No vendors added yet</p>
+                        <Button variant="outline" className="mt-2" onClick={() => setShowCreateVendor(true)}>
+                          <Plus className="h-4 w-4 mr-2" /> Add First Vendor
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    vendors.map(vendor => (
+                      <TableRow key={vendor.id}>
+                        <TableCell className="font-mono text-sm">{vendor.code}</TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{vendor.name}</p>
+                            <p className="text-xs text-slate-500">{vendor.email}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline" className="capitalize">{vendor.category}</Badge>
+                        </TableCell>
+                        <TableCell className="text-sm">{vendor.phone}</TableCell>
+                        <TableCell className="font-mono text-xs">{vendor.gstNumber || '-'}</TableCell>
+                        <TableCell className="text-right">{formatCurrency(vendor.totalPurchases || 0)}</TableCell>
+                        <TableCell className="text-right font-semibold text-amber-600">
+                          {formatCurrency(vendor.currentBalance || 0)}
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant={vendor.active !== false ? "success" : "secondary"}>
+                            {vendor.active !== false ? 'Active' : 'Inactive'}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="sm"><Edit className="h-4 w-4" /></Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ============================================= */}
+        {/* PURCHASE ORDERS TAB (NEW) */}
+        {/* ============================================= */}
+        <TabsContent value="purchase-orders" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <FileText className="h-5 w-5 text-blue-600" /> Purchase Orders
+              </CardTitle>
+              <Button onClick={() => setShowCreatePO(true)}>
+                <Plus className="h-4 w-4 mr-2" /> Create PO
+              </Button>
+            </CardHeader>
+            <CardContent>
+              {/* PO Stats */}
+              <div className="grid grid-cols-4 gap-4 mb-6">
+                <Card className="bg-slate-50">
+                  <CardContent className="p-4">
+                    <p className="text-sm text-slate-600">Total POs</p>
+                    <p className="text-2xl font-bold">{purchaseOrders.length}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-blue-50">
+                  <CardContent className="p-4">
+                    <p className="text-sm text-blue-600">Total Value</p>
+                    <p className="text-2xl font-bold text-blue-700">
+                      {formatCurrency(purchaseOrders.reduce((sum, po) => sum + (po.grandTotal || 0), 0))}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-amber-50">
+                  <CardContent className="p-4">
+                    <p className="text-sm text-amber-600">Pending Delivery</p>
+                    <p className="text-2xl font-bold text-amber-700">
+                      {purchaseOrders.filter(po => ['approved', 'sent', 'acknowledged', 'partially_received'].includes(po.status)).length}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-green-50">
+                  <CardContent className="p-4">
+                    <p className="text-sm text-green-600">Received</p>
+                    <p className="text-2xl font-bold text-green-700">
+                      {purchaseOrders.filter(po => po.status === 'received').length}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* PO Table */}
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>PO Number</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Vendor</TableHead>
+                    <TableHead>Items</TableHead>
+                    <TableHead className="text-right">Total Value</TableHead>
+                    <TableHead className="text-right">Received</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {purchaseOrders.length === 0 ? (
+                    <TableRow>
+                      <TableCell colSpan={8} className="text-center py-8">
+                        <FileText className="h-12 w-12 mx-auto text-slate-300 mb-2" />
+                        <p className="text-slate-500">No purchase orders yet</p>
+                        <Button variant="outline" className="mt-2" onClick={() => setShowCreatePO(true)}>
+                          <Plus className="h-4 w-4 mr-2" /> Create First PO
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ) : (
+                    purchaseOrders.map(po => (
+                      <TableRow key={po.id}>
+                        <TableCell className="font-mono font-medium text-blue-600">{po.poNumber}</TableCell>
+                        <TableCell>{new Date(po.poDate || po.createdAt).toLocaleDateString()}</TableCell>
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{po.vendorName}</p>
+                            <p className="text-xs text-slate-500">{po.vendorCode}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell>{po.items?.length || 0} items</TableCell>
+                        <TableCell className="text-right font-semibold">{formatCurrency(po.grandTotal || 0)}</TableCell>
+                        <TableCell className="text-right text-emerald-600">{formatCurrency(po.receivedValue || 0)}</TableCell>
+                        <TableCell>
+                          <Badge variant={
+                            po.status === 'draft' ? 'secondary' :
+                            po.status === 'pending_approval' ? 'warning' :
+                            po.status === 'approved' ? 'info' :
+                            po.status === 'received' ? 'success' :
+                            po.status === 'cancelled' ? 'destructive' : 'outline'
+                          } className="capitalize">
+                            {po.status?.replace('_', ' ')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <div className="flex items-center gap-1">
+                            <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="sm"><Edit className="h-4 w-4" /></Button>
+                            <Button variant="ghost" size="sm"><Printer className="h-4 w-4" /></Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    ))
+                  )}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ============================================= */}
+        {/* ACCOUNTS PAYABLE TAB (NEW) */}
+        {/* ============================================= */}
+        <TabsContent value="payables" className="space-y-4 mt-4">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <Wallet className="h-5 w-5 text-red-600" /> Accounts Payable
+              </CardTitle>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setShowCreateVendorBill(true)}>
+                  <Plus className="h-4 w-4 mr-2" /> Record Bill
+                </Button>
+                <Button onClick={() => setShowVendorPayment(true)}>
+                  <CreditCard className="h-4 w-4 mr-2" /> Make Payment
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              {/* Payables Summary */}
+              <div className="grid grid-cols-5 gap-4 mb-6">
+                <Card className="bg-red-50 border-red-100">
+                  <CardContent className="p-4">
+                    <p className="text-sm text-red-600">Total Payable</p>
+                    <p className="text-2xl font-bold text-red-700">{formatCurrency(payablesSummary.totalPayable || 0)}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-amber-50 border-amber-100">
+                  <CardContent className="p-4">
+                    <p className="text-sm text-amber-600">Overdue</p>
+                    <p className="text-2xl font-bold text-amber-700">{formatCurrency(payablesSummary.overdueAmount || 0)}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-green-50 border-green-100">
+                  <CardContent className="p-4">
+                    <p className="text-sm text-green-600">Paid This Month</p>
+                    <p className="text-2xl font-bold text-green-700">
+                      {formatCurrency(vendorPayments.filter(p => {
+                        const payDate = new Date(p.date || p.createdAt)
+                        const now = new Date()
+                        return payDate.getMonth() === now.getMonth() && payDate.getFullYear() === now.getFullYear()
+                      }).reduce((sum, p) => sum + (p.amount || 0), 0))}
+                    </p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-blue-50 border-blue-100">
+                  <CardContent className="p-4">
+                    <p className="text-sm text-blue-600">Total Bills</p>
+                    <p className="text-2xl font-bold text-blue-700">{vendorBills.length}</p>
+                  </CardContent>
+                </Card>
+                <Card className="bg-purple-50 border-purple-100">
+                  <CardContent className="p-4">
+                    <p className="text-sm text-purple-600">Payments Made</p>
+                    <p className="text-2xl font-bold text-purple-700">{vendorPayments.length}</p>
+                  </CardContent>
+                </Card>
+              </div>
+
+              {/* Vendor Bills Table */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <Receipt className="h-5 w-5" /> Vendor Bills
+                </h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Bill #</TableHead>
+                      <TableHead>Vendor Bill #</TableHead>
+                      <TableHead>Vendor</TableHead>
+                      <TableHead>Bill Date</TableHead>
+                      <TableHead>Due Date</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead className="text-right">Paid</TableHead>
+                      <TableHead className="text-right">Balance</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {vendorBills.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={10} className="text-center py-8">
+                          <Receipt className="h-12 w-12 mx-auto text-slate-300 mb-2" />
+                          <p className="text-slate-500">No vendor bills recorded</p>
+                          <Button variant="outline" className="mt-2" onClick={() => setShowCreateVendorBill(true)}>
+                            <Plus className="h-4 w-4 mr-2" /> Record First Bill
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      vendorBills.map(bill => {
+                        const isOverdue = new Date(bill.dueDate) < new Date() && !['paid', 'cancelled'].includes(bill.status)
+                        return (
+                          <TableRow key={bill.id} className={isOverdue ? 'bg-red-50' : ''}>
+                            <TableCell className="font-mono text-sm">{bill.billNumber}</TableCell>
+                            <TableCell className="font-mono text-sm">{bill.vendorBillNumber}</TableCell>
+                            <TableCell>
+                              <div>
+                                <p className="font-medium">{bill.vendorName}</p>
+                              </div>
+                            </TableCell>
+                            <TableCell>{new Date(bill.billDate).toLocaleDateString()}</TableCell>
+                            <TableCell className={isOverdue ? 'text-red-600 font-medium' : ''}>
+                              {new Date(bill.dueDate).toLocaleDateString()}
+                              {isOverdue && <AlertTriangle className="h-4 w-4 inline ml-1" />}
+                            </TableCell>
+                            <TableCell className="text-right">{formatCurrency(bill.totalAmount || 0)}</TableCell>
+                            <TableCell className="text-right text-emerald-600">{formatCurrency(bill.paidAmount || 0)}</TableCell>
+                            <TableCell className="text-right font-semibold text-red-600">
+                              {formatCurrency(bill.balanceAmount || bill.totalAmount || 0)}
+                            </TableCell>
+                            <TableCell>
+                              <Badge variant={
+                                bill.status === 'paid' ? 'success' :
+                                bill.status === 'partial' ? 'warning' :
+                                bill.status === 'overdue' ? 'destructive' :
+                                bill.status === 'cancelled' ? 'secondary' : 'outline'
+                              } className="capitalize">
+                                {bill.status}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-1">
+                                <Button variant="ghost" size="sm" onClick={() => setShowVendorPayment(true)}>
+                                  <CreditCard className="h-4 w-4" />
+                                </Button>
+                                <Button variant="ghost" size="sm"><Eye className="h-4 w-4" /></Button>
+                              </div>
+                            </TableCell>
+                          </TableRow>
+                        )
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+
+              {/* Recent Vendor Payments */}
+              <div>
+                <h3 className="text-lg font-semibold mb-3 flex items-center gap-2">
+                  <ArrowUpRight className="h-5 w-5" /> Recent Payments to Vendors
+                </h3>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Payment #</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Vendor</TableHead>
+                      <TableHead>Method</TableHead>
+                      <TableHead>Reference</TableHead>
+                      <TableHead className="text-right">Amount</TableHead>
+                      <TableHead className="text-right">TDS</TableHead>
+                      <TableHead className="text-right">Net Paid</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {vendorPayments.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={8} className="text-center py-4 text-slate-500">
+                          No payments recorded yet
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      vendorPayments.slice(0, 10).map(payment => (
+                        <TableRow key={payment.id}>
+                          <TableCell className="font-mono text-sm">{payment.paymentNumber}</TableCell>
+                          <TableCell>{new Date(payment.date || payment.createdAt).toLocaleDateString()}</TableCell>
+                          <TableCell className="font-medium">{payment.vendorName}</TableCell>
+                          <TableCell className="uppercase text-xs">{payment.method}</TableCell>
+                          <TableCell className="font-mono text-xs">{payment.reference || '-'}</TableCell>
+                          <TableCell className="text-right">{formatCurrency(payment.amount || 0)}</TableCell>
+                          <TableCell className="text-right text-amber-600">{formatCurrency(payment.tdsAmount || 0)}</TableCell>
+                          <TableCell className="text-right font-semibold text-green-600">
+                            {formatCurrency(payment.netAmount || payment.amount || 0)}
+                          </TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         {/* Ledger Tab */}
         <TabsContent value="ledger" className="space-y-4 mt-4">
           <Card>
