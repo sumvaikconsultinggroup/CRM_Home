@@ -59,8 +59,8 @@ const BUSINESS_MODES = [
   }
 ]
 
-export function SettingsTab({ settings: initialSettings, onSave, headers, glassStyles }) {
-  const [activeTab, setActiveTab] = useState('general')
+export function SettingsTab({ settings: initialSettings, onSave, headers, glassStyles, businessMode, onBusinessModeChange }) {
+  const [activeTab, setActiveTab] = useState('business-mode')
   const [settings, setSettings] = useState({
     // General Settings
     productionMode: 'fabricator', // fabricator | manufacturer
@@ -105,6 +105,18 @@ export function SettingsTab({ settings: initialSettings, onSave, headers, glassS
   const [saving, setSaving] = useState(false)
   const [testing, setTesting] = useState(false)
   const [showAddAutomation, setShowAddAutomation] = useState(false)
+
+  // Business Mode Change states
+  const [currentMode, setCurrentMode] = useState(businessMode || 'fabricator')
+  const [modeInfo, setModeInfo] = useState(null)
+  const [showModeChangeDialog, setShowModeChangeDialog] = useState(false)
+  const [selectedNewMode, setSelectedNewMode] = useState(null)
+  const [otpSent, setOtpSent] = useState(false)
+  const [otp, setOtp] = useState('')
+  const [maskedEmail, setMaskedEmail] = useState('')
+  const [requestingOtp, setRequestingOtp] = useState(false)
+  const [verifyingOtp, setVerifyingOtp] = useState(false)
+  const [devOtp, setDevOtp] = useState('') // For development only
 
   const [automationForm, setAutomationForm] = useState({
     name: '',
