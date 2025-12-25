@@ -12,10 +12,12 @@ import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
+import { InputOTP, InputOTPGroup, InputOTPSlot } from '@/components/ui/input-otp'
 import {
   Settings, MessageSquare, Bell, Zap, Save, TestTube, CheckCircle2,
   XCircle, Key, Globe, Factory, Scissors, Palette, CreditCard,
-  Mail, Smartphone, RefreshCw, AlertTriangle, Plus, Trash2, Play
+  Mail, Smartphone, RefreshCw, AlertTriangle, Plus, Trash2, Play,
+  Shield, Lock, Unlock, Wrench, Building2, Loader2
 } from 'lucide-react'
 import { toast } from 'sonner'
 
@@ -27,6 +29,34 @@ const WHATSAPP_PROVIDERS = [
   { id: 'interakt', name: 'Interakt', logo: '🟡' },
   { id: 'gupshup', name: 'Gupshup', logo: '🟣' },
   { id: 'custom', name: 'Custom WhatsApp Business API', logo: '🔵' }
+]
+
+// Business Mode Definitions
+const BUSINESS_MODES = [
+  {
+    id: 'manufacturer',
+    name: 'Manufacturer',
+    icon: Factory,
+    color: 'purple',
+    description: 'Large-scale production, sells to dealers and distributors. Access to dealer network, price lists, and B2B features.',
+    features: ['Dealer Network Management', 'Wholesale Price Lists', 'B2B Orders', 'Production at Scale', 'Dealer Credit Management']
+  },
+  {
+    id: 'fabricator',
+    name: 'Fabricator',
+    icon: Scissors,
+    color: 'blue',
+    description: 'Custom cut-to-size production with full manufacturing workflow. Serves both dealers and direct customers.',
+    features: ['Custom Fabrication', 'Full Production Stages', 'Both B2B & B2C', 'Site Surveys', 'Installation Management']
+  },
+  {
+    id: 'dealer',
+    name: 'Dealer',
+    icon: Building2,
+    color: 'emerald',
+    description: 'Resells products from manufacturers. Focus on sales, customer service, and installation.',
+    features: ['Product Catalog', 'Customer Quotations', 'Order from Manufacturer', 'Installation Coordination', 'After-Sales Service']
+  }
 ]
 
 export function SettingsTab({ settings: initialSettings, onSave, headers, glassStyles }) {
