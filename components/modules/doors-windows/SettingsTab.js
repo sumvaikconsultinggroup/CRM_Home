@@ -832,6 +832,169 @@ export function SettingsTab({ settings: initialSettings, onSave, headers, glassS
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Business Mode Change OTP Dialog */}
+      <Dialog open={showModeChangeDialog} onOpenChange={(open) => !open && handleCancelModeChange()}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Shield className="h-5 w-5 text-indigo-600" />
+              {otpSent ? 'Enter Verification Code' : 'Confirm Mode Change'}
+            </DialogTitle>
+            <DialogDescription>
+              {otpSent 
+                ? `We've sent a 6-digit OTP to ${maskedEmail}. Enter it below to confirm the change.`
+                : 'This action requires email verification for security purposes.'
+              }
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-6">
+            {!otpSent ? (
+              // Step 1: Confirm and Request OTP
+              <div className="space-y-6">
+                {/* Mode Change Summary */}
+                <div className="flex items-center justify-center gap-4">
+                  {(() => {
+                    const fromMode = BUSINESS_MODES.find(m => m.id === currentMode)
+                    const toMode = BUSINESS_MODES.find(m => m.id === selectedNewMode)
+                    const FromIcon = fromMode?.icon || Factory
+                    const ToIcon = toMode?.icon || Factory
+                    
+                    return (
+                      <>
+                        <div className="text-center">
+                          <div className="p-3 rounded-xl bg-slate-100 mx-auto mb-2">
+                            <FromIcon className="h-8 w-8 text-slate-500" />
+                          </div>
+                          <p className="text-sm font-medium text-slate-500">{fromMode?.name}</p>
+                        </div>
+                        <div className="flex flex-col items-center">
+                          <div className="w-12 h-0.5 bg-gradient-to-r from-slate-300 to-indigo-500" />
+                          <span className="text-2xl my-1">→</span>
+                          <div className="w-12 h-0.5 bg-gradient-to-r from-indigo-500 to-indigo-300" />
+                        </div>
+                        <div className="text-center">
+                          <div className={`p-3 rounded-xl bg-${toMode?.color || 'indigo'}-100 mx-auto mb-2`}>
+                            <ToIcon className={`h-8 w-8 text-${toMode?.color || 'indigo'}-600`} />
+                          </div>
+                          <p className={`text-sm font-medium text-${toMode?.color || 'indigo'}-600`}>{toMode?.name}</p>
+                        </div>
+                      </>
+                    )
+                  })()}
+                </div>
+
+                {/* Warning */}
+                <div className="p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                  <div className="flex items-start gap-3">
+                    <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5 flex-shrink-0" />
+                    <div className="text-sm">
+                      <p className="font-medium text-amber-800">This will change your workflow</p>
+                      <p className="text-amber-700 mt-1">
+                        Switching modes will update available features, tabs, and business processes. 
+                        Make sure you understand the implications.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                <Button 
+                  onClick={handleSendOTP} 
+                  disabled={requestingOtp}
+                  className="w-full bg-gradient-to-r from-indigo-600 to-purple-600"
+                >
+                  {requestingOtp ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Sending OTP...</>
+                  ) : (
+                    <><Mail className="h-4 w-4 mr-2" /> Send Verification OTP</>
+                  )}
+                </Button>
+              </div>
+            ) : (
+              // Step 2: Enter OTP
+              <div className="space-y-6">
+                {/* OTP Input */}
+                <div className="flex flex-col items-center gap-4">
+                  <p className="text-sm text-slate-600">Enter the 6-digit code</p>
+                  <div className="flex justify-center gap-2">
+                    {[0, 1, 2, 3, 4, 5].map((index) => (
+                      <Input
+                        key={index}
+                        type="text"
+                        maxLength={1}
+                        value={otp[index] || ''}
+                        onChange={(e) => {
+                          const value = e.target.value.replace(/\D/g, '')
+                          if (value.length <= 1) {
+                            const newOtp = otp.split('')
+                            newOtp[index] = value
+                            setOtp(newOtp.join(''))
+                            // Auto-focus next input
+                            if (value && index < 5) {
+                              const nextInput = document.querySelector(`input[data-otp-index="${index + 1}"]`)
+                              nextInput?.focus()
+                            }
+                          }
+                        }}
+                        onKeyDown={(e) => {
+                          // Handle backspace
+                          if (e.key === 'Backspace' && !otp[index] && index > 0) {
+                            const prevInput = document.querySelector(`input[data-otp-index="${index - 1}"]`)
+                            prevInput?.focus()
+                          }
+                        }}
+                        data-otp-index={index}
+                        className="w-12 h-14 text-center text-2xl font-bold"
+                        autoFocus={index === 0}
+                      />
+                    ))}
+                  </div>
+                  
+                  {/* Dev OTP Display (remove in production) */}
+                  {devOtp && (
+                    <div className="p-2 bg-slate-100 rounded text-center">
+                      <p className="text-xs text-slate-500">Development OTP:</p>
+                      <p className="font-mono font-bold text-lg">{devOtp}</p>
+                    </div>
+                  )}
+                </div>
+
+                <Button 
+                  onClick={handleVerifyOTP}
+                  disabled={otp.length !== 6 || verifyingOtp}
+                  className="w-full bg-gradient-to-r from-emerald-600 to-green-600"
+                >
+                  {verifyingOtp ? (
+                    <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Verifying...</>
+                  ) : (
+                    <><CheckCircle2 className="h-4 w-4 mr-2" /> Verify & Change Mode</>
+                  )}
+                </Button>
+
+                <div className="flex items-center justify-center gap-4 text-sm">
+                  <span className="text-slate-500">Didn't receive the code?</span>
+                  <Button 
+                    variant="link" 
+                    size="sm" 
+                    onClick={handleResendOTP}
+                    disabled={requestingOtp}
+                    className="p-0 h-auto"
+                  >
+                    Resend OTP
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={handleCancelModeChange}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
