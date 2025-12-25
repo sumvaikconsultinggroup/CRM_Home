@@ -973,7 +973,7 @@ export function SettingsTab({ settings: initialSettings, onSave, headers, glassS
                 </Button>
 
                 <div className="flex items-center justify-center gap-4 text-sm">
-                  <span className="text-slate-500">Didn't receive the code?</span>
+                  <span className="text-slate-500">Did not receive the code?</span>
                   <Button 
                     variant="link" 
                     size="sm" 
