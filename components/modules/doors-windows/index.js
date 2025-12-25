@@ -1477,6 +1477,13 @@ export function DoorsWindowsModule({ client, user }) {
               onSave={handleSaveSettings}
               headers={headers}
               glassStyles={glassStyles}
+              businessMode={businessMode}
+              onBusinessModeChange={(newMode) => {
+                setBusinessMode(newMode)
+                if (typeof window !== 'undefined') {
+                  localStorage.setItem('dw_business_mode', newMode)
+                }
+              }}
             />
           </TabsContent>
 
