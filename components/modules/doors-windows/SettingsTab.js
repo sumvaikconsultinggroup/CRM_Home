@@ -132,6 +132,143 @@ export function SettingsTab({ settings: initialSettings, onSave, headers, glassS
     }
   }, [initialSettings])
 
+  // Fetch current business mode on mount
+  useEffect(() => {
+    fetchBusinessMode()
+  }, [])
+
+  // Update currentMode when businessMode prop changes
+  useEffect(() => {
+    if (businessMode) {
+      setCurrentMode(businessMode)
+    }
+  }, [businessMode])
+
+  const fetchBusinessMode = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/business-mode`, { headers })
+      const data = await res.json()
+      if (!data.error) {
+        setCurrentMode(data.mode || 'fabricator')
+        setModeInfo(data)
+      }
+    } catch (error) {
+      console.error('Failed to fetch business mode:', error)
+    }
+  }
+
+  const handleRequestModeChange = async (newMode) => {
+    if (newMode === currentMode) {
+      toast.info('You are already in this mode')
+      return
+    }
+    
+    setSelectedNewMode(newMode)
+    setShowModeChangeDialog(true)
+  }
+
+  const handleSendOTP = async () => {
+    setRequestingOtp(true)
+    try {
+      const res = await fetch(`${API_BASE}/business-mode`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ action: 'request_otp', newMode: selectedNewMode })
+      })
+      const data = await res.json()
+      
+      if (res.ok) {
+        setOtpSent(true)
+        setMaskedEmail(data.email || '')
+        if (data.devOtp) setDevOtp(data.devOtp) // For development testing
+        toast.success(data.message || 'OTP sent to your email')
+      } else {
+        toast.error(data.error || 'Failed to send OTP')
+      }
+    } catch (error) {
+      toast.error('Failed to send OTP')
+    } finally {
+      setRequestingOtp(false)
+    }
+  }
+
+  const handleVerifyOTP = async () => {
+    if (otp.length !== 6) {
+      toast.error('Please enter a valid 6-digit OTP')
+      return
+    }
+
+    setVerifyingOtp(true)
+    try {
+      const res = await fetch(`${API_BASE}/business-mode`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ action: 'verify_otp', otp, newMode: selectedNewMode })
+      })
+      const data = await res.json()
+      
+      if (res.ok) {
+        toast.success(data.message || 'Business mode changed successfully!')
+        setCurrentMode(selectedNewMode)
+        onBusinessModeChange?.(selectedNewMode)
+        setShowModeChangeDialog(false)
+        resetModeChangeState()
+        fetchBusinessMode()
+      } else {
+        toast.error(data.error || 'Invalid OTP')
+      }
+    } catch (error) {
+      toast.error('Failed to verify OTP')
+    } finally {
+      setVerifyingOtp(false)
+    }
+  }
+
+  const handleResendOTP = async () => {
+    setRequestingOtp(true)
+    try {
+      const res = await fetch(`${API_BASE}/business-mode`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ action: 'resend_otp' })
+      })
+      const data = await res.json()
+      
+      if (res.ok) {
+        if (data.devOtp) setDevOtp(data.devOtp)
+        toast.success('New OTP sent to your email')
+      } else {
+        toast.error(data.error || 'Failed to resend OTP')
+      }
+    } catch (error) {
+      toast.error('Failed to resend OTP')
+    } finally {
+      setRequestingOtp(false)
+    }
+  }
+
+  const handleCancelModeChange = async () => {
+    try {
+      await fetch(`${API_BASE}/business-mode`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ action: 'cancel' })
+      })
+    } catch (error) {
+      // Ignore cancel errors
+    }
+    setShowModeChangeDialog(false)
+    resetModeChangeState()
+  }
+
+  const resetModeChangeState = () => {
+    setSelectedNewMode(null)
+    setOtpSent(false)
+    setOtp('')
+    setMaskedEmail('')
+    setDevOtp('')
+  }
+
   const handleSave = async () => {
     setSaving(true)
     try {
