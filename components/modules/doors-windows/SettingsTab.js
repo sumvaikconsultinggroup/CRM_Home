@@ -348,62 +348,168 @@ export function SettingsTab({ settings: initialSettings, onSave, headers, glassS
       </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid grid-cols-4 w-full max-w-2xl">
+        <TabsList className="grid grid-cols-5 w-full max-w-3xl">
+          <TabsTrigger value="business-mode"><Shield className="h-4 w-4 mr-2" /> Business Mode</TabsTrigger>
           <TabsTrigger value="general"><Settings className="h-4 w-4 mr-2" /> General</TabsTrigger>
           <TabsTrigger value="whatsapp"><MessageSquare className="h-4 w-4 mr-2" /> WhatsApp</TabsTrigger>
           <TabsTrigger value="notifications"><Bell className="h-4 w-4 mr-2" /> Notifications</TabsTrigger>
           <TabsTrigger value="automation"><Zap className="h-4 w-4 mr-2" /> Automation</TabsTrigger>
         </TabsList>
 
-        {/* General Settings */}
-        <TabsContent value="general" className="space-y-6 mt-6">
-          {/* Production Mode */}
+        {/* Business Mode Settings - NEW PRIMARY TAB */}
+        <TabsContent value="business-mode" className="space-y-6 mt-6">
           <Card className={glassStyles?.card}>
             <CardHeader>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Factory className="h-5 w-5 text-indigo-600" />
-                Production Mode
-              </CardTitle>
-              <CardDescription>Choose how your business operates</CardDescription>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle className="text-lg flex items-center gap-2">
+                    <Shield className="h-5 w-5 text-indigo-600" />
+                    Business Mode Configuration
+                  </CardTitle>
+                  <CardDescription>
+                    Select how your business operates. Mode changes require email verification for security.
+                  </CardDescription>
+                </div>
+                <Badge className="bg-amber-100 text-amber-700 border-amber-200">
+                  <Lock className="h-3 w-3 mr-1" />
+                  Secured
+                </Badge>
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-2 gap-4">
-                <div
-                  className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                    settings.productionMode === 'fabricator'
-                      ? 'border-blue-500 bg-blue-50'
-                      : 'border-slate-200 hover:border-slate-300'
-                  }`}
-                  onClick={() => setSettings({ ...settings, productionMode: 'fabricator' })}
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <Scissors className="h-6 w-6 text-blue-600" />
-                    <h4 className="font-semibold">Fabricator Mode</h4>
+              {/* Current Mode Display */}
+              <div className="mb-6 p-4 bg-gradient-to-r from-indigo-50 to-purple-50 border border-indigo-200 rounded-xl">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-4">
+                    {(() => {
+                      const modeConfig = BUSINESS_MODES.find(m => m.id === currentMode)
+                      const IconComponent = modeConfig?.icon || Factory
+                      return (
+                        <>
+                          <div className={`p-3 rounded-xl bg-${modeConfig?.color || 'indigo'}-100`}>
+                            <IconComponent className={`h-8 w-8 text-${modeConfig?.color || 'indigo'}-600`} />
+                          </div>
+                          <div>
+                            <p className="text-sm text-slate-500">Current Mode</p>
+                            <p className="text-xl font-bold text-slate-800">{modeConfig?.name || 'Fabricator'}</p>
+                          </div>
+                        </>
+                      )
+                    })()}
                   </div>
-                  <p className="text-sm text-slate-600">
-                    Cut-to-size production with full manufacturing stages (cutting, assembly, glass fitting, QC)
-                  </p>
-                </div>
-                <div
-                  className={`p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                    settings.productionMode === 'manufacturer'
-                      ? 'border-purple-500 bg-purple-50'
-                      : 'border-slate-200 hover:border-slate-300'
-                  }`}
-                  onClick={() => setSettings({ ...settings, productionMode: 'manufacturer' })}
-                >
-                  <div className="flex items-center gap-3 mb-2">
-                    <Factory className="h-6 w-6 text-purple-600" />
-                    <h4 className="font-semibold">Manufacturer Mode</h4>
-                  </div>
-                  <p className="text-sm text-slate-600">
-                    Direct material dispatch without cutting/sizing. Ideal for Aluminium profile manufacturers.
-                  </p>
+                  {modeInfo?.lastChangedAt && (
+                    <div className="text-right text-sm text-slate-500">
+                      <p>Last changed</p>
+                      <p className="font-medium">{new Date(modeInfo.lastChangedAt).toLocaleDateString()}</p>
+                    </div>
+                  )}
                 </div>
               </div>
+
+              {/* Mode Selection Cards */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {BUSINESS_MODES.map((mode) => {
+                  const IconComponent = mode.icon
+                  const isActive = currentMode === mode.id
+                  const colorClasses = {
+                    purple: { border: 'border-purple-500', bg: 'bg-purple-50', text: 'text-purple-600', icon: 'text-purple-600', badge: 'bg-purple-100 text-purple-700' },
+                    blue: { border: 'border-blue-500', bg: 'bg-blue-50', text: 'text-blue-600', icon: 'text-blue-600', badge: 'bg-blue-100 text-blue-700' },
+                    emerald: { border: 'border-emerald-500', bg: 'bg-emerald-50', text: 'text-emerald-600', icon: 'text-emerald-600', badge: 'bg-emerald-100 text-emerald-700' }
+                  }
+                  const colors = colorClasses[mode.color]
+                  
+                  return (
+                    <div
+                      key={mode.id}
+                      className={`relative p-5 rounded-xl border-2 transition-all ${
+                        isActive
+                          ? `${colors.border} ${colors.bg} shadow-lg`
+                          : 'border-slate-200 hover:border-slate-300 hover:shadow-md cursor-pointer'
+                      }`}
+                      onClick={() => !isActive && handleRequestModeChange(mode.id)}
+                    >
+                      {isActive && (
+                        <Badge className={`absolute top-3 right-3 ${colors.badge}`}>
+                          <CheckCircle2 className="h-3 w-3 mr-1" />
+                          Active
+                        </Badge>
+                      )}
+                      
+                      <div className="flex items-center gap-3 mb-3">
+                        <div className={`p-2 rounded-lg ${colors.bg}`}>
+                          <IconComponent className={`h-6 w-6 ${colors.icon}`} />
+                        </div>
+                        <h4 className="font-semibold text-lg">{mode.name}</h4>
+                      </div>
+                      
+                      <p className="text-sm text-slate-600 mb-4">{mode.description}</p>
+                      
+                      <div className="space-y-2">
+                        <p className="text-xs font-medium text-slate-500 uppercase tracking-wide">Key Features</p>
+                        <ul className="space-y-1">
+                          {mode.features.slice(0, 3).map((feature, i) => (
+                            <li key={i} className="flex items-center gap-2 text-sm text-slate-600">
+                              <CheckCircle2 className={`h-3 w-3 ${colors.icon}`} />
+                              {feature}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                      
+                      {!isActive && (
+                        <Button
+                          variant="outline"
+                          className={`w-full mt-4 ${colors.text} border-current hover:${colors.bg}`}
+                          onClick={(e) => { e.stopPropagation(); handleRequestModeChange(mode.id); }}
+                        >
+                          <Unlock className="h-4 w-4 mr-2" />
+                          Switch to {mode.name}
+                        </Button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+
+              {/* Security Notice */}
+              <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <AlertTriangle className="h-5 w-5 text-amber-600 mt-0.5" />
+                  <div>
+                    <p className="font-medium text-amber-800">Important Security Notice</p>
+                    <p className="text-sm text-amber-700 mt-1">
+                      Changing your business mode will affect available features, tabs, and workflows. 
+                      An OTP will be sent to your registered email address to verify this change. 
+                      This is to prevent unauthorized mode switching.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Change History */}
+              {modeInfo?.changeHistory && modeInfo.changeHistory.length > 0 && (
+                <div className="mt-6">
+                  <h4 className="font-medium text-slate-700 mb-3">Change History</h4>
+                  <div className="space-y-2">
+                    {modeInfo.changeHistory.slice(-3).reverse().map((change, i) => (
+                      <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg text-sm">
+                        <div className="flex items-center gap-2">
+                          <span className="capitalize text-slate-500">{change.fromMode}</span>
+                          <span className="text-slate-400">→</span>
+                          <span className="capitalize font-medium">{change.toMode}</span>
+                        </div>
+                        <span className="text-slate-400">{new Date(change.changedAt).toLocaleDateString()}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
+        </TabsContent>
 
+        {/* General Settings */}
+        <TabsContent value="general" className="space-y-6 mt-6">
           {/* Business Details */}
           <Card className={glassStyles?.card}>
             <CardHeader>
