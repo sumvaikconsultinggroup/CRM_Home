@@ -398,8 +398,8 @@ export function SettingsTab({ settings: initialSettings, onSave, headers, glassS
                 </div>
               </div>
 
-              {/* Mode Selection Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Mode Selection Cards - 2 Modes Only */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {BUSINESS_MODES.map((mode) => {
                   const IconComponent = mode.icon
                   const isActive = currentMode === mode.id
