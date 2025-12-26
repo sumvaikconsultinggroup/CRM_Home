@@ -1524,7 +1524,7 @@ export function DoorsWindowsModule({ client, user }) {
             </Card>
           </TabsContent>
 
-          {/* Inventory Tab - Enterprise D&W Inventory */}
+          {/* Products & Inventory Tab - Self-hosted D&W Inventory */}
           <TabsContent value="inventory" className="space-y-6">
             <EnterpriseInventoryDW client={client} user={user} />
           </TabsContent>
