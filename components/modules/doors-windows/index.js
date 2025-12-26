@@ -164,6 +164,11 @@ export function DoorsWindowsModule({ client, user }) {
   // Finance sync state
   const [syncingToFinance, setSyncingToFinance] = useState(false)
   const [financeSyncStatus, setFinanceSyncStatus] = useState({})
+  
+  // Pre-loaded data for instant tab switching
+  const [installationsData, setInstallationsData] = useState({ installations: [], stats: {} })
+  const [inventoryData, setInventoryData] = useState({ inventory: [], warehouses: [], suppliers: [] })
+  const [financeData, setFinanceData] = useState({ transactions: [], summary: {} })
 
   // Handle business mode toggle
   const toggleBusinessMode = (mode) => {
