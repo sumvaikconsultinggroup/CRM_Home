@@ -1360,11 +1360,6 @@ export function DoorsWindowsModule({ client, user }) {
             </Card>
           </TabsContent>
 
-          {/* Products Tab - Self-hosted D&W Inventory */}
-          <TabsContent value="products" className="space-y-6">
-            <EnterpriseInventoryDW client={client} user={user} />
-          </TabsContent>
-
           {/* Production Tab */}
           <TabsContent value="production" className="space-y-6">
             <ProductionTab
