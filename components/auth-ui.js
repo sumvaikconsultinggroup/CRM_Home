@@ -215,9 +215,9 @@ export function LoginPage({ onBack, onSuccess, onRegister, onForgotPassword }) {
           )}
         </div>
 
-        <SafeButton type="submit" className="w-full h-11 text-base bg-gradient-to-r from-primary to-indigo-600 hover:opacity-90 shadow-lg shadow-primary/20">
-          Sign In
-        </SafeButton>
+        <Button type="submit" className="w-full h-11 text-base bg-gradient-to-r from-primary to-indigo-600 hover:opacity-90 shadow-lg shadow-primary/20" disabled={loading}>
+          {loading ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Sign In'}
+        </Button>
       </form>
 
       <div className="mt-6 text-center text-sm">
