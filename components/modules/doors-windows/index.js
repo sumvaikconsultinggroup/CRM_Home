@@ -73,12 +73,11 @@ const TAB_GROUPS_FABRICATOR = {
     { id: 'orders', label: 'Orders', icon: ShoppingCart },
     { id: 'invoices', label: 'Invoices', icon: Receipt },
     { id: 'post-invoicing', label: 'Post-Invoicing', icon: ScrollText, highlight: true },
-    { id: 'products', label: 'Products', icon: Package },
     { id: 'production', label: 'Production', icon: Factory },
     { id: 'installation', label: 'Installation', icon: Wrench },
   ],
   module: [
-    { id: 'inventory', label: 'Inventory', icon: Box, highlight: true },
+    { id: 'inventory', label: 'Products & Inventory', icon: Package, highlight: true },
     { id: 'finance', label: 'Finance', icon: IndianRupee, highlight: true },
   ],
   support: [
