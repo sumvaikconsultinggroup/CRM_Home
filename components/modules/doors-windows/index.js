@@ -254,24 +254,30 @@ export function DoorsWindowsModule({ client, user }) {
   // NEW: Secondary data fetch (runs in background after dashboard loads)
   const fetchSecondaryData = async () => {
     try {
-      const [surveysRes, quotesRes, ordersRes, invoicesRes] = await Promise.all([
+      const [surveysRes, quotesRes, ordersRes, invoicesRes, challansRes] = await Promise.all([
         fetch(`${API_BASE}/surveys`, { headers }),
         fetch(`${API_BASE}/quotations`, { headers }),
         fetch(`${API_BASE}/orders`, { headers }),
-        fetch(`${API_BASE}/invoices`, { headers })
+        fetch(`${API_BASE}/invoices`, { headers }),
+        fetch(`${API_BASE}/challans`, { headers })
       ])
 
-      const [surveysData, quotesData, ordersData, invoicesData] = await Promise.all([
+      const [surveysData, quotesData, ordersData, invoicesData, challansData] = await Promise.all([
         surveysRes.json(),
         quotesRes.json(),
         ordersRes.json(),
-        invoicesRes.json()
+        invoicesRes.json(),
+        challansRes.json()
       ])
 
       if (surveysData.surveys) setSurveys(surveysData.surveys)
       if (quotesData.quotations) setQuotations(quotesData.quotations)
       if (ordersData.orders) setOrders(ordersData.orders)
       if (invoicesData.invoices) setInvoices(invoicesData.invoices)
+      if (challansData.challans) {
+        setChallans(challansData.challans)
+        setChallanStats(challansData.summary || { total: 0, draft: 0, dispatched: 0, delivered: 0 })
+      }
     } catch (error) {
       console.error('Failed to fetch secondary data:', error)
     }
