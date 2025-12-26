@@ -33,6 +33,7 @@ import {
   ChevronRight, ChevronDown, MoreHorizontal, Copy, Edit, Plus, Minus
 } from 'lucide-react'
 import { validateEmail, validatePhone, validateGST, validatePinCode, validateURL } from '@/lib/utils/validation'
+import { BillingPlanSettings } from '@/components/billing-plan-settings'
 
 // ==================== CONSTANTS ====================
 const CURRENCIES = [
