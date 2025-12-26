@@ -2508,6 +2508,32 @@ export default function App() {
   const [client, setClient] = useState(null)
   const [loading, setLoading] = useState(true)
   const [authToken, setAuthToken] = useState(null)
+  const [subscriptionStatus, setSubscriptionStatus] = useState(null)
+  const [requiresPlanSelection, setRequiresPlanSelection] = useState(false)
+
+  // Check subscription status for non-admin users
+  const checkSubscriptionStatus = useCallback(async (token) => {
+    if (!token) return null
+    try {
+      const res = await fetch('/api/subscription', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      })
+      if (res.ok) {
+        const data = await res.json()
+        setSubscriptionStatus(data)
+        // Check if user needs to select a plan first
+        if (data.status === 'no_plan' || data.requiresPlanSelection) {
+          setRequiresPlanSelection(true)
+        } else {
+          setRequiresPlanSelection(false)
+        }
+        return data
+      }
+    } catch (error) {
+      console.error('Failed to check subscription:', error)
+    }
+    return null
+  }, [])
 
   useEffect(() => {
     const checkAuth = async () => {
@@ -2523,7 +2549,15 @@ export default function App() {
           } else {
             setClient(null)
           }
-          setView(data.user.role === 'super_admin' ? 'admin' : 'client')
+          
+          // Set view based on role
+          if (data.user.role === 'super_admin') {
+            setView('admin')
+          } else {
+            // Check subscription for non-admin users
+            await checkSubscriptionStatus(token)
+            setView('client')
+          }
         } catch (error) {
           api.logout()
           setAuthToken(null)
@@ -2532,24 +2566,40 @@ export default function App() {
       setLoading(false)
     }
     checkAuth()
-  }, [])
+  }, [checkSubscriptionStatus])
 
-  const handleLoginSuccess = (user, client) => {
+  const handleLoginSuccess = async (user, client) => {
     setUser(user)
     setClient(client)
     // Store auth token state
     const token = localStorage.getItem('token')
-    if (token) setAuthToken(token)
+    if (token) {
+      setAuthToken(token)
+      // Check subscription for non-admin users
+      if (user.role !== 'super_admin') {
+        await checkSubscriptionStatus(token)
+      }
+    }
     // Store in localStorage for sub-pages
     if (user) localStorage.setItem('user', JSON.stringify(user))
     if (client) localStorage.setItem('client', JSON.stringify(client))
     setView(user.role === 'super_admin' ? 'admin' : 'client')
   }
 
+  const handlePlanSelected = async (result) => {
+    // Refresh subscription status after plan selection
+    if (authToken) {
+      await checkSubscriptionStatus(authToken)
+    }
+    setRequiresPlanSelection(false)
+  }
+
   const handleLogout = () => {
     api.logout()
     setUser(null)
     setClient(null)
+    setSubscriptionStatus(null)
+    setRequiresPlanSelection(false)
     setView('landing')
   }
 
