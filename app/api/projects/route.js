@@ -234,6 +234,47 @@ export async function POST(request) {
 
     await projectsCollection.insertOne(project)
 
+    // AUTO-SYNC: Automatically create a D&W project when CRM project is created
+    // This ensures the D&W module always has access to new projects
+    try {
+      const dwProjectsCollection = db.collection('doors_windows_projects')
+      const dwProjectNumber = `DWP-${new Date().getFullYear()}-${String(await dwProjectsCollection.countDocuments() + 1).padStart(5, '0')}`
+      
+      await dwProjectsCollection.insertOne({
+        id: uuidv4(),
+        projectNumber: dwProjectNumber,
+        clientId: user.clientId,
+        name: project.name,
+        crmProjectId: project.id,
+        leadId: project.leadId || null,
+        customer: {
+          name: project.clientName || '',
+          email: project.clientEmail || '',
+          phone: project.clientPhone || '',
+          address: project.siteAddress || ''
+        },
+        clientName: project.clientName || '',
+        clientEmail: project.clientEmail || '',
+        clientPhone: project.clientPhone || '',
+        siteAddress: project.siteAddress || '',
+        buildingType: 'Residential - Independent',
+        value: project.budget || 0,
+        budget: project.budget || 0,
+        status: 'new',
+        priority: project.priority || 'medium',
+        source: 'crm_sync',
+        syncedFrom: { type: 'project', id: project.id, syncedAt: now.toISOString() },
+        isActive: true,
+        createdBy: user.id,
+        createdAt: now.toISOString(),
+        updatedAt: now.toISOString()
+      })
+      console.log(`Auto-synced CRM project to D&W: ${project.name}`)
+    } catch (dwError) {
+      console.error('Failed to auto-sync to D&W:', dwError)
+      // Don't fail the main project creation
+    }
+
     return successResponse(sanitizeDocument(project), 201)
   } catch (error) {
     console.error('Projects POST API Error:', error)
