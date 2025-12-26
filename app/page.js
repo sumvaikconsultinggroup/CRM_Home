@@ -72,6 +72,7 @@ import { EnterpriseSettings } from '@/components/enterprise-settings'
 import { EnterpriseUserManagement } from '@/components/enterprise-user-management'
 import { useResponsive } from '@/hooks/use-responsive'
 import { Sheet, SheetContent } from '@/components/ui/sheet'
+import { SubscriptionProvider, PlanSelectionPage } from '@/components/subscription-guard'
 
 // Animation variants
 const fadeIn = {
