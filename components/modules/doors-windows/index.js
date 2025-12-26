@@ -163,6 +163,7 @@ export function DoorsWindowsModule({ client, user }) {
   
   // Finance sync state
   const [syncingToFinance, setSyncingToFinance] = useState(false)
+  const [financeSyncStatus, setFinanceSyncStatus] = useState({})
 
   // Handle business mode toggle
   const toggleBusinessMode = (mode) => {
