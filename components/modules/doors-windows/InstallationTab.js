@@ -102,7 +102,7 @@ export function InstallationTab({ glassStyles, onRefresh, initialData }) {
 
   // Only fetch if no initial data provided
   useEffect(() => {
-    if (!initialData?.installations) {
+    if (!hasPreloadedData) {
       fetchInstallations()
     }
   }, [])
