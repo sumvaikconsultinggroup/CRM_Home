@@ -627,7 +627,7 @@ export function DoorsWindowsModule({ client, user }) {
               <>
                 <Wrench className="h-5 w-5 text-emerald-600" />
                 <div>
-                  <p className="font-semibold text-emerald-800">Fabricator/Dealer Mode</p>
+                  <p className="font-semibold text-emerald-800">Fabricator Mode</p>
                   <p className="text-xs text-emerald-600">Customer-facing • Site surveys • Full quote-to-installation workflow</p>
                 </div>
               </>
