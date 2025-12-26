@@ -248,11 +248,48 @@ export async function GET(request) {
         const userRoles = await userRolesCollection.find({}).toArray()
         const customRolesForUsers = await rolesCollection.find({}).toArray()
         
+        // CRM Role to Flooring Role mapping (automatic assignment based on CRM role)
+        // This ensures client_admin automatically gets full access
+        const CRM_TO_FLOORING_ROLE_MAP = {
+          'super_admin': 'super_admin',
+          'admin': 'super_admin',
+          'client_admin': 'client_admin',  // Organization owner gets full client admin access
+          'owner': 'client_admin',
+          'manager': 'manager',
+          'project_manager': 'manager',
+          'operations_manager': 'manager',
+          'sales_manager': 'manager',
+          'finance_manager': 'manager',
+          'accountant': 'manager',
+          'sales_rep': 'sales_staff',
+          'sales': 'sales_staff',
+          'salesperson': 'sales_staff',
+          'executive': 'sales_staff',
+          'warehouse': 'warehouse_staff',
+          'installer': 'installer',
+          'surveyor': 'installer',
+          'viewer': 'viewer',
+          'user': 'viewer'
+        }
+        
         const usersWithRoles = crmUsers.map(u => {
+          // First check for explicit role assignment
           const roleAssignment = userRoles.find(ur => ur.userId === u.id)
-          const role = roleAssignment ? 
-            (DEFAULT_ROLES[roleAssignment.roleId] || customRolesForUsers.find(r => r.id === roleAssignment.roleId)) : 
-            null
+          
+          let effectiveRoleId, effectiveRole, assignmentType
+          
+          if (roleAssignment) {
+            // User has explicit flooring role assignment
+            effectiveRoleId = roleAssignment.roleId
+            effectiveRole = DEFAULT_ROLES[roleAssignment.roleId] || customRolesForUsers.find(r => r.id === roleAssignment.roleId)
+            assignmentType = 'explicit'
+          } else {
+            // Auto-assign based on CRM role (Single Source of Truth)
+            effectiveRoleId = CRM_TO_FLOORING_ROLE_MAP[u.role] || 'viewer'
+            effectiveRole = DEFAULT_ROLES[effectiveRoleId]
+            assignmentType = 'auto'  // Automatically inherited from CRM role
+          }
+          
           return {
             id: u.id,
             name: u.name,
@@ -261,23 +298,28 @@ export async function GET(request) {
             role: u.role, // CRM role
             status: u.status,
             createdAt: u.createdAt,
-            // Flooring module role assignment
-            flooringRoleId: roleAssignment?.roleId,
-            flooringRoleName: role?.name,
-            flooringRoleLevel: role?.level,
-            assignedAt: roleAssignment?.assignedAt,
-            assignedBy: roleAssignment?.assignedBy
+            // Flooring module role - effective role (explicit or auto-mapped from CRM)
+            flooringRoleId: effectiveRoleId,
+            flooringRoleName: effectiveRole?.name || 'Unknown',
+            flooringRoleLevel: effectiveRole?.level || 0,
+            assignmentType,  // 'explicit' or 'auto'
+            assignedAt: roleAssignment?.assignedAt || null,
+            assignedBy: roleAssignment?.assignedBy || (assignmentType === 'auto' ? 'System (CRM Sync)' : null),
+            // Flags for UI
+            hasExplicitRole: !!roleAssignment,
+            isAutoAssigned: assignmentType === 'auto'
           }
         })
 
         return successResponse({ 
           users: sanitizeDocuments(usersWithRoles),
+          roleMapping: CRM_TO_FLOORING_ROLE_MAP,  // Send mapping to frontend for reference
           summary: {
             total: crmUsers.length,
-            withRoles: userRoles.length,
-            withoutRoles: crmUsers.length - userRoles.filter(ur => crmUsers.some(u => u.id === ur.userId)).length,
+            withExplicitRoles: userRoles.length,
+            withAutoRoles: crmUsers.length - userRoles.filter(ur => crmUsers.some(u => u.id === ur.userId)).length,
             byRole: Object.keys(DEFAULT_ROLES).reduce((acc, roleId) => {
-              acc[roleId] = userRoles.filter(ur => ur.roleId === roleId).length
+              acc[roleId] = usersWithRoles.filter(u => u.flooringRoleId === roleId).length
               return acc
             }, {})
           }
