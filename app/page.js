@@ -1586,21 +1586,15 @@ function ClientDashboard({ user, client, onLogout }) {
             )}
 
             {/* Reports Tab */}
-            {activeTab === 'reports' && stats && (
+            {activeTab === 'reports' && (
               <motion.div
                 key="reports"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
-                className="space-y-6"
+                className="h-full"
               >
-                <AdvancedReports 
-                  stats={stats}
-                  leads={leads}
-                  projects={projects}
-                  tasks={tasks}
-                  expenses={expenses}
-                />
+                <EnterpriseReports authToken={localStorage.getItem('token')} />
               </motion.div>
             )}
 
