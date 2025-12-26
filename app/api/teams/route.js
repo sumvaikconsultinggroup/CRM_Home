@@ -123,7 +123,46 @@ export async function GET(request) {
           .sort({ lastMessageAt: -1 })
           .toArray()
         
-        return successResponse(sanitizeDocuments(dmChannels))
+        // Get the main database to fetch user details
+        const mainDb = await getMainDb()
+        const usersCollection = mainDb.collection('users')
+        
+        // Enrich DM channels with other user's info
+        const enrichedDMChannels = await Promise.all(dmChannels.map(async (dm) => {
+          // Find the other user in the DM (not the current user)
+          const otherMember = dm.members.find(m => m.userId !== user.id)
+          
+          if (otherMember) {
+            // Fetch the other user's details
+            const otherUser = await usersCollection.findOne({ id: otherMember.userId })
+            
+            return {
+              ...dm,
+              otherUser: otherUser ? {
+                id: otherUser.id,
+                name: otherUser.name,
+                email: otherUser.email,
+                avatar: otherUser.avatar,
+                status: otherUser.status || 'offline'
+              } : {
+                id: otherMember.userId,
+                name: otherMember.name || 'Unknown User',
+                email: '',
+                avatar: null,
+                status: 'offline'
+              },
+              displayName: otherUser?.name || otherMember.name || 'Unknown User'
+            }
+          }
+          
+          return {
+            ...dm,
+            otherUser: null,
+            displayName: dm.name || 'Unknown Conversation'
+          }
+        }))
+        
+        return successResponse(sanitizeDocuments(enrichedDMChannels))
       }
 
       case 'unread': {
