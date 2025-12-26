@@ -249,8 +249,12 @@ export function ProjectsTab({
     } else if (sourceFilter === 'crm-lead') {
       matchesSource = p.syncedFrom?.type === 'lead' && !p.crmProjectId
     }
+
+    // Customer type filter (for Manufacturer mode)
+    const matchesCustomerType = customerTypeFilter === 'all' || 
+      (p.customerType || 'consumer') === customerTypeFilter
     
-    return matchesSearch && matchesStatus && matchesSource
+    return matchesSearch && matchesStatus && matchesSource && matchesCustomerType
   }) || []
 
   // Calculate counts for badges
@@ -258,7 +262,9 @@ export function ProjectsTab({
     total: projects?.length || 0,
     manual: projects?.filter(p => p.source === 'manual' || !p.source).length || 0,
     fromProject: projects?.filter(p => p.syncedFrom?.type === 'project' || p.crmProjectId).length || 0,
-    fromLead: projects?.filter(p => p.syncedFrom?.type === 'lead' && !p.crmProjectId).length || 0
+    fromLead: projects?.filter(p => p.syncedFrom?.type === 'lead' && !p.crmProjectId).length || 0,
+    dealers: projects?.filter(p => p.customerType === 'dealer').length || 0,
+    consumers: projects?.filter(p => !p.customerType || p.customerType === 'consumer').length || 0
   }
 
   // Get project stats
