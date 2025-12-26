@@ -479,33 +479,13 @@ export function DoorsWindowsModule({ client, user }) {
     }
   }
 
-  // Fetch Post-Invoicing Data
-  const fetchPostInvoicingData = async () => {
-    try {
-      const res = await fetch(`${API_BASE}/post-invoicing?type=all`, { headers })
-      if (res.ok) {
-        const data = await res.json()
-        setPostInvoicingData(data)
-        setPostInvoicingStats({
-          challans: data.challanStats,
-          installations: data.installationStats,
-          payments: data.paymentStats,
-          warranties: data.warrantyStats,
-          amcs: data.amcStats
-        })
-      }
-    } catch (error) {
-      console.error('Failed to fetch post-invoicing data:', error)
-    }
-  }
-
   // Fetch Finance Sync Status
   const fetchFinanceSyncStatus = async () => {
     try {
       const res = await fetch(`${API_BASE}/sync-finance`, { headers })
       if (res.ok) {
         const data = await res.json()
-        setFinanceSyncStatus(data)
+        // Finance sync status if needed
       }
     } catch (error) {
       console.error('Failed to fetch finance sync status:', error)
@@ -515,7 +495,6 @@ export function DoorsWindowsModule({ client, user }) {
   // Sync All to Finance
   const syncAllToFinance = async () => {
     try {
-      setSyncingToFinance(true)
       const res = await fetch(`${API_BASE}/sync-finance`, {
         method: 'POST',
         headers,
@@ -530,8 +509,6 @@ export function DoorsWindowsModule({ client, user }) {
       }
     } catch (error) {
       toast.error('Failed to sync to Finance')
-    } finally {
-      setSyncingToFinance(false)
     }
   }
 
@@ -545,8 +522,6 @@ export function DoorsWindowsModule({ client, user }) {
       })
       if (res.ok) {
         toast.success(`${type.charAt(0).toUpperCase() + type.slice(1)} synced to Finance`)
-        if (type === 'quote') fetchQuotations()
-        if (type === 'invoice') fetchInvoices()
         fetchFinanceSyncStatus()
       }
     } catch (error) {
