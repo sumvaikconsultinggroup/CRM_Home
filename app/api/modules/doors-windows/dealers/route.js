@@ -399,6 +399,127 @@ export async function POST(request) {
       }, 201)
     }
 
+    // Create dealer from D&W Project (Single Source of Truth)
+    if (action === 'create_from_project') {
+      const { projectId, companyName, contactPerson, email, phone, territory, tier, autoApprove } = body
+
+      if (!projectId) {
+        return errorResponse('Project ID is required', 400)
+      }
+
+      if (!companyName) {
+        return errorResponse('Company name is required', 400)
+      }
+
+      // Check if project is already linked to a dealer
+      const projects = db.collection('dw_projects')
+      const project = await projects.findOne({ id: projectId })
+      
+      if (!project) {
+        return errorResponse('Project not found', 404)
+      }
+
+      if (project.dealerId) {
+        return errorResponse('Project is already linked to a dealer', 400)
+      }
+
+      // Check for duplicate dealer
+      const existingDealer = await dealers.findOne({
+        $or: [
+          { companyName: { $regex: `^${companyName}$`, $options: 'i' } },
+          { sourceProjectId: projectId }
+        ]
+      })
+      if (existingDealer) {
+        // Link existing dealer to project
+        await projects.updateOne({ id: projectId }, {
+          $set: { 
+            dealerId: existingDealer.id, 
+            customerType: 'dealer',
+            updatedAt: now 
+          }
+        })
+        return successResponse({
+          dealer: sanitizeDocument(existingDealer),
+          message: 'Project linked to existing dealer',
+          linked: true
+        })
+      }
+
+      // Generate dealer code
+      const count = await dealers.countDocuments()
+      const dealerCode = `DLR-${String(count + 1).padStart(4, '0')}`
+      const tierData = DEALER_TIERS.find(t => t.id === (tier || 'bronze'))
+
+      const dealer = {
+        id: uuidv4(),
+        dealerCode,
+        clientId: user.clientId,
+        sourceProjectId: projectId, // Link to project
+        crmCustomerId: project.crmCustomerId || project.syncedFrom?.crmId || null,
+        companyName,
+        tradeName: '',
+        legalName: companyName,
+        contactPerson: contactPerson || project.contactPerson || '',
+        email: email || project.contactEmail || '',
+        phone: phone || project.contactPhone || '',
+        alternatePhone: '',
+        address: project.siteAddress ? { line1: project.siteAddress } : {},
+        territory: territory || '',
+        region: '',
+        gstNumber: '',
+        panNumber: '',
+        tier: tier || 'bronze',
+        priceListId: null,
+        customDiscountPercent: 0,
+        creditLimit: 100000,
+        creditUsed: 0,
+        creditAvailable: 100000,
+        creditDays: tierData.creditDays,
+        status: autoApprove ? 'active' : 'pending_approval',
+        approvalWorkflow: {
+          submittedAt: now,
+          submittedBy: user.id,
+          approvedAt: autoApprove ? now : null,
+          approvedBy: autoApprove ? user.id : null
+        },
+        documents: { gstCertificate: null, panCard: null, addressProof: null, bankDetails: null, authorizationLetter: null },
+        bankDetails: { bankName: '', accountNumber: '', ifscCode: '', accountType: 'current' },
+        settings: {
+          autoInvoice: false,
+          requirePONumber: true,
+          allowPartialPayment: true,
+          sendInvoiceReminders: true,
+          reminderDays: [7, 3, 1, 0]
+        },
+        metrics: { totalOrders: 0, totalOrderValue: 0, avgOrderValue: 0, lastOrderDate: null, onTimePaymentRate: 0, returnRate: 0 },
+        commissionRate: 0,
+        commissionEarned: 0,
+        commissionPaid: 0,
+        notes: `Created from project: ${project.name || project.siteName}`,
+        tags: ['from-project'],
+        createdBy: user.id,
+        createdAt: now,
+        updatedAt: now
+      }
+
+      await dealers.insertOne(dealer)
+
+      // Update project with dealer link (Single Source of Truth)
+      await projects.updateOne({ id: projectId }, {
+        $set: {
+          dealerId: dealer.id,
+          customerType: 'dealer',
+          updatedAt: now
+        }
+      })
+
+      return successResponse({
+        dealer: sanitizeDocument(dealer),
+        message: autoApprove ? 'Dealer created from project and approved' : 'Dealer created from project, pending approval'
+      }, 201)
+    }
+
     // Approve dealer
     if (action === 'approve') {
       const { dealerId, priceListId, creditLimit, tier } = body
