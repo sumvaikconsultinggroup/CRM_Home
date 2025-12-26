@@ -1052,11 +1052,23 @@ function ClientDashboard({ user, client, onLogout }) {
   }
 
   // Check if modules are enabled - only show modules that are actually assigned to the client
-  const hasFlooringModule = modules.some(m => m.id === 'wooden-flooring' && m.enabled)
-  const hasFurnitureModule = modules.some(m => m.id === 'furniture' && m.enabled)
-  const hasDoorsWindowsModule = modules.some(m => (m.id === 'doors-windows' || m.id === 'doors-and-windows') && m.enabled)
-  const hasPaintsModule = modules.some(m => m.id === 'paints-coatings' && m.enabled)
+  // AND check if user has permission to access them (based on user.permissions.modules)
+  const userModules = user?.permissions?.modules || []
+  const isClientAdmin = user?.role === 'client_admin' || user?.role === 'admin' || user?.role === 'super_admin'
+  
+  // For client_admin, show all enabled modules. For other users, check their assigned modules
+  const canAccessModule = (moduleId) => {
+    if (isClientAdmin) return true  // Client admin can access all modules
+    if (!userModules || userModules.length === 0) return true  // If no specific modules assigned, allow all (backward compatibility)
+    return userModules.includes(moduleId)
+  }
+  
+  const hasFlooringModule = modules.some(m => m.id === 'wooden-flooring' && m.enabled) && canAccessModule('wooden-flooring')
+  const hasFurnitureModule = modules.some(m => m.id === 'furniture' && m.enabled) && canAccessModule('furniture')
+  const hasDoorsWindowsModule = modules.some(m => (m.id === 'doors-windows' || m.id === 'doors-and-windows') && m.enabled) && canAccessModule('doors-windows')
+  const hasPaintsModule = modules.some(m => m.id === 'paints-coatings' && m.enabled) && canAccessModule('paints-coatings')
 
+  // Define which menu items require specific roles
   const menuItems = [
     { id: 'dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { id: 'leads', icon: Target, label: 'Leads' },
@@ -1065,10 +1077,11 @@ function ClientDashboard({ user, client, onLogout }) {
     { id: 'tasks', icon: ClipboardList, label: 'Tasks' },
     { id: 'expenses', icon: Receipt, label: 'Expenses' },
     { id: 'calendar', icon: CalendarDays, label: 'Calendar & Notes' },
-    { id: 'users', icon: Shield, label: 'User Management' },
+    // User Management - Only for client_admin
+    ...(isClientAdmin ? [{ id: 'users', icon: Shield, label: 'User Management' }] : []),
     { id: 'teams', icon: MessageSquare, label: 'Teams Hub' },
     { id: 'reports', icon: BarChart3, label: 'Reports' },
-    // Add Wooden Flooring module link if enabled
+    // Add Wooden Flooring module link if enabled AND user has access
     ...(hasFlooringModule ? [{ id: 'flooring-module', icon: Layers, label: 'Wooden Flooring', isModule: true }] : []),
     // Add Furniture module link
     ...(hasFurnitureModule ? [{ id: 'furniture-module', icon: Sofa, label: 'Furniture', isModule: true }] : []),
@@ -1077,8 +1090,11 @@ function ClientDashboard({ user, client, onLogout }) {
     // Add Paints & Coatings module link
     ...(hasPaintsModule ? [{ id: 'paints-module', icon: Paintbrush, label: 'Paints & Coatings', isModule: true }] : []),
     { id: 'modules', icon: Package, label: 'Modules' },
-    { id: 'integrations', icon: Plug, label: 'Integrations' },
-    { id: 'whitelabel', icon: Palette, label: 'White Label' },
+    // Integrations, Whitelabel, Settings - Only for client_admin
+    ...(isClientAdmin ? [
+      { id: 'integrations', icon: Plug, label: 'Integrations' },
+      { id: 'whitelabel', icon: Palette, label: 'White Label' },
+    ] : []),
     { id: 'settings', icon: Settings, label: 'Settings' }
   ]
 
