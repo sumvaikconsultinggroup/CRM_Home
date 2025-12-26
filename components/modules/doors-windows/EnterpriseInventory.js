@@ -156,6 +156,9 @@ const movementTypeStyles = {
 }
 
 export function EnterpriseInventoryDW({ client, user, initialData }) {
+  // Check if data was pre-loaded (array exists, even if empty)
+  const hasPreloadedData = initialData && 'inventory' in initialData
+  
   // State management
   const [activeSubTab, setActiveSubTab] = useState('stock')
   const [inventory, setInventory] = useState(initialData?.inventory || [])
@@ -164,7 +167,7 @@ export function EnterpriseInventoryDW({ client, user, initialData }) {
   const [purchaseOrders, setPurchaseOrders] = useState([])
   const [suppliers, setSuppliers] = useState(initialData?.suppliers || [])
   const [reservations, setReservations] = useState([])
-  const [loading, setLoading] = useState(!initialData?.inventory)
+  const [loading, setLoading] = useState(!hasPreloadedData)
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [warehouseFilter, setWarehouseFilter] = useState('all')
