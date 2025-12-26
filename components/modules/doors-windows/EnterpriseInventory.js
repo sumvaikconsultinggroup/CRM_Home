@@ -295,7 +295,7 @@ export function EnterpriseInventoryDW({ client, user }) {
     try {
       const response = await fetch(`${API_BASE}/inventory`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: getAuthHeaders(),
         body: JSON.stringify(newItem)
       })
       
