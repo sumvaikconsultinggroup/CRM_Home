@@ -424,6 +424,61 @@ export function ProjectsTab({
                     </div>
                   </div>
 
+                  {/* Customer Type Toggle - Manufacturer Mode Only */}
+                  {businessMode === 'manufacturer' && (
+                    <div className={`mb-3 p-2 rounded-lg border ${
+                      project.customerType === 'dealer' 
+                        ? 'bg-purple-50 border-purple-200' 
+                        : 'bg-blue-50 border-blue-200'
+                    }`}>
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          {project.customerType === 'dealer' ? (
+                            <>
+                              <Store className="h-4 w-4 text-purple-600" />
+                              <span className="text-sm font-medium text-purple-700">Dealer</span>
+                            </>
+                          ) : (
+                            <>
+                              <UserCircle className="h-4 w-4 text-blue-600" />
+                              <span className="text-sm font-medium text-blue-700">Consumer</span>
+                            </>
+                          )}
+                          {project.dealerId && (
+                            <Badge className="text-xs bg-emerald-100 text-emerald-700">
+                              <Link2 className="h-3 w-3 mr-1" />
+                              Linked
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                          <span className="text-xs text-slate-500">Consumer</span>
+                          <Switch
+                            checked={project.customerType === 'dealer'}
+                            onCheckedChange={(checked) => handleCustomerTypeChange(project, checked ? 'dealer' : 'consumer')}
+                            className="data-[state=checked]:bg-purple-600"
+                          />
+                          <span className="text-xs text-slate-500">Dealer</span>
+                        </div>
+                      </div>
+                      {project.customerType === 'dealer' && !project.dealerId && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="w-full mt-2 text-purple-600 border-purple-300 hover:bg-purple-100"
+                          onClick={(e) => { e.stopPropagation(); handleSyncToDealer(project); }}
+                          disabled={syncingToDealer === project.id}
+                        >
+                          {syncingToDealer === project.id ? (
+                            <><Loader2 className="h-3 w-3 mr-1 animate-spin" /> Syncing...</>
+                          ) : (
+                            <><Users className="h-3 w-3 mr-1" /> Add to Dealer Network</>
+                          )}
+                        </Button>
+                      )}
+                    </div>
+                  )}
+
                   {project.siteAddress && (
                     <p className="text-xs text-slate-500 flex items-start gap-1 mb-3">
                       <MapPin className="h-3 w-3 mt-0.5 flex-shrink-0" />
