@@ -1985,21 +1985,31 @@ export function SiteSurvey({ surveys, projects, selectedProject, onRefresh, head
                             formData.append('surveyId', viewingSurvey?.id || '')
                             formData.append('openingRef', openingForm.openingRef)
                             
+                            // Debug log
+                            console.log('Uploading photo:', file.name, 'size:', file.size)
+                            
                             const res = await fetch(`${API_BASE}/photos`, {
                               method: 'POST',
-                              headers: { 'Authorization': headers.Authorization },
+                              headers: { 
+                                'Authorization': headers?.Authorization || ''
+                              },
                               body: formData
                             })
                             
+                            console.log('Upload response status:', res.status)
+                            
                             if (res.ok) {
                               const data = await res.json()
+                              console.log('Upload success:', data)
                               newPhotos.push(data.photo)
                             } else {
-                              toast.error(`Failed to upload ${file.name}`)
+                              const errorData = await res.json().catch(() => ({}))
+                              console.error('Upload failed:', res.status, errorData)
+                              toast.error(`Failed to upload ${file.name}: ${errorData.error || res.statusText}`)
                             }
                           } catch (err) {
                             console.error('Photo upload error:', err)
-                            toast.error(`Error uploading ${file.name}`)
+                            toast.error(`Error uploading ${file.name}: ${err.message}`)
                           }
                         }
                         
