@@ -168,7 +168,7 @@ export function DoorsWindowsModule({ client, user }) {
   // Pre-loaded data for instant tab switching
   const [installationsData, setInstallationsData] = useState({ installations: [], stats: {} })
   const [inventoryData, setInventoryData] = useState({ inventory: [], warehouses: [], suppliers: [] })
-  const [financeData, setFinanceData] = useState({ transactions: [], summary: {} })
+  const [financeData, setFinanceData] = useState({ invoices: [], quotations: [], payments: [] })
 
   // Handle business mode toggle
   const toggleBusinessMode = (mode) => {
