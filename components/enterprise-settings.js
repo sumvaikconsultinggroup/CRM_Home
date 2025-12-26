@@ -1214,41 +1214,15 @@ export function EnterpriseSettings({ authToken, client, user, onClientUpdate }) 
                 exit={{ opacity: 0, x: -20 }}
                 className="space-y-6"
               >
-                <SectionCard icon={Crown} title="Current Plan">
-                  <div className="grid grid-cols-3 gap-4">
-                    {Object.entries(PLAN_FEATURES).map(([planId, plan]) => (
-                      <PlanCard
-                        key={planId}
-                        planId={planId}
-                        plan={plan}
-                        isCurrentPlan={billing.plan === planId}
-                        onSelect={(id) => toast.info(`Contact sales to upgrade to ${PLAN_FEATURES[id].name}`)}
-                      />
-                    ))}
-                  </div>
-                </SectionCard>
-
-                <SectionCard icon={CreditCard} title="Payment Method">
-                  <div className="p-4 bg-slate-50 rounded-xl flex items-center justify-between">
-                    <div className="flex items-center gap-4">
-                      <div className="h-12 w-16 bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg flex items-center justify-center text-white font-bold">
-                        VISA
-                      </div>
-                      <div>
-                        <p className="font-medium">•••• •••• •••• 4242</p>
-                        <p className="text-sm text-slate-500">Expires 12/25</p>
-                      </div>
-                    </div>
-                    <Button variant="outline">Update</Button>
-                  </div>
-                </SectionCard>
-
-                <SectionCard icon={Receipt} title="Billing History">
-                  <div className="text-center py-8 text-slate-500">
-                    <Receipt className="h-12 w-12 mx-auto mb-3 text-slate-300" />
-                    <p>No invoices yet</p>
-                  </div>
-                </SectionCard>
+                <BillingPlanSettings 
+                  authToken={authToken}
+                  client={client}
+                  user={user}
+                  onSubscriptionChange={(newSub) => {
+                    // Update local billing state
+                    setBilling(prev => ({ ...prev, plan: newSub.planId }))
+                  }}
+                />
               </motion.div>
             )}
 
