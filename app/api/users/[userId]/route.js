@@ -38,8 +38,40 @@ export async function PUT(request, { params }) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
+    // Only client_admin can update users (except for their own profile)
     const { userId } = await params
+    const isSelfUpdate = userId === user.id
+    
+    if (!isSelfUpdate && user.role !== 'client_admin' && user.role !== 'admin' && user.role !== 'super_admin') {
+      return errorResponse('Only administrators can update other users', 403)
+    }
+
     const body = await request.json()
+    
+    // Non-admins can only update limited fields for themselves
+    if (isSelfUpdate && user.role !== 'client_admin' && user.role !== 'admin' && user.role !== 'super_admin') {
+      // Only allow updating name, phone, avatar for self
+      const allowedFields = ['name', 'phone', 'avatar', 'password']
+      const updateData = { updatedAt: new Date() }
+      if (body.name) updateData.name = body.name
+      if (body.phone !== undefined) updateData.phone = body.phone
+      if (body.avatar !== undefined) updateData.avatar = body.avatar
+      if (body.password) updateData.password = hashPassword(body.password)
+      
+      const mainDb = await getMainDb()
+      const usersCollection = mainDb.collection('users')
+      
+      const result = await usersCollection.updateOne(
+        { id: userId, clientId: user.clientId },
+        { $set: updateData }
+      )
+
+      if (result.matchedCount === 0) {
+        return errorResponse('User not found', 404)
+      }
+
+      return successResponse({ message: 'Profile updated successfully' })
+    }
     
     // Users are in main database (platform-level)
     const mainDb = await getMainDb()
@@ -78,6 +110,11 @@ export async function DELETE(request, { params }) {
   try {
     const user = getAuthUser(request)
     requireClientAccess(user)
+
+    // Only client_admin can delete users
+    if (user.role !== 'client_admin' && user.role !== 'admin' && user.role !== 'super_admin') {
+      return errorResponse('Only administrators can delete users', 403)
+    }
 
     const { userId } = await params
 
