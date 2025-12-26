@@ -498,6 +498,7 @@ export function DoorsWindowsModule({ client, user }) {
   // Sync All to Finance
   const syncAllToFinance = async () => {
     try {
+      setSyncingToFinance(true)
       const res = await fetch(`${API_BASE}/sync-finance`, {
         method: 'POST',
         headers,
@@ -512,6 +513,8 @@ export function DoorsWindowsModule({ client, user }) {
       }
     } catch (error) {
       toast.error('Failed to sync to Finance')
+    } finally {
+      setSyncingToFinance(false)
     }
   }
 
