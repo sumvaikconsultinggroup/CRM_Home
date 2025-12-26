@@ -45,17 +45,26 @@ const orderStatusStyles = {
   'ready': 'bg-blue-100 text-blue-700'
 }
 
-export function InstallationTab({ glassStyles, onRefresh }) {
-  const [installations, setInstallations] = useState([])
+export function InstallationTab({ glassStyles, onRefresh, initialData }) {
+  const [installations, setInstallations] = useState(initialData?.installations || [])
   const [eligibleOrders, setEligibleOrders] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!initialData?.installations)
   const [loadingOrders, setLoadingOrders] = useState(false)
   const [showSchedule, setShowSchedule] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
   const [selectedInstallation, setSelectedInstallation] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
-  const [stats, setStats] = useState({ total: 0, scheduled: 0, inProgress: 0, completed: 0 })
+  const [stats, setStats] = useState(() => {
+    if (initialData?.stats) return initialData.stats
+    const data = initialData?.installations || []
+    return {
+      total: data.length,
+      scheduled: data.filter(i => i.status === 'scheduled').length,
+      inProgress: data.filter(i => i.status === 'in-progress').length,
+      completed: data.filter(i => i.status === 'completed').length
+    }
+  })
 
   // Schedule form with all order details
   const [scheduleForm, setScheduleForm] = useState({
@@ -88,9 +97,27 @@ export function InstallationTab({ glassStyles, onRefresh }) {
     { id: 'team-delta', name: 'Team Delta', lead: 'Vikram Patel', members: 4 },
   ]
 
+  // Only fetch if no initial data provided
   useEffect(() => {
-    fetchInstallations()
+    if (!initialData?.installations) {
+      fetchInstallations()
+    }
   }, [])
+
+  // Update state when initialData changes
+  useEffect(() => {
+    if (initialData?.installations) {
+      setInstallations(initialData.installations)
+      setLoading(false)
+      const data = initialData.installations
+      setStats({
+        total: initialData.stats?.total || data.length,
+        scheduled: initialData.stats?.scheduled || data.filter(i => i.status === 'scheduled').length,
+        inProgress: initialData.stats?.inProgress || data.filter(i => i.status === 'in-progress').length,
+        completed: initialData.stats?.completed || data.filter(i => i.status === 'completed').length
+      })
+    }
+  }, [initialData])
 
   const fetchInstallations = async () => {
     setLoading(true)
