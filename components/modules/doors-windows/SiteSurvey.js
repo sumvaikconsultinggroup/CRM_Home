@@ -2045,7 +2045,7 @@ export function SiteSurvey({ surveys, projects, selectedProject, onRefresh, head
                         </p>
                       </div>
                     )}
-                  </div>
+                  </label>
 
                   {/* Photo Preview Grid */}
                   {openingForm.photos?.length > 0 && (
