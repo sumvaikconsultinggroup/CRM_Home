@@ -983,18 +983,51 @@ export function EnterpriseInventoryDW({ client, user }) {
               const whValue = whItems.reduce((sum, i) => sum + ((i.currentQty || 0) * (i.costPrice || 0)), 0)
               
               return (
-                <Card key={wh.id}>
+                <Card key={wh.id} className={wh.isDefault ? 'ring-2 ring-indigo-500' : ''}>
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <Warehouse className="h-5 w-5 text-indigo-600" />
-                      {wh.name}
-                    </CardTitle>
-                    <CardDescription className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" /> {wh.location}
-                    </CardDescription>
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <CardTitle className="flex items-center gap-2">
+                          <Warehouse className="h-5 w-5 text-indigo-600" />
+                          {wh.name}
+                          {wh.isDefault && <Badge className="bg-indigo-100 text-indigo-700 text-xs">Default</Badge>}
+                        </CardTitle>
+                        <CardDescription className="flex items-center gap-1 mt-1">
+                          <MapPin className="h-3 w-3" /> {wh.city || wh.address || 'No location set'}
+                        </CardDescription>
+                      </div>
+                      <div className="flex gap-1">
+                        <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => openEditWarehouse(wh)}>
+                          <Edit className="h-4 w-4 text-slate-500" />
+                        </Button>
+                        {!wh.isDefault && (
+                          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={() => handleDeleteWarehouse(wh.id)}>
+                            <Trash2 className="h-4 w-4 text-red-500" />
+                          </Button>
+                        )}
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <div className="space-y-3">
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Code:</span>
+                          <span className="font-medium">{wh.code || '-'}</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-slate-500">Type:</span>
+                          <span className="font-medium capitalize">{wh.type || 'branch'}</span>
+                        </div>
+                      </div>
+                      {wh.contactPerson && (
+                        <div className="text-sm">
+                          <span className="text-slate-500">Contact:</span>{' '}
+                          <span className="font-medium">{wh.contactPerson}</span>
+                          {wh.phone && <span className="text-slate-500"> • {wh.phone}</span>}
+                        </div>
+                      )}
+                      <Separator />
                       <div className="flex justify-between">
                         <span className="text-slate-500">Total Items</span>
                         <span className="font-semibold">{whItems.length}</span>
@@ -1017,12 +1050,15 @@ export function EnterpriseInventoryDW({ client, user }) {
                 </Card>
               )
             })}
-            <Card className="border-dashed">
+            <Card className="border-dashed border-2 hover:border-indigo-300 hover:bg-indigo-50/50 transition-colors cursor-pointer" onClick={() => setShowAddWarehouse(true)}>
               <CardContent className="flex items-center justify-center h-full min-h-48">
-                <Button variant="ghost" className="flex flex-col gap-2 h-auto py-4">
-                  <Plus className="h-8 w-8 text-slate-400" />
-                  <span className="text-slate-500">Add Warehouse</span>
-                </Button>
+                <div className="flex flex-col items-center gap-2">
+                  <div className="p-3 rounded-full bg-indigo-100">
+                    <Plus className="h-8 w-8 text-indigo-600" />
+                  </div>
+                  <span className="font-medium text-indigo-600">Add Warehouse</span>
+                  <span className="text-xs text-slate-500">Create a new storage location</span>
+                </div>
               </CardContent>
             </Card>
           </div>
