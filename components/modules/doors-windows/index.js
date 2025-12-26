@@ -97,13 +97,12 @@ const TAB_GROUPS_MANUFACTURER = {
   operations: [
     { id: 'invoices', label: 'Invoices', icon: Receipt },
     { id: 'post-invoicing', label: 'Post-Invoicing', icon: ScrollText },
-    { id: 'products', label: 'Product Catalog', icon: Package },
     { id: 'production', label: 'Production', icon: Factory, highlight: true },
     { id: 'quality', label: 'Quality Control', icon: CheckCircle2 },
     { id: 'dispatch', label: 'Dispatch', icon: Truck },
   ],
   module: [
-    { id: 'inventory', label: 'Inventory', icon: Box, highlight: true },
+    { id: 'inventory', label: 'Products & Inventory', icon: Package, highlight: true },
     { id: 'finance', label: 'Finance', icon: IndianRupee, highlight: true },
     { id: 'collections', label: 'Collections', icon: Wallet, highlight: true },
   ],
