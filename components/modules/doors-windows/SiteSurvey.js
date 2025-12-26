@@ -1732,9 +1732,20 @@ export function SiteSurvey({ surveys, projects, selectedProject, onRefresh, head
             {/* Form Side */}
             <ScrollArea className="pr-4">
               <Tabs value={activeOpeningTab} onValueChange={setActiveOpeningTab} className="space-y-4">
-                <TabsList className="grid grid-cols-3">
+                <TabsList className="grid grid-cols-4">
                   <TabsTrigger value="dimensions">Dimensions</TabsTrigger>
                   <TabsTrigger value="config">Configuration</TabsTrigger>
+                  <TabsTrigger value="photos" className="relative">
+                    Photos
+                    {openingForm.photos?.length > 0 && (
+                      <Badge className="ml-1 h-5 w-5 p-0 flex items-center justify-center bg-emerald-500 text-white text-xs">
+                        {openingForm.photos.length}
+                      </Badge>
+                    )}
+                    {(!openingForm.photos || openingForm.photos.length === 0) && (
+                      <Badge className="ml-1 h-5 w-5 p-0 flex items-center justify-center bg-red-500 text-white text-xs">!</Badge>
+                    )}
+                  </TabsTrigger>
                   <TabsTrigger value="verify">Verify</TabsTrigger>
                 </TabsList>
 
