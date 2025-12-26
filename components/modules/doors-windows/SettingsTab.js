@@ -31,31 +31,23 @@ const WHATSAPP_PROVIDERS = [
   { id: 'custom', name: 'Custom WhatsApp Business API', logo: '🔵' }
 ]
 
-// Business Mode Definitions
+// Business Mode Definitions - Only 2 Modes
 const BUSINESS_MODES = [
   {
     id: 'manufacturer',
     name: 'Manufacturer',
     icon: Factory,
     color: 'purple',
-    description: 'Large-scale production, sells to dealers and distributors. Access to dealer network, price lists, and B2B features.',
-    features: ['Dealer Network Management', 'Wholesale Price Lists', 'B2B Orders', 'Production at Scale', 'Dealer Credit Management']
+    description: 'Large-scale production with dealer network. Serves both dealers (B2B) and direct customers. Full access to dealer management, price lists, and production features.',
+    features: ['Dealer Network Management', 'Wholesale Price Lists', 'B2B & Direct Customers', 'Production at Scale', 'Quality Control']
   },
   {
     id: 'fabricator',
     name: 'Fabricator',
     icon: Scissors,
     color: 'blue',
-    description: 'Custom cut-to-size production with full manufacturing workflow. Serves both dealers and direct customers.',
-    features: ['Custom Fabrication', 'Full Production Stages', 'Both B2B & B2C', 'Site Surveys', 'Installation Management']
-  },
-  {
-    id: 'dealer',
-    name: 'Dealer',
-    icon: Building2,
-    color: 'emerald',
-    description: 'Resells products from manufacturers. Focus on sales, customer service, and installation.',
-    features: ['Product Catalog', 'Customer Quotations', 'Order from Manufacturer', 'Installation Coordination', 'After-Sales Service']
+    description: 'Custom cut-to-size production with full manufacturing workflow. Serves end customers with site surveys, installations, and after-sales service.',
+    features: ['Custom Fabrication', 'Site Surveys', 'Full Production Stages', 'Installation Management', 'Warranty Service']
   }
 ]
 
