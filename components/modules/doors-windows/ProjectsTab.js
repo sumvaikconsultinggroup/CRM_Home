@@ -80,9 +80,83 @@ export function ProjectsTab({
       contactEmail: '',
       expectedValue: '',
       notes: '',
-      status: 'active'
+      status: 'active',
+      customerType: 'consumer'
     })
     setEditingProject(null)
+  }
+
+  // NEW: Sync project to Dealer Network
+  const handleSyncToDealer = async (project) => {
+    if (project.dealerId) {
+      toast.info('This project is already linked to a dealer')
+      return
+    }
+
+    setSyncingToDealer(project.id)
+    try {
+      const res = await fetch(`${API_BASE}/dealers`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          action: 'create_from_project',
+          projectId: project.id,
+          companyName: project.name || project.siteName,
+          contactPerson: project.contactPerson,
+          email: project.contactEmail,
+          phone: project.contactPhone,
+          territory: project.siteAddress?.split(',').pop()?.trim() || '',
+          tier: 'bronze',
+          autoApprove: true
+        })
+      })
+      const data = await res.json()
+      
+      if (res.ok) {
+        toast.success(`Dealer "${data.dealer?.companyName || project.name}" created and linked!`)
+        onRefresh?.()
+      } else {
+        toast.error(data.error || 'Failed to create dealer')
+      }
+    } catch (error) {
+      toast.error('Failed to sync to dealer network')
+    } finally {
+      setSyncingToDealer(null)
+    }
+  }
+
+  // NEW: Update customer type for a project
+  const handleCustomerTypeChange = async (project, newType) => {
+    try {
+      const res = await fetch(`${API_BASE}/projects`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          id: project.id,
+          customerType: newType
+        })
+      })
+      
+      if (res.ok) {
+        toast.success(`Customer type updated to ${newType}`)
+        
+        // If changed to dealer, prompt to sync
+        if (newType === 'dealer' && !project.dealerId) {
+          const shouldSync = window.confirm(
+            'Would you like to add this customer to your Dealer Network? This will allow them to place orders with dealer pricing.'
+          )
+          if (shouldSync) {
+            await handleSyncToDealer(project)
+          }
+        }
+        
+        onRefresh?.()
+      } else {
+        toast.error('Failed to update customer type')
+      }
+    } catch (error) {
+      toast.error('Failed to update customer type')
+    }
   }
 
   const openEditProject = (project) => {
