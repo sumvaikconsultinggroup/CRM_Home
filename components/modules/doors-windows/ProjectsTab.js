@@ -166,10 +166,11 @@ export function ProjectsTab({
       siteName: project.siteName || '',
       siteAddress: project.siteAddress || '',
       buildingType: project.buildingType || '',
-      contactPerson: project.contactPerson || '',
-      contactPhone: project.contactPhone || '',
-      contactEmail: project.contactEmail || '',
-      expectedValue: project.expectedValue || '',
+      // Support both manual and CRM-synced field names
+      contactPerson: project.contactPerson || project.clientName || '',
+      contactPhone: project.contactPhone || project.clientPhone || '',
+      contactEmail: project.contactEmail || project.clientEmail || '',
+      expectedValue: project.expectedValue || project.value || project.budget || '',
       notes: project.notes || '',
       status: project.status || 'active',
       customerType: project.customerType || 'consumer'
