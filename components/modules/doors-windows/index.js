@@ -170,7 +170,7 @@ export function DoorsWindowsModule({ client, user }) {
     if (typeof window !== 'undefined') {
       localStorage.setItem('dw_business_mode', mode)
     }
-    toast.success(`Switched to ${mode === 'manufacturer' ? 'Manufacturer' : 'Fabricator/Dealer'} mode`)
+    toast.success(`Switched to ${mode === 'manufacturer' ? 'Manufacturer' : 'Fabricator'} mode`)
   }
 
   // Memoize headers to prevent unnecessary recalculations
