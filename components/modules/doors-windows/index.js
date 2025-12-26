@@ -70,9 +70,8 @@ const TAB_GROUPS_FABRICATOR = {
     { id: 'quotes', label: 'Quotes', icon: FileText },
   ],
   operations: [
-    { id: 'orders', label: 'Orders', icon: ShoppingCart },
+    { id: 'orders', label: 'Orders & Challans', icon: ShoppingCart, highlight: true },
     { id: 'invoices', label: 'Invoices', icon: Receipt },
-    { id: 'post-invoicing', label: 'Post-Invoicing', icon: ScrollText, highlight: true },
     { id: 'production', label: 'Production', icon: Factory },
     { id: 'installation', label: 'Installation', icon: Wrench },
   ],
@@ -96,7 +95,6 @@ const TAB_GROUPS_MANUFACTURER = {
   ],
   operations: [
     { id: 'invoices', label: 'Invoices', icon: Receipt },
-    { id: 'post-invoicing', label: 'Post-Invoicing', icon: ScrollText },
     { id: 'production', label: 'Production', icon: Factory, highlight: true },
     { id: 'quality', label: 'Quality Control', icon: CheckCircle2 },
     { id: 'dispatch', label: 'Dispatch', icon: Truck },
@@ -112,6 +110,7 @@ const TAB_GROUPS_MANUFACTURER = {
     { id: 'settings', label: 'Settings', icon: Settings },
   ]
 }
+
 
 // Legacy constant for backward compatibility
 const TAB_GROUPS = TAB_GROUPS_FABRICATOR
