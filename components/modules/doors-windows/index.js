@@ -306,6 +306,12 @@ export function DoorsWindowsModule({ client, user }) {
         inventory: inventoryDataRes.inventory || inventoryDataRes.data?.inventory || [],
         warehouses: warehousesDataRes.warehouses || warehousesDataRes.data?.warehouses || []
       })
+
+      // Pre-load finance data with invoices and quotations already fetched
+      setFinanceData({
+        invoices: invoicesData.invoices || [],
+        quotations: quotesData.quotations || []
+      })
     } catch (error) {
       console.error('Failed to fetch secondary data:', error)
     }
