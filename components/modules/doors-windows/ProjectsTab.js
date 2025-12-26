@@ -10,10 +10,11 @@ import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
 import { ScrollArea } from '@/components/ui/scroll-area'
+import { Switch } from '@/components/ui/switch'
 import {
   Plus, Search, Filter, Eye, Edit, Trash2, MapPin, Phone, Mail,
   Calendar, User, Building2, FolderKanban, FileText, Ruler,
-  CheckCircle2, Clock, MoreHorizontal
+  CheckCircle2, Clock, MoreHorizontal, Users, Store, UserCircle, Loader2, Link2
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { BUILDING_TYPES } from './constants'
@@ -28,6 +29,12 @@ const statusStyles = {
   cancelled: 'bg-red-100 text-red-700'
 }
 
+// Customer type styles for Manufacturer mode
+const customerTypeStyles = {
+  consumer: { bg: 'bg-blue-50', border: 'border-blue-200', text: 'text-blue-700', icon: UserCircle },
+  dealer: { bg: 'bg-purple-50', border: 'border-purple-200', text: 'text-purple-700', icon: Store }
+}
+
 export function ProjectsTab({ 
   projects, 
   surveys, 
@@ -36,14 +43,17 @@ export function ProjectsTab({
   setSelectedProject,
   onRefresh, 
   headers, 
-  glassStyles 
+  glassStyles,
+  businessMode // NEW: to show customer type toggle in manufacturer mode
 }) {
   const [showNewProject, setShowNewProject] = useState(false)
   const [editingProject, setEditingProject] = useState(null)
   const [searchQuery, setSearchQuery] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [sourceFilter, setSourceFilter] = useState('all')
+  const [customerTypeFilter, setCustomerTypeFilter] = useState('all') // NEW: filter by customer type
   const [saving, setSaving] = useState(false)
+  const [syncingToDealer, setSyncingToDealer] = useState(null) // Track which project is syncing
   
   const [projectForm, setProjectForm] = useState({
     name: '',
@@ -55,7 +65,8 @@ export function ProjectsTab({
     contactEmail: '',
     expectedValue: '',
     notes: '',
-    status: 'active'
+    status: 'active',
+    customerType: 'consumer' // NEW: consumer or dealer
   })
 
   const resetForm = () => {
