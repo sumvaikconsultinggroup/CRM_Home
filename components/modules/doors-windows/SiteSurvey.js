@@ -868,6 +868,7 @@ export function SiteSurvey({ surveys, projects, selectedProject, onRefresh, head
       grill: false,
       grillPattern: 'horizontal',
       safetyBars: false,
+      photos: [], // Reset photos array
       measurements: {
         width: false,
         height: false,
