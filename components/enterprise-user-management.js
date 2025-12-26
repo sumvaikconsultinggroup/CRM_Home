@@ -1276,13 +1276,9 @@ export function EnterpriseUserManagement({ authToken, currentUser, onRefresh }) 
           
           <DialogFooter>
             <Button variant="outline" onClick={() => setShowRoleDialog(false)}>Cancel</Button>
-            <Button onClick={handleCreateRole} disabled={saving}>
-              {saving ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Creating...</>
-              ) : (
-                <><Plus className="h-4 w-4 mr-2" /> Create Role</>
-              )}
-            </Button>
+            <SafeButton onClick={handleCreateRole}>
+              <Plus className="h-4 w-4 mr-2" /> Create Role
+            </SafeButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
