@@ -155,11 +155,11 @@ export function DoorsWindowsModule({ client, user }) {
   const [pendingSyncNotification, setPendingSyncNotification] = useState(null)
   const [showSyncNotification, setShowSyncNotification] = useState(true)
 
-  // Post-Invoicing states
-  const [postInvoicingData, setPostInvoicingData] = useState({})
-  const [postInvoicingStats, setPostInvoicingStats] = useState({})
-  const [financeSyncStatus, setFinanceSyncStatus] = useState({})
-  const [syncingToFinance, setSyncingToFinance] = useState(false)
+  // Challans state (Single Source of Truth)
+  const [challans, setChallans] = useState([])
+  const [challanStats, setChallanStats] = useState({ total: 0, draft: 0, dispatched: 0, delivered: 0 })
+  const [showChallanDialog, setShowChallanDialog] = useState(false)
+  const [selectedOrderForChallan, setSelectedOrderForChallan] = useState(null)
 
   // Handle business mode toggle
   const toggleBusinessMode = (mode) => {
