@@ -993,6 +993,12 @@ export function SiteSurvey({ surveys, projects, selectedProject, onRefresh, head
       toast.error('Please select the room/location')
       return
     }
+    // Validate: At least 1 photo is required
+    if (!openingForm.photos || openingForm.photos.length === 0) {
+      toast.error('Please upload at least 1 photo of the opening')
+      setActiveOpeningTab('photos')
+      return
+    }
 
     setSaving(true)
     try {
