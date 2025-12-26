@@ -160,6 +160,9 @@ export function DoorsWindowsModule({ client, user }) {
   const [challanStats, setChallanStats] = useState({ total: 0, draft: 0, dispatched: 0, delivered: 0 })
   const [showChallanDialog, setShowChallanDialog] = useState(false)
   const [selectedOrderForChallan, setSelectedOrderForChallan] = useState(null)
+  
+  // Finance sync state
+  const [syncingToFinance, setSyncingToFinance] = useState(false)
 
   // Handle business mode toggle
   const toggleBusinessMode = (mode) => {
