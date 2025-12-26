@@ -330,6 +330,30 @@ export function ProjectsTab({
                 <SelectItem value="crm-lead">From CRM Leads ({projectCounts.fromLead})</SelectItem>
               </SelectContent>
             </Select>
+            
+            {/* Customer Type Filter - Only in Manufacturer Mode */}
+            {businessMode === 'manufacturer' && (
+              <Select value={customerTypeFilter} onValueChange={setCustomerTypeFilter}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue placeholder="Customer type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Customers ({projectCounts.total})</SelectItem>
+                  <SelectItem value="consumer">
+                    <div className="flex items-center gap-2">
+                      <UserCircle className="h-4 w-4 text-blue-600" />
+                      Consumers ({projectCounts.consumers})
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="dealer">
+                    <div className="flex items-center gap-2">
+                      <Store className="h-4 w-4 text-purple-600" />
+                      Dealers ({projectCounts.dealers})
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            )}
           </div>
         </CardContent>
       </Card>
