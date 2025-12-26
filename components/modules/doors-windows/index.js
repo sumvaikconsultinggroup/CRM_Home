@@ -606,11 +606,8 @@ export function DoorsWindowsModule({ client, user }) {
     }
   }
 
-  // Fetch post-invoicing data when tab changes
+  // Fetch finance sync status when tab changes
   useEffect(() => {
-    if (activeTab === 'post-invoicing') {
-      fetchPostInvoicingData()
-    }
     if (activeTab === 'finance-sync') {
       fetchFinanceSyncStatus()
     }
