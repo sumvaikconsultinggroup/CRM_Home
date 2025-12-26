@@ -1928,6 +1928,182 @@ export function SiteSurvey({ surveys, projects, selectedProject, onRefresh, head
                   </div>
                 </TabsContent>
 
+                {/* Photos Tab - 1-5 photos per opening, 1 mandatory */}
+                <TabsContent value="photos" className="space-y-4">
+                  <div className="p-4 bg-blue-50 rounded-xl">
+                    <h4 className="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                      <Camera className="h-4 w-4" /> Opening Photos
+                    </h4>
+                    <p className="text-sm text-blue-600">
+                      Upload 1-5 photos of this opening. <span className="font-semibold">At least 1 photo is required.</span>
+                    </p>
+                  </div>
+
+                  {/* Photo Upload Area */}
+                  <div 
+                    className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${
+                      openingForm.photos?.length >= 5 
+                        ? 'border-slate-200 bg-slate-50 cursor-not-allowed' 
+                        : 'border-indigo-300 hover:border-indigo-500 hover:bg-indigo-50'
+                    }`}
+                    onClick={() => openingForm.photos?.length < 5 && photoInputRef.current?.click()}
+                  >
+                    <input
+                      type="file"
+                      ref={photoInputRef}
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={async (e) => {
+                        const files = Array.from(e.target.files || [])
+                        if (files.length === 0) return
+                        
+                        const remainingSlots = 5 - (openingForm.photos?.length || 0)
+                        const filesToUpload = files.slice(0, remainingSlots)
+                        
+                        if (files.length > remainingSlots) {
+                          toast.warning(`Only ${remainingSlots} more photo${remainingSlots > 1 ? 's' : ''} can be added`)
+                        }
+
+                        setUploadingPhoto(true)
+                        const newPhotos = []
+                        
+                        for (const file of filesToUpload) {
+                          try {
+                            const formData = new FormData()
+                            formData.append('file', file)
+                            formData.append('surveyId', viewingSurvey?.id || '')
+                            formData.append('openingRef', openingForm.openingRef)
+                            
+                            const res = await fetch(`${API_BASE}/photos`, {
+                              method: 'POST',
+                              headers: { 'Authorization': headers.Authorization },
+                              body: formData
+                            })
+                            
+                            if (res.ok) {
+                              const data = await res.json()
+                              newPhotos.push(data.photo)
+                            } else {
+                              toast.error(`Failed to upload ${file.name}`)
+                            }
+                          } catch (err) {
+                            console.error('Photo upload error:', err)
+                            toast.error(`Error uploading ${file.name}`)
+                          }
+                        }
+                        
+                        if (newPhotos.length > 0) {
+                          setOpeningForm({
+                            ...openingForm, 
+                            photos: [...(openingForm.photos || []), ...newPhotos],
+                            measurements: { ...openingForm.measurements, photoTaken: true }
+                          })
+                          toast.success(`${newPhotos.length} photo${newPhotos.length > 1 ? 's' : ''} uploaded`)
+                        }
+                        
+                        setUploadingPhoto(false)
+                        e.target.value = '' // Reset input
+                      }}
+                      disabled={openingForm.photos?.length >= 5}
+                    />
+                    
+                    {uploadingPhoto ? (
+                      <div className="flex flex-col items-center">
+                        <Loader2 className="h-10 w-10 text-indigo-500 animate-spin mb-2" />
+                        <p className="text-sm text-slate-600">Uploading...</p>
+                      </div>
+                    ) : openingForm.photos?.length >= 5 ? (
+                      <div className="flex flex-col items-center">
+                        <CheckCircle2 className="h-10 w-10 text-emerald-500 mb-2" />
+                        <p className="text-sm text-slate-600">Maximum 5 photos reached</p>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center">
+                        <Upload className="h-10 w-10 text-indigo-400 mb-2" />
+                        <p className="text-sm text-slate-600">Click to upload photos</p>
+                        <p className="text-xs text-slate-400 mt-1">JPEG, PNG, WebP • Max 10MB each</p>
+                        <p className="text-xs text-indigo-500 mt-2">
+                          {openingForm.photos?.length || 0}/5 photos uploaded
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Photo Preview Grid */}
+                  {openingForm.photos?.length > 0 && (
+                    <div className="grid grid-cols-3 gap-3">
+                      {openingForm.photos.map((photo, idx) => (
+                        <div key={photo.id || idx} className="relative group rounded-lg overflow-hidden border">
+                          <img 
+                            src={photo.url} 
+                            alt={`Opening photo ${idx + 1}`}
+                            className="w-full h-24 object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              className="h-8 w-8 p-0"
+                              onClick={() => window.open(photo.url, '_blank')}
+                            >
+                              <Eye className="h-4 w-4" />
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="destructive"
+                              className="h-8 w-8 p-0"
+                              onClick={async () => {
+                                try {
+                                  await fetch(`${API_BASE}/photos?id=${photo.id}`, {
+                                    method: 'DELETE',
+                                    headers
+                                  })
+                                  setOpeningForm({
+                                    ...openingForm,
+                                    photos: openingForm.photos.filter(p => p.id !== photo.id),
+                                    measurements: { 
+                                      ...openingForm.measurements, 
+                                      photoTaken: openingForm.photos.length > 1 
+                                    }
+                                  })
+                                  toast.success('Photo removed')
+                                } catch (err) {
+                                  toast.error('Failed to remove photo')
+                                }
+                              }}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                          <div className="absolute bottom-0 left-0 right-0 bg-black/50 text-white text-xs p-1 text-center">
+                            Photo {idx + 1}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Photo Status Indicator */}
+                  <div className={`p-3 rounded-lg flex items-center gap-2 ${
+                    openingForm.photos?.length >= 1 
+                      ? 'bg-emerald-50 text-emerald-700' 
+                      : 'bg-red-50 text-red-700'
+                  }`}>
+                    {openingForm.photos?.length >= 1 ? (
+                      <>
+                        <CheckCircle2 className="h-5 w-5" />
+                        <span className="text-sm font-medium">Photo requirement met ({openingForm.photos.length}/5)</span>
+                      </>
+                    ) : (
+                      <>
+                        <AlertCircle className="h-5 w-5" />
+                        <span className="text-sm font-medium">At least 1 photo is required to save this opening</span>
+                      </>
+                    )}
+                  </div>
+                </TabsContent>
+
                 <TabsContent value="verify" className="space-y-4">
                   <MeasurementChecklist 
                     opening={openingForm}
