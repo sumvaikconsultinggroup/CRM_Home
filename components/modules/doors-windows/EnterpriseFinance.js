@@ -71,15 +71,15 @@ const GST_RATES = [
   { rate: 28, label: '28%' }
 ]
 
-export function EnterpriseFinanceDW({ client, user }) {
+export function EnterpriseFinanceDW({ client, user, initialData }) {
   // State management
   const [activeSubTab, setActiveSubTab] = useState('overview')
-  const [invoices, setInvoices] = useState([])
-  const [payments, setPayments] = useState([])
-  const [quotations, setQuotations] = useState([])
-  const [customers, setCustomers] = useState([])
-  const [expenses, setExpenses] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [invoices, setInvoices] = useState(initialData?.invoices || [])
+  const [payments, setPayments] = useState(initialData?.payments || [])
+  const [quotations, setQuotations] = useState(initialData?.quotations || [])
+  const [customers, setCustomers] = useState(initialData?.customers || [])
+  const [expenses, setExpenses] = useState(initialData?.expenses || [])
+  const [loading, setLoading] = useState(!initialData?.invoices)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [dateRange, setDateRange] = useState({ from: null, to: null })
@@ -100,10 +100,24 @@ export function EnterpriseFinanceDW({ client, user }) {
     tdsDeducted: 0
   })
 
-  // Fetch data
+  // Fetch data - only if not pre-loaded
   useEffect(() => {
-    fetchAllData()
+    if (!initialData?.invoices) {
+      fetchAllData()
+    }
   }, [])
+
+  // Update state when initialData changes
+  useEffect(() => {
+    if (initialData?.invoices) {
+      setInvoices(initialData.invoices)
+      setLoading(false)
+    }
+    if (initialData?.payments) setPayments(initialData.payments)
+    if (initialData?.quotations) setQuotations(initialData.quotations)
+    if (initialData?.customers) setCustomers(initialData.customers)
+    if (initialData?.expenses) setExpenses(initialData.expenses)
+  }, [initialData])
 
   const fetchAllData = async () => {
     setLoading(true)
