@@ -936,58 +936,233 @@ export function DoorsWindowsModule({ client, user }) {
             />
           </TabsContent>
 
-          {/* Orders Tab */}
+          {/* Orders & Challans Tab - Enterprise Grade with Single Source of Truth */}
           <TabsContent value="orders" className="space-y-6">
+            {/* Stats Row */}
+            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+              <Card className={glassStyles.card}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <ShoppingCart className="h-5 w-5 text-blue-600" />
+                    <span className="text-sm text-slate-500">Total Orders</span>
+                  </div>
+                  <p className="text-2xl font-bold text-slate-800">{orders.length}</p>
+                </CardContent>
+              </Card>
+              <Card className={glassStyles.card}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-5 w-5 text-amber-600" />
+                    <span className="text-sm text-slate-500">Confirmed</span>
+                  </div>
+                  <p className="text-2xl font-bold text-amber-600">{orders.filter(o => o.status === 'confirmed').length}</p>
+                </CardContent>
+              </Card>
+              <Card className={glassStyles.card}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <ScrollText className="h-5 w-5 text-purple-600" />
+                    <span className="text-sm text-slate-500">Challans</span>
+                  </div>
+                  <p className="text-2xl font-bold text-purple-600">{challanStats.total}</p>
+                </CardContent>
+              </Card>
+              <Card className={glassStyles.card}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <Truck className="h-5 w-5 text-orange-600" />
+                    <span className="text-sm text-slate-500">Dispatched</span>
+                  </div>
+                  <p className="text-2xl font-bold text-orange-600">{challanStats.dispatched}</p>
+                </CardContent>
+              </Card>
+              <Card className={glassStyles.card}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="h-5 w-5 text-emerald-600" />
+                    <span className="text-sm text-slate-500">Delivered</span>
+                  </div>
+                  <p className="text-2xl font-bold text-emerald-600">{challanStats.delivered}</p>
+                </CardContent>
+              </Card>
+              <Card className={glassStyles.card}>
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-2">
+                    <IndianRupee className="h-5 w-5 text-green-600" />
+                    <span className="text-sm text-slate-500">Order Value</span>
+                  </div>
+                  <p className="text-2xl font-bold text-green-600">₹{(orders.reduce((sum, o) => sum + (o.grandTotal || 0), 0) / 100000).toFixed(1)}L</p>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Workflow Info */}
+            <Card className={`${glassStyles.card} border-l-4 border-l-indigo-500`}>
+              <CardContent className="py-3 px-4">
+                <div className="flex items-center gap-4 text-sm">
+                  <span className="font-medium text-indigo-700">Order Flow:</span>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge className="bg-slate-100 text-slate-700">Quote Approved</Badge>
+                    <ChevronRight className="h-4 w-4 text-slate-400" />
+                    <Badge className="bg-blue-100 text-blue-700">Order Created</Badge>
+                    <ChevronRight className="h-4 w-4 text-slate-400" />
+                    <Badge className="bg-purple-100 text-purple-700">Challan Created</Badge>
+                    <ChevronRight className="h-4 w-4 text-slate-400" />
+                    <Badge className="bg-orange-100 text-orange-700">Dispatched</Badge>
+                    <ChevronRight className="h-4 w-4 text-slate-400" />
+                    <Badge className="bg-emerald-100 text-emerald-700">Delivered</Badge>
+                    <ChevronRight className="h-4 w-4 text-slate-400" />
+                    <Badge className="bg-green-100 text-green-700">Installation</Badge>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Orders List */}
             <Card className={glassStyles.card}>
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
                     <CardTitle className="flex items-center gap-2">
                       <ShoppingCart className="h-5 w-5 text-emerald-600" />
-                      Orders & Invoices
+                      Orders & Delivery Challans
                     </CardTitle>
-                    <CardDescription>Manage orders, invoices and payments</CardDescription>
+                    <CardDescription>Manage orders and create delivery challans for dispatch</CardDescription>
                   </div>
-                  <Button 
-                    className="bg-gradient-to-r from-indigo-600 to-purple-600"
-                    onClick={() => {
-                      toast.info('Orders are created from approved quotes. Go to Quotes tab and approve a quote to create an order.')
-                      setActiveTab('quotes')
-                    }}
-                  >
-                    <Plus className="h-4 w-4 mr-2" /> Create Order
-                  </Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" onClick={fetchSecondaryData}>
+                      <RefreshCw className="h-4 w-4 mr-2" /> Refresh
+                    </Button>
+                    <Button 
+                      className="bg-gradient-to-r from-indigo-600 to-purple-600"
+                      onClick={() => {
+                        toast.info('Orders are created from approved quotes. Go to Quotes tab.')
+                        setActiveTab('quotes')
+                      }}
+                    >
+                      <Plus className="h-4 w-4 mr-2" /> From Quote
+                    </Button>
+                  </div>
                 </div>
               </CardHeader>
               <CardContent>
                 {orders.length === 0 ? (
                   <div className="text-center py-12">
                     <ShoppingCart className="h-16 w-16 text-slate-300 mx-auto mb-4" />
-                    <p className="text-slate-500">No orders yet. Approve quotes to create orders.</p>
+                    <p className="text-slate-500 mb-4">No orders yet. Approve quotes to create orders.</p>
+                    <Button variant="outline" onClick={() => setActiveTab('quotes')}>
+                      Go to Quotes
+                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {orders.map(order => (
-                      <Card key={order.id} className="hover:shadow-lg transition-all">
-                        <CardContent className="p-4">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <h4 className="font-semibold">{order.orderNumber}</h4>
-                                <Badge variant={order.status === 'completed' ? 'default' : 'secondary'}>
-                                  {order.status}
-                                </Badge>
+                    {orders.map(order => {
+                      const orderChallan = challans.find(c => c.orderId === order.id)
+                      return (
+                        <Card key={order.id} className="hover:shadow-lg transition-all border-l-4" style={{
+                          borderLeftColor: orderChallan?.status === 'delivered' ? '#10b981' : 
+                                          orderChallan?.status === 'dispatched' ? '#f59e0b' : 
+                                          orderChallan ? '#8b5cf6' : '#94a3b8'
+                        }}>
+                          <CardContent className="p-4">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="flex items-center gap-2 mb-1">
+                                  <h4 className="font-semibold text-lg">{order.orderNumber}</h4>
+                                  <Badge className={
+                                    order.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' :
+                                    order.status === 'dispatched' ? 'bg-orange-100 text-orange-700' :
+                                    order.status === 'confirmed' ? 'bg-blue-100 text-blue-700' :
+                                    'bg-slate-100 text-slate-700'
+                                  }>
+                                    {order.status}
+                                  </Badge>
+                                  {orderChallan && (
+                                    <Badge className="bg-purple-100 text-purple-700">
+                                      <ScrollText className="h-3 w-3 mr-1" />
+                                      {orderChallan.challanNumber}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-slate-600">{order.customerName}</p>
+                                <div className="flex items-center gap-4 mt-2 text-sm text-slate-500">
+                                  <span className="flex items-center gap-1">
+                                    <Package className="h-4 w-4" /> {order.itemsCount || 0} items
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <MapPin className="h-4 w-4" /> {order.siteAddress?.slice(0, 30) || 'No address'}...
+                                  </span>
+                                  <span className="flex items-center gap-1">
+                                    <Calendar className="h-4 w-4" /> {new Date(order.createdAt).toLocaleDateString()}
+                                  </span>
+                                </div>
+
+                                {/* Challan Status */}
+                                {orderChallan && (
+                                  <div className="mt-3 p-2 bg-slate-50 rounded-lg">
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex items-center gap-2">
+                                        <Truck className="h-4 w-4 text-purple-600" />
+                                        <span className="text-sm font-medium">Challan: {orderChallan.challanNumber}</span>
+                                        <Badge className={
+                                          orderChallan.status === 'delivered' ? 'bg-emerald-100 text-emerald-700' :
+                                          orderChallan.status === 'dispatched' ? 'bg-orange-100 text-orange-700' :
+                                          'bg-slate-100 text-slate-700'
+                                        }>
+                                          {orderChallan.status}
+                                        </Badge>
+                                      </div>
+                                      <div className="flex gap-2">
+                                        {orderChallan.status === 'draft' && (
+                                          <Button size="sm" className="bg-orange-600 hover:bg-orange-700" onClick={() => handleDispatchChallan(orderChallan)}>
+                                            <Truck className="h-3 w-3 mr-1" /> Dispatch
+                                          </Button>
+                                        )}
+                                        {orderChallan.status === 'dispatched' && (
+                                          <Button size="sm" className="bg-emerald-600 hover:bg-emerald-700" onClick={() => handleDeliverChallan(orderChallan)}>
+                                            <CheckCircle2 className="h-3 w-3 mr-1" /> Mark Delivered
+                                          </Button>
+                                        )}
+                                        <Button size="sm" variant="outline">
+                                          <Download className="h-3 w-3 mr-1" /> Print
+                                        </Button>
+                                      </div>
+                                    </div>
+                                    {orderChallan.vehicleNumber && (
+                                      <p className="text-xs text-slate-500 mt-1">
+                                        Vehicle: {orderChallan.vehicleNumber} | Driver: {orderChallan.driverName || 'N/A'}
+                                      </p>
+                                    )}
+                                  </div>
+                                )}
                               </div>
-                              <p className="text-sm text-slate-500">{order.customerName}</p>
+                              
+                              <div className="ml-4 text-right">
+                                <p className="font-bold text-xl text-emerald-600">₹{(order.grandTotal || 0).toLocaleString()}</p>
+                                <div className="flex flex-col gap-2 mt-3">
+                                  {!orderChallan && order.status === 'confirmed' && (
+                                    <Button size="sm" className="bg-purple-600 hover:bg-purple-700" onClick={() => handleCreateChallan(order)}>
+                                      <ScrollText className="h-4 w-4 mr-1" /> Create Challan
+                                    </Button>
+                                  )}
+                                  {orderChallan?.status === 'delivered' && (
+                                    <Button size="sm" variant="outline" onClick={() => {
+                                      toast.info('Go to Installation tab to schedule')
+                                      setActiveTab('installation')
+                                    }}>
+                                      <Wrench className="h-4 w-4 mr-1" /> Schedule Install
+                                    </Button>
+                                  )}
+                                  <Button size="sm" variant="outline">
+                                    <Eye className="h-4 w-4 mr-1" /> Details
+                                  </Button>
+                                </div>
+                              </div>
                             </div>
-                            <div className="text-right">
-                              <p className="font-semibold text-emerald-600">₹{order.grandTotal?.toLocaleString()}</p>
-                              <p className="text-sm text-slate-500">{order.itemsCount || 0} items</p>
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    ))}
+                          </CardContent>
+                        </Card>
+                      )
+                    })}
                   </div>
                 )}
               </CardContent>
