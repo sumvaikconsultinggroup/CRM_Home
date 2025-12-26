@@ -1148,16 +1148,11 @@ export function EnterpriseUserManagement({ authToken, currentUser, onRefresh }) 
           
           <DialogFooter className="mt-6">
             <Button variant="outline" onClick={() => setShowUserDialog(false)}>Cancel</Button>
-            <Button 
+            <SafeButton 
               onClick={selectedUser ? handleUpdateUser : handleCreateUser}
-              disabled={saving}
             >
-              {saving ? (
-                <><Loader2 className="h-4 w-4 mr-2 animate-spin" /> Saving...</>
-              ) : (
-                <><Save className="h-4 w-4 mr-2" /> {selectedUser ? 'Update User' : 'Create User'}</>
-              )}
-            </Button>
+              <Save className="h-4 w-4 mr-2" /> {selectedUser ? 'Update User' : 'Create User'}
+            </SafeButton>
           </DialogFooter>
         </DialogContent>
       </Dialog>
