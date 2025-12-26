@@ -241,10 +241,26 @@ export function EnterpriseInventoryDW({ client, user, initialData }) {
     notes: ''
   })
 
-  // Fetch data
+  // Fetch data - only if not pre-loaded
   useEffect(() => {
-    fetchAllData()
+    if (!initialData?.inventory) {
+      fetchAllData()
+    }
   }, [])
+
+  // Update state when initialData changes
+  useEffect(() => {
+    if (initialData?.inventory) {
+      setInventory(initialData.inventory)
+      setLoading(false)
+    }
+    if (initialData?.warehouses) {
+      setWarehouses(initialData.warehouses)
+    }
+    if (initialData?.suppliers) {
+      setSuppliers(initialData.suppliers)
+    }
+  }, [initialData])
 
   const fetchAllData = async () => {
     setLoading(true)
