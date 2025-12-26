@@ -263,20 +263,27 @@ export function DoorsWindowsModule({ client, user }) {
   // NEW: Secondary data fetch (runs in background after dashboard loads)
   const fetchSecondaryData = async () => {
     try {
-      const [surveysRes, quotesRes, ordersRes, invoicesRes, challansRes] = await Promise.all([
+      // Fetch all data in parallel for instant tab switching
+      const [surveysRes, quotesRes, ordersRes, invoicesRes, challansRes, installationsRes, inventoryRes, warehousesRes] = await Promise.all([
         fetch(`${API_BASE}/surveys`, { headers }),
         fetch(`${API_BASE}/quotations`, { headers }),
         fetch(`${API_BASE}/orders`, { headers }),
         fetch(`${API_BASE}/invoices`, { headers }),
-        fetch(`${API_BASE}/challans`, { headers })
+        fetch(`${API_BASE}/challans`, { headers }),
+        fetch(`${API_BASE}/installation`, { headers }),
+        fetch(`${API_BASE}/inventory`, { headers }),
+        fetch(`${API_BASE}/warehouses`, { headers })
       ])
 
-      const [surveysData, quotesData, ordersData, invoicesData, challansData] = await Promise.all([
+      const [surveysData, quotesData, ordersData, invoicesData, challansData, installationsDataRes, inventoryDataRes, warehousesDataRes] = await Promise.all([
         surveysRes.json(),
         quotesRes.json(),
         ordersRes.json(),
         invoicesRes.json(),
-        challansRes.json()
+        challansRes.json(),
+        installationsRes.ok ? installationsRes.json() : { installations: [], stats: {} },
+        inventoryRes.ok ? inventoryRes.json() : { inventory: [] },
+        warehousesRes.ok ? warehousesRes.json() : { warehouses: [] }
       ])
 
       if (surveysData.surveys) setSurveys(surveysData.surveys)
@@ -287,6 +294,18 @@ export function DoorsWindowsModule({ client, user }) {
         setChallans(challansData.challans)
         setChallanStats(challansData.summary || { total: 0, draft: 0, dispatched: 0, delivered: 0 })
       }
+      
+      // Pre-load installations data
+      setInstallationsData({
+        installations: installationsDataRes.installations || [],
+        stats: installationsDataRes.stats || {}
+      })
+      
+      // Pre-load inventory data
+      setInventoryData({
+        inventory: inventoryDataRes.inventory || inventoryDataRes.data?.inventory || [],
+        warehouses: warehousesDataRes.warehouses || warehousesDataRes.data?.warehouses || []
+      })
     } catch (error) {
       console.error('Failed to fetch secondary data:', error)
     }
