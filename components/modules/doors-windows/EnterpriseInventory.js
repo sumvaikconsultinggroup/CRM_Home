@@ -174,7 +174,27 @@ export function EnterpriseInventoryDW({ client, user }) {
   const [showGRN, setShowGRN] = useState(false)
   const [showTransfer, setShowTransfer] = useState(false)
   const [showAdjustment, setShowAdjustment] = useState(false)
+  const [showAddWarehouse, setShowAddWarehouse] = useState(false)
   const [selectedItem, setSelectedItem] = useState(null)
+  const [selectedWarehouse, setSelectedWarehouse] = useState(null)
+  
+  // Warehouse form state
+  const [warehouseForm, setWarehouseForm] = useState({
+    name: '',
+    code: '',
+    type: 'branch',
+    address: '',
+    city: '',
+    state: '',
+    pincode: '',
+    contactPerson: '',
+    phone: '',
+    email: '',
+    capacity: '',
+    capacityUnit: 'sqft',
+    notes: '',
+    isDefault: false
+  })
   
   // Form state for new item
   const [newItem, setNewItem] = useState({
