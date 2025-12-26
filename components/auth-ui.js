@@ -138,7 +138,7 @@ export function LoginPage({ onBack, onSuccess, onRegister, onForgotPassword }) {
       return
     }
 
-    setLoading(true)
+    // SafeButton handles loading state automatically
     try {
       const data = await api.login(email, password)
       localStorage.setItem('user', JSON.stringify(data.user))
@@ -149,8 +149,7 @@ export function LoginPage({ onBack, onSuccess, onRegister, onForgotPassword }) {
       onSuccess(data.user, data.client)
     } catch (error) {
       toast.error(error.message || 'Invalid credentials')
-    } finally {
-      setLoading(false)
+      throw error // Re-throw so SafeButton knows it failed
     }
   }
 
