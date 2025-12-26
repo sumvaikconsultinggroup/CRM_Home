@@ -439,29 +439,56 @@ const MessageBubble = ({
         {/* Attachments */}
         {message.attachments?.length > 0 && (
           <div className="flex flex-wrap gap-2 mt-2">
-            {message.attachments.map((att, i) => (
-              <div key={i} className="flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-lg">
-                <File className="h-4 w-4 text-slate-500" />
-                <span className="text-sm text-slate-700">{att.name}</span>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-6 w-6"
-                  onClick={() => {
-                    // Download the file
-                    const link = document.createElement('a')
-                    link.href = att.url || att.data
-                    link.download = att.name || 'download'
-                    link.target = '_blank'
-                    document.body.appendChild(link)
-                    link.click()
-                    document.body.removeChild(link)
-                  }}
-                >
-                  <Download className="h-3 w-3" />
-                </Button>
-              </div>
-            ))}
+            {message.attachments.map((att, i) => {
+              const isImage = att.type?.startsWith('image/') || att.name?.match(/\.(jpg|jpeg|png|gif|webp)$/i)
+              
+              const handleDownload = () => {
+                try {
+                  const link = document.createElement('a')
+                  link.href = att.url || att.data
+                  link.download = att.name || 'download'
+                  document.body.appendChild(link)
+                  link.click()
+                  document.body.removeChild(link)
+                } catch (error) {
+                  console.error('Download failed:', error)
+                  // Fallback: open in new tab
+                  window.open(att.url || att.data, '_blank')
+                }
+              }
+              
+              return (
+                <div key={i} className="flex flex-col">
+                  {/* Show image preview if it's an image */}
+                  {isImage && att.url && (
+                    <div className="mb-2 relative group cursor-pointer" onClick={handleDownload}>
+                      <img 
+                        src={att.url} 
+                        alt={att.name}
+                        className="max-w-xs max-h-48 rounded-lg object-cover border shadow-sm hover:shadow-md transition-shadow"
+                      />
+                      <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity rounded-lg flex items-center justify-center">
+                        <Download className="h-6 w-6 text-white" />
+                      </div>
+                    </div>
+                  )}
+                  {/* File info bar */}
+                  <div className="flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-lg">
+                    <File className="h-4 w-4 text-slate-500" />
+                    <span className="text-sm text-slate-700 max-w-[150px] truncate">{att.name}</span>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6"
+                      onClick={handleDownload}
+                      title="Download file"
+                    >
+                      <Download className="h-3 w-3" />
+                    </Button>
+                  </div>
+                </div>
+              )
+            })}
           </div>
         )}
         
