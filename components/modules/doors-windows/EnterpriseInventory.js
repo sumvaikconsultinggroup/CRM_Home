@@ -229,13 +229,14 @@ export function EnterpriseInventoryDW({ client, user }) {
   const fetchAllData = async () => {
     setLoading(true)
     try {
+      const headers = getAuthHeaders()
       const [invRes, movRes, whRes, poRes, supRes, resRes] = await Promise.all([
-        fetch(`${API_BASE}/inventory`),
-        fetch(`${API_BASE}/inventory/movements`),
-        fetch(`${API_BASE}/warehouses`),
-        fetch(`${API_BASE}/purchase-orders`),
-        fetch(`${API_BASE}/suppliers`),
-        fetch(`${API_BASE}/inventory/reservations`)
+        fetch(`${API_BASE}/inventory`, { headers }),
+        fetch(`${API_BASE}/inventory/movements`, { headers }),
+        fetch(`${API_BASE}/warehouses`, { headers }),
+        fetch(`${API_BASE}/purchase-orders`, { headers }),
+        fetch(`${API_BASE}/suppliers`, { headers }),
+        fetch(`${API_BASE}/inventory/reservations`, { headers })
       ])
 
       if (invRes.ok) {
