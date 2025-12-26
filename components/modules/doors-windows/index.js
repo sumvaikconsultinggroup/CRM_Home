@@ -1418,6 +1418,7 @@ export function DoorsWindowsModule({ client, user }) {
               headers={headers}
               glassStyles={glassStyles}
               onRefresh={fetchCriticalData}
+              initialData={installationsData}
             />
           </TabsContent>
 
