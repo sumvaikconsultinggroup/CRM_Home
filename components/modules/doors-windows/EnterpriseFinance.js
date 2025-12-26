@@ -72,6 +72,9 @@ const GST_RATES = [
 ]
 
 export function EnterpriseFinanceDW({ client, user, initialData }) {
+  // Check if data was pre-loaded (array exists, even if empty)
+  const hasPreloadedData = initialData && 'invoices' in initialData
+  
   // State management
   const [activeSubTab, setActiveSubTab] = useState('overview')
   const [invoices, setInvoices] = useState(initialData?.invoices || [])
@@ -79,7 +82,7 @@ export function EnterpriseFinanceDW({ client, user, initialData }) {
   const [quotations, setQuotations] = useState(initialData?.quotations || [])
   const [customers, setCustomers] = useState(initialData?.customers || [])
   const [expenses, setExpenses] = useState(initialData?.expenses || [])
-  const [loading, setLoading] = useState(!initialData?.invoices)
+  const [loading, setLoading] = useState(!hasPreloadedData)
   const [searchTerm, setSearchTerm] = useState('')
   const [statusFilter, setStatusFilter] = useState('all')
   const [dateRange, setDateRange] = useState({ from: null, to: null })
@@ -102,7 +105,7 @@ export function EnterpriseFinanceDW({ client, user, initialData }) {
 
   // Fetch data - only if not pre-loaded
   useEffect(() => {
-    if (!initialData?.invoices) {
+    if (!hasPreloadedData) {
       fetchAllData()
     }
   }, [])
