@@ -1432,6 +1432,187 @@ export function EnterpriseInventoryDW({ client, user }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Add/Edit Warehouse Dialog */}
+      <Dialog open={showAddWarehouse || selectedWarehouse !== null} onOpenChange={(open) => {
+        if (!open) {
+          setShowAddWarehouse(false)
+          setSelectedWarehouse(null)
+          setWarehouseForm({
+            name: '', code: '', type: 'branch', address: '', city: '',
+            state: '', pincode: '', contactPerson: '', phone: '', email: '',
+            capacity: '', capacityUnit: 'sqft', notes: '', isDefault: false
+          })
+        }
+      }}>
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Warehouse className="h-5 w-5 text-indigo-600" />
+              {selectedWarehouse ? 'Edit Warehouse' : 'Add New Warehouse'}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedWarehouse ? 'Update warehouse details' : 'Create a new storage location for inventory management'}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="grid grid-cols-2 gap-4">
+            <div className="col-span-2">
+              <Label>Warehouse Name *</Label>
+              <Input 
+                value={warehouseForm.name}
+                onChange={(e) => setWarehouseForm({...warehouseForm, name: e.target.value})}
+                placeholder="e.g., Main Factory, Site Store"
+              />
+            </div>
+            
+            <div>
+              <Label>Code</Label>
+              <Input 
+                value={warehouseForm.code}
+                onChange={(e) => setWarehouseForm({...warehouseForm, code: e.target.value})}
+                placeholder="e.g., WH-001"
+              />
+            </div>
+            
+            <div>
+              <Label>Type</Label>
+              <Select value={warehouseForm.type} onValueChange={(v) => setWarehouseForm({...warehouseForm, type: v})}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="main">Main Warehouse</SelectItem>
+                  <SelectItem value="branch">Branch</SelectItem>
+                  <SelectItem value="site">Site Store</SelectItem>
+                  <SelectItem value="vendor">Vendor Location</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="col-span-2">
+              <Label>Address</Label>
+              <Input 
+                value={warehouseForm.address}
+                onChange={(e) => setWarehouseForm({...warehouseForm, address: e.target.value})}
+                placeholder="Street address"
+              />
+            </div>
+            
+            <div>
+              <Label>City</Label>
+              <Input 
+                value={warehouseForm.city}
+                onChange={(e) => setWarehouseForm({...warehouseForm, city: e.target.value})}
+                placeholder="City"
+              />
+            </div>
+            
+            <div>
+              <Label>State</Label>
+              <Input 
+                value={warehouseForm.state}
+                onChange={(e) => setWarehouseForm({...warehouseForm, state: e.target.value})}
+                placeholder="State"
+              />
+            </div>
+            
+            <div>
+              <Label>Pincode</Label>
+              <Input 
+                value={warehouseForm.pincode}
+                onChange={(e) => setWarehouseForm({...warehouseForm, pincode: e.target.value})}
+                placeholder="Pincode"
+              />
+            </div>
+            
+            <div>
+              <Label>Contact Person</Label>
+              <Input 
+                value={warehouseForm.contactPerson}
+                onChange={(e) => setWarehouseForm({...warehouseForm, contactPerson: e.target.value})}
+                placeholder="Manager name"
+              />
+            </div>
+            
+            <div>
+              <Label>Phone</Label>
+              <Input 
+                value={warehouseForm.phone}
+                onChange={(e) => setWarehouseForm({...warehouseForm, phone: e.target.value})}
+                placeholder="+91 XXXXX XXXXX"
+              />
+            </div>
+            
+            <div>
+              <Label>Email</Label>
+              <Input 
+                type="email"
+                value={warehouseForm.email}
+                onChange={(e) => setWarehouseForm({...warehouseForm, email: e.target.value})}
+                placeholder="warehouse@company.com"
+              />
+            </div>
+            
+            <div>
+              <Label>Capacity</Label>
+              <div className="flex gap-2">
+                <Input 
+                  type="number"
+                  value={warehouseForm.capacity}
+                  onChange={(e) => setWarehouseForm({...warehouseForm, capacity: e.target.value})}
+                  placeholder="e.g., 5000"
+                  className="flex-1"
+                />
+                <Select value={warehouseForm.capacityUnit} onValueChange={(v) => setWarehouseForm({...warehouseForm, capacityUnit: v})}>
+                  <SelectTrigger className="w-24"><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="sqft">sq.ft</SelectItem>
+                    <SelectItem value="sqm">sq.m</SelectItem>
+                    <SelectItem value="units">units</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            
+            <div className="flex items-center gap-2 mt-6">
+              <input 
+                type="checkbox"
+                id="isDefault"
+                checked={warehouseForm.isDefault}
+                onChange={(e) => setWarehouseForm({...warehouseForm, isDefault: e.target.checked})}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              <Label htmlFor="isDefault" className="text-sm font-normal">Set as default warehouse</Label>
+            </div>
+            
+            <div className="col-span-2">
+              <Label>Notes</Label>
+              <Textarea 
+                value={warehouseForm.notes}
+                onChange={(e) => setWarehouseForm({...warehouseForm, notes: e.target.value})}
+                placeholder="Additional notes about this warehouse..."
+                rows={2}
+              />
+            </div>
+          </div>
+          
+          <DialogFooter>
+            <Button variant="outline" onClick={() => {
+              setShowAddWarehouse(false)
+              setSelectedWarehouse(null)
+            }}>Cancel</Button>
+            <Button 
+              onClick={selectedWarehouse ? handleUpdateWarehouse : handleAddWarehouse} 
+              className="bg-gradient-to-r from-indigo-600 to-purple-600"
+            >
+              {selectedWarehouse ? (
+                <><CheckCircle2 className="h-4 w-4 mr-2" /> Update Warehouse</>
+              ) : (
+                <><Plus className="h-4 w-4 mr-2" /> Create Warehouse</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
