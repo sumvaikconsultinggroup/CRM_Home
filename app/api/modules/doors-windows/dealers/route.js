@@ -412,7 +412,7 @@ export async function POST(request) {
       }
 
       // Check if project is already linked to a dealer
-      const projects = db.collection('dw_projects')
+      const projects = db.collection('doors_windows_projects')
       const project = await projects.findOne({ id: projectId })
       
       if (!project) {
