@@ -246,7 +246,7 @@ export function EnterpriseInventoryDW({ client, user, initialData }) {
 
   // Fetch data - only if not pre-loaded
   useEffect(() => {
-    if (!initialData?.inventory) {
+    if (!hasPreloadedData) {
       fetchAllData()
     }
   }, [])
