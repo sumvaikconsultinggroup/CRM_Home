@@ -185,6 +185,50 @@ export function DoorsWindowsModule({ client, user }) {
     fetchCriticalData()
   }, [refreshKey])
 
+  // NEW: Auto-sync CRM projects on module load
+  useEffect(() => {
+    // Run auto-sync after initial data load completes
+    if (initialLoadComplete) {
+      performAutoSync()
+    }
+  }, [initialLoadComplete])
+
+  // NEW: Auto-sync function - silently syncs CRM projects to D&W
+  const performAutoSync = async () => {
+    try {
+      const statusRes = await fetch(`${API_BASE}/sync?action=status`, { headers })
+      const statusData = await statusRes.json()
+      
+      const availableProjects = statusData.availableToSync?.projects || 0
+      
+      // If there are unsynced projects, auto-sync them
+      if (availableProjects > 0) {
+        console.log(`Auto-syncing ${availableProjects} CRM projects...`)
+        
+        const syncRes = await fetch(`${API_BASE}/sync`, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({ action: 'sync-all' })
+        })
+        
+        if (syncRes.ok) {
+          const syncData = await syncRes.json()
+          const projectsSynced = syncData.results?.projects?.created || 0
+          
+          if (projectsSynced > 0) {
+            toast.success(`Auto-synced ${projectsSynced} project${projectsSynced > 1 ? 's' : ''} from CRM`)
+            // Refresh projects list after auto-sync
+            fetchProjects()
+            fetchCrmSyncStatus()
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Auto-sync error:', error)
+      // Don't show error toast for auto-sync - it's a background operation
+    }
+  }
+
   // NEW: Optimized critical data fetch (dashboard only for fast initial load)
   const fetchCriticalData = async () => {
     setLoading(true)
