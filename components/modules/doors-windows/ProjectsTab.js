@@ -171,7 +171,8 @@ export function ProjectsTab({
       contactEmail: project.contactEmail || '',
       expectedValue: project.expectedValue || '',
       notes: project.notes || '',
-      status: project.status || 'active'
+      status: project.status || 'active',
+      customerType: project.customerType || 'consumer'
     })
     setShowNewProject(true)
   }
