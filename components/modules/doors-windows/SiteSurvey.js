@@ -1950,20 +1950,19 @@ export function SiteSurvey({ surveys, projects, selectedProject, onRefresh, head
                   </div>
 
                   {/* Photo Upload Area */}
-                  <div 
-                    className={`border-2 border-dashed rounded-xl p-6 text-center transition-all cursor-pointer ${
+                  <label 
+                    className={`block border-2 border-dashed rounded-xl p-6 text-center transition-all ${
                       openingForm.photos?.length >= 5 
                         ? 'border-slate-200 bg-slate-50 cursor-not-allowed' 
-                        : 'border-indigo-300 hover:border-indigo-500 hover:bg-indigo-50'
+                        : 'border-indigo-300 hover:border-indigo-500 hover:bg-indigo-50 cursor-pointer'
                     }`}
-                    onClick={() => openingForm.photos?.length < 5 && photoInputRef.current?.click()}
                   >
                     <input
                       type="file"
-                      ref={photoInputRef}
-                      accept="image/*"
+                      accept="image/jpeg,image/png,image/webp,image/heic,image/heif"
                       multiple
                       className="hidden"
+                      disabled={openingForm.photos?.length >= 5 || uploadingPhoto}
                       onChange={async (e) => {
                         const files = Array.from(e.target.files || [])
                         if (files.length === 0) return
@@ -1985,7 +1984,6 @@ export function SiteSurvey({ surveys, projects, selectedProject, onRefresh, head
                             formData.append('surveyId', viewingSurvey?.id || '')
                             formData.append('openingRef', openingForm.openingRef)
                             
-                            // Debug log
                             console.log('Uploading photo:', file.name, 'size:', file.size)
                             
                             const res = await fetch(`${API_BASE}/photos`, {
@@ -2025,7 +2023,6 @@ export function SiteSurvey({ surveys, projects, selectedProject, onRefresh, head
                         setUploadingPhoto(false)
                         e.target.value = '' // Reset input
                       }}
-                      disabled={openingForm.photos?.length >= 5}
                     />
                     
                     {uploadingPhoto ? (
