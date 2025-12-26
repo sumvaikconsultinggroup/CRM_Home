@@ -26,6 +26,15 @@ import { toast } from 'sonner'
 
 const API_BASE = '/api/modules/doors-windows'
 
+// Helper function to get auth headers
+const getAuthHeaders = () => {
+  const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null
+  return {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json'
+  }
+}
+
 // =============================================
 // D&W INDUSTRY-SPECIFIC CONSTANTS
 // =============================================
