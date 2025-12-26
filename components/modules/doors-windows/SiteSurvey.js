@@ -758,6 +758,9 @@ export function SiteSurvey({ surveys, projects, selectedProject, onRefresh, head
     grillPattern: 'horizontal',
     safetyBars: false,
     
+    // Photos (1-5 photos per opening, 1 mandatory)
+    photos: [],
+    
     // Measurements checklist
     measurements: {
       width: false,
@@ -772,6 +775,10 @@ export function SiteSurvey({ surveys, projects, selectedProject, onRefresh, head
     
     specialNotes: ''
   })
+  
+  // Photo upload state
+  const [uploadingPhoto, setUploadingPhoto] = useState(false)
+  const photoInputRef = useRef(null)
 
   // Fetch survey openings
   useEffect(() => {
