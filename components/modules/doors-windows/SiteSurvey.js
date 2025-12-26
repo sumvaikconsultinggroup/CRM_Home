@@ -424,10 +424,14 @@ function OpeningVisualization({ opening, material }) {
       >
         {/* Glass panes */}
         <div 
-          className={`absolute inset-[${Math.round(profile.frameWidth * scale / 10)}px] bg-gradient-to-br ${glassAppearance.gradient} backdrop-blur-sm`}
+          className="absolute bg-gradient-to-br from-sky-100/60 to-sky-200/60 backdrop-blur-sm"
           style={{ 
-            margin: Math.round(profile.frameWidth * scale / 10),
-            borderRadius: '2px'
+            top: Math.round(profile.frameWidth * scale / 10),
+            left: Math.round(profile.frameWidth * scale / 10),
+            right: Math.round(profile.frameWidth * scale / 10),
+            bottom: Math.round(profile.frameWidth * scale / 10),
+            borderRadius: '2px',
+            background: `linear-gradient(to bottom right, rgba(186, 230, 253, 0.6), rgba(125, 211, 252, 0.6))`
           }}
         >
           {/* Panel dividers based on panel count */}
@@ -439,8 +443,13 @@ function OpeningVisualization({ opening, material }) {
               {Array.from({ length: opening.panels || 2 }).map((_, i) => (
                 <div 
                   key={i} 
-                  className={`flex-1 bg-gradient-to-br ${glassAppearance.gradient} border`}
-                  style={{ borderColor: frameColor }}
+                  className="flex-1"
+                  style={{ 
+                    borderColor: frameColor,
+                    borderWidth: '1px',
+                    borderStyle: 'solid',
+                    background: `linear-gradient(to bottom right, rgba(186, 230, 253, 0.5), rgba(125, 211, 252, 0.5))`
+                  }}
                 />
               ))}
             </div>
