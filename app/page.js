@@ -2669,9 +2669,16 @@ export default function App() {
           <SuperAdminDashboard user={user} onLogout={handleLogout} />
         </motion.div>
       )}
-      {view === 'client' && user && (
+      {view === 'client' && user && requiresPlanSelection && (
+        <motion.div key="plan-selection" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
+          <PlanSelectionPage token={authToken} onPlanSelected={handlePlanSelected} />
+        </motion.div>
+      )}
+      {view === 'client' && user && !requiresPlanSelection && (
         <motion.div key="client" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-          <ClientDashboard user={user} client={client} onLogout={handleLogout} />
+          <SubscriptionProvider token={authToken}>
+            <ClientDashboard user={user} client={client} onLogout={handleLogout} />
+          </SubscriptionProvider>
         </motion.div>
       )}
     </AnimatePresence>
