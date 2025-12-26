@@ -489,7 +489,7 @@ export function DoorsWindowsModule({ client, user }) {
       const res = await fetch(`${API_BASE}/sync-finance`, { headers })
       if (res.ok) {
         const data = await res.json()
-        // Finance sync status if needed
+        setFinanceSyncStatus(data)
       }
     } catch (error) {
       console.error('Failed to fetch finance sync status:', error)
