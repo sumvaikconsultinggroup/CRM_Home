@@ -364,6 +364,109 @@ export function EnterpriseInventoryDW({ client, user }) {
     }
   }
 
+  // Handle Add Warehouse
+  const handleAddWarehouse = async () => {
+    if (!warehouseForm.name) {
+      toast.error('Warehouse name is required')
+      return
+    }
+    
+    try {
+      const response = await fetch(`${API_BASE}/warehouses`, {
+        method: 'POST',
+        headers: getAuthHeaders(),
+        body: JSON.stringify(warehouseForm)
+      })
+      
+      if (response.ok) {
+        toast.success('Warehouse created successfully')
+        setShowAddWarehouse(false)
+        setWarehouseForm({
+          name: '', code: '', type: 'branch', address: '', city: '',
+          state: '', pincode: '', contactPerson: '', phone: '', email: '',
+          capacity: '', capacityUnit: 'sqft', notes: '', isDefault: false
+        })
+        fetchAllData()
+      } else {
+        const error = await response.json()
+        toast.error(error.message || 'Failed to create warehouse')
+      }
+    } catch (error) {
+      toast.error('Error creating warehouse')
+    }
+  }
+
+  // Handle Update Warehouse
+  const handleUpdateWarehouse = async () => {
+    if (!selectedWarehouse?.id) return
+    
+    try {
+      const response = await fetch(`${API_BASE}/warehouses`, {
+        method: 'PUT',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ id: selectedWarehouse.id, ...warehouseForm })
+      })
+      
+      if (response.ok) {
+        toast.success('Warehouse updated successfully')
+        setSelectedWarehouse(null)
+        setWarehouseForm({
+          name: '', code: '', type: 'branch', address: '', city: '',
+          state: '', pincode: '', contactPerson: '', phone: '', email: '',
+          capacity: '', capacityUnit: 'sqft', notes: '', isDefault: false
+        })
+        fetchAllData()
+      } else {
+        toast.error('Failed to update warehouse')
+      }
+    } catch (error) {
+      toast.error('Error updating warehouse')
+    }
+  }
+
+  // Handle Delete Warehouse
+  const handleDeleteWarehouse = async (warehouseId) => {
+    if (!confirm('Are you sure you want to deactivate this warehouse?')) return
+    
+    try {
+      const response = await fetch(`${API_BASE}/warehouses?id=${warehouseId}`, {
+        method: 'DELETE',
+        headers: getAuthHeaders()
+      })
+      
+      if (response.ok) {
+        toast.success('Warehouse deactivated successfully')
+        fetchAllData()
+      } else {
+        const error = await response.json()
+        toast.error(error.message || 'Failed to delete warehouse')
+      }
+    } catch (error) {
+      toast.error('Error deleting warehouse')
+    }
+  }
+
+  // Open edit warehouse dialog
+  const openEditWarehouse = (warehouse) => {
+    setSelectedWarehouse(warehouse)
+    setWarehouseForm({
+      name: warehouse.name || '',
+      code: warehouse.code || '',
+      type: warehouse.type || 'branch',
+      address: warehouse.address || '',
+      city: warehouse.city || '',
+      state: warehouse.state || '',
+      pincode: warehouse.pincode || '',
+      contactPerson: warehouse.contactPerson || '',
+      phone: warehouse.phone || '',
+      email: warehouse.email || '',
+      capacity: warehouse.capacity || '',
+      capacityUnit: warehouse.capacityUnit || 'sqft',
+      notes: warehouse.notes || '',
+      isDefault: warehouse.isDefault || false
+    })
+  }
+
   // Get stock status
   const getStockStatus = (item) => {
     if ((item.currentQty || 0) === 0) return 'out-of-stock'
