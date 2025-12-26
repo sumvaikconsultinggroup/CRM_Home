@@ -42,6 +42,11 @@ export async function POST(request) {
     const user = getAuthUser(request)
     requireClientAccess(user)
 
+    // Only client_admin can create users
+    if (user.role !== 'client_admin' && user.role !== 'admin' && user.role !== 'super_admin') {
+      return errorResponse('Only administrators can create users', 403)
+    }
+
     const body = await request.json()
     
     const validation = validateUserData(body)
