@@ -155,16 +155,16 @@ const movementTypeStyles = {
   'production': 'bg-indigo-100 text-indigo-700'
 }
 
-export function EnterpriseInventoryDW({ client, user }) {
+export function EnterpriseInventoryDW({ client, user, initialData }) {
   // State management
   const [activeSubTab, setActiveSubTab] = useState('stock')
-  const [inventory, setInventory] = useState([])
+  const [inventory, setInventory] = useState(initialData?.inventory || [])
   const [movements, setMovements] = useState([])
-  const [warehouses, setWarehouses] = useState([])
+  const [warehouses, setWarehouses] = useState(initialData?.warehouses || [])
   const [purchaseOrders, setPurchaseOrders] = useState([])
-  const [suppliers, setSuppliers] = useState([])
+  const [suppliers, setSuppliers] = useState(initialData?.suppliers || [])
   const [reservations, setReservations] = useState([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!initialData?.inventory)
   const [searchTerm, setSearchTerm] = useState('')
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [warehouseFilter, setWarehouseFilter] = useState('all')
