@@ -443,7 +443,21 @@ const MessageBubble = ({
               <div key={i} className="flex items-center gap-2 px-3 py-2 bg-slate-100 rounded-lg">
                 <File className="h-4 w-4 text-slate-500" />
                 <span className="text-sm text-slate-700">{att.name}</span>
-                <Button variant="ghost" size="icon" className="h-6 w-6">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-6 w-6"
+                  onClick={() => {
+                    // Download the file
+                    const link = document.createElement('a')
+                    link.href = att.url || att.data
+                    link.download = att.name || 'download'
+                    link.target = '_blank'
+                    document.body.appendChild(link)
+                    link.click()
+                    document.body.removeChild(link)
+                  }}
+                >
                   <Download className="h-3 w-3" />
                 </Button>
               </div>
