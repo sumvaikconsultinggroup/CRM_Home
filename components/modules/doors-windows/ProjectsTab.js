@@ -496,17 +496,29 @@ export function ProjectsTab({
                       <p className="text-xs text-slate-500">Quotes</p>
                     </div>
                     <div className="text-center p-2 bg-slate-50 rounded-lg">
-                      <p className="text-lg font-bold text-amber-600">₹{(stats.totalValue / 1000).toFixed(0)}K</p>
+                      <p className="text-lg font-bold text-amber-600">
+                        ₹{(((project.value || project.budget || project.expectedValue || stats.totalValue) / 1000) || 0).toFixed(0)}K
+                      </p>
                       <p className="text-xs text-slate-500">Value</p>
                     </div>
                   </div>
 
-                  {project.contactPerson && (
-                    <div className="pt-3 border-t flex items-center gap-2 text-sm text-slate-600">
+                  {/* Contact Info - support both manual project fields and CRM-synced fields */}
+                  {(project.contactPerson || project.clientName) && (
+                    <div className="pt-3 border-t flex flex-wrap items-center gap-2 text-sm text-slate-600">
                       <User className="h-4 w-4" />
-                      <span>{project.contactPerson}</span>
-                      {project.contactPhone && (
-                        <span className="text-slate-400">• {project.contactPhone}</span>
+                      <span>{project.contactPerson || project.clientName}</span>
+                      {(project.contactPhone || project.clientPhone) && (
+                        <>
+                          <Phone className="h-3 w-3 ml-2 text-slate-400" />
+                          <span className="text-slate-500">{project.contactPhone || project.clientPhone}</span>
+                        </>
+                      )}
+                      {(project.contactEmail || project.clientEmail) && (
+                        <>
+                          <Mail className="h-3 w-3 ml-2 text-slate-400" />
+                          <span className="text-slate-500 text-xs">{project.contactEmail || project.clientEmail}</span>
+                        </>
                       )}
                     </div>
                   )}
