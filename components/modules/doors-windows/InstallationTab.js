@@ -9,11 +9,12 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from '@/components/ui/dialog'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table'
+import { Separator } from '@/components/ui/separator'
 import {
   Wrench, Plus, Search, Calendar as CalendarIcon, MapPin, User,
   Clock, CheckCircle2, AlertTriangle, Phone, Camera, FileText,
-  Play, Pause, Flag, Star, RefreshCw, Eye, Truck, Loader2, Edit, Trash2
+  Play, Pause, Flag, Star, RefreshCw, Eye, Truck, Loader2, Edit, Trash2,
+  Package, Building2, Hash, IndianRupee, Users, ChevronRight, Info
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { format } from 'date-fns'
@@ -38,9 +39,17 @@ const statusStyles = {
   'cancelled': 'bg-slate-100 text-slate-700'
 }
 
-export function InstallationTab({ orders = [], glassStyles, onRefresh }) {
+const orderStatusStyles = {
+  'dispatched': 'bg-purple-100 text-purple-700',
+  'delivered': 'bg-emerald-100 text-emerald-700',
+  'ready': 'bg-blue-100 text-blue-700'
+}
+
+export function InstallationTab({ glassStyles, onRefresh }) {
   const [installations, setInstallations] = useState([])
+  const [eligibleOrders, setEligibleOrders] = useState([])
   const [loading, setLoading] = useState(true)
+  const [loadingOrders, setLoadingOrders] = useState(false)
   const [showSchedule, setShowSchedule] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
   const [selectedInstallation, setSelectedInstallation] = useState(null)
@@ -48,11 +57,13 @@ export function InstallationTab({ orders = [], glassStyles, onRefresh }) {
   const [statusFilter, setStatusFilter] = useState('all')
   const [stats, setStats] = useState({ total: 0, scheduled: 0, inProgress: 0, completed: 0 })
 
+  // Schedule form with all order details
   const [scheduleForm, setScheduleForm] = useState({
     orderId: '',
     orderNumber: '',
     customerName: '',
     customerPhone: '',
+    customerEmail: '',
     siteAddress: '',
     siteContactPerson: '',
     siteContactPhone: '',
@@ -61,15 +72,20 @@ export function InstallationTab({ orders = [], glassStyles, onRefresh }) {
     leadInstaller: '',
     team: [],
     totalOpenings: 0,
+    itemsCount: 0,
+    dispatchDate: '',
+    dispatchId: '',
+    grandTotal: 0,
     specialInstructions: '',
     notes: ''
   })
 
-  // Teams data - could be fetched from API
+  // Teams data - could be fetched from API in future
   const installerTeams = [
-    { id: 'team-alpha', name: 'Team Alpha', lead: 'Rajesh Kumar' },
-    { id: 'team-beta', name: 'Team Beta', lead: 'Suresh Singh' },
-    { id: 'team-gamma', name: 'Team Gamma', lead: 'Amit Sharma' },
+    { id: 'team-alpha', name: 'Team Alpha', lead: 'Rajesh Kumar', members: 4 },
+    { id: 'team-beta', name: 'Team Beta', lead: 'Suresh Singh', members: 3 },
+    { id: 'team-gamma', name: 'Team Gamma', lead: 'Amit Sharma', members: 5 },
+    { id: 'team-delta', name: 'Team Delta', lead: 'Vikram Patel', members: 4 },
   ]
 
   useEffect(() => {
@@ -83,31 +99,19 @@ export function InstallationTab({ orders = [], glassStyles, onRefresh }) {
         headers: getAuthHeaders() 
       })
       
-      if (!res.ok) {
-        throw new Error('Failed to fetch installations')
-      }
+      if (!res.ok) throw new Error('Failed to fetch installations')
       
       const data = await res.json()
       const installationData = data.data?.installations || data.installations || []
       setInstallations(installationData)
       
-      // Set stats from API response or calculate
-      if (data.data?.stats || data.stats) {
-        const apiStats = data.data?.stats || data.stats
-        setStats({
-          total: apiStats.total || installationData.length,
-          scheduled: apiStats.scheduled || installationData.filter(i => i.status === 'scheduled').length,
-          inProgress: apiStats.inProgress || installationData.filter(i => i.status === 'in-progress').length,
-          completed: apiStats.completed || installationData.filter(i => i.status === 'completed').length
-        })
-      } else {
-        setStats({
-          total: installationData.length,
-          scheduled: installationData.filter(i => i.status === 'scheduled').length,
-          inProgress: installationData.filter(i => i.status === 'in-progress').length,
-          completed: installationData.filter(i => i.status === 'completed').length
-        })
-      }
+      const apiStats = data.data?.stats || data.stats || {}
+      setStats({
+        total: apiStats.total || installationData.length,
+        scheduled: apiStats.scheduled || installationData.filter(i => i.status === 'scheduled').length,
+        inProgress: apiStats.inProgress || installationData.filter(i => i.status === 'in-progress').length,
+        completed: apiStats.completed || installationData.filter(i => i.status === 'completed').length
+      })
     } catch (error) {
       console.error('Failed to fetch installations:', error)
       toast.error('Failed to load installations')
@@ -115,6 +119,60 @@ export function InstallationTab({ orders = [], glassStyles, onRefresh }) {
       setStats({ total: 0, scheduled: 0, inProgress: 0, completed: 0 })
     } finally {
       setLoading(false)
+    }
+  }
+
+  // Fetch orders eligible for installation (dispatched/delivered)
+  const fetchEligibleOrders = async () => {
+    setLoadingOrders(true)
+    try {
+      // Get dispatched orders
+      const ordersRes = await fetch(`${API_BASE}/orders`, { 
+        headers: getAuthHeaders() 
+      })
+      
+      if (!ordersRes.ok) throw new Error('Failed to fetch orders')
+      
+      const ordersData = await ordersRes.json()
+      const allOrders = ordersData.data?.orders || ordersData.orders || []
+      
+      // Filter orders where material has been dispatched/delivered and not yet scheduled for installation
+      const existingInstallationOrderIds = installations.map(i => i.orderId).filter(Boolean)
+      
+      const eligible = allOrders.filter(order => 
+        ['dispatched', 'delivered', 'ready'].includes(order.status) &&
+        !existingInstallationOrderIds.includes(order.id)
+      )
+      
+      // Also fetch dispatch info to get delivery details
+      const dispatchRes = await fetch(`${API_BASE}/dispatch`, { 
+        headers: getAuthHeaders() 
+      })
+      
+      let dispatches = []
+      if (dispatchRes.ok) {
+        const dispatchData = await dispatchRes.json()
+        dispatches = dispatchData.data?.dispatches || dispatchData.dispatches || []
+      }
+      
+      // Enrich orders with dispatch info
+      const enrichedOrders = eligible.map(order => {
+        const dispatch = dispatches.find(d => d.orderId === order.id)
+        return {
+          ...order,
+          dispatchInfo: dispatch || null,
+          materialReached: dispatch?.status === 'delivered',
+          dispatchDate: dispatch?.actualDeliveryDate || dispatch?.scheduledDate || order.dispatchedAt
+        }
+      })
+      
+      setEligibleOrders(enrichedOrders)
+    } catch (error) {
+      console.error('Failed to fetch eligible orders:', error)
+      toast.error('Failed to load orders')
+      setEligibleOrders([])
+    } finally {
+      setLoadingOrders(false)
     }
   }
 
@@ -132,11 +190,81 @@ export function InstallationTab({ orders = [], glassStyles, onRefresh }) {
     return new Date(i.scheduledDate).toDateString() === new Date().toDateString()
   })
 
+  // Open schedule dialog and fetch eligible orders
+  const openScheduleDialog = () => {
+    setShowSchedule(true)
+    fetchEligibleOrders()
+    resetScheduleForm()
+  }
+
+  // Handle order selection - auto-populate all fields
+  const handleOrderSelect = (orderId) => {
+    const order = eligibleOrders.find(o => o.id === orderId)
+    if (!order) return
+
+    // Get quote items count from order
+    const openingsCount = order.itemsCount || order.totalOpenings || 0
+
+    setScheduleForm({
+      orderId: order.id,
+      orderNumber: order.orderNumber || '',
+      customerName: order.customerName || '',
+      customerPhone: order.customerPhone || '',
+      customerEmail: order.customerEmail || '',
+      siteAddress: order.siteAddress || '',
+      siteContactPerson: order.siteContactPerson || order.customerName || '',
+      siteContactPhone: order.siteContactPhone || order.customerPhone || '',
+      scheduledDate: '',
+      scheduledDuration: openingsCount > 10 ? '2 days' : openingsCount > 5 ? '1 day' : 'Half day',
+      leadInstaller: '',
+      team: [],
+      totalOpenings: openingsCount,
+      itemsCount: order.itemsCount || 0,
+      dispatchDate: order.dispatchDate ? new Date(order.dispatchDate).toISOString().split('T')[0] : '',
+      dispatchId: order.dispatchInfo?.id || '',
+      grandTotal: order.grandTotal || 0,
+      specialInstructions: '',
+      notes: ''
+    })
+  }
+
+  const resetScheduleForm = () => {
+    setScheduleForm({
+      orderId: '',
+      orderNumber: '',
+      customerName: '',
+      customerPhone: '',
+      customerEmail: '',
+      siteAddress: '',
+      siteContactPerson: '',
+      siteContactPhone: '',
+      scheduledDate: '',
+      scheduledDuration: '1 day',
+      leadInstaller: '',
+      team: [],
+      totalOpenings: 0,
+      itemsCount: 0,
+      dispatchDate: '',
+      dispatchId: '',
+      grandTotal: 0,
+      specialInstructions: '',
+      notes: ''
+    })
+  }
+
   // Handle creating new installation
   const handleSchedule = async () => {
     try {
-      if (!scheduleForm.orderNumber || !scheduleForm.scheduledDate) {
-        toast.error('Please fill in order number and scheduled date')
+      if (!scheduleForm.orderId) {
+        toast.error('Please select an order')
+        return
+      }
+      if (!scheduleForm.scheduledDate) {
+        toast.error('Please select installation date')
+        return
+      }
+      if (!scheduleForm.leadInstaller) {
+        toast.error('Please assign an installer team')
         return
       }
 
@@ -146,6 +274,7 @@ export function InstallationTab({ orders = [], glassStyles, onRefresh }) {
         body: JSON.stringify({
           orderId: scheduleForm.orderId,
           orderNumber: scheduleForm.orderNumber,
+          dispatchId: scheduleForm.dispatchId,
           customerName: scheduleForm.customerName,
           customerPhone: scheduleForm.customerPhone,
           siteAddress: scheduleForm.siteAddress,
@@ -174,25 +303,6 @@ export function InstallationTab({ orders = [], glassStyles, onRefresh }) {
       console.error('Schedule error:', error)
       toast.error('Failed to schedule installation')
     }
-  }
-
-  const resetScheduleForm = () => {
-    setScheduleForm({
-      orderId: '',
-      orderNumber: '',
-      customerName: '',
-      customerPhone: '',
-      siteAddress: '',
-      siteContactPerson: '',
-      siteContactPhone: '',
-      scheduledDate: '',
-      scheduledDuration: '1 day',
-      leadInstaller: '',
-      team: [],
-      totalOpenings: 0,
-      specialInstructions: '',
-      notes: ''
-    })
   }
 
   // Handle Start Installation (Check-in)
@@ -277,22 +387,6 @@ export function InstallationTab({ orders = [], glassStyles, onRefresh }) {
     setShowDetails(true)
   }
 
-  // Pre-fill form when selecting an order
-  const handleOrderSelect = (orderId) => {
-    const order = orders.find(o => o.id === orderId)
-    if (order) {
-      setScheduleForm({
-        ...scheduleForm,
-        orderId: order.id,
-        orderNumber: order.orderNumber || '',
-        customerName: order.customerName || order.clientName || '',
-        customerPhone: order.customerPhone || order.clientPhone || '',
-        siteAddress: order.siteAddress || order.address || '',
-        totalOpenings: order.totalOpenings || order.items?.length || 0
-      })
-    }
-  }
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-64">
@@ -308,13 +402,13 @@ export function InstallationTab({ orders = [], glassStyles, onRefresh }) {
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
           <h2 className="text-2xl font-bold text-slate-800">Installation Management</h2>
-          <p className="text-slate-500">Schedule, track and manage on-site installations</p>
+          <p className="text-slate-500">Schedule and manage on-site installations for dispatched orders</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={fetchInstallations}>
             <RefreshCw className="h-4 w-4 mr-2" /> Refresh
           </Button>
-          <Button onClick={() => setShowSchedule(true)} className="bg-gradient-to-r from-indigo-600 to-purple-600">
+          <Button onClick={openScheduleDialog} className="bg-gradient-to-r from-indigo-600 to-purple-600">
             <Plus className="h-4 w-4 mr-2" /> Schedule Installation
           </Button>
         </div>
@@ -386,8 +480,9 @@ export function InstallationTab({ orders = [], glassStyles, onRefresh }) {
                     <Badge className={statusStyles[inst.status]}>{inst.status}</Badge>
                   </div>
                   <div className="text-sm text-slate-600">
-                    <p className="flex items-center gap-1"><Clock className="h-3 w-3" /> {inst.scheduledDuration || '1 day'}</p>
+                    <p className="flex items-center gap-1"><Hash className="h-3 w-3" /> {inst.orderNumber}</p>
                     <p className="flex items-center gap-1"><User className="h-3 w-3" /> {inst.leadInstaller || 'Not assigned'}</p>
+                    <p className="flex items-center gap-1"><Package className="h-3 w-3" /> {inst.totalOpenings || 0} openings</p>
                   </div>
                 </div>
               ))}
@@ -435,9 +530,9 @@ export function InstallationTab({ orders = [], glassStyles, onRefresh }) {
             <p className="text-slate-500 mb-4">
               {searchQuery || statusFilter !== 'all' 
                 ? 'No installations match your search criteria.'
-                : 'Schedule your first installation to get started.'}
+                : 'Schedule installations for orders where material has been dispatched.'}
             </p>
-            <Button onClick={() => setShowSchedule(true)}>
+            <Button onClick={openScheduleDialog}>
               <Plus className="h-4 w-4 mr-2" /> Schedule Installation
             </Button>
           </CardContent>
@@ -474,7 +569,7 @@ export function InstallationTab({ orders = [], glassStyles, onRefresh }) {
                           <p className="text-slate-500">Scheduled</p>
                           <p className="font-medium">
                             {inst.scheduledDate 
-                              ? new Date(inst.scheduledDate).toLocaleDateString() 
+                              ? new Date(inst.scheduledDate).toLocaleDateString()
                               : 'Not set'}
                           </p>
                           <p className="text-slate-500">{inst.scheduledDuration || '1 day'}</p>
@@ -488,18 +583,17 @@ export function InstallationTab({ orders = [], glassStyles, onRefresh }) {
                         </div>
                       </div>
                       <div className="flex items-start gap-2">
-                        <User className="h-4 w-4 text-slate-400 mt-0.5" />
+                        <Users className="h-4 w-4 text-slate-400 mt-0.5" />
                         <div>
-                          <p className="text-slate-500">Team Lead</p>
+                          <p className="text-slate-500">Team</p>
                           <p className="font-medium">{inst.leadInstaller || 'Not assigned'}</p>
                         </div>
                       </div>
                       <div className="flex items-start gap-2">
-                        <Phone className="h-4 w-4 text-slate-400 mt-0.5" />
+                        <Package className="h-4 w-4 text-slate-400 mt-0.5" />
                         <div>
-                          <p className="text-slate-500">Contact</p>
-                          <p className="font-medium">{inst.siteContactPerson || inst.customerName || '-'}</p>
-                          <p className="text-slate-500">{inst.siteContactPhone || inst.customerPhone || '-'}</p>
+                          <p className="text-slate-500">Openings</p>
+                          <p className="font-medium">{inst.completedOpenings || 0} / {inst.totalOpenings || 0}</p>
                         </div>
                       </div>
                     </div>
@@ -509,7 +603,7 @@ export function InstallationTab({ orders = [], glassStyles, onRefresh }) {
                       <div className="mt-3">
                         <div className="flex justify-between text-sm mb-1">
                           <span className="text-slate-500">Progress</span>
-                          <span className="font-medium">{inst.completedOpenings || 0} / {inst.totalOpenings} openings</span>
+                          <span className="font-medium">{Math.round(((inst.completedOpenings || 0) / inst.totalOpenings) * 100)}%</span>
                         </div>
                         <div className="w-full bg-slate-200 rounded-full h-2">
                           <div 
@@ -554,137 +648,248 @@ export function InstallationTab({ orders = [], glassStyles, onRefresh }) {
         </div>
       )}
 
-      {/* Schedule Dialog */}
+      {/* Schedule Installation Dialog - Enterprise Grade */}
       <Dialog open={showSchedule} onOpenChange={setShowSchedule}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>Schedule Installation</DialogTitle>
-            <DialogDescription>Schedule a new installation for an order</DialogDescription>
+            <DialogTitle className="flex items-center gap-2">
+              <Wrench className="h-5 w-5 text-indigo-600" />
+              Schedule Installation
+            </DialogTitle>
+            <DialogDescription>
+              Select an order where material has been dispatched to schedule installation
+            </DialogDescription>
           </DialogHeader>
-          <div className="grid grid-cols-2 gap-4 py-4">
-            {orders && orders.length > 0 && (
-              <div className="col-span-2 space-y-2">
-                <Label>Select Order (Optional)</Label>
+
+          {/* Order Selection Section */}
+          <div className="space-y-4">
+            <div className="bg-indigo-50 rounded-lg p-4 border border-indigo-200">
+              <Label className="text-sm font-semibold text-indigo-800 mb-2 block">
+                Select Order (Material Dispatched) *
+              </Label>
+              {loadingOrders ? (
+                <div className="flex items-center justify-center py-4">
+                  <Loader2 className="h-5 w-5 animate-spin text-indigo-600 mr-2" />
+                  <span className="text-slate-600">Loading eligible orders...</span>
+                </div>
+              ) : eligibleOrders.length === 0 ? (
+                <div className="text-center py-4">
+                  <Truck className="h-8 w-8 text-slate-300 mx-auto mb-2" />
+                  <p className="text-slate-500">No orders with dispatched material available</p>
+                  <p className="text-xs text-slate-400 mt-1">Orders must be dispatched or delivered to schedule installation</p>
+                </div>
+              ) : (
                 <Select value={scheduleForm.orderId} onValueChange={handleOrderSelect}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select from existing orders" />
+                  <SelectTrigger className="bg-white">
+                    <SelectValue placeholder="Select an order to schedule installation" />
                   </SelectTrigger>
                   <SelectContent>
-                    {orders.filter(o => ['ready', 'dispatched', 'confirmed'].includes(o.status)).map(order => (
-                      <SelectItem key={order.id} value={order.id}>
-                        {order.orderNumber} - {order.customerName || order.clientName}
+                    {eligibleOrders.map(order => (
+                      <SelectItem key={order.id} value={order.id} className="py-3">
+                        <div className="flex items-center gap-3">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="font-semibold">{order.orderNumber}</span>
+                              <Badge className={orderStatusStyles[order.status] || 'bg-slate-100'}>
+                                {order.status}
+                              </Badge>
+                              {order.materialReached && (
+                                <Badge className="bg-emerald-100 text-emerald-700 text-xs">
+                                  <CheckCircle2 className="h-3 w-3 mr-1" />
+                                  Material Reached
+                                </Badge>
+                              )}
+                            </div>
+                            <p className="text-sm text-slate-600">{order.customerName}</p>
+                            <p className="text-xs text-slate-400">{order.itemsCount || 0} items • ₹{(order.grandTotal || 0).toLocaleString()}</p>
+                          </div>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-              </div>
+              )}
+            </div>
+
+            {/* Auto-populated Order Details */}
+            {scheduleForm.orderId && (
+              <>
+                <Separator />
+                
+                {/* Order Info Card */}
+                <Card className="bg-slate-50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      Order Details (Auto-filled)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <p className="text-slate-500">Order Number</p>
+                      <p className="font-semibold">{scheduleForm.orderNumber}</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500">Items/Openings</p>
+                      <p className="font-semibold">{scheduleForm.totalOpenings || scheduleForm.itemsCount} units</p>
+                    </div>
+                    <div>
+                      <p className="text-slate-500">Order Value</p>
+                      <p className="font-semibold text-emerald-600">₹{scheduleForm.grandTotal.toLocaleString()}</p>
+                    </div>
+                    {scheduleForm.dispatchDate && (
+                      <div>
+                        <p className="text-slate-500">Dispatch Date</p>
+                        <p className="font-semibold">{new Date(scheduleForm.dispatchDate).toLocaleDateString()}</p>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+
+                {/* Customer & Site Info */}
+                <Card>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-slate-700 flex items-center gap-2">
+                      <Building2 className="h-4 w-4" />
+                      Customer & Site Information
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Customer Name</Label>
+                      <Input 
+                        value={scheduleForm.customerName} 
+                        onChange={(e) => setScheduleForm({ ...scheduleForm, customerName: e.target.value })}
+                        className="bg-slate-50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Customer Phone</Label>
+                      <Input 
+                        value={scheduleForm.customerPhone} 
+                        onChange={(e) => setScheduleForm({ ...scheduleForm, customerPhone: e.target.value })}
+                        className="bg-slate-50"
+                      />
+                    </div>
+                    <div className="col-span-2 space-y-2">
+                      <Label>Site Address *</Label>
+                      <Textarea 
+                        value={scheduleForm.siteAddress} 
+                        onChange={(e) => setScheduleForm({ ...scheduleForm, siteAddress: e.target.value })}
+                        placeholder="Complete installation site address"
+                        className="bg-slate-50"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Site Contact Person</Label>
+                      <Input 
+                        value={scheduleForm.siteContactPerson} 
+                        onChange={(e) => setScheduleForm({ ...scheduleForm, siteContactPerson: e.target.value })}
+                        placeholder="On-site contact name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Site Contact Phone</Label>
+                      <Input 
+                        value={scheduleForm.siteContactPhone} 
+                        onChange={(e) => setScheduleForm({ ...scheduleForm, siteContactPhone: e.target.value })}
+                        placeholder="+91 XXXXX XXXXX"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Installation Schedule */}
+                <Card className="border-indigo-200 bg-indigo-50/50">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold text-indigo-700 flex items-center gap-2">
+                      <CalendarIcon className="h-4 w-4" />
+                      Installation Schedule *
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label>Installation Date *</Label>
+                      <Input 
+                        type="date"
+                        value={scheduleForm.scheduledDate} 
+                        onChange={(e) => setScheduleForm({ ...scheduleForm, scheduledDate: e.target.value })}
+                        min={new Date().toISOString().split('T')[0]}
+                        className="bg-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Estimated Duration</Label>
+                      <Select value={scheduleForm.scheduledDuration} onValueChange={(v) => setScheduleForm({ ...scheduleForm, scheduledDuration: v })}>
+                        <SelectTrigger className="bg-white">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="Half day">Half day (4 hours)</SelectItem>
+                          <SelectItem value="1 day">1 day</SelectItem>
+                          <SelectItem value="2 days">2 days</SelectItem>
+                          <SelectItem value="3 days">3 days</SelectItem>
+                          <SelectItem value="1 week">1 week</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Assign Team *</Label>
+                      <Select value={scheduleForm.leadInstaller} onValueChange={(v) => setScheduleForm({ ...scheduleForm, leadInstaller: v })}>
+                        <SelectTrigger className="bg-white">
+                          <SelectValue placeholder="Select installation team" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {installerTeams.map(team => (
+                            <SelectItem key={team.id} value={team.name}>
+                              <div className="flex items-center gap-2">
+                                <Users className="h-4 w-4 text-slate-400" />
+                                <span>{team.name}</span>
+                                <span className="text-slate-400">•</span>
+                                <span className="text-sm text-slate-500">{team.lead}</span>
+                                <Badge variant="outline" className="text-xs">{team.members} members</Badge>
+                              </div>
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <div className="space-y-2">
+                      <Label>Total Openings</Label>
+                      <Input 
+                        type="number"
+                        value={scheduleForm.totalOpenings} 
+                        onChange={(e) => setScheduleForm({ ...scheduleForm, totalOpenings: e.target.value })}
+                        className="bg-white"
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Special Instructions */}
+                <div className="space-y-2">
+                  <Label>Special Instructions for Team</Label>
+                  <Textarea 
+                    value={scheduleForm.specialInstructions} 
+                    onChange={(e) => setScheduleForm({ ...scheduleForm, specialInstructions: e.target.value })}
+                    placeholder="Any special instructions, access details, parking info, etc."
+                    rows={3}
+                  />
+                </div>
+              </>
             )}
-            
-            <div className="space-y-2">
-              <Label>Order Number *</Label>
-              <Input 
-                value={scheduleForm.orderNumber} 
-                onChange={(e) => setScheduleForm({ ...scheduleForm, orderNumber: e.target.value })} 
-                placeholder="e.g., ORD-2024-0001"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Scheduled Date *</Label>
-              <Input 
-                type="date"
-                value={scheduleForm.scheduledDate} 
-                onChange={(e) => setScheduleForm({ ...scheduleForm, scheduledDate: e.target.value })} 
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Customer Name</Label>
-              <Input 
-                value={scheduleForm.customerName} 
-                onChange={(e) => setScheduleForm({ ...scheduleForm, customerName: e.target.value })} 
-                placeholder="Customer name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Customer Phone</Label>
-              <Input 
-                value={scheduleForm.customerPhone} 
-                onChange={(e) => setScheduleForm({ ...scheduleForm, customerPhone: e.target.value })} 
-                placeholder="+91 XXXXX XXXXX"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Duration</Label>
-              <Select value={scheduleForm.scheduledDuration} onValueChange={(v) => setScheduleForm({ ...scheduleForm, scheduledDuration: v })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Half day">Half day</SelectItem>
-                  <SelectItem value="1 day">1 day</SelectItem>
-                  <SelectItem value="2 days">2 days</SelectItem>
-                  <SelectItem value="3 days">3 days</SelectItem>
-                  <SelectItem value="1 week">1 week</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Lead Installer / Team</Label>
-              <Select value={scheduleForm.leadInstaller} onValueChange={(v) => setScheduleForm({ ...scheduleForm, leadInstaller: v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select team" />
-                </SelectTrigger>
-                <SelectContent>
-                  {installerTeams.map(team => (
-                    <SelectItem key={team.id} value={team.name}>{team.name} - {team.lead}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Site Contact Person</Label>
-              <Input 
-                value={scheduleForm.siteContactPerson} 
-                onChange={(e) => setScheduleForm({ ...scheduleForm, siteContactPerson: e.target.value })} 
-                placeholder="On-site contact name"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Site Contact Phone</Label>
-              <Input 
-                value={scheduleForm.siteContactPhone} 
-                onChange={(e) => setScheduleForm({ ...scheduleForm, siteContactPhone: e.target.value })} 
-                placeholder="+91 XXXXX XXXXX"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label>Total Openings</Label>
-              <Input 
-                type="number"
-                value={scheduleForm.totalOpenings} 
-                onChange={(e) => setScheduleForm({ ...scheduleForm, totalOpenings: e.target.value })} 
-                placeholder="Number of doors/windows"
-              />
-            </div>
-            <div className="col-span-2 space-y-2">
-              <Label>Site Address</Label>
-              <Textarea 
-                value={scheduleForm.siteAddress} 
-                onChange={(e) => setScheduleForm({ ...scheduleForm, siteAddress: e.target.value })} 
-                placeholder="Complete installation site address"
-              />
-            </div>
-            <div className="col-span-2 space-y-2">
-              <Label>Special Instructions</Label>
-              <Textarea 
-                value={scheduleForm.specialInstructions} 
-                onChange={(e) => setScheduleForm({ ...scheduleForm, specialInstructions: e.target.value })} 
-                placeholder="Any special instructions for the installation team"
-              />
-            </div>
           </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => { setShowSchedule(false); resetScheduleForm(); }}>Cancel</Button>
-            <Button onClick={handleSchedule} className="bg-gradient-to-r from-indigo-600 to-purple-600">
+
+          <DialogFooter className="mt-4">
+            <Button variant="outline" onClick={() => { setShowSchedule(false); resetScheduleForm(); }}>
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSchedule} 
+              disabled={!scheduleForm.orderId || !scheduleForm.scheduledDate || !scheduleForm.leadInstaller}
+              className="bg-gradient-to-r from-indigo-600 to-purple-600"
+            >
+              <CheckCircle2 className="h-4 w-4 mr-2" />
               Schedule Installation
             </Button>
           </DialogFooter>
@@ -782,13 +987,6 @@ export function InstallationTab({ orders = [], glassStyles, onRefresh }) {
                 <div>
                   <p className="text-slate-500 text-sm">Special Instructions</p>
                   <p className="p-2 bg-slate-50 rounded">{selectedInstallation.specialInstructions}</p>
-                </div>
-              )}
-
-              {selectedInstallation.notes && (
-                <div>
-                  <p className="text-slate-500 text-sm">Notes</p>
-                  <p className="p-2 bg-slate-50 rounded">{selectedInstallation.notes}</p>
                 </div>
               )}
             </div>
