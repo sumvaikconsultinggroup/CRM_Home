@@ -46,9 +46,12 @@ const orderStatusStyles = {
 }
 
 export function InstallationTab({ glassStyles, onRefresh, initialData }) {
+  // Check if data was pre-loaded (array exists, even if empty)
+  const hasPreloadedData = initialData && 'installations' in initialData
+  
   const [installations, setInstallations] = useState(initialData?.installations || [])
   const [eligibleOrders, setEligibleOrders] = useState([])
-  const [loading, setLoading] = useState(!initialData?.installations)
+  const [loading, setLoading] = useState(!hasPreloadedData)
   const [loadingOrders, setLoadingOrders] = useState(false)
   const [showSchedule, setShowSchedule] = useState(false)
   const [showDetails, setShowDetails] = useState(false)
