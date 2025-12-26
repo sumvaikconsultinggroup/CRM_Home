@@ -317,6 +317,123 @@ export function DoorsWindowsModule({ client, user }) {
     }
   }
 
+  // Fetch Challans (Single Source of Truth)
+  const fetchChallans = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/challans`, { headers })
+      const data = await res.json()
+      if (data.challans) {
+        setChallans(data.challans)
+        setChallanStats(data.summary || { total: 0, draft: 0, dispatched: 0, delivered: 0 })
+      }
+    } catch (error) {
+      console.error('Failed to fetch challans:', error)
+    }
+  }
+
+  // Create Challan from Order
+  const handleCreateChallan = async (order) => {
+    try {
+      // Prepare items from order
+      const items = order.items?.map(item => ({
+        productName: item.productName || item.description || '',
+        description: item.description || '',
+        quantity: item.quantity || 1,
+        unit: item.unit || 'pcs',
+        unitPrice: item.unitPrice || 0,
+        dimensions: item.dimensions || {}
+      })) || [{
+        productName: 'Order Items',
+        description: `Items from ${order.orderNumber}`,
+        quantity: order.itemsCount || 1,
+        unit: 'pcs',
+        unitPrice: order.grandTotal / (order.itemsCount || 1),
+      }]
+
+      const res = await fetch(`${API_BASE}/challans`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          orderId: order.id,
+          orderNumber: order.orderNumber,
+          customerId: order.customerId,
+          customerName: order.customerName,
+          customerPhone: order.customerPhone,
+          deliveryAddress: order.siteAddress,
+          contactPerson: order.customerName,
+          contactPhone: order.customerPhone,
+          items,
+          notes: `Delivery Challan for ${order.orderNumber}`
+        })
+      })
+
+      if (res.ok) {
+        const data = await res.json()
+        toast.success(`Challan ${data.challanNumber} created successfully`)
+        fetchChallans()
+        fetchSecondaryData() // Refresh orders to update challan link
+      } else {
+        const error = await res.json()
+        toast.error(error.message || 'Failed to create challan')
+      }
+    } catch (error) {
+      console.error('Create challan error:', error)
+      toast.error('Failed to create challan')
+    }
+  }
+
+  // Dispatch Challan
+  const handleDispatchChallan = async (challan, vehicleInfo = {}) => {
+    try {
+      const res = await fetch(`${API_BASE}/challans`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          id: challan.id,
+          action: 'dispatch',
+          ...vehicleInfo
+        })
+      })
+
+      if (res.ok) {
+        toast.success(`Challan ${challan.challanNumber} dispatched`)
+        fetchChallans()
+        fetchSecondaryData()
+      } else {
+        const error = await res.json()
+        toast.error(error.message || 'Failed to dispatch challan')
+      }
+    } catch (error) {
+      toast.error('Failed to dispatch challan')
+    }
+  }
+
+  // Mark Challan as Delivered
+  const handleDeliverChallan = async (challan, deliveryInfo = {}) => {
+    try {
+      const res = await fetch(`${API_BASE}/challans`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({
+          id: challan.id,
+          action: 'deliver',
+          ...deliveryInfo
+        })
+      })
+
+      if (res.ok) {
+        toast.success(`Challan ${challan.challanNumber} marked as delivered`)
+        fetchChallans()
+        fetchSecondaryData()
+      } else {
+        const error = await res.json()
+        toast.error(error.message || 'Failed to mark challan as delivered')
+      }
+    } catch (error) {
+      toast.error('Failed to mark challan as delivered')
+    }
+  }
+
   const handleCrmSync = async () => {
     setSyncing(true)
     try {
