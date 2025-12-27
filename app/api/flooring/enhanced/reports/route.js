@@ -636,6 +636,283 @@ export async function GET(request) {
         })
       }
 
+      case 'payments': {
+        const allPayments = await payments.find({}).toArray()
+        const periodPayments = allPayments.filter(p => inPeriod(p.createdAt))
+        
+        // Payment methods breakdown
+        const byMethod = {}
+        periodPayments.forEach(p => {
+          const method = p.paymentMethod || 'other'
+          if (!byMethod[method]) byMethod[method] = { count: 0, amount: 0 }
+          byMethod[method].count++
+          byMethod[method].amount += p.amount || 0
+        })
+        
+        // Daily collection trend
+        const dailyCollection = {}
+        periodPayments.forEach(p => {
+          const day = new Date(p.createdAt).toISOString().split('T')[0]
+          if (!dailyCollection[day]) dailyCollection[day] = 0
+          dailyCollection[day] += p.amount || 0
+        })
+        
+        return successResponse({
+          type: 'payments',
+          totalCollected: periodPayments.reduce((sum, p) => sum + (p.amount || 0), 0),
+          paymentCount: periodPayments.length,
+          averagePayment: periodPayments.length > 0 ? Math.round(periodPayments.reduce((sum, p) => sum + (p.amount || 0), 0) / periodPayments.length) : 0,
+          byMethod,
+          dailyTrend: Object.entries(dailyCollection).map(([date, amount]) => ({ date, amount })).sort((a, b) => a.date.localeCompare(b.date))
+        })
+      }
+
+      case 'pipeline': {
+        const allQuotes = await quotes.find({}).toArray()
+        const periodQuotes = allQuotes.filter(q => inPeriod(q.createdAt))
+        
+        // Pipeline stages
+        const pipeline = {
+          draft: { count: 0, value: 0 },
+          sent: { count: 0, value: 0 },
+          viewed: { count: 0, value: 0 },
+          negotiation: { count: 0, value: 0 },
+          approved: { count: 0, value: 0 },
+          rejected: { count: 0, value: 0 },
+          invoiced: { count: 0, value: 0 }
+        }
+        
+        periodQuotes.forEach(q => {
+          const status = q.status || 'draft'
+          if (pipeline[status]) {
+            pipeline[status].count++
+            pipeline[status].value += q.grandTotal || 0
+          }
+        })
+        
+        return successResponse({
+          type: 'pipeline',
+          totalQuotes: periodQuotes.length,
+          totalValue: periodQuotes.reduce((sum, q) => sum + (q.grandTotal || 0), 0),
+          pipeline,
+          avgDealSize: periodQuotes.length > 0 ? Math.round(periodQuotes.reduce((sum, q) => sum + (q.grandTotal || 0), 0) / periodQuotes.length) : 0
+        })
+      }
+
+      case 'conversion': {
+        const allQuotes = await quotes.find({}).toArray()
+        const periodQuotes = allQuotes.filter(q => inPeriod(q.createdAt))
+        
+        const total = periodQuotes.length
+        const sent = periodQuotes.filter(q => ['sent', 'viewed', 'negotiation', 'approved', 'invoiced'].includes(q.status)).length
+        const approved = periodQuotes.filter(q => ['approved', 'invoiced'].includes(q.status)).length
+        const invoiced = periodQuotes.filter(q => q.status === 'invoiced').length
+        
+        return successResponse({
+          type: 'conversion',
+          funnel: [
+            { stage: 'Created', count: total, rate: 100 },
+            { stage: 'Sent', count: sent, rate: total > 0 ? Math.round((sent / total) * 100) : 0 },
+            { stage: 'Approved', count: approved, rate: total > 0 ? Math.round((approved / total) * 100) : 0 },
+            { stage: 'Invoiced', count: invoiced, rate: total > 0 ? Math.round((invoiced / total) * 100) : 0 }
+          ],
+          conversionRate: total > 0 ? Math.round((approved / total) * 100) : 0,
+          avgTimeToApproval: 0 // Would need date tracking for this
+        })
+      }
+
+      case 'profitability': {
+        const allInvoices = await invoices.find({}).toArray()
+        const periodInvoices = allInvoices.filter(i => inPeriod(i.createdAt))
+        
+        // Calculate profitability from line items if cost data is available
+        let totalRevenue = 0
+        let totalCost = 0
+        
+        periodInvoices.forEach(inv => {
+          const revenue = inv.grandTotal || 0
+          totalRevenue += revenue
+          // Estimate cost as 60% of revenue if no cost data (typical margin)
+          const cost = inv.items?.reduce((sum, item) => sum + ((item.costPrice || item.unitPrice * 0.6) * (item.quantity || 1)), 0) || revenue * 0.6
+          totalCost += cost
+        })
+        
+        const grossProfit = totalRevenue - totalCost
+        const grossMargin = totalRevenue > 0 ? Math.round((grossProfit / totalRevenue) * 100) : 0
+        
+        return successResponse({
+          type: 'profitability',
+          totalRevenue,
+          totalCost,
+          grossProfit,
+          grossMargin,
+          invoiceCount: periodInvoices.length,
+          avgMarginPerDeal: periodInvoices.length > 0 ? Math.round(grossProfit / periodInvoices.length) : 0
+        })
+      }
+
+      case 'team': {
+        // Get all users for this client
+        const allUsers = await users.find({}).toArray()
+        const teamMembers = allUsers.filter(u => ['client_admin', 'employee', 'sales', 'project_manager'].includes(u.role))
+        
+        const allQuotes = await quotes.find({}).toArray()
+        const allInvoices = await invoices.find({}).toArray()
+        const periodQuotes = allQuotes.filter(q => inPeriod(q.createdAt))
+        const periodInvoices = allInvoices.filter(i => inPeriod(i.createdAt))
+        
+        // Team performance by user
+        const teamPerformance = teamMembers.map(member => {
+          const memberQuotes = periodQuotes.filter(q => q.createdBy === member.id || q.salesPerson === member.id)
+          const memberInvoices = periodInvoices.filter(i => i.createdBy === member.id)
+          
+          return {
+            userId: member.id,
+            name: member.name || member.email,
+            role: member.role,
+            quotesCreated: memberQuotes.length,
+            quoteValue: memberQuotes.reduce((sum, q) => sum + (q.grandTotal || 0), 0),
+            invoicesGenerated: memberInvoices.length,
+            revenue: memberInvoices.reduce((sum, i) => sum + (i.grandTotal || 0), 0),
+            conversionRate: memberQuotes.length > 0 ? Math.round((memberQuotes.filter(q => ['approved', 'invoiced'].includes(q.status)).length / memberQuotes.length) * 100) : 0
+          }
+        }).sort((a, b) => b.revenue - a.revenue)
+        
+        return successResponse({
+          type: 'team',
+          teamMembers: teamPerformance,
+          totalTeamRevenue: teamPerformance.reduce((sum, m) => sum + m.revenue, 0),
+          topPerformer: teamPerformance[0] || null
+        })
+      }
+
+      case 'forecast': {
+        const allQuotes = await quotes.find({}).toArray()
+        const activeQuotes = allQuotes.filter(q => ['sent', 'viewed', 'negotiation'].includes(q.status))
+        
+        // Weighted pipeline based on status
+        const weightings = { sent: 0.2, viewed: 0.4, negotiation: 0.6 }
+        const weightedPipeline = activeQuotes.reduce((sum, q) => sum + (q.grandTotal || 0) * (weightings[q.status] || 0.2), 0)
+        
+        // Historical conversion rate
+        const historicalQuotes = allQuotes.filter(q => ['approved', 'invoiced', 'rejected'].includes(q.status))
+        const historicalConversion = historicalQuotes.length > 0 
+          ? historicalQuotes.filter(q => ['approved', 'invoiced'].includes(q.status)).length / historicalQuotes.length 
+          : 0.3
+        
+        return successResponse({
+          type: 'forecast',
+          activePipeline: activeQuotes.reduce((sum, q) => sum + (q.grandTotal || 0), 0),
+          weightedForecast: Math.round(weightedPipeline),
+          activeDeals: activeQuotes.length,
+          historicalConversionRate: Math.round(historicalConversion * 100),
+          expectedClosures: Math.round(activeQuotes.length * historicalConversion)
+        })
+      }
+
+      case 'comparison': {
+        // Compare current period with previous period
+        const allQuotes = await quotes.find({}).toArray()
+        const allInvoices = await invoices.find({}).toArray()
+        
+        const currentQuotes = allQuotes.filter(q => inPeriod(q.createdAt))
+        const currentInvoices = allInvoices.filter(i => inPeriod(i.createdAt))
+        
+        // Previous period
+        const prevPeriodStart = new Date(periodStart.getTime() - periodDays * 24 * 60 * 60 * 1000)
+        const prevPeriodEnd = new Date(periodStart.getTime())
+        const inPrevPeriod = (date) => {
+          if (!date) return false
+          const d = new Date(date)
+          return d >= prevPeriodStart && d <= prevPeriodEnd
+        }
+        
+        const prevQuotes = allQuotes.filter(q => inPrevPeriod(q.createdAt))
+        const prevInvoices = allInvoices.filter(i => inPrevPeriod(i.createdAt))
+        
+        const currentRevenue = currentInvoices.reduce((sum, i) => sum + (i.paidAmount || 0), 0)
+        const prevRevenue = prevInvoices.reduce((sum, i) => sum + (i.paidAmount || 0), 0)
+        
+        return successResponse({
+          type: 'comparison',
+          current: {
+            quotes: currentQuotes.length,
+            quoteValue: currentQuotes.reduce((sum, q) => sum + (q.grandTotal || 0), 0),
+            invoices: currentInvoices.length,
+            revenue: currentRevenue
+          },
+          previous: {
+            quotes: prevQuotes.length,
+            quoteValue: prevQuotes.reduce((sum, q) => sum + (q.grandTotal || 0), 0),
+            invoices: prevInvoices.length,
+            revenue: prevRevenue
+          },
+          changes: {
+            quotesChange: prevQuotes.length > 0 ? Math.round(((currentQuotes.length - prevQuotes.length) / prevQuotes.length) * 100) : 0,
+            revenueChange: prevRevenue > 0 ? Math.round(((currentRevenue - prevRevenue) / prevRevenue) * 100) : 0
+          }
+        })
+      }
+
+      case 'stock': {
+        const allProducts = await products.find({}).toArray()
+        
+        // Stock levels
+        const lowStock = allProducts.filter(p => (p.inventory?.quantity || 0) > 0 && (p.inventory?.quantity || 0) <= (p.inventory?.reorderLevel || 50))
+        const outOfStock = allProducts.filter(p => (p.inventory?.quantity || 0) === 0)
+        const inStock = allProducts.filter(p => (p.inventory?.quantity || 0) > (p.inventory?.reorderLevel || 50))
+        
+        // Total inventory value
+        const totalValue = allProducts.reduce((sum, p) => sum + ((p.inventory?.quantity || 0) * (p.pricing?.costPrice || p.pricing?.sellingPrice || 0)), 0)
+        
+        return successResponse({
+          type: 'stock',
+          totalProducts: allProducts.length,
+          totalValue,
+          inStock: inStock.length,
+          lowStock: lowStock.length,
+          outOfStock: outOfStock.length,
+          lowStockProducts: lowStock.slice(0, 10).map(p => ({
+            id: p.id,
+            name: p.name,
+            sku: p.sku,
+            currentStock: p.inventory?.quantity || 0,
+            reorderLevel: p.inventory?.reorderLevel || 50
+          })),
+          outOfStockProducts: outOfStock.slice(0, 10).map(p => ({
+            id: p.id,
+            name: p.name,
+            sku: p.sku
+          }))
+        })
+      }
+
+      case 'wastage': {
+        // Wastage would be tracked in a separate collection - for now provide structure
+        const allInvoices = await invoices.find({}).toArray()
+        const periodInvoices = allInvoices.filter(i => inPeriod(i.createdAt))
+        
+        // Estimate wastage as 5-10% of material used (typical for flooring)
+        const totalMaterialUsed = periodInvoices.reduce((sum, inv) => {
+          return sum + (inv.items?.reduce((itemSum, item) => itemSum + ((item.quantity || 0) * (item.unitPrice || 0)), 0) || 0)
+        }, 0)
+        
+        const estimatedWastage = totalMaterialUsed * 0.07 // 7% average wastage
+        
+        return successResponse({
+          type: 'wastage',
+          estimatedWastageValue: Math.round(estimatedWastage),
+          wastageRate: 7,
+          totalMaterialValue: totalMaterialUsed,
+          note: 'Wastage is estimated at 7% of material value. Track actual wastage for accurate reporting.',
+          recommendations: [
+            'Implement cutting optimization software',
+            'Track actual wastage per project',
+            'Train installers on material efficiency'
+          ]
+        })
+      }
+
       default:
         return errorResponse('Invalid report type', 400)
     }
