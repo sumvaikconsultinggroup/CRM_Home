@@ -9698,6 +9698,123 @@ export function EnterpriseFlooringModule({ client, user, token }) {
 
           {/* Report Content */}
           <div className="lg:col-span-3 space-y-4">
+            {/* Loading State */}
+            {reportsLoading && (
+              <Card className="p-8">
+                <div className="flex flex-col items-center justify-center">
+                  <RefreshCw className="h-8 w-8 text-blue-500 animate-spin mb-4" />
+                  <p className="text-slate-600">Generating report...</p>
+                </div>
+              </Card>
+            )}
+
+            {/* No Data State - Show when loaded but no meaningful data */}
+            {!reportsLoading && reportData?._loaded && !reportData?._error && (
+              (() => {
+                // Check if the report has any meaningful data
+                const hasData = (() => {
+                  switch(selectedReportType) {
+                    case 'summary':
+                      return (reportData?.overview?.totalCollected || 0) > 0 || (reportData?.overview?.periodQuotes || 0) > 0
+                    case 'sales':
+                      return (reportData?.totalSales || 0) > 0 || (reportData?.orderCount || 0) > 0
+                    case 'quotes':
+                      return (reportData?.quotesCreated || 0) > 0
+                    case 'invoices':
+                      return (reportData?.invoiceCount || 0) > 0 || (reportData?.totalInvoiced || 0) > 0
+                    case 'payments':
+                      return (reportData?.paymentCount || 0) > 0 || (reportData?.totalCollected || 0) > 0
+                    case 'inventory':
+                      return (reportData?.totalProducts || 0) > 0
+                    case 'products':
+                      return (reportData?.topProducts?.length || 0) > 0
+                    case 'customers':
+                      return (reportData?.totalCustomers || 0) > 0
+                    case 'pipeline':
+                      return (reportData?.totalQuotes || 0) > 0
+                    case 'conversion':
+                      return (reportData?.funnel?.length || 0) > 0
+                    case 'profitability':
+                      return (reportData?.totalRevenue || 0) > 0
+                    case 'team':
+                      return (reportData?.teamMembers?.length || 0) > 0
+                    case 'forecast':
+                      return (reportData?.activeDeals || 0) > 0 || (reportData?.activePipeline || 0) > 0
+                    case 'comparison':
+                      return (reportData?.current?.quotes || 0) > 0 || (reportData?.previous?.quotes || 0) > 0
+                    case 'stock':
+                      return (reportData?.totalProducts || 0) > 0
+                    case 'wastage':
+                      return (reportData?.totalMaterialValue || 0) > 0
+                    case 'installations':
+                      return (reportData?.totalJobs || 0) > 0
+                    case 'revenue':
+                      return (reportData?.totalInvoiced || 0) > 0
+                    case 'aging':
+                      return (reportData?.totalOutstanding || 0) > 0
+                    case 'tax':
+                      return (reportData?.gstSummary?.invoiceCount || 0) > 0
+                    default:
+                      return Object.keys(reportData).filter(k => k !== '_loaded' && k !== '_error').length > 0
+                  }
+                })()
+                
+                if (!hasData) {
+                  return (
+                    <Card className="p-8">
+                      <div className="flex flex-col items-center justify-center text-center">
+                        <div className="inline-flex p-4 rounded-full bg-slate-100 mb-4">
+                          <FileX className="h-8 w-8 text-slate-400" />
+                        </div>
+                        <h3 className="text-lg font-semibold text-slate-900 mb-2">No Data Found</h3>
+                        <p className="text-slate-500 max-w-md">
+                          No data available for this report in the selected time period. 
+                          Try selecting a different time range or create some transactions first.
+                        </p>
+                      </div>
+                    </Card>
+                  )
+                }
+                return null
+              })()
+            )}
+
+            {/* Error State */}
+            {!reportsLoading && reportData?._error && (
+              <Card className="p-8">
+                <div className="flex flex-col items-center justify-center text-center">
+                  <div className="inline-flex p-4 rounded-full bg-red-100 mb-4">
+                    <AlertTriangle className="h-8 w-8 text-red-500" />
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">Error Loading Report</h3>
+                  <p className="text-slate-500 mb-4">Failed to generate report. Please try again.</p>
+                  <Button onClick={() => fetchReports(selectedReportType)}>
+                    <RefreshCw className="h-4 w-4 mr-2" /> Retry
+                  </Button>
+                </div>
+              </Card>
+            )}
+
+            {/* Report Not Loaded Yet - Prompt to Generate */}
+            {!reportsLoading && !reportData?._loaded && (
+              <Card className="p-8">
+                <div className="text-center">
+                  <div className="inline-flex p-4 rounded-full bg-slate-100 mb-4">
+                    {(() => {
+                      const ReportIcon = reportTypes.find(r => r.id === selectedReportType)?.icon || BarChart3
+                      return <ReportIcon className="h-8 w-8 text-slate-400" />
+                    })()}
+                  </div>
+                  <h3 className="text-lg font-semibold text-slate-900 mb-2">
+                    {reportTypes.find(r => r.id === selectedReportType)?.name}
+                  </h3>
+                  <p className="text-slate-500 mb-4">Click to generate this report</p>
+                  <Button onClick={() => fetchReports(selectedReportType)}>
+                    <RefreshCw className="h-4 w-4 mr-2" /> Generate Report
+                  </Button>
+                </div>
+              </Card>
+            )}
             {/* Summary Report */}
             {selectedReportType === 'summary' && (
               <>
