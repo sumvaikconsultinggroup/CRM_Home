@@ -9975,7 +9975,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             )}
 
             {/* Aging Report */}
-            {selectedReportType === 'aging' && (
+            {selectedReportType === 'aging' && reportData?._loaded && !reportsLoading && (
               <div className="space-y-4">
                 <Card className="p-4">
                   <h3 className="font-semibold mb-4">Receivables Aging Summary</h3>
