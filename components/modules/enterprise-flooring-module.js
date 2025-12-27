@@ -10475,7 +10475,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             )}
 
             {/* Forecast Report */}
-            {selectedReportType === 'forecast' && (
+            {selectedReportType === 'forecast' && reportData?._loaded && !reportsLoading && (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <Card className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
