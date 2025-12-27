@@ -643,7 +643,19 @@ function SalesPipelineReport({ data }) {
 
 // Sales by Team Report
 function SalesByTeamReport({ data }) {
-  const teamData = data?.data || []
+  // Ensure teamData is always an array
+  const rawData = data?.data
+  const teamData = Array.isArray(rawData) ? rawData : []
+
+  if (teamData.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+        <Users className="h-12 w-12 mb-4 opacity-50" />
+        <p className="text-lg font-medium">No Sales Data Available</p>
+        <p className="text-sm">No team members have sales in the selected period</p>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
