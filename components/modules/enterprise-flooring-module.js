@@ -10007,8 +10007,613 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               </div>
             )}
 
-            {/* Other Reports - Placeholder */}
-            {!['summary', 'invoices', 'aging', 'tax', 'quotes'].includes(selectedReportType) && (
+            {/* Sales Report */}
+            {selectedReportType === 'sales' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-4 gap-4">
+                  <Card className="p-4 bg-gradient-to-br from-emerald-50 to-green-50">
+                    <p className="text-sm text-emerald-600 font-medium">Total Sales</p>
+                    <p className="text-2xl font-bold text-emerald-700">₹{(reportData?.totalSales || 0).toLocaleString()}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+                    <p className="text-sm text-blue-600 font-medium">Orders</p>
+                    <p className="text-2xl font-bold text-blue-700">{reportData?.orderCount || 0}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-purple-50 to-violet-50">
+                    <p className="text-sm text-purple-600 font-medium">Avg Order Value</p>
+                    <p className="text-2xl font-bold text-purple-700">₹{(reportData?.avgOrderValue || 0).toLocaleString()}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-amber-50 to-yellow-50">
+                    <p className="text-sm text-amber-600 font-medium">Sqft Sold</p>
+                    <p className="text-2xl font-bold text-amber-700">{(reportData?.totalSqft || 0).toLocaleString()}</p>
+                  </Card>
+                </div>
+                {reportData?.salesByMonth && Object.keys(reportData.salesByMonth).length > 0 && (
+                  <Card className="p-4">
+                    <h3 className="font-semibold mb-4">Monthly Sales Trend</h3>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={Object.entries(reportData.salesByMonth || {}).map(([month, data]) => ({ month, ...data }))}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" />
+                          <YAxis />
+                          <Tooltip formatter={(value) => `₹${value.toLocaleString()}`} />
+                          <Bar dataKey="revenue" fill="#10b981" radius={[4, 4, 0, 0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </Card>
+                )}
+              </div>
+            )}
+
+            {/* Payments Report */}
+            {selectedReportType === 'payments' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <Card className="p-4 bg-gradient-to-br from-emerald-50 to-green-50">
+                    <p className="text-sm text-emerald-600 font-medium">Total Collected</p>
+                    <p className="text-2xl font-bold text-emerald-700">₹{(reportData?.totalCollected || 0).toLocaleString()}</p>
+                    <p className="text-xs text-emerald-500">{reportData?.paymentCount || 0} payments</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+                    <p className="text-sm text-blue-600 font-medium">Avg Payment</p>
+                    <p className="text-2xl font-bold text-blue-700">₹{(reportData?.averagePayment || 0).toLocaleString()}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-purple-50 to-violet-50">
+                    <p className="text-sm text-purple-600 font-medium">Payment Methods</p>
+                    <p className="text-2xl font-bold text-purple-700">{Object.keys(reportData?.byMethod || {}).length}</p>
+                  </Card>
+                </div>
+                <Card className="p-4">
+                  <h3 className="font-semibold mb-4">Payment Methods Breakdown</h3>
+                  <div className="grid grid-cols-4 gap-4">
+                    {Object.entries(reportData?.byMethod || {}).map(([method, data]) => (
+                      <div key={method} className="p-4 bg-slate-50 rounded-lg text-center">
+                        <p className="text-sm font-medium capitalize">{method.replace('_', ' ')}</p>
+                        <p className="text-xl font-bold text-slate-700">₹{(data.amount || 0).toLocaleString()}</p>
+                        <p className="text-xs text-slate-500">{data.count} payment{data.count !== 1 ? 's' : ''}</p>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* Inventory Report */}
+            {selectedReportType === 'inventory' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-4 gap-4">
+                  <Card className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+                    <p className="text-sm text-blue-600 font-medium">Total SKUs</p>
+                    <p className="text-2xl font-bold text-blue-700">{reportData?.totalProducts || 0}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-emerald-50 to-green-50">
+                    <p className="text-sm text-emerald-600 font-medium">In Stock</p>
+                    <p className="text-2xl font-bold text-emerald-700">{reportData?.inStock || 0}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-amber-50 to-yellow-50">
+                    <p className="text-sm text-amber-600 font-medium">Low Stock</p>
+                    <p className="text-2xl font-bold text-amber-700">{reportData?.lowStock || 0}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-red-50 to-rose-50">
+                    <p className="text-sm text-red-600 font-medium">Out of Stock</p>
+                    <p className="text-2xl font-bold text-red-700">{reportData?.outOfStock || 0}</p>
+                  </Card>
+                </div>
+                <Card className="p-4">
+                  <h3 className="font-semibold mb-4">Inventory Value</h3>
+                  <p className="text-3xl font-bold text-slate-700 mb-4">₹{(reportData?.totalValue || 0).toLocaleString()}</p>
+                  <p className="text-sm text-slate-500">Total value of current inventory at cost price</p>
+                </Card>
+              </div>
+            )}
+
+            {/* Products Report */}
+            {selectedReportType === 'products' && (
+              <div className="space-y-4">
+                <Card className="p-4">
+                  <h3 className="font-semibold mb-4">Top Products by Revenue</h3>
+                  <table className="w-full">
+                    <thead className="bg-slate-50">
+                      <tr>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">Product</th>
+                        <th className="px-4 py-2 text-left text-xs font-semibold text-slate-600">Category</th>
+                        <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Qty Sold</th>
+                        <th className="px-4 py-2 text-right text-xs font-semibold text-slate-600">Revenue</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y">
+                      {(reportData?.topProducts || []).map((product, i) => (
+                        <tr key={product.id || i} className="hover:bg-slate-50">
+                          <td className="px-4 py-3 font-medium">{product.name}</td>
+                          <td className="px-4 py-3">
+                            <Badge className={FlooringCategories[product.category]?.color || 'bg-slate-100'}>
+                              {FlooringCategories[product.category]?.label || product.category || 'Other'}
+                            </Badge>
+                          </td>
+                          <td className="px-4 py-3 text-right">{(product.sales?.quantity || 0).toLocaleString()} sqft</td>
+                          <td className="px-4 py-3 text-right font-semibold text-emerald-600">
+                            ₹{(product.sales?.revenue || 0).toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                      {(!reportData?.topProducts || reportData?.topProducts?.length === 0) && (
+                        <tr>
+                          <td colSpan="4" className="px-4 py-8 text-center text-slate-500">No product data available</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                </Card>
+              </div>
+            )}
+
+            {/* Customers Report */}
+            {selectedReportType === 'customers' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-4 gap-4">
+                  <Card className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+                    <p className="text-sm text-blue-600 font-medium">Total Customers</p>
+                    <p className="text-2xl font-bold text-blue-700">{reportData?.totalCustomers || 0}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-emerald-50 to-green-50">
+                    <p className="text-sm text-emerald-600 font-medium">Active</p>
+                    <p className="text-2xl font-bold text-emerald-700">{reportData?.activeCustomers || 0}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-purple-50 to-violet-50">
+                    <p className="text-sm text-purple-600 font-medium">Avg Lifetime Value</p>
+                    <p className="text-2xl font-bold text-purple-700">₹{(reportData?.avgLifetimeValue || 0).toLocaleString()}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-amber-50 to-yellow-50">
+                    <p className="text-sm text-amber-600 font-medium">Repeat Rate</p>
+                    <p className="text-2xl font-bold text-amber-700">{reportData?.repeatCustomerRate || 0}%</p>
+                  </Card>
+                </div>
+                <Card className="p-4">
+                  <h3 className="font-semibold mb-4">Top Customers by Revenue</h3>
+                  <div className="space-y-3">
+                    {(reportData?.topCustomers || []).slice(0, 5).map((customer, i) => (
+                      <div key={i} className="flex items-center justify-between p-3 bg-slate-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                            i === 0 ? 'bg-yellow-500 text-white' :
+                            i === 1 ? 'bg-slate-400 text-white' :
+                            i === 2 ? 'bg-orange-400 text-white' :
+                            'bg-slate-200'
+                          }`}>{i + 1}</div>
+                          <div>
+                            <p className="font-medium">{customer.name || customer.company}</p>
+                            <p className="text-sm text-slate-500">{customer.orderCount || 0} orders</p>
+                          </div>
+                        </div>
+                        <p className="font-bold text-lg">₹{(customer.totalRevenue || 0).toLocaleString()}</p>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* Pipeline Report */}
+            {selectedReportType === 'pipeline' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <Card className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+                    <p className="text-sm text-blue-600 font-medium">Total Pipeline</p>
+                    <p className="text-2xl font-bold text-blue-700">₹{(reportData?.totalValue || 0).toLocaleString()}</p>
+                    <p className="text-xs text-blue-500">{reportData?.totalQuotes || 0} quotes</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-emerald-50 to-green-50">
+                    <p className="text-sm text-emerald-600 font-medium">Avg Deal Size</p>
+                    <p className="text-2xl font-bold text-emerald-700">₹{(reportData?.avgDealSize || 0).toLocaleString()}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-purple-50 to-violet-50">
+                    <p className="text-sm text-purple-600 font-medium">Stages</p>
+                    <p className="text-2xl font-bold text-purple-700">{Object.keys(reportData?.pipeline || {}).length}</p>
+                  </Card>
+                </div>
+                <Card className="p-4">
+                  <h3 className="font-semibold mb-4">Pipeline by Stage</h3>
+                  <div className="space-y-3">
+                    {Object.entries(reportData?.pipeline || {}).map(([stage, data]) => {
+                      const maxValue = Math.max(...Object.values(reportData?.pipeline || {}).map(d => d.value || 0)) || 1
+                      const percentage = Math.round((data.value / maxValue) * 100)
+                      return (
+                        <div key={stage} className="space-y-1">
+                          <div className="flex justify-between text-sm">
+                            <span className="capitalize font-medium">{stage.replace('_', ' ')}</span>
+                            <span className="text-slate-600">₹{(data.value || 0).toLocaleString()} ({data.count} quotes)</span>
+                          </div>
+                          <div className="h-2 bg-slate-100 rounded-full overflow-hidden">
+                            <div 
+                              className="h-full bg-blue-500 rounded-full transition-all"
+                              style={{ width: `${percentage}%` }}
+                            />
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* Conversion Report */}
+            {selectedReportType === 'conversion' && (
+              <div className="space-y-4">
+                <Card className="p-4 bg-gradient-to-br from-purple-50 to-violet-50">
+                  <p className="text-sm text-purple-600 font-medium text-center">Overall Conversion Rate</p>
+                  <p className="text-4xl font-bold text-purple-700 text-center">{reportData?.conversionRate || 0}%</p>
+                </Card>
+                <Card className="p-4">
+                  <h3 className="font-semibold mb-4">Conversion Funnel</h3>
+                  <div className="space-y-4">
+                    {(reportData?.funnel || []).map((stage, i) => (
+                      <div key={i} className="space-y-1">
+                        <div className="flex justify-between text-sm">
+                          <span className="font-medium">{stage.stage}</span>
+                          <span className="text-slate-600">{stage.count} ({stage.rate}%)</span>
+                        </div>
+                        <div className="h-8 bg-slate-100 rounded-lg overflow-hidden relative">
+                          <div 
+                            className={`h-full rounded-lg transition-all ${
+                              i === 0 ? 'bg-blue-400' :
+                              i === 1 ? 'bg-blue-500' :
+                              i === 2 ? 'bg-emerald-500' :
+                              'bg-emerald-600'
+                            }`}
+                            style={{ width: `${stage.rate}%` }}
+                          />
+                          <span className="absolute inset-0 flex items-center justify-center text-xs font-medium text-white drop-shadow">
+                            {stage.count}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* Profitability Report */}
+            {selectedReportType === 'profitability' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-4 gap-4">
+                  <Card className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+                    <p className="text-sm text-blue-600 font-medium">Total Revenue</p>
+                    <p className="text-2xl font-bold text-blue-700">₹{(reportData?.totalRevenue || 0).toLocaleString()}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-red-50 to-rose-50">
+                    <p className="text-sm text-red-600 font-medium">Total Cost</p>
+                    <p className="text-2xl font-bold text-red-700">₹{(reportData?.totalCost || 0).toLocaleString()}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-emerald-50 to-green-50">
+                    <p className="text-sm text-emerald-600 font-medium">Gross Profit</p>
+                    <p className="text-2xl font-bold text-emerald-700">₹{(reportData?.grossProfit || 0).toLocaleString()}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-purple-50 to-violet-50">
+                    <p className="text-sm text-purple-600 font-medium">Gross Margin</p>
+                    <p className="text-2xl font-bold text-purple-700">{reportData?.grossMargin || 0}%</p>
+                  </Card>
+                </div>
+                <Card className="p-4">
+                  <h3 className="font-semibold mb-4">Profitability Metrics</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-4 bg-slate-50 rounded-lg">
+                      <p className="text-3xl font-bold text-slate-700">{reportData?.invoiceCount || 0}</p>
+                      <p className="text-sm text-slate-500">Invoices</p>
+                    </div>
+                    <div className="text-center p-4 bg-slate-50 rounded-lg">
+                      <p className="text-3xl font-bold text-slate-700">₹{(reportData?.avgMarginPerDeal || 0).toLocaleString()}</p>
+                      <p className="text-sm text-slate-500">Avg Margin/Deal</p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* Team Report */}
+            {selectedReportType === 'team' && (
+              <div className="space-y-4">
+                <Card className="p-4 bg-gradient-to-br from-emerald-50 to-green-50">
+                  <p className="text-sm text-emerald-600 font-medium text-center">Total Team Revenue</p>
+                  <p className="text-4xl font-bold text-emerald-700 text-center">₹{(reportData?.totalTeamRevenue || 0).toLocaleString()}</p>
+                </Card>
+                <Card className="p-4">
+                  <h3 className="font-semibold mb-4">Team Performance</h3>
+                  <div className="space-y-3">
+                    {(reportData?.teamMembers || []).map((member, i) => (
+                      <div key={i} className="flex items-center justify-between p-4 bg-slate-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold ${
+                            i === 0 ? 'bg-yellow-500 text-white' :
+                            i === 1 ? 'bg-slate-400 text-white' :
+                            i === 2 ? 'bg-orange-400 text-white' :
+                            'bg-slate-200'
+                          }`}>{i + 1}</div>
+                          <div>
+                            <p className="font-medium">{member.name}</p>
+                            <p className="text-sm text-slate-500 capitalize">{member.role}</p>
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-bold text-lg">₹{(member.revenue || 0).toLocaleString()}</p>
+                          <p className="text-sm text-slate-500">{member.quotesCreated} quotes • {member.conversionRate}% conv</p>
+                        </div>
+                      </div>
+                    ))}
+                    {(!reportData?.teamMembers || reportData?.teamMembers?.length === 0) && (
+                      <p className="text-center text-slate-500 py-4">No team data available</p>
+                    )}
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* Forecast Report */}
+            {selectedReportType === 'forecast' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <Card className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+                    <p className="text-sm text-blue-600 font-medium">Active Pipeline</p>
+                    <p className="text-2xl font-bold text-blue-700">₹{(reportData?.activePipeline || 0).toLocaleString()}</p>
+                    <p className="text-xs text-blue-500">{reportData?.activeDeals || 0} active deals</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-emerald-50 to-green-50">
+                    <p className="text-sm text-emerald-600 font-medium">Weighted Forecast</p>
+                    <p className="text-2xl font-bold text-emerald-700">₹{(reportData?.weightedForecast || 0).toLocaleString()}</p>
+                    <p className="text-xs text-emerald-500">Probability adjusted</p>
+                  </Card>
+                </div>
+                <Card className="p-4">
+                  <h3 className="font-semibold mb-4">Forecast Metrics</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-4 bg-slate-50 rounded-lg">
+                      <p className="text-3xl font-bold text-slate-700">{reportData?.historicalConversionRate || 0}%</p>
+                      <p className="text-sm text-slate-500">Historical Conversion</p>
+                    </div>
+                    <div className="text-center p-4 bg-slate-50 rounded-lg">
+                      <p className="text-3xl font-bold text-slate-700">{reportData?.expectedClosures || 0}</p>
+                      <p className="text-sm text-slate-500">Expected Closures</p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* Comparison Report */}
+            {selectedReportType === 'comparison' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-6">
+                  <Card className="p-4">
+                    <h3 className="font-semibold text-emerald-600 mb-4">Current Period</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Quotes</span>
+                        <span className="font-bold">{reportData?.current?.quotes || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Quote Value</span>
+                        <span className="font-bold">₹{(reportData?.current?.quoteValue || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Invoices</span>
+                        <span className="font-bold">{reportData?.current?.invoices || 0}</span>
+                      </div>
+                      <div className="flex justify-between border-t pt-2">
+                        <span className="text-slate-600 font-medium">Revenue</span>
+                        <span className="font-bold text-emerald-600">₹{(reportData?.current?.revenue || 0).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </Card>
+                  <Card className="p-4">
+                    <h3 className="font-semibold text-slate-600 mb-4">Previous Period</h3>
+                    <div className="space-y-3">
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Quotes</span>
+                        <span className="font-bold">{reportData?.previous?.quotes || 0}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Quote Value</span>
+                        <span className="font-bold">₹{(reportData?.previous?.quoteValue || 0).toLocaleString()}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-slate-600">Invoices</span>
+                        <span className="font-bold">{reportData?.previous?.invoices || 0}</span>
+                      </div>
+                      <div className="flex justify-between border-t pt-2">
+                        <span className="text-slate-600 font-medium">Revenue</span>
+                        <span className="font-bold text-slate-700">₹{(reportData?.previous?.revenue || 0).toLocaleString()}</span>
+                      </div>
+                    </div>
+                  </Card>
+                </div>
+                <Card className="p-4">
+                  <h3 className="font-semibold mb-4">Period Over Period Change</h3>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className={`p-4 rounded-lg text-center ${(reportData?.changes?.quotesChange || 0) >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}>
+                      <p className={`text-3xl font-bold ${(reportData?.changes?.quotesChange || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {reportData?.changes?.quotesChange || 0}%
+                      </p>
+                      <p className="text-sm text-slate-500">Quotes Change</p>
+                    </div>
+                    <div className={`p-4 rounded-lg text-center ${(reportData?.changes?.revenueChange || 0) >= 0 ? 'bg-emerald-50' : 'bg-red-50'}`}>
+                      <p className={`text-3xl font-bold ${(reportData?.changes?.revenueChange || 0) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                        {reportData?.changes?.revenueChange || 0}%
+                      </p>
+                      <p className="text-sm text-slate-500">Revenue Change</p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* Stock Report */}
+            {selectedReportType === 'stock' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-4 gap-4">
+                  <Card className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+                    <p className="text-sm text-blue-600 font-medium">Total Products</p>
+                    <p className="text-2xl font-bold text-blue-700">{reportData?.totalProducts || 0}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-emerald-50 to-green-50">
+                    <p className="text-sm text-emerald-600 font-medium">In Stock</p>
+                    <p className="text-2xl font-bold text-emerald-700">{reportData?.inStock || 0}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-amber-50 to-yellow-50">
+                    <p className="text-sm text-amber-600 font-medium">Low Stock</p>
+                    <p className="text-2xl font-bold text-amber-700">{reportData?.lowStock || 0}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-red-50 to-rose-50">
+                    <p className="text-sm text-red-600 font-medium">Out of Stock</p>
+                    <p className="text-2xl font-bold text-red-700">{reportData?.outOfStock || 0}</p>
+                  </Card>
+                </div>
+                {(reportData?.lowStockProducts?.length > 0 || reportData?.outOfStockProducts?.length > 0) && (
+                  <div className="grid grid-cols-2 gap-4">
+                    <Card className="p-4">
+                      <h3 className="font-semibold text-amber-600 mb-4">Low Stock Items</h3>
+                      <div className="space-y-2">
+                        {(reportData?.lowStockProducts || []).map((p, i) => (
+                          <div key={i} className="flex justify-between p-2 bg-amber-50 rounded">
+                            <span className="text-sm">{p.name}</span>
+                            <span className="text-sm font-medium">{p.currentStock}/{p.reorderLevel}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                    <Card className="p-4">
+                      <h3 className="font-semibold text-red-600 mb-4">Out of Stock Items</h3>
+                      <div className="space-y-2">
+                        {(reportData?.outOfStockProducts || []).map((p, i) => (
+                          <div key={i} className="flex justify-between p-2 bg-red-50 rounded">
+                            <span className="text-sm">{p.name}</span>
+                            <span className="text-sm font-medium text-red-600">0</span>
+                          </div>
+                        ))}
+                      </div>
+                    </Card>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Wastage Report */}
+            {selectedReportType === 'wastage' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-3 gap-4">
+                  <Card className="p-4 bg-gradient-to-br from-red-50 to-rose-50">
+                    <p className="text-sm text-red-600 font-medium">Estimated Wastage</p>
+                    <p className="text-2xl font-bold text-red-700">₹{(reportData?.estimatedWastageValue || 0).toLocaleString()}</p>
+                    <p className="text-xs text-red-500">{reportData?.wastageRate || 0}% of material</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+                    <p className="text-sm text-blue-600 font-medium">Total Material Value</p>
+                    <p className="text-2xl font-bold text-blue-700">₹{(reportData?.totalMaterialValue || 0).toLocaleString()}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-slate-50 to-gray-50">
+                    <p className="text-sm text-slate-600 font-medium">Wastage Rate</p>
+                    <p className="text-2xl font-bold text-slate-700">{reportData?.wastageRate || 0}%</p>
+                  </Card>
+                </div>
+                <Card className="p-4">
+                  <h3 className="font-semibold mb-4">Recommendations</h3>
+                  <ul className="space-y-2">
+                    {(reportData?.recommendations || []).map((rec, i) => (
+                      <li key={i} className="flex items-center gap-2 text-slate-600">
+                        <div className="w-2 h-2 bg-blue-500 rounded-full" />
+                        {rec}
+                      </li>
+                    ))}
+                  </ul>
+                  {reportData?.note && (
+                    <p className="mt-4 p-3 bg-amber-50 text-amber-700 rounded-lg text-sm">
+                      <strong>Note:</strong> {reportData.note}
+                    </p>
+                  )}
+                </Card>
+              </div>
+            )}
+
+            {/* Installations Report */}
+            {selectedReportType === 'installations' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-4 gap-4">
+                  <Card className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+                    <p className="text-sm text-blue-600 font-medium">Total Jobs</p>
+                    <p className="text-2xl font-bold text-blue-700">{reportData?.totalJobs || 0}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-emerald-50 to-green-50">
+                    <p className="text-sm text-emerald-600 font-medium">Completed</p>
+                    <p className="text-2xl font-bold text-emerald-700">{reportData?.completed || 0}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-amber-50 to-yellow-50">
+                    <p className="text-sm text-amber-600 font-medium">In Progress</p>
+                    <p className="text-2xl font-bold text-amber-700">{reportData?.inProgress || 0}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-purple-50 to-violet-50">
+                    <p className="text-sm text-purple-600 font-medium">Sqft Installed</p>
+                    <p className="text-2xl font-bold text-purple-700">{(reportData?.totalSqftInstalled || 0).toLocaleString()}</p>
+                  </Card>
+                </div>
+                <Card className="p-4">
+                  <h3 className="font-semibold mb-4">Installation Status</h3>
+                  <div className="grid grid-cols-4 gap-4">
+                    {Object.entries(reportData?.byStatus || {}).map(([status, count]) => (
+                      <div key={status} className="p-4 bg-slate-50 rounded-lg text-center">
+                        <p className="text-xl font-bold text-slate-700">{count}</p>
+                        <p className="text-sm text-slate-500 capitalize">{status.replace('_', ' ')}</p>
+                      </div>
+                    ))}
+                  </div>
+                </Card>
+              </div>
+            )}
+
+            {/* Revenue Report */}
+            {selectedReportType === 'revenue' && (
+              <div className="space-y-4">
+                <div className="grid grid-cols-4 gap-4">
+                  <Card className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
+                    <p className="text-sm text-blue-600 font-medium">Total Invoiced</p>
+                    <p className="text-2xl font-bold text-blue-700">₹{(reportData?.totalInvoiced || 0).toLocaleString()}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-emerald-50 to-green-50">
+                    <p className="text-sm text-emerald-600 font-medium">Collected</p>
+                    <p className="text-2xl font-bold text-emerald-700">₹{(reportData?.totalCollected || 0).toLocaleString()}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-amber-50 to-yellow-50">
+                    <p className="text-sm text-amber-600 font-medium">Pending</p>
+                    <p className="text-2xl font-bold text-amber-700">₹{(reportData?.totalPending || 0).toLocaleString()}</p>
+                  </Card>
+                  <Card className="p-4 bg-gradient-to-br from-purple-50 to-violet-50">
+                    <p className="text-sm text-purple-600 font-medium">Collection Rate</p>
+                    <p className="text-2xl font-bold text-purple-700">{reportData?.collectionRate || 0}%</p>
+                  </Card>
+                </div>
+                {reportData?.monthlyTrend && reportData.monthlyTrend.length > 0 && (
+                  <Card className="p-4">
+                    <h3 className="font-semibold mb-4">Monthly Revenue Trend</h3>
+                    <div className="h-64">
+                      <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={reportData.monthlyTrend}>
+                          <CartesianGrid strokeDasharray="3 3" />
+                          <XAxis dataKey="month" />
+                          <YAxis />
+                          <Tooltip formatter={(value) => `₹${value.toLocaleString()}`} />
+                          <Bar dataKey="invoiced" fill="#3b82f6" name="Invoiced" />
+                          <Bar dataKey="collected" fill="#10b981" name="Collected" />
+                        </BarChart>
+                      </ResponsiveContainer>
+                    </div>
+                  </Card>
+                )}
+              </div>
+            )}
+
+            {/* Fallback for any other report types */}
+            {!['summary', 'invoices', 'aging', 'tax', 'quotes', 'sales', 'payments', 'inventory', 'products', 'customers', 'pipeline', 'conversion', 'profitability', 'team', 'forecast', 'comparison', 'stock', 'wastage', 'installations', 'revenue'].includes(selectedReportType) && (
               <Card className="p-8">
                 <div className="text-center">
                   <div className="inline-flex p-4 rounded-full bg-slate-100 mb-4">
@@ -10020,7 +10625,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                   <h3 className="text-lg font-semibold text-slate-900 mb-2">
                     {reportTypes.find(r => r.id === selectedReportType)?.name}
                   </h3>
-                  <p className="text-slate-500 mb-4">Click "Generate Report" to load data</p>
+                  <p className="text-slate-500 mb-4">Click "Refresh" to load report data</p>
                   <Button onClick={() => fetchReports(selectedReportType)}>
                     <RefreshCw className="h-4 w-4 mr-2" /> Generate Report
                   </Button>
