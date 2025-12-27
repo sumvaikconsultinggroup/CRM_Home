@@ -10660,7 +10660,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             )}
 
             {/* Installations Report */}
-            {selectedReportType === 'installations' && (
+            {selectedReportType === 'installations' && reportData?._loaded && !reportsLoading && (
               <div className="space-y-4">
                 <div className="grid grid-cols-4 gap-4">
                   <Card className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
