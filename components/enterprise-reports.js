@@ -1233,7 +1233,9 @@ function CustomerAcquisitionReport({ data }) {
 
 // Customer LTV Report
 function CustomerLTVReport({ data }) {
-  const customers = data?.data?.customers || []
+  // Ensure customers is always an array
+  const rawCustomers = data?.data?.customers
+  const customers = Array.isArray(rawCustomers) ? rawCustomers : []
   const summary = data?.data?.summary || {}
 
   return (
@@ -1249,28 +1251,35 @@ function CustomerLTVReport({ data }) {
           <CardTitle className="text-lg">Top Customers by Lifetime Value</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {customers.slice(0, 10).map((customer, i) => (
-              <div key={i} className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
-                <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
-                  i === 0 ? 'bg-yellow-500 text-white' :
-                  i === 1 ? 'bg-slate-400 text-white' :
-                  i === 2 ? 'bg-orange-400 text-white' :
-                  'bg-muted text-muted-foreground'
-                }`}>
-                  {i + 1}
+          {customers.length > 0 ? (
+            <div className="space-y-4">
+              {customers.slice(0, 10).map((customer, i) => (
+                <div key={i} className="flex items-center gap-4 p-4 rounded-xl bg-muted/50">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold ${
+                    i === 0 ? 'bg-yellow-500 text-white' :
+                    i === 1 ? 'bg-slate-400 text-white' :
+                    i === 2 ? 'bg-orange-400 text-white' :
+                    'bg-muted text-muted-foreground'
+                  }`}>
+                    {i + 1}
+                  </div>
+                  <div className="flex-1">
+                    <p className="font-medium">{customer.contactName}</p>
+                    <p className="text-sm text-muted-foreground">{customer.company} • {customer.totalOrders} orders</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold text-lg">{formatCurrency(customer.lifetimeValue)}</p>
+                    <p className="text-sm text-muted-foreground">Avg: {formatCurrency(customer.avgOrderValue)}</p>
+                  </div>
                 </div>
-                <div className="flex-1">
-                  <p className="font-medium">{customer.contactName}</p>
-                  <p className="text-sm text-muted-foreground">{customer.company} • {customer.totalOrders} orders</p>
-                </div>
-                <div className="text-right">
-                  <p className="font-bold text-lg">{formatCurrency(customer.lifetimeValue)}</p>
-                  <p className="text-sm text-muted-foreground">Avg: {formatCurrency(customer.avgOrderValue)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+              <Users className="h-8 w-8 mb-2 opacity-50" />
+              <p>No customer data available</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
