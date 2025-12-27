@@ -9692,23 +9692,23 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                 <div className="grid grid-cols-4 gap-4">
                   <Card className="p-4 bg-gradient-to-br from-emerald-50 to-green-50">
                     <p className="text-sm text-emerald-600 font-medium">Total Revenue</p>
-                    <p className="text-2xl font-bold text-emerald-700">₹{(reportData?.overview?.totalCollected || dashboardData?.overview?.collectedAmount || 0).toLocaleString()}</p>
+                    <p className="text-2xl font-bold text-emerald-700">₹{(reportData?.overview?.totalCollected || 0).toLocaleString()}</p>
                     <p className="text-xs text-emerald-500 mt-1">{reportData?.overview?.collectedChange || '+0%'} from last period</p>
                   </Card>
                   <Card className="p-4 bg-gradient-to-br from-blue-50 to-indigo-50">
                     <p className="text-sm text-blue-600 font-medium">Quotes Sent</p>
-                    <p className="text-2xl font-bold text-blue-700">{reportData?.overview?.periodQuotes || dashboardData?.overview?.totalQuotes || 0}</p>
-                    <p className="text-xs text-blue-500 mt-1">₹{(reportData?.overview?.periodQuoteValue || dashboardData?.overview?.totalQuoteValue || 0).toLocaleString()} value</p>
+                    <p className="text-2xl font-bold text-blue-700">{reportData?.overview?.periodQuotes || 0}</p>
+                    <p className="text-xs text-blue-500 mt-1">₹{(reportData?.overview?.periodQuoteValue || 0).toLocaleString()} value</p>
                   </Card>
                   <Card className="p-4 bg-gradient-to-br from-purple-50 to-violet-50">
                     <p className="text-sm text-purple-600 font-medium">Conversion Rate</p>
-                    <p className="text-2xl font-bold text-purple-700">{reportData?.overview?.conversionRate || dashboardData?.overview?.conversionRate || 0}%</p>
-                    <p className="text-xs text-purple-500 mt-1">{reportData?.overview?.approvedQuotes || dashboardData?.overview?.approvedQuotes || 0} approved</p>
+                    <p className="text-2xl font-bold text-purple-700">{reportData?.overview?.conversionRate || 0}%</p>
+                    <p className="text-xs text-purple-500 mt-1">{reportData?.overview?.approvedQuotes || 0} approved</p>
                   </Card>
                   <Card className="p-4 bg-gradient-to-br from-amber-50 to-yellow-50">
                     <p className="text-sm text-amber-600 font-medium">Pending Collection</p>
-                    <p className="text-2xl font-bold text-amber-700">₹{(reportData?.overview?.pendingAmount || dashboardData?.overview?.pendingAmount || 0).toLocaleString()}</p>
-                    <p className="text-xs text-amber-500 mt-1">{invoices.filter(i => !['paid', 'cancelled'].includes(i.status)).length} unpaid invoices</p>
+                    <p className="text-2xl font-bold text-amber-700">₹{(reportData?.overview?.pendingAmount || 0).toLocaleString()}</p>
+                    <p className="text-xs text-amber-500 mt-1">{reportData?.invoicesByStatus?.overdue || 0} unpaid invoices</p>
                   </Card>
                 </div>
 
