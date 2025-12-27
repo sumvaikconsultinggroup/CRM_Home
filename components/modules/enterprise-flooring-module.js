@@ -268,6 +268,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
   const [crmContacts, setCrmContacts] = useState([]) // CRM Contacts for customer selection
   const [moduleSettings, setModuleSettings] = useState(null) // Module settings
   const [reports, setReports] = useState({}) // Reports data
+  const [reportsLoading, setReportsLoading] = useState(false) // Reports loading state
   const [meeAiMessages, setMeeAiMessages] = useState([]) // MEE AI chat
   const [meeAiInput, setMeeAiInput] = useState('')
   const [meeAiLoading, setMeeAiLoading] = useState(false)
