@@ -10233,7 +10233,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             )}
 
             {/* Products Report */}
-            {selectedReportType === 'products' && (
+            {selectedReportType === 'products' && reportData?._loaded && !reportsLoading && (
               <div className="space-y-4">
                 <Card className="p-4">
                   <h3 className="font-semibold mb-4">Top Products by Revenue</h3>
