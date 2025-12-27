@@ -398,20 +398,97 @@ export function EnterpriseFlooringModule({ client, user, token }) {
     }
   }, [token])
 
+  // Default fallback schema for when API fails
+  const DEFAULT_PRODUCT_SCHEMA = useMemo(() => ({
+    version: 1,
+    sections: [
+      {
+        key: 'core',
+        title: 'Core Details',
+        fields: [
+          { key: 'name', label: 'Product Name', type: 'text', required: true },
+          { key: 'sku', label: 'SKU', type: 'text', required: false, hint: 'Recommended unique identifier.' },
+          { key: 'brand', label: 'Brand', type: 'text' },
+          { key: 'collection', label: 'Collection / Series', type: 'text' },
+          { key: 'categoryId', label: 'Category', type: 'category', required: true },
+          { key: 'description', label: 'Description', type: 'textarea' },
+          { key: 'status', label: 'Status', type: 'select', options: ['active', 'inactive'], defaultValue: 'active' }
+        ]
+      },
+      {
+        key: 'construction',
+        title: 'Construction',
+        fields: [
+          { key: 'specs.construction', label: 'Construction', type: 'select', options: ['solid', 'engineered', 'laminate', 'bamboo', 'spc', 'lvt', 'other'] },
+          { key: 'specs.species', label: 'Species / Wood Type', type: 'text', hint: 'e.g., Oak, Walnut, Teak' },
+          { key: 'specs.origin', label: 'Origin', type: 'text' },
+          { key: 'specs.grade', label: 'Grade', type: 'text', hint: 'e.g., Select, Natural, Rustic' }
+        ]
+      },
+      {
+        key: 'dimensions',
+        title: 'Dimensions',
+        fields: [
+          { key: 'specs.thicknessMm', label: 'Thickness (mm)', type: 'number' },
+          { key: 'specs.widthMm', label: 'Width (mm)', type: 'number' },
+          { key: 'specs.lengthMm', label: 'Length (mm)', type: 'number', hint: 'Use average length if random' },
+          { key: 'pack.coverageSqftPerBox', label: 'Coverage per Box (sqft)', type: 'number' },
+          { key: 'pack.planksPerBox', label: 'Planks per Box', type: 'number' }
+        ]
+      },
+      {
+        key: 'finish',
+        title: 'Finish & Look',
+        fields: [
+          { key: 'specs.finish', label: 'Finish', type: 'select', options: ['matte', 'semi-gloss', 'gloss', 'oil', 'uv', 'lacquer', 'unfinished', 'other'] },
+          { key: 'specs.colorTone', label: 'Color Tone', type: 'text', hint: 'e.g., Natural, Dark, Grey' },
+          { key: 'specs.texture', label: 'Texture', type: 'select', options: ['smooth', 'brushed', 'hand-scraped', 'wire-brushed', 'distressed', 'embossed', 'other'] }
+        ]
+      },
+      {
+        key: 'pricing',
+        title: 'Pricing',
+        fields: [
+          { key: 'pricing.costPrice', label: 'Cost Price (₹/sqft)', type: 'number' },
+          { key: 'pricing.mrp', label: 'MRP (₹/sqft)', type: 'number' },
+          { key: 'pricing.sellingPrice', label: 'Retail / Selling Price (₹/sqft)', type: 'number', required: true },
+          { key: 'tax.hsnCode', label: 'HSN Code', type: 'text', defaultValue: '4418' },
+          { key: 'tax.gstRate', label: 'GST Rate (%)', type: 'number', defaultValue: 18 }
+        ]
+      },
+      {
+        key: 'media',
+        title: 'Media',
+        fields: [
+          { key: 'images', label: 'Image URLs (comma separated)', type: 'text' }
+        ]
+      }
+    ]
+  }), [])
+
   const fetchProductSchema = useCallback(async () => {
     if (!token) {
       console.log('Waiting for token to fetch schema...')
+      // Use default schema if no token yet
+      if (!productSchema) setProductSchema(DEFAULT_PRODUCT_SCHEMA)
       return
     }
     try {
       const res = await fetch('/api/flooring/enhanced/products/schema', { headers })
       const data = await res.json()
-      if (data?.schema) setProductSchema(data.schema)
-      else if (data?.error) console.error('Schema API error:', data.error)
+      if (data?.schema) {
+        setProductSchema(data.schema)
+      } else if (data?.error) {
+        console.error('Schema API error:', data.error)
+        // Use default schema on error
+        if (!productSchema) setProductSchema(DEFAULT_PRODUCT_SCHEMA)
+      }
     } catch (error) {
       console.error('Product schema fetch error:', error)
+      // Use default schema on network error
+      if (!productSchema) setProductSchema(DEFAULT_PRODUCT_SCHEMA)
     }
-  }, [token, headers])
+  }, [token, headers, productSchema, DEFAULT_PRODUCT_SCHEMA])
 
   const fetchProductCategories = useCallback(async () => {
     try {
