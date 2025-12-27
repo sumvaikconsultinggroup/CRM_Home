@@ -9816,7 +9816,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
               </Card>
             )}
             {/* Summary Report */}
-            {selectedReportType === 'summary' && (
+            {selectedReportType === 'summary' && reportData?._loaded && !reportsLoading && (
               <>
                 {/* KPI Cards - Dynamic Data */}
                 <div className="grid grid-cols-4 gap-4">
