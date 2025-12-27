@@ -10437,7 +10437,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             )}
 
             {/* Team Report */}
-            {selectedReportType === 'team' && (
+            {selectedReportType === 'team' && reportData?._loaded && !reportsLoading && (
               <div className="space-y-4">
                 <Card className="p-4 bg-gradient-to-br from-emerald-50 to-green-50">
                   <p className="text-sm text-emerald-600 font-medium text-center">Total Team Revenue</p>
