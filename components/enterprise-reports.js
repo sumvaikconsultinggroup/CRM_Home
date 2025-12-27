@@ -1041,7 +1041,9 @@ function ProjectStatusReport({ data }) {
 
 // Project Profitability Report
 function ProjectProfitabilityReport({ data }) {
-  const projects = data?.data?.projects || []
+  // Ensure projects is always an array
+  const rawProjects = data?.data?.projects
+  const projects = Array.isArray(rawProjects) ? rawProjects : []
   const summary = data?.data?.summary || {}
 
   return (
@@ -1058,36 +1060,43 @@ function ProjectProfitabilityReport({ data }) {
           <CardTitle className="text-lg">Project Profitability</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead>
-                <tr className="border-b">
-                  <th className="text-left py-3 px-4">Project</th>
-                  <th className="text-right py-3 px-4">Budget</th>
-                  <th className="text-right py-3 px-4">Revenue</th>
-                  <th className="text-right py-3 px-4">Expenses</th>
-                  <th className="text-right py-3 px-4">Profit</th>
-                  <th className="text-right py-3 px-4">Margin</th>
-                </tr>
-              </thead>
-              <tbody>
-                {projects.slice(0, 10).map((project, i) => (
-                  <tr key={i} className="border-b hover:bg-muted/50">
-                    <td className="py-3 px-4 font-medium">{project.projectName}</td>
-                    <td className="py-3 px-4 text-right">{formatCurrency(project.budget)}</td>
-                    <td className="py-3 px-4 text-right text-green-600">{formatCurrency(project.revenue)}</td>
-                    <td className="py-3 px-4 text-right text-red-600">{formatCurrency(project.expenses)}</td>
-                    <td className="py-3 px-4 text-right font-bold">{formatCurrency(project.profit)}</td>
-                    <td className="py-3 px-4 text-right">
-                      <Badge variant={parseFloat(project.margin) > 20 ? 'default' : 'destructive'}>
-                        {project.margin}%
-                      </Badge>
-                    </td>
+          {projects.length > 0 ? (
+            <div className="overflow-x-auto">
+              <table className="w-full">
+                <thead>
+                  <tr className="border-b">
+                    <th className="text-left py-3 px-4">Project</th>
+                    <th className="text-right py-3 px-4">Budget</th>
+                    <th className="text-right py-3 px-4">Revenue</th>
+                    <th className="text-right py-3 px-4">Expenses</th>
+                    <th className="text-right py-3 px-4">Profit</th>
+                    <th className="text-right py-3 px-4">Margin</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {projects.slice(0, 10).map((project, i) => (
+                    <tr key={i} className="border-b hover:bg-muted/50">
+                      <td className="py-3 px-4 font-medium">{project.projectName}</td>
+                      <td className="py-3 px-4 text-right">{formatCurrency(project.budget)}</td>
+                      <td className="py-3 px-4 text-right text-green-600">{formatCurrency(project.revenue)}</td>
+                      <td className="py-3 px-4 text-right text-red-600">{formatCurrency(project.expenses)}</td>
+                      <td className="py-3 px-4 text-right font-bold">{formatCurrency(project.profit)}</td>
+                      <td className="py-3 px-4 text-right">
+                        <Badge variant={parseFloat(project.margin) > 20 ? 'default' : 'destructive'}>
+                          {project.margin}%
+                        </Badge>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center h-32 text-muted-foreground">
+              <Briefcase className="h-8 w-8 mb-2 opacity-50" />
+              <p>No project data available</p>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>
