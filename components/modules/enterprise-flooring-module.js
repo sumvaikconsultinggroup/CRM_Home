@@ -749,6 +749,13 @@ export function EnterpriseFlooringModule({ client, user, token }) {
       const res = await fetch(`/api/flooring/enhanced/reports?type=${reportType}&period=${periodParam}`, { headers })
       const data = await res.json()
       if (data) setReports(prev => ({ ...prev, [reportType]: data }))
+      
+      // For summary report, also fetch products report for Top Products section
+      if (reportType === 'summary') {
+        const productsRes = await fetch(`/api/flooring/enhanced/reports?type=products&period=${periodParam}`, { headers })
+        const productsData = await productsRes.json()
+        if (productsData) setReports(prev => ({ ...prev, products: productsData }))
+      }
     } catch (error) {
       console.error('Reports fetch error:', error)
     }
