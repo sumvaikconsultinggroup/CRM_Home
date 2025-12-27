@@ -9770,12 +9770,12 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                         </tr>
                       </thead>
                       <tbody className="divide-y">
-                        {(reports.products?.topProducts || products.slice(0, 5)).map((product, i) => (
+                        {(reports.products?.topProducts || []).map((product, i) => (
                           <tr key={product.id || i} className="hover:bg-slate-50">
                             <td className="px-4 py-3 font-medium">{product.name}</td>
                             <td className="px-4 py-3">
                               <Badge className={FlooringCategories[product.category]?.color || 'bg-slate-100'}>
-                                {FlooringCategories[product.category]?.label || product.category}
+                                {FlooringCategories[product.category]?.label || product.category || 'Other'}
                               </Badge>
                             </td>
                             <td className="px-4 py-3 text-right">{(product.sales?.quantity || 0).toLocaleString()} sqft</td>
@@ -9784,7 +9784,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
                             </td>
                           </tr>
                         ))}
-                        {(!reports.products?.topProducts || reports.products?.topProducts?.length === 0) && products.length === 0 && (
+                        {(!reports.products?.topProducts || reports.products?.topProducts?.length === 0) && (
                           <tr>
                             <td colSpan="4" className="px-4 py-8 text-center text-slate-500">
                               No product data available. Create quotes or invoices to see product performance.
