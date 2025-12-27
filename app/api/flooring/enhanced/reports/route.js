@@ -34,8 +34,10 @@ export async function GET(request) {
     const customers = db.collection('flooring_customers')
     const contacts = db.collection('contacts')
     const leads = db.collection('leads')
+    const users = db.collection('users')
 
     const now = new Date()
+    const periodDays = period // Store period in days for comparison report
     const periodStart = startDate ? new Date(startDate) : new Date(Date.now() - period * 24 * 60 * 60 * 1000)
     const periodEnd = endDate ? new Date(endDate) : new Date()
 
