@@ -33,7 +33,7 @@ import {
   CreditCard, Banknote, ChevronDown, ArrowLeft, ArrowRight, Sparkles,
   MessageSquare, Bot, ClipboardList, Hammer, ShieldCheck, History, ExternalLink, Tags,
   Lock, Unlock, Info, Bell, IndianRupee, Landmark, Wallet, Check, Loader2, User,
-  ClipboardCheck, QrCode, Barcode, ScanLine, AlertCircle, ThermometerSun
+  ClipboardCheck, QrCode, Barcode, ScanLine, AlertCircle, ThermometerSun, FileX
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { PhoneInput } from '@/components/ui/phone-input'
