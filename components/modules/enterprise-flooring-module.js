@@ -10363,7 +10363,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             )}
 
             {/* Conversion Report */}
-            {selectedReportType === 'conversion' && (
+            {selectedReportType === 'conversion' && reportData?._loaded && !reportsLoading && (
               <div className="space-y-4">
                 <Card className="p-4 bg-gradient-to-br from-purple-50 to-violet-50">
                   <p className="text-sm text-purple-600 font-medium text-center">Overall Conversion Rate</p>
