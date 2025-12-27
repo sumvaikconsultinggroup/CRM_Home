@@ -37,6 +37,7 @@ import {
 } from 'lucide-react'
 import { toast } from 'sonner'
 import { PhoneInput } from '@/components/ui/phone-input'
+import { ResponsiveContainer, BarChart, CartesianGrid, XAxis, YAxis, Tooltip, Bar } from 'recharts'
 
 // =============================================
 // CONSTANTS & CONFIGURATIONS
