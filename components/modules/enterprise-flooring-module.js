@@ -745,13 +745,14 @@ export function EnterpriseFlooringModule({ client, user, token }) {
 
   const fetchReports = useCallback(async (reportType = 'summary') => {
     try {
-      const res = await fetch(`/api/flooring/enhanced/reports?type=${reportType}`, { headers })
+      const periodParam = reportPeriod === 'all' ? '3650' : reportPeriod
+      const res = await fetch(`/api/flooring/enhanced/reports?type=${reportType}&period=${periodParam}`, { headers })
       const data = await res.json()
       if (data) setReports(prev => ({ ...prev, [reportType]: data }))
     } catch (error) {
       console.error('Reports fetch error:', error)
     }
-  }, [token])
+  }, [token, reportPeriod, headers])
 
   const fetchCrmProjects = useCallback(async () => {
     try {
