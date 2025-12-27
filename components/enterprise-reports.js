@@ -1096,7 +1096,19 @@ function ProjectProfitabilityReport({ data }) {
 
 // Team Performance Report
 function TeamPerformanceReport({ data }) {
-  const teamData = data?.data || []
+  // Ensure teamData is always an array
+  const rawData = data?.data
+  const teamData = Array.isArray(rawData) ? rawData : []
+
+  if (teamData.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center h-64 text-muted-foreground">
+        <Users className="h-12 w-12 mb-4 opacity-50" />
+        <p className="text-lg font-medium">No Team Data Available</p>
+        <p className="text-sm">No team members found in the selected period</p>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-6">
@@ -1113,20 +1125,20 @@ function TeamPerformanceReport({ data }) {
                     <p className="font-bold">{member.userName}</p>
                     <p className="text-sm text-muted-foreground">{member.email} • {member.role}</p>
                   </div>
-                  <Badge>{formatCurrency(member.metrics.leads.revenue)}</Badge>
+                  <Badge>{formatCurrency(member.metrics?.leads?.revenue || 0)}</Badge>
                 </div>
                 <div className="grid grid-cols-3 gap-4 text-sm">
                   <div>
                     <p className="text-muted-foreground">Tasks</p>
-                    <p className="font-medium">{member.metrics.tasks.completed}/{member.metrics.tasks.total} ({member.metrics.tasks.completionRate}%)</p>
+                    <p className="font-medium">{member.metrics?.tasks?.completed || 0}/{member.metrics?.tasks?.total || 0} ({member.metrics?.tasks?.completionRate || 0}%)</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Leads Won</p>
-                    <p className="font-medium">{member.metrics.leads.won}/{member.metrics.leads.total}</p>
+                    <p className="font-medium">{member.metrics?.leads?.won || 0}/{member.metrics?.leads?.total || 0}</p>
                   </div>
                   <div>
                     <p className="text-muted-foreground">Projects</p>
-                    <p className="font-medium">{member.metrics.projects}</p>
+                    <p className="font-medium">{member.metrics?.projects || 0}</p>
                   </div>
                 </div>
               </div>
