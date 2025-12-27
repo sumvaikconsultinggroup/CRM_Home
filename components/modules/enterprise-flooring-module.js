@@ -10506,7 +10506,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             )}
 
             {/* Comparison Report */}
-            {selectedReportType === 'comparison' && (
+            {selectedReportType === 'comparison' && reportData?._loaded && !reportsLoading && (
               <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-6">
                   <Card className="p-4">
