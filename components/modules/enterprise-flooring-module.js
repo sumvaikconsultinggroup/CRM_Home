@@ -10032,7 +10032,7 @@ export function EnterpriseFlooringModule({ client, user, token }) {
             )}
 
             {/* Tax/GST Report */}
-            {selectedReportType === 'tax' && (
+            {selectedReportType === 'tax' && reportData?._loaded && !reportsLoading && (
               <div className="space-y-4">
                 <div className="grid grid-cols-4 gap-4">
                   <Card className="p-4 bg-gradient-to-br from-slate-50 to-gray-50">
